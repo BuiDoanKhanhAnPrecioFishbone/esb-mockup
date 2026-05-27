@@ -8,21 +8,55 @@
    - Environments: .env.local
 
  ✓ Starting...
- ✓ Ready in 1288ms
- ○ Compiling /middleware ...
- ✓ Compiled /middleware in 569ms (115 modules)
- ○ Compiling /login ...
- ✓ Compiled /login in 3s (560 modules)
- GET /login?from=%2Fm%2Fsystem-ui-tour 200 in 3368ms
- GET /login?from=%2Fm%2Fsystem-ui-tour 200 in 56ms
- ✓ Compiled /api/auth in 436ms (580 modules)
- POST /api/auth 200 in 576ms
+ ✓ Ready in 1290ms
+ ✓ Compiled /middleware in 315ms (115 modules)
+ ○ Compiling /api/auth ...
+ ✓ Compiled /api/auth in 1359ms (297 modules)
+ POST /api/auth 200 in 1577ms
+ POST /api/auth 200 in 11ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 1205ms (539 modules)
+ GET /sw.js 404 in 1404ms
+ ✓ Compiled in 156ms (227 modules)
+ ✓ Compiled in 136ms (227 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename 'C:\D\esb-mockup\.next\cache\webpack\client-development\0.pack.gz_' -> 'C:\D\esb-mockup\.next\cache\webpack\client-development\0.pack.gz'
+ ✓ Compiled /_not-found in 137ms (525 modules)
+ ⨯ TypeError: Cannot read properties of undefined (reading 'call')
+    at __webpack_exec__ (C:\D\esb-mockup\.next\server\app\_not-found\page.js:226:39)
+    at <unknown> (C:\D\esb-mockup\.next\server\app\_not-found\page.js:227:104)
+    at <unknown> (C:\D\esb-mockup\.next\server\app\_not-found\page.js:227:47)
+    at Object.<anonymous> (C:\D\esb-mockup\.next\server\app\_not-found\page.js:230:3)
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 1601ms (872 modules)
+ GET /me 500 in 4235ms
+ ⨯ TypeError: __webpack_modules__[moduleId] is not a function
+    at __webpack_exec__ (C:\D\esb-mockup\.next\server\app\_not-found\page.js:226:39)
+    at <unknown> (C:\D\esb-mockup\.next\server\app\_not-found\page.js:227:104)
+    at <unknown> (C:\D\esb-mockup\.next\server\app\_not-found\page.js:227:47)
+    at Object.<anonymous> (C:\D\esb-mockup\.next\server\app\_not-found\page.js:230:3)
+ GET /me 500 in 157ms
+ ○ Compiling /guide ...
+ ✓ Compiled /guide in 1844ms (1203 modules)
+ GET /guide 200 in 2564ms
  ⚠ Fast Refresh had to perform a full reload due to a runtime error.
- GET /login?from=%2Fm%2Fsystem-ui-tour 200 in 241ms
- GET /login?from=%2Fm%2Fsystem-ui-tour 200 in 260ms
- ○ Compiling /m/[slug] ...
- ✓ Compiled /m/[slug] in 1929ms (871 modules)
- GET /m/system-ui-tour 200 in 2626ms
- POST /api/auth 200 in 30ms
- GET /m/system-ui-tour 200 in 37ms
- GET /m/system-ui-tour 200 in 34ms
+ ✓ Compiled /_not-found in 372ms (1208 modules)
+ ⨯ TypeError: Cannot read properties of undefined (reading 'call')
+    at __webpack_exec__ (C:\D\esb-mockup\.next\server\app\_not-found\page.js:226:39)
+    at <unknown> (C:\D\esb-mockup\.next\server\app\_not-found\page.js:227:104)
+    at <unknown> (C:\D\esb-mockup\.next\server\app\_not-found\page.js:227:47)
+    at Object.<anonymous> (C:\D\esb-mockup\.next\server\app\_not-found\page.js:230:3)
+ GET /sw.js 500 in 665ms
+ GET /guide 200 in 1028ms
+ GET /sw.js 404 in 43ms
+ ✓ Compiled /login in 492ms (1235 modules)
+ GET /login?from=%2Fguide 200 in 827ms
+ ✓ Compiled /api/auth in 292ms (863 modules)
+ POST /api/auth 200 in 446ms
+ GET /guide 200 in 518ms
+ GET /guide 200 in 195ms
+ ✓ Compiled in 343ms (401 modules)
+ ✓ Compiled in 244ms (401 modules)
+ GET /guide 200 in 482ms
+ GET /guide 200 in 150ms
+ ✓ Compiled in 132ms (401 modules)
+ GET /guide 200 in 140ms

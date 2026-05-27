@@ -15,6 +15,24 @@ Deeper reference docs are in `docs/arteep/`:
 - `QA-INT-01-Dual-Verification-Rule.md` — foundational governance rule + compliance matrix
 - `UC-HO-01_initiate-handover-session_v2.md`, `UC-HO-02_conduct-ai-guided-voice-interview_v2.md` — detailed UC specs
 
+## Three workflows in this repo
+
+Two are file-writing, one is a router. They must not bleed into each other.
+
+| Skill | Touches | Use for |
+|---|---|---|
+| **`apply-to-mockup`** | `components/mockups/`, `lib/mockups-registry.ts` | Turning an idea **or a JSX artifact Claude generated in chat** into a visible mockup at `/m/<slug>` |
+| **`update-context`** | `ARTEEP-context-snapshot.md`, `docs/arteep/*.md` | Persisting a *written* decision (new CL entry, persona/UC/sprint/palette change) so the next contributor sees it |
+| **`ship-it`** (router) | Delegates only | One-shot "save what we just did" — surveys the chat, picks one or both of the above, runs them in the right order |
+
+**Cheat sheet — which to fire**
+
+- User is specific about *what* to save → use the matching specific skill:
+  - *"Save this artifact" / "put this into the repo" / "make this viewable"* → **`apply-to-mockup`**
+  - *"Save this decision" / "log this" / "update the context" / "compact this chat"* → **`update-context`**
+- User is non-specific ("ship it", "save this", "save everything", "sync to repo") → **`ship-it`** — it surveys the chat and dispatches.
+- When both apply (e.g. *"log the new rule and update S2 to follow it"*), the order is always **context first, then mockup**, as two separate commits. `ship-it` enforces this automatically.
+
 ## How to add a mockup
 
 When asked to add or update a mockup, follow this sequence. Do not invent a different structure.
@@ -38,6 +56,24 @@ When asked to add or update a mockup, follow this sequence. Do not invent a diff
 - Don't add database, auth, or session logic to a mockup. The only auth is the site-wide password gate in `middleware.ts`.
 - Don't edit `app/`, `middleware.ts`, or `lib/auth.ts` unless explicitly asked — those are infrastructure.
 - Don't open a PR unless the user asks for one. Direct push to `main` is the default for fast iteration.
+
+## How to update context
+
+When asked to capture, log, or save decisions from the conversation:
+
+1. **Read first.** Open `ARTEEP-context-snapshot.md`, `docs/arteep/ARTEEP-design-change-log.md`, and the relevant `docs/arteep/UC-*.md`. Scan the change log for the highest existing `CL-###` — the next entry uses that number + 1.
+2. **Summarize what you're about to write** to the user in one short paragraph before touching files. If anything is ambiguous, ask.
+3. **Make surgical edits, not rewrites:**
+   - New design rule / visual change → append a `CL-###` entry to `docs/arteep/ARTEEP-design-change-log.md`.
+   - Persona / palette / sprint / UC / TBD / QA-INT-01 state change → edit the matching numbered section of `ARTEEP-context-snapshot.md` (§3 personas, §4 design system, §5 UCs, §6 sprints, §7 Step Zero, §8 QA-INT-01, §9 artifacts, §10 CL summary, §11 TBDs).
+   - UC behavior change → update the specific `docs/arteep/UC-*.md` and bump its version line.
+4. **Commit and push to `main`** with a message naming the CL IDs added and the §sections touched. Example: `context: log CL-087 (canonical badge on hover); bump §4 visual rules`.
+
+**Don't:**
+- Don't invent CL numbers — always grep for the highest existing one first.
+- Don't restructure the snapshot beyond the targeted edits. Headings, tables, and the footer are load-bearing.
+- Don't capture decisions that are still being deliberated. If the user is mid-thought, ask first.
+- Don't touch `components/mockups/` from this workflow — that's `apply-to-mockup`'s job. Do them as two separate commits if both are needed.
 
 ## Design system (locked — do not deviate)
 

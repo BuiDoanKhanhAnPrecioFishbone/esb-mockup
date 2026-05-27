@@ -1,6 +1,6 @@
 ---
 name: apply-to-mockup
-description: Translate a brainstormed idea, flow, or wireframe into a clickable mockup in this repo. Use whenever the user wants to add, update, or remix an ART-EEP screen, flow, or component for the team to view at the deployed URL. Triggers on phrases like "add a mockup for…", "show this as a wireframe", "put this flow on the mockup site", or "/apply-to-mockup".
+description: Translate a brainstormed idea, flow, wireframe, or a JSX/React artifact Claude just generated in chat into a clickable mockup in this repo. Use whenever the user wants to add, update, or remix an ART-EEP screen, flow, or component for the team to view at the deployed URL — including when they say "save this artifact", "put this into the repo", "ship the artifact", "make this viewable", "add a mockup for…", "show this as a wireframe", "put this flow on the mockup site", or "/apply-to-mockup".
 ---
 
 # apply-to-mockup
@@ -9,7 +9,14 @@ Adds or updates a mockup in the `esb-mockup` repo (Next.js + Tailwind) so the te
 
 ## When to use
 
-The user has described an ART-EEP idea, flow, wireframe, or change in a brainstorm — either as text, a sketch, an existing JSX artifact, or a riff on a current mockup — and wants it to appear on the deployed mockup site.
+The user wants something visible at `/m/<slug>` on the deployed site. Sources can be:
+
+- **A JSX/React artifact Claude generated in the current chat** — the most common case. The user will usually say "save this", "put this in the repo", or "ship it" after seeing the rendered artifact.
+- An idea, flow, or wireframe described in text or a sketch.
+- A riff on or update to an existing mockup already in `components/mockups/`.
+- An external JSX file the user pastes in.
+
+If the user is *only* logging written decisions or design rules (no visual component to render), use `update-context` instead. If they want both (e.g. "log this new rule and update S2 to follow it"), do `update-context` first, then `apply-to-mockup` — as two separate commits.
 
 ## What to do
 
@@ -37,4 +44,4 @@ Never:
 
 ## After pushing
 
-Tell the user the slug, the route (`/m/<slug>`), and remind them the deploy takes ~30s on Vercel. If a flow was added, list the step order so they can share the entry point.
+Tell the user the slug, the route (`/m/<slug>`), and remind them the deploy takes ~60s on Vercel. If a flow was added, list the step order so they can share the entry point.
