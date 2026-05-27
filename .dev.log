@@ -1,0 +1,28 @@
+
+> esb-mockup@0.1.0 dev
+> next dev
+
+   ▲ Next.js 15.5.18
+   - Local:        http://localhost:3000
+   - Network:      http://172.27.77.5:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 1288ms
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 569ms (115 modules)
+ ○ Compiling /login ...
+ ✓ Compiled /login in 3s (560 modules)
+ GET /login?from=%2Fm%2Fsystem-ui-tour 200 in 3368ms
+ GET /login?from=%2Fm%2Fsystem-ui-tour 200 in 56ms
+ ✓ Compiled /api/auth in 436ms (580 modules)
+ POST /api/auth 200 in 576ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET /login?from=%2Fm%2Fsystem-ui-tour 200 in 241ms
+ GET /login?from=%2Fm%2Fsystem-ui-tour 200 in 260ms
+ ○ Compiling /m/[slug] ...
+ ✓ Compiled /m/[slug] in 1929ms (871 modules)
+ GET /m/system-ui-tour 200 in 2626ms
+ POST /api/auth 200 in 30ms
+ GET /m/system-ui-tour 200 in 37ms
+ GET /m/system-ui-tour 200 in 34ms
