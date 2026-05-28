@@ -832,6 +832,192 @@ The S1 rebuild was prompted by a stakeholder request to (a) audit UC adherence s
 | Decided By | UX |
 | Category | Visual System |
 
+---
+
+## Planning v2 — Step Zero integration
+
+The entries below were generated when the Implementation Plan was rewritten to v2 to introduce Step Zero. They were drafted in the plan document at the time but not appended to this Change Log; they are backfilled here to keep the audit trail complete.
+
+### CL-066 — Step Zero introduced as a new sprint between S0 and S1
+
+| Field | Value |
+|---|---|
+| Date | 2026-05-22 |
+| Sprint | Planning v2 |
+| Change | A new sprint, **SZ — Step Zero (Data Integration & Configuration)**, is introduced between S0 (Platform Foundation) and S1 (Handover Initiation). It owns 4 new screens (Z01 Connector Library, Z02 Setup Wizard, Z03 Health Dashboard, Z04 Department × Source Mapping), the new Platform Admin persona, and the operational governance for source-data ingress (OAuth, credentials, sync scheduling, sensitivity classification routing). |
+| UC Reference | Cross-cutting · new module (no prior UC) |
+| Why | Plan v1 implicitly treated integrations as one-shot infrastructure done in S0 alongside Azure provisioning. That conflation was wrong: integrations are operational (Platform Admins manage them throughout the system's life), per-department configurable, and tied to compliance reviews. They deserve a dedicated sprint, persona, and UI surface — without Step Zero, the platform can demo but cannot ship to a real org. |
+| Decided By | Stakeholder + BA |
+| Category | BA Gap |
+
+### CL-067 — Step Zero MVP scoped to 4 screens (Z01–Z04)
+
+| Field | Value |
+|---|---|
+| Date | 2026-05-22 |
+| Sprint | Planning v2 |
+| Change | The Step Zero MVP is scoped to exactly 4 screens — Z01 Connector Library (browse), Z02 Setup Wizard (OAuth + scope confirmation), Z03 Health Dashboard (operational status), Z04 Department × Source Mapping. Five additional screens were identified but deferred: per-source field-schema configuration, per-source Purview sensitivity overrides, dedicated Lineage UI, sync-history detail UI, and per-role source defaults. Defaults ship with each connector instead. |
+| UC Reference | SZ (new) |
+| Why | A 4-screen MVP keeps SZ shippable in 2 weeks (or 1 in compressed mode). Field-schema and sensitivity overrides aren't needed because each connector ships with safe defaults and Purview classifications run on a global ruleset. Lineage UI and sync-history are admin power-user features that don't gate handover sessions — they can wait for v2. Role defaults are derivable from the Department × Source mapping, so they don't need their own screen. |
+| Decided By | BA + Architecture |
+| Category | Scope Deferral |
+
+### CL-068 — New persona introduced: An Quân Vũ (Platform Admin)
+
+| Field | Value |
+|---|---|
+| Date | 2026-05-22 |
+| Sprint | Planning v2 |
+| Change | A 6th persona is added: **An Quân Vũ** — Platform Admin / IT. Distinct RBAC role from Manager. Responsibilities: connector enablement, credential management, health monitoring, department-source mapping (with Department Lead input), compliance attestation for source-data ingress. Their home surface is Z03 (Connector Health Dashboard) — the daily ops equivalent of Hà Vy's Handover Dashboard. |
+| UC Reference | SZ (all 4 screens) |
+| Why | Manager (Hà Vy) and Platform Admin are genuinely different roles — different scope (one team vs. platform-wide), different responsibilities (handover quality vs. integration health), different on-call expectations. Conflating them would force Managers into IT-style work and Platform Admins into people-side work; both would do their actual jobs worse. The Vietnamese naming convention is preserved for consistency with the existing 5 personas. |
+| Decided By | BA |
+| Category | BA Gap |
+
+### CL-069 — Connector catalog scoped to 8 MVP integrations
+
+| Field | Value |
+|---|---|
+| Date | 2026-05-22 |
+| Sprint | Planning v2 |
+| Change | The Z01 Connector Library MVP ships with exactly 8 curated connectors: Microsoft 365 (Email + OneDrive + SharePoint + Teams), Google Workspace (Drive + Gmail + Calendar), Jira, Salesforce, Slack, Notion, GitHub, generic HRIS (BambooHR/Workday adapter). Curated catalog only — no admin-added custom connectors and no community SDK in v1. Adding a 9th connector in MVP requires a code change. |
+| UC Reference | SZ-Z01 |
+| Why | 8 covers the major SaaS surfaces a typical Vietnamese mid-market company would need (productivity, engineering, sales, communication, HR org-structure). Curated catalog avoids the security review treadmill of arbitrary integrations. The code-change requirement for new connectors is fine for MVP because adding a new adapter is the kind of work that needs an engineer's hands anyway (rate-limit handling, OAuth callback registration, schema mapping). |
+| Decided By | BA + Architecture |
+| Category | Scope Deferral |
+
+### CL-070 — UC-HO-01 step 4 and AC.3 refined to reference Step Zero output
+
+| Field | Value |
+|---|---|
+| Date | 2026-05-22 |
+| Sprint | Planning v2 |
+| Change | UC-HO-01 v2.1 wording change pending: step 4 currently reads "*Manager confirms which data sources to scan*" with no specification of where those sources come from. v2.1 will read "*System looks up Step Zero's Department × Source mapping for the Offboarder's department and presents the configured sources for Manager confirmation*." A new precondition is added: "At least one connector configured for the Offboarder's department in Step Zero." AC.3 (no data sources available) is extended to include "*or none mapped for this department in Step Zero — fallback to generic question bank*." UC document update is planned for S0 alongside the Master UC Index refresh. |
+| UC Reference | UC-HO-01 step 4, precondition, AC.3 |
+| Why | The original wording presumed the integrations existed by magic. With Step Zero supplying them, the wording must reference where they come from — otherwise the UC remains under-specified and the cross-impact stays invisible. The fallback to AC.3's generic-question-bank mode covers the edge case where Step Zero hasn't been configured for the offboarder's department yet (a real risk early in deployment). |
+| Decided By | BA |
+| Category | BA Gap (cross-impact) |
+
+### CL-071 — 5 new pre-build decision blockers (TBD-Z1 through TBD-Z5)
+
+| Field | Value |
+|---|---|
+| Date | 2026-05-22 |
+| Sprint | Planning v2 |
+| Change | Step Zero introduces 5 new pre-build decision blockers, all hard: **TBD-Z1** OAuth scope minimums per connector (IT Security); **TBD-Z2** connector approval workflow and SLA (IT + Legal); **TBD-Z3** default sync frequency vs. rate-limit costs (Product + IT); **TBD-Z4** source data retention policy by sensitivity (Legal + DPO); **TBD-Z5** connector deprecation behavior — hard delete, soft isolate, or grace period (Product). None of these can be safely defaulted because they intersect legal, security, and product judgment. SZ cannot start until owners are named. |
+| UC Reference | SZ (cross-cutting blockers) |
+| Why | Each TBD owns a real risk: TBD-Z1 (over-permissive scopes leak data; under-permissive scopes break sessions); TBD-Z2 (no review means rogue connectors; heavy review means no connectors ship); TBD-Z3 (high frequency hits rate limits; low frequency means stale context); TBD-Z4 (retention too short loses traceability; too long violates compliance); TBD-Z5 (hard delete strands handover sessions; grace period creates confusing partial states). Defaulting any of these would be irresponsible. |
+| Decided By | BA |
+| Category | Default Pending Confirmation |
+
+### CL-072 — Plan v2 supersedes v1 (v1 file preserved for diff)
+
+| Field | Value |
+|---|---|
+| Date | 2026-05-22 |
+| Sprint | Planning v2 |
+| Change | `ARTEEP-implementation-plan-v2.md` becomes the operative plan. The original `ARTEEP-implementation-plan.md` is preserved unchanged for historical diff. The Master UC Index needs a follow-up refresh to reference Step Zero (planned for S0 alongside the UC-HO-01 v2.1 wording update per CL-070). |
+| UC Reference | Cross-cutting (planning document supersession) |
+| Why | Two-file pattern preserves history without confusion: v2 is the source of truth, v1 is the read-only baseline. Anyone reading the project from scratch reads v2; anyone auditing what changed reads both side-by-side. |
+| Decided By | BA |
+| Category | Visual System (governance) |
+
+### CL-073 — Total project timeline extended from ~7–8 weeks to ~12 weeks
+
+| Field | Value |
+|---|---|
+| Date | 2026-05-22 |
+| Sprint | Planning v2 |
+| Change | Inserting Step Zero adds 2 weeks to the critical path, taking the full production-ready build to ~12 weeks. A hackathon-compressed mode reduces SZ to ~1 week by shipping with 2 connectors (Microsoft 365 + Jira) instead of 8, bringing the total to ~11 weeks. Mode decision remains pending stakeholder confirmation per CL-003. |
+| UC Reference | Cross-cutting (timeline impact) |
+| Why | Step Zero is a genuine new module, not visual polish — it has a backend (Key Vault, Graph Connectors, schema mappings), a UI surface (4 screens), and operational concerns (health monitoring, audit). Trying to absorb that into the existing 7-8 week plan would either compromise SZ quality or push other sprints' actual work into "polish" time. Honest scoping is better than optimistic scheduling. |
+| Decided By | BA + Stakeholder |
+| Category | Scope Deferral |
+
+---
+
+## System UI Tour
+
+### CL-074 — Comprehensive System UI Tour artifact created
+
+| Field | Value |
+|---|---|
+| Date | 2026-05-22 |
+| Sprint | S6 (Polish & Demo) |
+| Change | A single navigable artifact, `arteep-system-ui-tour.jsx`, is created covering all 8 major features × 3 states = 24 demonstrable views. Module switcher across the top, state selector below per feature. Supersedes the prior per-sprint artifacts (S0–S4) for demo and stakeholder review purposes. Per-sprint artifacts remain as canonical build references for engineering. |
+| UC Reference | Cross-cutting (demo surface for all UCs) |
+| Why | Stakeholders need one place to walk the whole product without switching artifacts. Per-sprint files made sense during build but force a Manager or judge to track which file shows which screen. The Tour collapses that into one navigable surface where the relationship between Step Zero, Handover, Onboarding, and Feedback is visible as a single product. |
+| Decided By | UX |
+| Category | Visual System |
+
+### CL-075 — Feedback Loop combines UC-HO-06 and UC-HO-07 into a single feature surface
+
+| Field | Value |
+|---|---|
+| Date | 2026-05-22 |
+| Sprint | S6 (Polish & Demo) |
+| Change | In the System UI Tour, UC-HO-06 (Report Hallucination) and UC-HO-07 (Approve Correction) render as one feature titled "Feedback Loop" with three lifecycle states: Report → Review → Resolved. The two UCs remain distinct in the spec docs for BA traceability, but the demo surface unifies them as one user-perceived workflow. |
+| UC Reference | UC-HO-06, UC-HO-07 |
+| Why | The two UCs describe a single round-trip story (Onboarder reports → Manager reviews → resolution propagates). Splitting them across two tabs would make the audience switch contexts mid-narrative. The single-feature framing tells the actual story while preserving the underlying spec separation. |
+| Decided By | BA + UX |
+| Category | UX Refinement |
+
+### CL-076 — Skill Gap progress bars use violet / light-violet two-tone
+
+| Field | Value |
+|---|---|
+| Date | 2026-05-22 |
+| Sprint | S6 (Polish & Demo) |
+| Change | The 5-segment progress bar on each Skill Row uses three tones: current level in violet-600, gap-to-target in violet-200, untargeted segments in gray-200. The two-tone purple treatment makes "current," "where I need to get to," and "above my target band" instantly legible without legend. |
+| UC Reference | UC-ON-03 step 3 (skill profile rendering) |
+| Why | A single-tone bar (filled vs. unfilled) only encodes one dimension. The two-tone purple encodes both current proficiency and the target band, which is what the Onboarder actually cares about — not "how full is this bar" but "where am I, where do I need to be, and how far is the gap." Aligned with the violet primary brand color per CL-054. |
+| Decided By | UX |
+| Category | Visual System |
+
+---
+
+## Transactional Gateways
+
+### CL-077 — Vietnamese UI applied to Transactional Gateways artifact (deviation from CL-001)
+
+| Field | Value |
+|---|---|
+| Date | 2026-05-22 |
+| Sprint | S0 v2 |
+| Change | The Transactional Gateways artifact (`arteep-transactional-gateways.jsx`) uses Vietnamese for all user-facing UI text per explicit stakeholder request. CL-001 (English UI standardization) remains the system default; this artifact is a scoped deviation for stakeholder demonstration purposes. Vietnamese copy may serve as the source for future Vietnamese localization work, but does not change the system's primary language. |
+| UC Reference | Cross-cutting (deviation from CL-001) |
+| Why | Stakeholder explicitly requested Vietnamese for this gateway demonstration to validate the Vietnamese-locale user experience for an internal review where the audience prefers Vietnamese. The deviation is logged so future builds know which language each artifact uses; CL-001 is not amended. |
+| Decided By | Stakeholder |
+| Category | UX Refinement (scoped deviation) |
+
+### CL-078 — Three entity badge categories for inline transcript marking
+
+| Field | Value |
+|---|---|
+| Date | 2026-05-22 |
+| Sprint | S2 v2 (Transactional Gateways context) |
+| Change | The Glass-Box Transcript Editor introduces three entity badge types embedded inline within transcript text: **Projects/products** in muted blue (`bg-blue-50 border-blue-200 text-blue-700`), **People** in neutral gray (`bg-gray-100 border-gray-200 text-gray-700`), and **Concepts/technical terms** in violet (`bg-violet-50 border-violet-200 text-violet-700`). Each badge is a single-line inline element using padding-x 1.5 and the same border + text contrast across all three. Muted blue is scoped to the Transactional Gateways artifact only. |
+| UC Reference | UC-HO-03 step 5 (entity recognition and tagging) |
+| Why | The transcript editor needs to communicate "what kind of thing" each highlighted term is without resorting to icons or extra chrome that would disrupt reading flow. Three categories cover the majority of named entities in handover transcripts. Reading flow stays smooth because the badges are visually quiet — no icons, no shadows, just colored borders and backgrounds at low saturation. |
+| Decided By | UX |
+| Category | Visual System |
+
+### CL-079 — Low-confidence text spans use yellow underline (not strikethrough or highlight-color)
+
+| Field | Value |
+|---|---|
+| Date | 2026-05-22 |
+| Sprint | S2 v2 (Transactional Gateways context) |
+| Change | Low-confidence text spans inside the transcript editor are marked with a 2px solid yellow underline (`border-b-2 border-yellow-400`) plus a soft `bg-yellow-50/60` background tint. Not strikethrough (would imply "this is wrong"), not full yellow background (would compete with reading flow), not red (would alarm the user unnecessarily). |
+| UC Reference | UC-HO-03 step 6, UC-HO-02 AC.4 (confidence-gate signaling) |
+| Why | Strikethrough implies the system is *certain* the text is wrong. Low confidence is a different state — the system is *uncertain*, and the user needs to verify. The yellow underline communicates "look at this" without communicating "this is wrong." The right-drawer card pattern reinforces this — three action buttons (Verify / Edit / Clear) respect the three possible user judgments rather than presuming one. |
+| Decided By | UX |
+| Category | Visual System |
+
+---
+
+## QA-INT-01 Adoption
+
 ### CL-080 — QA-INT-01 (Dual-Verification & Workflow Integration) adopted as foundational governance rule
 
 | Field | Value |
@@ -930,6 +1116,11 @@ The defaults in CL-003, CL-004, and CL-005 are working assumptions. The followin
 | HO-03 e-signature standard | Vietnam local | S2 | Legal |
 | ON-01 Playbook delivery model | Static + Copilot overlay | S4 | Product / UX |
 | ON-02 mobile parity scope | Desktop-first v1 | S4 | Product / UX |
+| **TBD-Z1 OAuth scope minimums per connector** | (no default — hard block) | SZ | IT Security |
+| **TBD-Z2 Connector approval workflow + SLA** | (no default — hard block) | SZ | IT + Legal |
+| **TBD-Z3 Default sync frequency vs. rate limits** | (no default — hard block) | SZ | Product + IT |
+| **TBD-Z4 Source data retention policy by sensitivity** | (no default — hard block) | SZ | Legal + DPO |
+| **TBD-Z5 Connector deprecation behavior** | (no default — hard block) | SZ | Product |
 
 ---
 
