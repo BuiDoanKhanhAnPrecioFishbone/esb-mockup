@@ -2,6 +2,7 @@ import type { ComponentType } from "react";
 
 import SystemUiTour from "@/components/mockups/system-ui-tour.jsx";
 import S0ComponentLibrary from "@/components/mockups/s0-component-library.jsx";
+import UcHo01NormalCourse from "@/components/mockups/uc-ho-01-normal-course.jsx";
 import UcHo01AlternativeCourses from "@/components/mockups/uc-ho-01-alternative-courses.jsx";
 import UcHo01Exceptions from "@/components/mockups/uc-ho-01-exceptions.jsx";
 import S1HandoverInitiationV2 from "@/components/mockups/s1-handover-initiation-v2.jsx";
@@ -68,6 +69,17 @@ export const mockups: MockupEntry[] = [
     useCases: ["Z01", "Z02", "Z03", "Z04"],
     tags: ["step-zero", "vietnamese", "specialized"],
     Component: TransactionalGateways,
+  },
+  {
+    slug: "uc-ho-01-normal-course",
+    title: "UC-HO-01 · Normal course — steps 1 through 13",
+    description:
+      "Sprint 1 · 4 clickable happy-path screens from UC-HO-01 v2.0: dashboard notification, session setup wizard, mid-flight context seeding, preliminary knowledge map with next actions. Single canonical scenario (Hà Vy initiating for Minh Lê).",
+    sprint: "S1",
+    personas: ["Hà Vy", "Minh Lê"],
+    useCases: ["UC-HO-01"],
+    tags: ["s1", "flow", "normal-course", "spec-strict"],
+    Component: UcHo01NormalCourse,
   },
   {
     slug: "uc-ho-01-alternative-courses",
