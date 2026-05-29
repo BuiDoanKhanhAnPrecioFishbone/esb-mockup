@@ -3,6 +3,7 @@ import type { ComponentType } from "react";
 import SystemUiTour from "@/components/mockups/system-ui-tour.jsx";
 import S0ComponentLibrary from "@/components/mockups/s0-component-library.jsx";
 import UcHo01AlternativeCourses from "@/components/mockups/uc-ho-01-alternative-courses.jsx";
+import UcHo01Exceptions from "@/components/mockups/uc-ho-01-exceptions.jsx";
 import S1HandoverInitiationV2 from "@/components/mockups/s1-handover-initiation-v2.jsx";
 import S1HandoverInitiation from "@/components/mockups/s1-handover-initiation.jsx";
 import S2CaptureVerify from "@/components/mockups/s2-capture-verify.jsx";
@@ -78,6 +79,17 @@ export const mockups: MockupEntry[] = [
     useCases: ["UC-HO-01"],
     tags: ["s1", "flow", "alternative-courses", "spec-strict"],
     Component: UcHo01AlternativeCourses,
+  },
+  {
+    slug: "uc-ho-01-exceptions",
+    title: "UC-HO-01 · Exceptions — EX.1 through EX.5",
+    description:
+      "Sprint 1 · 5 clickable exception states from UC-HO-01 v2.0: seeding partial, profile missing, critical short notice, classification paused, RBAC unresolvable. Rose-themed chrome marks the exception kind.",
+    sprint: "S1",
+    personas: ["Hà Vy", "Minh Lê", "Khánh Linh Trần"],
+    useCases: ["UC-HO-01"],
+    tags: ["s1", "flow", "exceptions", "spec-strict"],
+    Component: UcHo01Exceptions,
   },
   {
     slug: "s1-handover-initiation-v2",
