@@ -5,6 +5,7 @@ import S0ComponentLibrary from "@/components/mockups/s0-component-library.jsx";
 import UcHo01NormalCourse from "@/components/mockups/uc-ho-01-normal-course.jsx";
 import UcHo01AlternativeCourses from "@/components/mockups/uc-ho-01-alternative-courses.jsx";
 import UcHo01Exceptions from "@/components/mockups/uc-ho-01-exceptions.jsx";
+import UcHo05ConfigurePromptsDraft from "@/components/mockups/uc-ho-05-configure-prompts-draft.jsx";
 import S1HandoverInitiationV2 from "@/components/mockups/s1-handover-initiation-v2.jsx";
 import S1HandoverInitiation from "@/components/mockups/s1-handover-initiation.jsx";
 import S2CaptureVerify from "@/components/mockups/s2-capture-verify.jsx";
@@ -102,6 +103,17 @@ export const mockups: MockupEntry[] = [
     useCases: ["UC-HO-01"],
     tags: ["s1", "flow", "exceptions", "spec-strict"],
     Component: UcHo01Exceptions,
+  },
+  {
+    slug: "uc-ho-05-configure-prompts-draft",
+    title: "UC-HO-05 · Configure interview prompts — v0.1 DRAFT",
+    description:
+      "Sprint 1 · 5-screen Priority Prompts flow paired with the v0.1 DRAFT spec at docs/arteep/UC-HO-05_configure-interview-prompts_v0.1-draft.md. Claude-drafted from inference, awaiting BA review. Yellow draft banner visible throughout.",
+    sprint: "S1",
+    personas: ["Hà Vy", "Minh Lê", "Trần Hữu Nam"],
+    useCases: ["UC-HO-05"],
+    tags: ["s1", "flow", "draft", "v0.1", "needs-review"],
+    Component: UcHo05ConfigurePromptsDraft,
   },
   {
     slug: "s1-handover-initiation-v2",
