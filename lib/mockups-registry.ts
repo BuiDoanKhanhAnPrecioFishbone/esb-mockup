@@ -2,6 +2,7 @@ import type { ComponentType } from "react";
 
 import SystemUiTour from "@/components/mockups/system-ui-tour.jsx";
 import S0ComponentLibrary from "@/components/mockups/s0-component-library.jsx";
+import UcHo01AlternativeCourses from "@/components/mockups/uc-ho-01-alternative-courses.jsx";
 import S1HandoverInitiationV2 from "@/components/mockups/s1-handover-initiation-v2.jsx";
 import S1HandoverInitiation from "@/components/mockups/s1-handover-initiation.jsx";
 import S2CaptureVerify from "@/components/mockups/s2-capture-verify.jsx";
@@ -66,6 +67,17 @@ export const mockups: MockupEntry[] = [
     useCases: ["Z01", "Z02", "Z03", "Z04"],
     tags: ["step-zero", "vietnamese", "specialized"],
     Component: TransactionalGateways,
+  },
+  {
+    slug: "uc-ho-01-alternative-courses",
+    title: "UC-HO-01 · Alternative courses — AC.1 through AC.4",
+    description:
+      "Sprint 1 · 4 clickable AC variants from UC-HO-01 v2.0: manual initiation, email excluded, no sources, high-sensitivity exclusion. Each traces to a numbered UC clause.",
+    sprint: "S1",
+    personas: ["Hà Vy", "Minh Lê", "Khánh Linh Trần", "Phương Anh Nguyễn"],
+    useCases: ["UC-HO-01"],
+    tags: ["s1", "flow", "alternative-courses", "spec-strict"],
+    Component: UcHo01AlternativeCourses,
   },
   {
     slug: "s1-handover-initiation-v2",
