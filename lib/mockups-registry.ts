@@ -2,6 +2,7 @@ import type { ComponentType } from "react";
 
 import SystemUiTour from "@/components/mockups/system-ui-tour.jsx";
 import S0ComponentLibrary from "@/components/mockups/s0-component-library.jsx";
+import HaVyHandoverDashboard from "@/components/mockups/ha-vy-handover-dashboard.jsx";
 import UcHo01NormalCourse from "@/components/mockups/uc-ho-01-normal-course.jsx";
 import UcHo01AlternativeCourses from "@/components/mockups/uc-ho-01-alternative-courses.jsx";
 import UcHo01Exceptions from "@/components/mockups/uc-ho-01-exceptions.jsx";
@@ -70,6 +71,17 @@ export const mockups: MockupEntry[] = [
     useCases: ["Z01", "Z02", "Z03", "Z04"],
     tags: ["step-zero", "vietnamese", "specialized"],
     Component: TransactionalGateways,
+  },
+  {
+    slug: "ha-vy-handover-dashboard",
+    title: "Hà Vy's handover dashboard — with progress",
+    description:
+      "Manager command center with multi-session progress tracking. 3 screens: active dashboard (3 sessions, different lifecycle stages), session detail drawer (full 8-stage timeline), just-completed celebration. Separates dashboard from initiation flow (which now lives at its own route).",
+    sprint: "S1",
+    personas: ["Hà Vy", "Minh Lê", "Khánh Linh Trần", "Phương Anh Nguyễn", "Trần Hữu Nam"],
+    useCases: ["UC-HO-01", "UC-HO-02", "UC-HO-03", "UC-HO-04"],
+    tags: ["s1", "dashboard", "progress", "command-center", "spec-strict"],
+    Component: HaVyHandoverDashboard,
   },
   {
     slug: "uc-ho-01-normal-course",
