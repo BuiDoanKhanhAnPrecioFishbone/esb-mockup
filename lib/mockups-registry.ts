@@ -3,6 +3,8 @@ import type { ComponentType } from "react";
 import SystemUiTour from "@/components/mockups/system-ui-tour.jsx";
 import S0ComponentLibrary from "@/components/mockups/s0-component-library.jsx";
 import HaVyHandoverDashboard from "@/components/mockups/ha-vy-handover-dashboard.jsx";
+import UcHo01QuickInitiate from "@/components/mockups/uc-ho-01-quick-initiate.jsx";
+import SessionCommandView from "@/components/mockups/session-command-view.jsx";
 import UcHo01NormalCourse from "@/components/mockups/uc-ho-01-normal-course.jsx";
 import UcHo01AlternativeCourses from "@/components/mockups/uc-ho-01-alternative-courses.jsx";
 import UcHo01Exceptions from "@/components/mockups/uc-ho-01-exceptions.jsx";
@@ -76,7 +78,7 @@ export const mockups: MockupEntry[] = [
     slug: "ha-vy-handover-dashboard",
     title: "Hà Vy's handover dashboard — with progress",
     description:
-      "Manager command center with multi-session progress tracking. 3 screens: active dashboard (3 sessions, different lifecycle stages), session detail drawer (full 8-stage timeline), just-completed celebration. Separates dashboard from initiation flow (which now lives at its own route).",
+      "Manager command center with multi-session progress tracking. 2 screens: active dashboard (3 sessions, different lifecycle stages) and just-completed celebration. Session cards now navigate to /session/[id] command view (no more side drawer). Pairs with quick-initiate and command-view mockups.",
     sprint: "S1",
     personas: ["Hà Vy", "Minh Lê", "Khánh Linh Trần", "Phương Anh Nguyễn", "Trần Hữu Nam"],
     useCases: ["UC-HO-01", "UC-HO-02", "UC-HO-03", "UC-HO-04"],
@@ -84,14 +86,36 @@ export const mockups: MockupEntry[] = [
     Component: HaVyHandoverDashboard,
   },
   {
-    slug: "uc-ho-01-normal-course",
-    title: "UC-HO-01 · Normal course — steps 1 through 13",
+    slug: "uc-ho-01-quick-initiate",
+    title: "UC-HO-01 · Quick initiate — one-click session creation",
     description:
-      "Sprint 1 · 4 clickable happy-path screens from UC-HO-01 v2.0: dashboard notification, session setup wizard, mid-flight context seeding, preliminary knowledge map with next actions. Single canonical scenario (Hà Vy initiating for Minh Lê).",
+      "Streamlined initiation page (replaces the multi-step wizard, per UX feedback that the wizard caused user fatigue). Single page · HR-synced defaults · one primary 'Start session' CTA · customization hidden behind a progressive-disclosure expander. 2 screens: default ready + customize expanded.",
+    sprint: "S1",
+    personas: ["Hà Vy", "Minh Lê", "Trần Hữu Nam"],
+    useCases: ["UC-HO-01"],
+    tags: ["s1", "initiation", "streamlined", "one-click"],
+    Component: UcHo01QuickInitiate,
+  },
+  {
+    slug: "session-command-view",
+    title: "Session command view — full-screen per-session workspace",
+    description:
+      "Dedicated route at /session/[id] · replaces the 480px side drawer with a tabbed full-screen view (Overview · Stages · Data · Audit · Settings). 3 screens: Minh Lê mid-seeding (Overview), Minh Lê full 8-stage timeline (Stages), Phương Anh awaiting transcript review (Overview). Pairs with the dashboard and quick-initiate mockups.",
+    sprint: "S1",
+    personas: ["Hà Vy", "Minh Lê", "Phương Anh Nguyễn", "Trần Hữu Nam"],
+    useCases: ["UC-HO-01", "UC-HO-02", "UC-HO-03", "UC-HO-04"],
+    tags: ["s1", "session-detail", "tabbed", "command-view"],
+    Component: SessionCommandView,
+  },
+  {
+    slug: "uc-ho-01-normal-course",
+    title: "UC-HO-01 · Normal course — spec-strict v2.0 (superseded)",
+    description:
+      "Sprint 1 · 4 clickable happy-path screens from UC-HO-01 v2.0 spec. SUPERSEDED by quick-initiate + command-view per UX feedback (multi-step wizard caused fatigue). Kept for spec-trace audit and comparison.",
     sprint: "S1",
     personas: ["Hà Vy", "Minh Lê"],
     useCases: ["UC-HO-01"],
-    tags: ["s1", "flow", "normal-course", "spec-strict"],
+    tags: ["s1", "flow", "normal-course", "spec-strict", "superseded"],
     Component: UcHo01NormalCourse,
   },
   {
