@@ -6,52 +6,80 @@ import {
   Settings, FileText, MessageSquare, Network, Database, Eye,
   AlertTriangle, AlertOctagon, Clock, CheckCircle2, Loader2,
   Calendar, ArrowRight, ArrowUpRight, ExternalLink, MoreHorizontal,
-  Users, Tag, GitBranch, Folder, Mail, Sparkles, Hash, Lock,
+  Users, Tag, GitBranch, Github, Folder, Sparkles, Hash, Lock,
   PlayCircle, PauseCircle, RefreshCw, Inbox, ShieldCheck
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════════════
    Session Command View — dedicated full-screen page at /session/[id]
 
-   Design response to feedback that a 480px side drawer is too cramped
-   for the data volume involved in managing a handover session
-   (timeline, extraction progress, audit logs, etc.).
+   THIS VERSION:
+     · Compresses the 8-stage lifecycle into 3 user-facing phases
+       (Prepare · Capture · Deliver), per UX feedback that 8 stages
+       was cognitively heavy. Internal sub-stages (8 of them) still
+       exist for system tracking.
+     · Removes all email-as-source references per data-ingestion
+       governance. Engineering sources are now Jira · GitHub · Drive.
 
-   Layout:
-     · TopBar with breadcrumb back to dashboard
-     · Hero with persona + 8-segment progress bar + current stage info
-     · Tab navigation · Overview · Stages · Data · Audit log · Settings
-     · Two-column main: content (left) + action sidebar (right ~280px)
+   Layout · TopBar with breadcrumb · Hero with persona + 3-phase
+   progress · Tab navigation (Overview · Stages · Data · Audit · Settings)
+   · Two-column main with content (left) + action sidebar (right).
 
    Three screens demonstrate state diversity:
-     1. Minh Lê · Overview tab · mid-seeding (stage 3 of 8)
-     2. Minh Lê · Stages tab · full vertical timeline of all 8 stages
-     3. Phương Anh Nguyễn · Overview tab · awaiting transcript review
-        (stage 6 of 8 · the case that needs the manager's action)
-
-   Honors locked design rules:
-     · CL-054 violet primary · CL-055 32px buttons · CL-059 focus rings
-     · CL-020 audit anchor referenced ambiently
-     · CL-022 "AI asked" eyebrow for Manager Priority prompts
-     · CL-063 multi-persona — this view is per-session, not per-manager
+     1. Minh Lê · Overview tab · mid-seeding (Phase 1 · Prepare)
+     2. Minh Lê · Stages tab · 3-phase timeline with sub-stages
+     3. Phương Anh · Overview tab · awaiting review (Phase 2 · Capture)
    ═══════════════════════════════════════════════════════════════════ */
 
 const FLOW = [
-  { id: "ml-overview", label: "Minh Lê · Overview",   trigger: "Session in stage 3 of 8 · context seeding · system actively running." },
-  { id: "ml-stages",   label: "Minh Lê · Stages",     trigger: "Stages tab · full 8-stage vertical timeline replaces the drawer." },
-  { id: "pa-overview", label: "Phương Anh · Overview", trigger: "Different session at stage 6 · awaiting manager review · action needed." },
+  { id: "ml-overview", label: "Minh Lê · Overview",   trigger: "Phase 1 of 3 · Prepare · context seeding in progress." },
+  { id: "ml-stages",   label: "Minh Lê · Stages",     trigger: "Stages tab · 3-phase timeline · sub-stages expand within current phase." },
+  { id: "pa-overview", label: "Phương Anh · Overview", trigger: "Phase 2 of 3 · Capture · awaiting your transcript review." },
 ];
 
-const LIFECYCLE_STAGES = [
-  { id: 1, key: "setup",     label: "Setup pending",          actor: "Manager",    description: "Waiting for the manager to initiate the session." },
-  { id: 2, key: "config",    label: "Configuration",          actor: "Manager",    description: "Manager confirms details and data sources." },
-  { id: 3, key: "seeding",   label: "Context seeding",        actor: "System",     description: "System scans Offboarder's accessible work." },
-  { id: 4, key: "ready",     label: "Ready for interview",    actor: "Offboarder", description: "Knowledge map produced. Interview can be scheduled." },
-  { id: 5, key: "interview", label: "Interview in progress",  actor: "Offboarder", description: "AI-guided voice interview with the Offboarder." },
-  { id: 6, key: "review",    label: "Transcript review",      actor: "Manager",    description: "Manager reviews and approves the captured content." },
-  { id: 7, key: "commit",    label: "Committing to KG",       actor: "System",     description: "Verified content propagates to the knowledge graph." },
-  { id: 8, key: "playbook",  label: "Playbook delivered",     actor: "Successor",  description: "Personalized onboarding playbook ready for the successor." },
+// 3 user-facing phases · each contains 2-3 internal sub-stages
+const LIFECYCLE_PHASES = [
+  {
+    id: 1, key: "prepare", label: "Prepare",
+    description: "Set up the session and scan accessible work across approved sources",
+    actor: "Manager + System",
+    subStages: [
+      { id: 1, label: "Setup confirmed",     actor: "Manager",    note: "Quick-initiate page · one click" },
+      { id: 2, label: "Context seeding",     actor: "System",     note: "Scan Jira / GitHub / Drive" },
+      { id: 3, label: "Knowledge map ready", actor: "System",     note: "Gaps inferred · ready for interview" },
+    ],
+  },
+  {
+    id: 2, key: "capture", label: "Capture",
+    description: "AI-guided interview captures tacit knowledge, then Manager reviews",
+    actor: "Offboarder + Manager",
+    subStages: [
+      { id: 4, label: "Interview scheduled",  actor: "Offboarder", note: "Offboarder picks a time" },
+      { id: 5, label: "Voice interview",      actor: "Offboarder", note: "AI-guided dynamic questioning" },
+      { id: 6, label: "Transcript reviewed",  actor: "Manager",    note: "Manager approves captured content" },
+    ],
+  },
+  {
+    id: 3, key: "deliver", label: "Deliver",
+    description: "Commit verified knowledge and deliver personalized playbook",
+    actor: "System + Successor",
+    subStages: [
+      { id: 7, label: "Committed to KG",      actor: "System",     note: "Atomic commit with rollback safety" },
+      { id: 8, label: "Playbook delivered",   actor: "Successor",  note: "Personalized onboarding playbook" },
+    ],
+  },
 ];
+
+function getPhase(subStageId) {
+  return LIFECYCLE_PHASES.find((p) => p.subStages.some((s) => s.id === subStageId));
+}
+function getSubStage(subStageId) {
+  for (const p of LIFECYCLE_PHASES) {
+    const s = p.subStages.find((x) => x.id === subStageId);
+    if (s) return s;
+  }
+  return null;
+}
 
 const SESSIONS = {
   ml: {
@@ -61,8 +89,7 @@ const SESSIONS = {
     role: "Senior Backend Engineer",
     dept: "Engineering",
     initials: "ML",
-    stageId: 3,
-    progressPct: 32,
+    subStageId: 2, // mid-seeding in Phase 1 (Prepare)
     daysLeft: 6,
     successor: "Trần Hữu Nam",
     deadline: "June 8, 2026 · 17:00",
@@ -76,8 +103,7 @@ const SESSIONS = {
     role: "Senior Account Executive",
     dept: "Sales",
     initials: "PA",
-    stageId: 6,
-    progressPct: 72,
+    subStageId: 6, // transcript review in Phase 2 (Capture)
     daysLeft: 4,
     successor: "Đặng Khải Hoàn",
     deadline: "June 5, 2026 · 17:00",
@@ -205,10 +231,11 @@ function CommandView({ session, activeTab }) {
   );
 }
 
-/* ─── Hero · persona identity + 8-segment progress + current stage ──── */
+/* ─── Hero · persona identity + 3-phase progress + current sub-stage ── */
 
 function Hero({ session }) {
-  const stage = LIFECYCLE_STAGES.find((s) => s.id === session.stageId);
+  const phase = getPhase(session.subStageId);
+  const subStage = getSubStage(session.subStageId);
   const isUrgent = session.daysLeft <= 3;
 
   return (
@@ -235,14 +262,14 @@ function Hero({ session }) {
             {session.role} · successor <span className="text-gray-700">{session.successor}</span> · deadline <span className="text-gray-700" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{session.deadline}</span>
           </p>
 
-          <SegmentedProgress stageId={session.stageId} progressPct={session.progressPct} />
+          <PhaseProgress subStageId={session.subStageId} />
 
-          <div className="flex items-center gap-2 mt-2 text-[11px] text-gray-500">
-            <span className="font-semibold text-gray-900">{stage.label}</span>
+          <div className="flex items-center gap-2 mt-2 text-[11px] text-gray-500 flex-wrap">
+            <span className="font-semibold text-gray-900">Phase {phase.id} · {phase.label}</span>
             <span className="text-gray-300">·</span>
-            <span>{stage.description}</span>
+            <span>{subStage.label}</span>
             <span className="text-gray-300">·</span>
-            <span>Next actor · <span className="text-gray-700 font-medium">{stage.actor}</span></span>
+            <span>Owned by <span className="text-gray-700 font-medium">{subStage.actor}</span></span>
           </div>
         </div>
 
@@ -268,29 +295,38 @@ function Hero({ session }) {
   );
 }
 
-function SegmentedProgress({ stageId, progressPct }) {
+/* 3-segment phase progress bar */
+function PhaseProgress({ subStageId }) {
+  const currentPhase = getPhase(subStageId);
   return (
     <div>
-      <div className="flex items-center justify-between mb-1 text-[10px]">
-        <span className="text-gray-700 font-medium" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>
-          Stage {stageId} of 8 · {progressPct}%
-        </span>
-        <span className="text-gray-500">{LIFECYCLE_STAGES[stageId - 1].label}</span>
-      </div>
-      <div className="flex items-center gap-0.5">
-        {LIFECYCLE_STAGES.map((stage) => {
-          const isDone = stage.id < stageId;
-          const isCurrent = stage.id === stageId;
+      <div className="grid grid-cols-3 gap-1">
+        {LIFECYCLE_PHASES.map((phase) => {
+          const isDone = phase.id < currentPhase.id;
+          const isCurrent = phase.id === currentPhase.id;
+          let withinFillPct = 0;
+          if (isCurrent) {
+            const subIdx = phase.subStages.findIndex((s) => s.id === subStageId);
+            withinFillPct = ((subIdx + 0.5) / phase.subStages.length) * 100;
+          }
           return (
-            <span
-              key={stage.id}
-              title={stage.label}
-              className={`flex-1 h-1.5 rounded-sm transition-colors ${
-                isDone ? "bg-emerald-500"
-                : isCurrent ? "bg-violet-500 animate-pulse"
-                : "bg-gray-200"
-              }`}
-            />
+            <div key={phase.id} className="relative h-2 rounded-sm bg-gray-200 overflow-hidden" title={`${phase.label} · ${phase.description}`}>
+              {isDone && <div className="absolute inset-0 bg-emerald-500" />}
+              {isCurrent && <div className="absolute inset-y-0 left-0 bg-violet-500 animate-pulse" style={{ width: `${withinFillPct}%` }} />}
+            </div>
+          );
+        })}
+      </div>
+      <div className="grid grid-cols-3 gap-1 mt-1">
+        {LIFECYCLE_PHASES.map((phase) => {
+          const isDone = phase.id < currentPhase.id;
+          const isCurrent = phase.id === currentPhase.id;
+          return (
+            <span key={phase.id} className={`text-[10px] uppercase tracking-wider font-medium text-center ${
+              isDone ? "text-emerald-700" : isCurrent ? "text-violet-700" : "text-gray-400"
+            }`}>
+              {phase.id}. {phase.label}
+            </span>
           );
         })}
       </div>
@@ -325,11 +361,11 @@ function TabBar({ activeTab }) {
   );
 }
 
-/* ─── Tab content · Overview (varies by stage) ──────────────────────── */
+/* ─── Tab content · Overview (varies by phase) ──────────────────────── */
 
 function OverviewTab({ session }) {
-  if (session.stageId === 3) return <OverviewSeedingActive session={session} />;
-  if (session.stageId === 6) return <OverviewTranscriptReview session={session} />;
+  if (session.subStageId === 2) return <OverviewSeedingActive session={session} />;
+  if (session.subStageId === 6) return <OverviewTranscriptReview session={session} />;
   return null;
 }
 
@@ -345,7 +381,7 @@ function OverviewSeedingActive({ session }) {
           <div className="flex-1 min-w-0">
             <h3 className="text-sm font-semibold text-gray-900">Context seeding in progress</h3>
             <p className="text-[12px] text-gray-700 mt-0.5 leading-relaxed">
-              Scanning {session.offboarder}'s accessible work across approved sources. About 4 minutes remaining. You can leave this page — seeding continues in the background.
+              Scanning {session.offboarder}'s accessible work across approved shared workspaces. About 4 minutes remaining. You can leave this page — seeding continues in the background.
             </p>
           </div>
           <span className="text-[11px] text-gray-500 shrink-0" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>
@@ -357,8 +393,8 @@ function OverviewSeedingActive({ session }) {
           <SubStep done>Authorization scope established · 2.1s</SubStep>
           <SubStep done>Decomposed seeding job · 3 sources · 0.8s</SubStep>
           <SubStep done>Extracted Jira metadata · 47 tickets · 1m 24s</SubStep>
-          <SubStep active>Extracting Google Drive · 318 of 412 files</SubStep>
-          <SubStep>Email metadata · subject lines and participants only</SubStep>
+          <SubStep active>Extracting GitHub · 18 of 23 shared repos</SubStep>
+          <SubStep>Google Drive · titles and edit recency only</SubStep>
           <SubStep>Sensitivity classification gate</SubStep>
           <SubStep>Knowledge gaps inference</SubStep>
           <SubStep>Preliminary knowledge map build</SubStep>
@@ -368,10 +404,13 @@ function OverviewSeedingActive({ session }) {
       <div>
         <SectionLabel>Sources being scanned</SectionLabel>
         <div className="space-y-2 mt-2">
-          <SourceRow icon={GitBranch} name="Jira"          detail="47 tickets · 6 months · comments included" status="done" />
-          <SourceRow icon={Folder}    name="Google Drive"  detail="412 files · titles and edit recency only" status="active" subDetail="318 of 412 · 77%" />
-          <SourceRow icon={Mail}      name="Email metadata" detail="Subject lines and participants only · email content is never read or stored" status="pending" />
+          <SourceRow icon={GitBranch} name="Jira"           detail="47 tickets · 6 months · comments included" status="done" />
+          <SourceRow icon={Github}    name="GitHub"         detail="23 shared repos · PR descriptions, commit messages, wiki pages" status="active" subDetail="18 of 23 · 78%" />
+          <SourceRow icon={Folder}    name="Google Drive"   detail="412 files · titles and edit recency only · file content is not read until interview" status="pending" />
         </div>
+        <p className="text-[10px] text-gray-500 mt-2 leading-relaxed">
+          Per the data-ingestion governance rule, automated collection is restricted to shared workspaces only. Personal directories and individual messaging are excluded; manual upload of specific files is supported via the interview workflow.
+        </p>
       </div>
 
       <div>
@@ -518,68 +557,89 @@ function SmallStat({ icon: Icon, label, value, tone }) {
   );
 }
 
-/* ─── Tab content · Stages — full vertical timeline ─────────────────── */
+/* ─── Tab content · Stages — now 3 phase blocks instead of 8 rows ───── */
 
 function StagesTab({ session }) {
   return (
     <div>
-      <SectionLabel>Lifecycle timeline · all 8 stages</SectionLabel>
+      <SectionLabel>Lifecycle · 3 phases</SectionLabel>
       <p className="text-[11px] text-gray-500 mt-1 mb-4 leading-relaxed">
-        Each stage names the actor responsible for advancing the session. Click a completed stage to see the detail of what happened. The active stage is expanded inline.
+        Each phase groups the steps that move together. Click a completed phase to see the detail of what happened. The active phase auto-expands with sub-stage detail.
       </p>
 
-      <div className="relative">
-        {LIFECYCLE_STAGES.map((stage, i) => (
-          <StageBlock
-            key={stage.id}
-            stage={stage}
-            session={session}
-            status={
-              stage.id < session.stageId ? "done"
-              : stage.id === session.stageId ? "active"
-              : "pending"
-            }
-            isLast={i === LIFECYCLE_STAGES.length - 1}
-          />
-        ))}
+      <div className="space-y-3">
+        {LIFECYCLE_PHASES.map((phase) => {
+          const isDone    = phase.subStages.every((s) => s.id < session.subStageId);
+          const isCurrent = phase.subStages.some((s) => s.id === session.subStageId);
+          const status    = isDone ? "done" : isCurrent ? "active" : "pending";
+          return (
+            <PhaseBlock
+              key={phase.id}
+              phase={phase}
+              session={session}
+              status={status}
+            />
+          );
+        })}
       </div>
     </div>
   );
 }
 
-function StageBlock({ stage, session, status, isLast }) {
+function PhaseBlock({ phase, session, status }) {
   const cfg = {
-    done:    { icon: CheckCircle2, iconCls: "text-emerald-600 bg-emerald-50 border-emerald-200", labelCls: "text-gray-900",        lineCls: "bg-emerald-200" },
-    active:  { icon: Loader2,      iconCls: "text-violet-600 bg-violet-50 border-violet-200 animate-spin", labelCls: "text-gray-900 font-semibold", lineCls: "bg-gray-200" },
-    pending: { icon: Clock,        iconCls: "text-gray-300 bg-white border-gray-200",           labelCls: "text-gray-400",        lineCls: "bg-gray-200" },
+    done:    { border: "border-emerald-200", bg: "bg-emerald-50/20", iconCls: "text-emerald-600 bg-emerald-50 border-emerald-200", pillCls: "bg-emerald-50 border-emerald-200 text-emerald-700", pillLabel: "Complete" },
+    active:  { border: "border-violet-200",  bg: "bg-violet-50/30",  iconCls: "text-violet-600 bg-violet-50 border-violet-200",    pillCls: "bg-violet-50 border-violet-200 text-violet-700",    pillLabel: "In progress" },
+    pending: { border: "border-gray-200",    bg: "bg-white",         iconCls: "text-gray-300 bg-white border-gray-200",            pillCls: "bg-gray-50 border-gray-200 text-gray-500",          pillLabel: "Pending" },
   }[status];
-  const Icon = cfg.icon;
-  const showDetail = status === "active";
+
+  const Icon = status === "done" ? CheckCircle2 : status === "active" ? Loader2 : Clock;
+  const isExpanded = status === "active";
 
   return (
-    <div className="flex items-start gap-4 relative pb-5 last:pb-0">
-      {!isLast && <span className={`absolute left-[15px] top-9 bottom-0 w-px ${cfg.lineCls}`} />}
-      <div className={`w-8 h-8 rounded-full border flex items-center justify-center shrink-0 z-10 ${cfg.iconCls}`}>
-        <Icon className="w-3.5 h-3.5" strokeWidth={2} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className={`text-sm ${cfg.labelCls}`}>{stage.label}</span>
-          <span className="text-[10px] text-gray-500">·</span>
-          <span className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">{stage.actor}</span>
-          {status === "done"  && <span className="text-[10px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>· complete</span>}
-          {status === "active" && <span className="text-[10px] text-violet-700 font-medium">· in progress</span>}
+    <article className={`rounded-lg border ${cfg.border} ${cfg.bg}`}>
+      <div className="px-4 py-3 flex items-start gap-3">
+        <div className={`w-8 h-8 rounded-full border flex items-center justify-center shrink-0 ${cfg.iconCls}`}>
+          <Icon className={`w-3.5 h-3.5 ${status === "active" ? "animate-spin" : ""}`} strokeWidth={2} />
         </div>
-        <p className="text-[11px] text-gray-500 mt-0.5 leading-relaxed">{stage.description}</p>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap mb-0.5">
+            <h3 className="text-sm font-semibold text-gray-900">Phase {phase.id} · {phase.label}</h3>
+            <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold border ${cfg.pillCls}`}>{cfg.pillLabel}</span>
+          </div>
+          <p className="text-[11px] text-gray-500 leading-relaxed">{phase.description}</p>
+          <p className="text-[10px] text-gray-500 mt-0.5"><span className="uppercase tracking-wider font-medium">Owned by</span> · {phase.actor}</p>
+        </div>
+      </div>
 
-        {showDetail && (
-          <div className="mt-3 rounded-md border border-violet-200 bg-violet-50/30 p-3">
+      <div className="border-t border-gray-100 px-4 py-3 space-y-1.5">
+        {phase.subStages.map((sub) => {
+          const isCurrentSub = sub.id === session.subStageId;
+          const isDoneSub    = sub.id < session.subStageId;
+          return (
+            <div key={sub.id} className="flex items-start gap-2 text-[11px]">
+              <span className="shrink-0 mt-0.5">
+                {isDoneSub    && <CheckCircle2 className="w-3 h-3 text-emerald-600" strokeWidth={2.5} />}
+                {isCurrentSub && <Loader2      className="w-3 h-3 text-violet-600 animate-spin" strokeWidth={2} />}
+                {!isDoneSub && !isCurrentSub && <Clock className="w-3 h-3 text-gray-300" strokeWidth={1.75} />}
+              </span>
+              <span className={`leading-relaxed ${isDoneSub ? "text-gray-700" : isCurrentSub ? "text-gray-900 font-medium" : "text-gray-400"}`}>
+                {sub.label}
+                <span className="text-gray-500 font-normal"> · {sub.note}</span>
+              </span>
+            </div>
+          );
+        })}
+
+        {isExpanded && (
+          <div className="mt-3 pt-3 border-t border-violet-100">
+            <div className="text-[10px] uppercase tracking-[0.2em] text-violet-700 font-semibold mb-2">Live detail · context seeding</div>
             <ul className="space-y-1 text-[11px]">
               <SubStep done>Authorization scope established · 2.1s</SubStep>
               <SubStep done>Decomposed seeding job · 3 sources · 0.8s</SubStep>
               <SubStep done>Extracted Jira metadata · 47 tickets · 1m 24s</SubStep>
-              <SubStep active>Extracting Google Drive · 318 of 412 files</SubStep>
-              <SubStep>Email metadata · subject lines and participants only</SubStep>
+              <SubStep active>Extracting GitHub · 18 of 23 shared repos</SubStep>
+              <SubStep>Google Drive · titles and edit recency only</SubStep>
               <SubStep>Sensitivity classification gate</SubStep>
               <SubStep>Knowledge gaps inference</SubStep>
               <SubStep>Preliminary knowledge map build</SubStep>
@@ -590,15 +650,15 @@ function StageBlock({ stage, session, status, isLast }) {
           </div>
         )}
       </div>
-    </div>
+    </article>
   );
 }
 
 /* ─── Action sidebar (right) ────────────────────────────────────────── */
 
 function ActionSidebar({ session }) {
-  const isSeeding = session.stageId === 3;
-  const isReview  = session.stageId === 6;
+  const isSeeding = session.subStageId === 2;
+  const isReview  = session.subStageId === 6;
 
   return (
     <aside className="space-y-4">
@@ -635,10 +695,10 @@ function ActionSidebar({ session }) {
       <div>
         <SectionLabel>Quick links</SectionLabel>
         <div className="space-y-1 mt-2">
-          <QuickLink icon={Network}     label="Knowledge map preview"   disabled={isSeeding} />
-          <QuickLink icon={MessageSquare} label="Interview transcript"   disabled={isSeeding} />
-          <QuickLink icon={Tag}         label="Priority prompts"        count={3} />
-          <QuickLink icon={FileText}    label="Audit log"               count={14} />
+          <QuickLink icon={Network}       label="Knowledge map preview"   disabled={isSeeding} />
+          <QuickLink icon={MessageSquare} label="Interview transcript"    disabled={isSeeding} />
+          <QuickLink icon={Tag}           label="Priority prompts"        count={3} />
+          <QuickLink icon={FileText}      label="Audit log"               count={14} />
         </div>
       </div>
 
@@ -684,7 +744,7 @@ function InfoRow({ label, value, mono }) {
   return (
     <div className="flex items-center justify-between gap-2">
       <span className="text-gray-500">{label}</span>
-      <span className={`text-gray-900 font-medium text-right ${mono ? "" : ""}`} style={mono ? { fontFamily: "ui-monospace, Menlo, monospace" } : undefined}>{value}</span>
+      <span className="text-gray-900 font-medium text-right" style={mono ? { fontFamily: "ui-monospace, Menlo, monospace" } : undefined}>{value}</span>
     </div>
   );
 }
