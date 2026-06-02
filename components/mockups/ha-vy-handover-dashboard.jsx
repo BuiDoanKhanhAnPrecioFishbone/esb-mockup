@@ -15,22 +15,23 @@ import {
    Hà Vy's Handover Dashboard — multi-session progress view
 
    Architectural intent · separate the dashboard (Manager's command
-   center) from the initiation flow (its own dedicated route at
-   /session/[id]/setup).
+   center) from per-session work, which now lives on dedicated routes:
 
-   The dashboard's job becomes ONLY to surface state at a glance:
+     · /session/[id]/setup  → uc-ho-01-quick-initiate (one-click)
+     · /session/[id]        → session-command-view (tabbed full page)
+
+   The dashboard's job is ONLY to surface state at a glance:
      · Which sessions need my attention?
      · How far along is each one?
      · What's the next action?
 
-   Clicking "Start setup" on a session card navigates to
-   /session/[id]/setup — the existing initiation wizard mockup
-   (uc-ho-01-normal-course screens 2-4).
+   Clicking a session card NAVIGATES to the command view — no more
+   480px side drawer (replaced based on UX feedback that drawers
+   are too cramped for the data volume in session management).
 
-   Three screens demonstrate the dashboard's stateful behavior:
+   Two screens demonstrate the dashboard's stateful behavior:
      1. Active dashboard — 3 sessions in different lifecycle stages
-     2. Session detail drawer — full step timeline for selected session
-     3. Just completed — Minh Lê's session moved to "Completed" section
+     2. Just completed — Minh Lê's session moved to "Completed" section
 
    Design system locked decisions exercised:
      · CL-054 violet primary + yellow secondary + rose critical + emerald verified
@@ -42,7 +43,6 @@ import {
 
 const FLOW = [
   { id: "active",    label: "Active dashboard",       trigger: "3 sessions in flight at different lifecycle stages." },
-  { id: "drawer",    label: "Session detail drawer",  trigger: "Click a session card → full 8-stage timeline opens." },
   { id: "completed", label: "Just completed",         trigger: "Minh Lê's session finished · moves to Completed section." },
 ];
 
@@ -70,7 +70,7 @@ const SESSIONS_ACTIVE = [
     urgency: "critical",
     statusText: "Awaiting your initiation",
     activeDetail: "HR sync detected · 38 minutes ago",
-    action: { label: "Start setup", primary: true, kind: "navigate", target: "/m/uc-ho-01-normal-course?step=1" },
+    action: { label: "Start setup", primary: true, route: "/session/sess-kltran/setup" },
     successor: null,
   },
   {
@@ -84,7 +84,7 @@ const SESSIONS_ACTIVE = [
     urgency: "in-progress",
     statusText: "Context seeding in progress",
     activeDetail: "Stage 3 of 8 · 4m 12s elapsed · ~4m remaining",
-    action: { label: "View progress", primary: false, kind: "navigate", target: "/m/uc-ho-01-normal-course?step=3" },
+    action: { label: "Open session", primary: false, route: "/session/sess-minhle" },
     successor: "Trần Hữu Nam",
   },
   {
@@ -98,7 +98,7 @@ const SESSIONS_ACTIVE = [
     urgency: "needs-action",
     statusText: "Awaiting your review",
     activeDetail: "Signed by Phương Anh · 38 minutes ago",
-    action: { label: "Review transcript", primary: true, kind: "navigate", target: "#" },
+    action: { label: "Review transcript", primary: true, route: "/session/sess-pha" },
     successor: "Đặng Khải Hoàn",
   },
 ];
@@ -179,7 +179,7 @@ function FlowBar({ step, stepIdx, onJump }) {
         <div className="flex items-center gap-2 text-[11px] text-gray-500">
           <span className="uppercase tracking-wider font-semibold text-violet-700">Design exploration</span>
           <span className="text-gray-300">·</span>
-          <span>Dashboard separated from initiation flow</span>
+          <span>Cards navigate to /session/[id] · no more side drawer</span>
           <span className="text-gray-300">·</span>
           <span style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>step {stepIdx + 1} of {FLOW.length}</span>
         </div>
@@ -238,7 +238,6 @@ function FooterNav({ stepIdx, step, onChange }) {
 
 function StepRenderer({ id }) {
   if (id === "active")    return <ActiveDashboard />;
-  if (id === "drawer")    return <DashboardWithDrawer />;
   if (id === "completed") return <JustCompletedDashboard />;
   return null;
 }
@@ -292,161 +291,7 @@ function ActiveDashboard() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   SCREEN 2 · DASHBOARD WITH SESSION DETAIL DRAWER
-   ═══════════════════════════════════════════════════════════════════ */
-
-function DashboardWithDrawer() {
-  const session = SESSIONS_ACTIVE.find((s) => s.id === "sess-minhle");
-  return (
-    <div className="relative">
-      <div className="max-w-7xl mx-auto p-6 pr-[28rem]">
-        <PageHeader
-          title="Good afternoon, Hà Vy"
-          subtitle="You have 3 active handover sessions. One needs your action right now."
-        />
-
-        <KpiRow active={3} needsAction={1} completedThisWeek={2} />
-
-        <FilterChips />
-
-        <div className="space-y-3">
-          <SectionLabel count={SESSIONS_ACTIVE.length}>Active sessions</SectionLabel>
-          {SESSIONS_ACTIVE.map((s) => (
-            <SessionCard key={s.id} session={s} isSelected={s.id === session.id} />
-          ))}
-        </div>
-      </div>
-
-      <SessionDetailDrawer session={session} />
-    </div>
-  );
-}
-
-function SessionDetailDrawer({ session }) {
-  const currentStage = LIFECYCLE_STAGES.find((s) => s.id === session.stageId);
-  return (
-    <aside className="fixed top-0 right-0 bottom-0 w-[28rem] bg-white border-l border-gray-200 z-30 flex flex-col" style={{ marginTop: "5.5rem", marginBottom: "3.25rem" }}>
-      <header className="px-4 py-3 border-b border-gray-200 flex items-start justify-between gap-2 shrink-0">
-        <div className="flex items-start gap-3 min-w-0 flex-1">
-          <div className="w-9 h-9 rounded-full bg-gray-100 text-gray-700 text-[11px] font-semibold inline-flex items-center justify-center shrink-0">ML</div>
-          <div className="min-w-0 flex-1">
-            <h3 className="text-sm font-semibold text-gray-900 truncate">{session.offboarder}</h3>
-            <p className="text-[11px] text-gray-500 truncate">{session.role} · {session.dept}</p>
-            <p className="text-[10px] text-gray-500 mt-0.5" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>
-              SESSION-2026-05-29-7a3c · {session.daysLeft} days remaining
-            </p>
-          </div>
-        </div>
-        <button className="w-7 h-7 rounded-md hover:bg-gray-100 inline-flex items-center justify-center text-gray-500 shrink-0 focus:outline-none focus:ring-2 focus:ring-violet-500/20">
-          <X className="w-3.5 h-3.5" />
-        </button>
-      </header>
-
-      <div className="flex-1 overflow-y-auto px-4 py-4">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-medium">Lifecycle</span>
-          <span className="text-[10px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>
-            Stage {session.stageId} of 8 · {session.progressPct}%
-          </span>
-        </div>
-
-        <div className="relative">
-          {LIFECYCLE_STAGES.map((stage, i) => (
-            <StageRow
-              key={stage.id}
-              stage={stage}
-              status={
-                stage.id < session.stageId ? "done"
-                : stage.id === session.stageId ? "active"
-                : "pending"
-              }
-              isLast={i === LIFECYCLE_STAGES.length - 1}
-            />
-          ))}
-        </div>
-
-        <div className="mt-5 pt-4 border-t border-gray-200">
-          <h4 className="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-medium mb-2">In-flight detail</h4>
-          <div className="rounded-md border border-violet-200 bg-violet-50/40 p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <Loader2 className="w-3.5 h-3.5 text-violet-600 animate-spin" strokeWidth={1.75} />
-              <h5 className="text-sm font-semibold text-gray-900">{currentStage.label}</h5>
-            </div>
-            <p className="text-[12px] text-gray-700 leading-relaxed mb-2">{currentStage.description}</p>
-            <ul className="space-y-0.5 text-[11px] text-gray-600">
-              <SubStep done>Authorization scope established · 2s</SubStep>
-              <SubStep done>Decomposed seeding job · 3 sources</SubStep>
-              <SubStep done>Extracted Jira metadata · 47 tickets · 1.4 min</SubStep>
-              <SubStep active>Extracting Google Drive · 318 of 412 files</SubStep>
-              <SubStep>Email metadata · pending</SubStep>
-              <SubStep>Sensitivity classification gate · pending</SubStep>
-              <SubStep>Knowledge gaps inference · pending</SubStep>
-              <SubStep>Knowledge map build · pending</SubStep>
-            </ul>
-          </div>
-        </div>
-
-        <div className="mt-5 pt-4 border-t border-gray-200">
-          <h4 className="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-medium mb-2">Audit anchor</h4>
-          <div className="text-[10px] text-gray-500 leading-relaxed" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>
-            SESSION-2026-05-29-7a3c<br />
-            anchored · 2026-05-29 14:32:08Z<br />
-            RBAC scope hash · b7e29f...4ac1<br />
-            8 events · 3 actors
-          </div>
-        </div>
-      </div>
-
-      <footer className="px-4 py-3 border-t border-gray-200 flex items-center justify-between gap-2 shrink-0">
-        <button className="h-8 px-2 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 text-xs font-medium inline-flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500/20">
-          <ExternalLink className="w-3 h-3" />
-          Audit log
-        </button>
-        <button className="h-8 px-3 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30">
-          View live progress
-          <ArrowRight className="w-3.5 h-3.5" />
-        </button>
-      </footer>
-    </aside>
-  );
-}
-
-function StageRow({ stage, status, isLast }) {
-  const cfg = {
-    done:    { icon: CheckCircle2, iconCls: "text-emerald-600 bg-emerald-50 border-emerald-200", labelCls: "text-gray-900",       lineCls: "bg-emerald-200" },
-    active:  { icon: Loader2,      iconCls: "text-violet-600 bg-violet-50 border-violet-200 animate-spin", labelCls: "text-gray-900 font-semibold", lineCls: "bg-gray-200"    },
-    pending: { icon: Clock,        iconCls: "text-gray-300 bg-white border-gray-200",          labelCls: "text-gray-400",       lineCls: "bg-gray-200"    },
-  }[status];
-  const Icon = cfg.icon;
-  return (
-    <div className="flex items-start gap-3 relative pb-3 last:pb-0">
-      {!isLast && <span className={`absolute left-[11px] top-6 bottom-0 w-px ${cfg.lineCls}`} />}
-      <div className={`w-6 h-6 rounded-full border flex items-center justify-center shrink-0 z-10 ${cfg.iconCls}`}>
-        <Icon className="w-3 h-3" strokeWidth={2} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className={`text-sm ${cfg.labelCls} leading-tight`}>{stage.label}</div>
-        <div className="text-[10px] text-gray-500 mt-0.5">{stage.actor} · {stage.description}</div>
-      </div>
-    </div>
-  );
-}
-
-function SubStep({ done, active, children }) {
-  return (
-    <li className="flex items-start gap-1.5">
-      <span className="shrink-0 mt-0.5">
-        {done && <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" strokeWidth={2.5} />}
-        {active && <Loader2 className="w-2.5 h-2.5 text-violet-600 animate-spin" strokeWidth={2} />}
-        {!done && !active && <Clock className="w-2.5 h-2.5 text-gray-300" strokeWidth={1.75} />}
-      </span>
-      <span className={`leading-relaxed ${done ? "text-gray-700" : active ? "text-gray-900 font-medium" : "text-gray-400"}`}>{children}</span>
-    </li>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════
-   SCREEN 3 · JUST COMPLETED
+   SCREEN 2 · JUST COMPLETED
    ═══════════════════════════════════════════════════════════════════ */
 
 function JustCompletedDashboard() {
@@ -512,7 +357,7 @@ function CompletionCelebration() {
 
 function CompletedSessionCard({ session }) {
   return (
-    <article className="rounded-lg border border-gray-200 bg-white">
+    <article className="rounded-lg border border-gray-200 bg-white hover:border-gray-300 transition-colors cursor-pointer" title={`Opens /session/${session.id}`}>
       <div className="p-4 flex items-start gap-4">
         <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-semibold inline-flex items-center justify-center shrink-0 border border-emerald-200">ML</div>
         <div className="flex-1 min-w-0">
@@ -564,17 +409,16 @@ function SmallStat({ icon: Icon, label, value }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   Reusable session card
+   Reusable session card · entire card is clickable
+   Navigates to /session/[id] command view (no more drawer)
    ═══════════════════════════════════════════════════════════════════ */
 
-function SessionCard({ session, isSelected }) {
+function SessionCard({ session }) {
   const isUrgent = session.urgency === "critical";
   const needsAction = session.urgency === "needs-action";
   const cardCls = isUrgent
     ? "border-rose-200 bg-rose-50/20"
-    : isSelected
-      ? "border-violet-300 ring-1 ring-violet-600/10"
-      : "border-gray-200";
+    : "border-gray-200";
   const leftBorder = isUrgent ? "2px solid rgb(244, 63, 94)" : undefined;
 
   const initials = session.offboarder.split(" ").map((w) => w[0]).join("").slice(0, 2);
@@ -582,8 +426,9 @@ function SessionCard({ session, isSelected }) {
 
   return (
     <article
-      className={`rounded-lg border bg-white transition-colors hover:border-gray-300 ${cardCls}`}
+      className={`rounded-lg border bg-white transition-all hover:border-gray-300 hover:shadow-sm cursor-pointer ${cardCls}`}
       style={leftBorder ? { borderLeft: leftBorder } : undefined}
+      title={`Opens ${session.action.route}`}
     >
       <div className="p-4 flex items-start gap-4">
         <div className={`w-10 h-10 rounded-full text-[11px] font-semibold inline-flex items-center justify-center shrink-0 border ${
@@ -632,9 +477,10 @@ function SessionCard({ session, isSelected }) {
             {session.action.label}
             <ArrowRight className="w-3 h-3" />
           </button>
-          <button className="h-8 w-8 rounded-md hover:bg-gray-100 inline-flex items-center justify-center text-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20">
-            <MoreHorizontal className="w-3.5 h-3.5" />
-          </button>
+          <span className="text-[10px] text-gray-400 inline-flex items-center gap-1" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>
+            <ExternalLink className="w-2.5 h-2.5" />
+            {session.action.route}
+          </span>
         </div>
       </div>
     </article>
@@ -654,7 +500,6 @@ function ProgressBar({ progressPct, currentStage, stageName, done }) {
         {LIFECYCLE_STAGES.map((stage) => {
           const isDone = stage.id < currentStage || done;
           const isCurrent = stage.id === currentStage && !done;
-          const isPending = stage.id > currentStage && !done;
           return (
             <span
               key={stage.id}
