@@ -7,7 +7,7 @@ import {
   AlertTriangle, AlertOctagon, Clock, CheckCircle2, Loader2,
   Calendar, ArrowRight, ArrowUpRight, ExternalLink,
   Users, FileText, MessageSquare, Network, Tag,
-  GitBranch, Folder, Mail, Sparkles, Database, Eye,
+  GitBranch, Folder, Sparkles, Database, Eye,
   Briefcase, Hash, Inbox
 } from "lucide-react";
 
@@ -15,48 +15,74 @@ import {
    Hà Vy's Handover Dashboard — multi-session progress view
 
    Architectural intent · separate the dashboard (Manager's command
-   center) from per-session work, which now lives on dedicated routes:
+   center) from per-session work, which lives on dedicated routes:
 
      · /session/[id]/setup  → uc-ho-01-quick-initiate (one-click)
      · /session/[id]        → session-command-view (tabbed full page)
 
-   The dashboard's job is ONLY to surface state at a glance:
-     · Which sessions need my attention?
-     · How far along is each one?
-     · What's the next action?
+   THIS VERSION compresses the previous 8-stage lifecycle into 3
+   user-facing phases (Prepare · Capture · Deliver), per UX feedback
+   that 8 stages was cognitively heavy. The 8 internal stages still
+   exist as sub-stages within each phase for system tracking, but
+   the dashboard surfaces only 3 phases.
 
-   Clicking a session card NAVIGATES to the command view — no more
-   480px side drawer (replaced based on UX feedback that drawers
-   are too cramped for the data volume in session management).
+   Data sources comply with the data-ingestion governance rule —
+   email is NEVER an automated source. Sources for Engineering
+   personas are Jira · GitHub · Google Drive.
 
    Two screens demonstrate the dashboard's stateful behavior:
-     1. Active dashboard — 3 sessions in different lifecycle stages
+     1. Active dashboard — 3 sessions in different phases
      2. Just completed — Minh Lê's session moved to "Completed" section
-
-   Design system locked decisions exercised:
-     · CL-054 violet primary + yellow secondary + rose critical + emerald verified
-     · CL-063 multi-persona dashboard (3 concurrent sessions visible)
-     · CL-065 critical urgency · 2px rose left-border + Urgent pill
-     · CL-020 audit anchor referenced in activity feed
-     · CL-055 32px primary buttons; CL-059 explicit focus rings
    ═══════════════════════════════════════════════════════════════════ */
 
 const FLOW = [
-  { id: "active",    label: "Active dashboard",       trigger: "3 sessions in flight at different lifecycle stages." },
+  { id: "active",    label: "Active dashboard",       trigger: "3 sessions in flight at different lifecycle phases." },
   { id: "completed", label: "Just completed",         trigger: "Minh Lê's session finished · moves to Completed section." },
 ];
 
-// The 8 user-facing lifecycle stages (vs 13 internal UC-HO-01 steps)
-const LIFECYCLE_STAGES = [
-  { id: 1, key: "setup",       label: "Setup pending",          actor: "Manager",    description: "Waiting for the manager to initiate the session." },
-  { id: 2, key: "config",      label: "Configuration",          actor: "Manager",    description: "Manager confirms details and data sources." },
-  { id: 3, key: "seeding",     label: "Context seeding",        actor: "System",     description: "System scans Offboarder's accessible work." },
-  { id: 4, key: "ready",       label: "Ready for interview",    actor: "Offboarder", description: "Knowledge map produced. Interview can be scheduled." },
-  { id: 5, key: "interview",   label: "Interview in progress",  actor: "Offboarder", description: "AI-guided voice interview with the Offboarder." },
-  { id: 6, key: "review",      label: "Transcript review",      actor: "Manager",    description: "Manager reviews and approves the captured content." },
-  { id: 7, key: "commit",      label: "Committing to KG",       actor: "System",     description: "Verified content propagates to the knowledge graph." },
-  { id: 8, key: "playbook",    label: "Playbook delivered",     actor: "Successor",  description: "Personalized onboarding playbook ready for the successor." },
+// 3 user-facing phases · each contains 2-3 internal sub-stages
+const LIFECYCLE_PHASES = [
+  {
+    id: 1, key: "prepare", label: "Prepare",
+    description: "Set up the session and scan accessible work",
+    actor: "Manager + System",
+    subStages: [
+      { id: 1, label: "Setup confirmed",     actor: "Manager"    },
+      { id: 2, label: "Context seeding",     actor: "System"     },
+      { id: 3, label: "Knowledge map ready", actor: "System"     },
+    ],
+  },
+  {
+    id: 2, key: "capture", label: "Capture",
+    description: "AI-guided interview, then Manager review",
+    actor: "Offboarder + Manager",
+    subStages: [
+      { id: 4, label: "Interview scheduled",  actor: "Offboarder" },
+      { id: 5, label: "Voice interview",      actor: "Offboarder" },
+      { id: 6, label: "Transcript reviewed",  actor: "Manager"    },
+    ],
+  },
+  {
+    id: 3, key: "deliver", label: "Deliver",
+    description: "Commit knowledge and deliver playbook",
+    actor: "System + Successor",
+    subStages: [
+      { id: 7, label: "Committed to KG",      actor: "System"     },
+      { id: 8, label: "Playbook delivered",   actor: "Successor"  },
+    ],
+  },
 ];
+
+function getPhase(subStageId) {
+  return LIFECYCLE_PHASES.find((p) => p.subStages.some((s) => s.id === subStageId));
+}
+function getSubStage(subStageId) {
+  for (const p of LIFECYCLE_PHASES) {
+    const s = p.subStages.find((x) => x.id === subStageId);
+    if (s) return s;
+  }
+  return null;
+}
 
 const SESSIONS_ACTIVE = [
   {
@@ -64,8 +90,7 @@ const SESSIONS_ACTIVE = [
     offboarder: "Khánh Linh Trần",
     role: "Head of People Operations",
     dept: "People & Culture",
-    stageId: 1,
-    progressPct: 0,
+    subStageId: 1,
     daysLeft: 2,
     urgency: "critical",
     statusText: "Awaiting your initiation",
@@ -78,12 +103,11 @@ const SESSIONS_ACTIVE = [
     offboarder: "Minh Lê",
     role: "Senior Backend Engineer",
     dept: "Engineering",
-    stageId: 3,
-    progressPct: 32,
+    subStageId: 2,
     daysLeft: 6,
     urgency: "in-progress",
     statusText: "Context seeding in progress",
-    activeDetail: "Stage 3 of 8 · 4m 12s elapsed · ~4m remaining",
+    activeDetail: "4m 12s elapsed · ~4m remaining",
     action: { label: "Open session", primary: false, route: "/session/sess-minhle" },
     successor: "Trần Hữu Nam",
   },
@@ -92,8 +116,7 @@ const SESSIONS_ACTIVE = [
     offboarder: "Phương Anh Nguyễn",
     role: "Senior Account Executive",
     dept: "Sales",
-    stageId: 6,
-    progressPct: 72,
+    subStageId: 6,
     daysLeft: 4,
     urgency: "needs-action",
     statusText: "Awaiting your review",
@@ -108,8 +131,7 @@ const SESSION_COMPLETED_ML = {
   offboarder: "Minh Lê",
   role: "Senior Backend Engineer",
   dept: "Engineering",
-  stageId: 8,
-  progressPct: 100,
+  subStageId: 8,
   completedAt: "Just now",
   durationLabel: "3 days, 4 hours total",
   successor: "Trần Hữu Nam",
@@ -179,7 +201,7 @@ function FlowBar({ step, stepIdx, onJump }) {
         <div className="flex items-center gap-2 text-[11px] text-gray-500">
           <span className="uppercase tracking-wider font-semibold text-violet-700">Design exploration</span>
           <span className="text-gray-300">·</span>
-          <span>Cards navigate to /session/[id] · no more side drawer</span>
+          <span>3-phase lifecycle · cards navigate to /session/[id]</span>
           <span className="text-gray-300">·</span>
           <span style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>step {stepIdx + 1} of {FLOW.length}</span>
         </div>
@@ -295,7 +317,6 @@ function ActiveDashboard() {
    ═══════════════════════════════════════════════════════════════════ */
 
 function JustCompletedDashboard() {
-  // Minh Lê has now moved to completed; only Khánh Linh + Phương Anh are active
   const stillActive = SESSIONS_ACTIVE.filter((s) => s.id !== "sess-minhle");
 
   return (
@@ -371,9 +392,9 @@ function CompletedSessionCard({ session }) {
           </div>
           <p className="text-[12px] text-gray-500 mb-3">{session.role} · {session.dept} · successor {session.successor}</p>
 
-          <ProgressBar progressPct={100} currentStage={8} done />
+          <PhaseProgress subStageId={session.subStageId} done />
           <div className="text-[10px] text-gray-500 mt-1.5" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>
-            All 8 stages complete · {session.durationLabel}
+            All 3 phases complete · {session.durationLabel}
           </div>
 
           <div className="grid grid-cols-3 gap-2 mt-3">
@@ -410,7 +431,7 @@ function SmallStat({ icon: Icon, label, value }) {
 
 /* ═══════════════════════════════════════════════════════════════════
    Reusable session card · entire card is clickable
-   Navigates to /session/[id] command view (no more drawer)
+   Now shows 3 PHASES instead of 8 stages
    ═══════════════════════════════════════════════════════════════════ */
 
 function SessionCard({ session }) {
@@ -422,7 +443,8 @@ function SessionCard({ session }) {
   const leftBorder = isUrgent ? "2px solid rgb(244, 63, 94)" : undefined;
 
   const initials = session.offboarder.split(" ").map((w) => w[0]).join("").slice(0, 2);
-  const stage = LIFECYCLE_STAGES.find((s) => s.id === session.stageId);
+  const phase = getPhase(session.subStageId);
+  const subStage = getSubStage(session.subStageId);
 
   return (
     <article
@@ -459,7 +481,7 @@ function SessionCard({ session }) {
             {!isUrgent && <> · {session.daysLeft} days remaining</>}
           </p>
 
-          <ProgressBar progressPct={session.progressPct} currentStage={session.stageId} stageName={stage.label} />
+          <PhaseProgress subStageId={session.subStageId} />
 
           <div className="flex items-center gap-2 mt-2 text-[10px] text-gray-500">
             <span className="font-semibold text-gray-700">{session.statusText}</span>
@@ -487,29 +509,60 @@ function SessionCard({ session }) {
   );
 }
 
-function ProgressBar({ progressPct, currentStage, stageName, done }) {
+/* 3-phase progress · each phase is one segment.
+   Current phase shows within-phase fill (proportional to sub-stage position).
+   Completed phases are fully emerald. Future phases are gray. */
+function PhaseProgress({ subStageId, done }) {
+  const currentPhase = getPhase(subStageId);
+  const currentSubStage = getSubStage(subStageId);
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-1 text-[10px]">
-        <span className="text-gray-700 font-medium">{stageName || (done ? "Complete" : "")}</span>
+      <div className="flex items-center justify-between mb-1.5 text-[10px]">
+        <span className="text-gray-700 font-medium">
+          {done
+            ? <>All 3 phases complete</>
+            : <>Phase {currentPhase.id} of 3 · <span className="text-gray-900">{currentPhase.label}</span></>
+          }
+        </span>
         <span className="text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>
-          Stage {currentStage} of 8 · {progressPct}%
+          {done ? "100%" : `${currentSubStage.label}`}
         </span>
       </div>
-      <div className="flex items-center gap-0.5">
-        {LIFECYCLE_STAGES.map((stage) => {
-          const isDone = stage.id < currentStage || done;
-          const isCurrent = stage.id === currentStage && !done;
+
+      <div className="grid grid-cols-3 gap-1">
+        {LIFECYCLE_PHASES.map((phase) => {
+          const isDone = done || phase.id < currentPhase.id;
+          const isCurrent = !done && phase.id === currentPhase.id;
+          let withinFillPct = 0;
+          if (isCurrent) {
+            const subIdx = phase.subStages.findIndex((s) => s.id === subStageId);
+            withinFillPct = ((subIdx + 0.5) / phase.subStages.length) * 100;
+          }
+          return (
+            <div key={phase.id} className="relative h-2 rounded-sm bg-gray-200 overflow-hidden" title={`${phase.label} · ${phase.description}`}>
+              {isDone && <div className="absolute inset-0 bg-emerald-500" />}
+              {isCurrent && <div className="absolute inset-y-0 left-0 bg-violet-500 animate-pulse" style={{ width: `${withinFillPct}%` }} />}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="grid grid-cols-3 gap-1 mt-1">
+        {LIFECYCLE_PHASES.map((phase) => {
+          const isDone = done || phase.id < currentPhase.id;
+          const isCurrent = !done && phase.id === currentPhase.id;
           return (
             <span
-              key={stage.id}
-              title={stage.label}
-              className={`flex-1 h-1.5 rounded-sm transition-colors ${
-                isDone ? "bg-emerald-500"
-                : isCurrent ? "bg-violet-500 animate-pulse"
-                : "bg-gray-200"
+              key={phase.id}
+              className={`text-[9px] uppercase tracking-wider font-medium text-center ${
+                isDone ? "text-emerald-700"
+                : isCurrent ? "text-violet-700"
+                : "text-gray-400"
               }`}
-            />
+            >
+              {phase.label}
+            </span>
           );
         })}
       </div>
