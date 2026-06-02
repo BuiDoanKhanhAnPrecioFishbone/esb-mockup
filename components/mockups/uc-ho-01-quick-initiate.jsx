@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import {
   ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Check, X,
-  Calendar, Mail, Folder, GitBranch, User, Sparkles, ArrowRight,
+  Calendar, Github, Folder, GitBranch, User, Sparkles, ArrowRight,
   Info, Settings, FileText, Clock, AlertTriangle, ShieldCheck
 } from "lucide-react";
 
@@ -17,11 +17,13 @@ import {
    ONE screen. ONE primary action. Customization hidden behind a
    progressive-disclosure expander for the rare cases that need it.
 
+   Data sources comply with the data-ingestion governance rule —
+   email is NEVER an automated source. Engineering sources are
+   Jira · GitHub · Google Drive (all shared workspaces).
+
    Two states to demonstrate:
      1. Default ready — collapsed expander · one click to start
-     2. Customize expanded — same screen with the expander open,
-        showing the optional review-deadline / data-sources / focus
-        note / successor fields
+     2. Customize expanded — same screen with the expander open
 
    After "Start session" the user is routed to /session/[id] —
    the command view mockup. No more multi-step wizard.
@@ -50,8 +52,8 @@ const SCENARIO = {
   successor: "Trần Hữu Nam",
   sources: [
     { icon: GitBranch, name: "Jira",           detail: "47 active tickets · 6 months of comments", selected: true },
-    { icon: Folder,    name: "Google Drive",   detail: "412 files · titles and edit recency only",  selected: true },
-    { icon: Mail,      name: "Email metadata", detail: "Subject lines and participants only · email content is never read or stored", selected: true },
+    { icon: Github,    name: "GitHub",         detail: "23 shared repos · PR descriptions, commit messages, wiki pages",  selected: true },
+    { icon: Folder,    name: "Google Drive",   detail: "412 files · titles and edit recency only · content read only during interview", selected: true },
   ],
   seedingEstimate: "About 7 minutes",
 };
@@ -186,7 +188,7 @@ function QuickInitiateScreen({ showCustomize }) {
       {/* Pre-configured defaults grid */}
       <div className="grid grid-cols-3 gap-3 mb-4">
         <DefaultTile icon={Calendar}    label="Review deadline"    value={SCENARIO.defaultDeadline}      detail="+3 business days · default" />
-        <DefaultTile icon={ShieldCheck} label="Data sources"       value="3 sources · all selected"      detail="Jira · Drive · email metadata" />
+        <DefaultTile icon={ShieldCheck} label="Data sources"       value="3 sources · all selected"      detail="Jira · GitHub · Google Drive" />
         <DefaultTile icon={Clock}       label="Estimated seeding"  value={SCENARIO.seedingEstimate}      detail="Background · you can leave the page" />
       </div>
 
@@ -228,7 +230,7 @@ function QuickInitiateScreen({ showCustomize }) {
       </article>
 
       <p className="text-[11px] text-gray-500 mt-3 leading-relaxed">
-        <span className="text-gray-700 font-medium">For the audit trail ·</span> the session anchor will be written with your authorship, the {SCENARIO.sources.length} approved sources, and the default 3-business-day review window. You can edit the deadline later from the session command view.
+        <span className="text-gray-700 font-medium">Data ingestion scope ·</span> automated collection is restricted to shared workspaces only (Jira, GitHub, SharePoint, Google Drive, Trello, Planner). Personal directories, individual mailboxes, and private messaging are never scanned. You can manually upload specific files later from the session command view.
       </p>
     </div>
   );
@@ -281,13 +283,16 @@ function CustomizeBody() {
             </label>
           ))}
         </div>
+        <p className="text-[10px] text-gray-500 mt-1.5 leading-relaxed">
+          Shared workspaces only · email and personal directories are excluded by policy.
+        </p>
       </div>
 
       {/* Focus note */}
       <div>
         <label className="text-[10px] uppercase tracking-[0.18em] text-gray-500 font-medium block mb-1.5">Focus note · optional</label>
         <textarea
-          placeholder="Add a focus area — for example, 'Probe deeply on the Payment Gateway timeout and Vendor XYZ renewal.'"
+          placeholder="Add a focus area — for example, 'Probe deeply on the renewal negotiation with Vendor XYZ.'"
           defaultValue="Probe deeply on the Payment Gateway timeout — recurring incident, no runbook. Also the Vendor XYZ renewal SLA terms."
           className="w-full min-h-[60px] px-2.5 py-2 rounded-md border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/15 transition-colors resize-none"
           style={{ fontFamily: "inherit" }}
