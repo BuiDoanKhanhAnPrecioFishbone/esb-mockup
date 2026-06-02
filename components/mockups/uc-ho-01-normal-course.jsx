@@ -3,29 +3,31 @@
 import React, { useState } from "react";
 import {
   Bell, ChevronLeft, ChevronRight, Check, AlertTriangle, Info, Clock,
-  Calendar, Mail, Folder, GitBranch, Users, Briefcase, ShieldCheck,
+  Calendar, Github, Folder, GitBranch, Users, Briefcase, ShieldCheck,
   Network, Sparkles, Loader2, Database, ArrowRight, ArrowUpRight,
   Tag, MessageSquare, FileText, Layers, CheckCircle2, KeyRound
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════════════
-   UC-HO-01 · Normal Course — clickable flow
+   UC-HO-01 · Normal Course — clickable flow  (SUPERSEDED)
 
-   Four screens covering the 13 happy-path steps of UC-HO-01 v2.0:
+   Four screens covering the 13 happy-path steps of UC-HO-01 v2.0.
+   This is the spec-strict reference; the streamlined direction is
+   in uc-ho-01-quick-initiate (one-click) + session-command-view.
 
      Screen 1 (steps 1–2)    Dashboard notification → Initiate
      Screen 2 (steps 3–5)    Session setup wizard
      Screen 3 (steps 6–9)    Context seeding · live progress
      Screen 4 (steps 10–13)  Preliminary knowledge map · next actions
 
-   Single scenario throughout: Hà Vy initiating a handover for Minh Lê,
-   the canonical Senior Backend Engineer departure.
+   Sources used here are restricted to approved shared workspaces ·
+   Jira · GitHub · Google Drive (shared). Email is NEVER an automated
+   source per the data-ingestion governance rule.
 
    Honors the locked S1 v2 visual system:
      · CL-054 violet primary + pastel yellow secondary
-     · CL-055 primary CTAs carry the brand color · 32px button height
-     · CL-013 "sensitivity classification", never "Microsoft Purview"
-     · CL-015 email scanning constraint surfaced inline at the source row
+     · CL-055 32px button height
+     · CL-013 "sensitivity classification", never vendor names
      · CL-016 knowledge gaps framed as warm guidance, not deficiency
      · CL-020 audit anchor referenced as ambient context
      · CL-059 explicit focus rings
@@ -71,7 +73,7 @@ function TopBar({ step, stepIdx, onJump }) {
           <div className="w-1.5 h-1.5 bg-violet-500 rounded-full" />
           <span className="text-gray-900 font-semibold tracking-[0.18em] text-xs" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>ART-EEP</span>
           <span className="text-gray-300 text-xs">·</span>
-          <span className="text-gray-500 text-xs">UC-HO-01 · Normal course</span>
+          <span className="text-gray-500 text-xs">UC-HO-01 · Normal course (superseded)</span>
         </div>
         <div className="flex items-center gap-2 text-[11px] text-gray-500 shrink-0">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
@@ -196,8 +198,8 @@ function NotificationScreen() {
 
             <div className="flex items-center gap-1.5 mt-3 flex-wrap">
               <SourcePreviewChip icon={GitBranch} label="Jira · 47 active tickets" />
+              <SourcePreviewChip icon={Github}    label="GitHub · 23 shared repos" />
               <SourcePreviewChip icon={Folder}    label="Google Drive · 412 files" />
-              <SourcePreviewChip icon={Mail}      label="Email metadata" />
             </div>
 
             <div className="flex items-center gap-3 mt-4">
@@ -242,7 +244,7 @@ function NotificationScreen() {
       </div>
 
       <p className="text-[11px] text-gray-500 mt-5 leading-relaxed">
-        <span className="text-gray-700 font-medium">Per UC-HO-01 preconditions ·</span> {SCENARIO.name}'s departure has been formally recorded in HR with a confirmed last working date and synced to ART-EEP (status <code className="text-gray-900">Departure Confirmed</code>). His Jira, Drive, and email integrations are reachable. The audit anchor entry will be written when you initiate.
+        <span className="text-gray-700 font-medium">Per UC-HO-01 preconditions ·</span> {SCENARIO.name}'s departure has been formally recorded in HR with a confirmed last working date and synced to ART-EEP (status <code className="text-gray-900">Departure Confirmed</code>). His Jira, GitHub, and shared Drive integrations are reachable. The audit anchor entry will be written when you initiate.
       </p>
     </div>
   );
@@ -312,11 +314,11 @@ function WizardScreen() {
         </p>
       </FormSection>
 
-      <FormSection title="Data sources" subtitle="Pre-selected based on the integrations available for this Offboarder.">
+      <FormSection title="Data sources" subtitle="Approved shared workspaces only. Personal directories and email are never scanned.">
         <div className="space-y-2">
           <SourceRow icon={GitBranch} name="Jira"           detail="47 active tickets · 6 months of comments"           selected />
-          <SourceRow icon={Folder}    name="Google Drive"   detail="412 files · access through OAuth · titles only"     selected />
-          <SourceRow icon={Mail}      name="Email metadata" detail="Subject lines and participants only. Email content is never read or stored." selected />
+          <SourceRow icon={Github}    name="GitHub"         detail="23 shared repos · PR descriptions, commit messages, wiki pages" selected />
+          <SourceRow icon={Folder}    name="Google Drive"   detail="412 files · titles and edit recency only · content read only during interview" selected />
         </div>
       </FormSection>
 
@@ -377,7 +379,6 @@ function SourceRow({ icon: Icon, name, detail, selected }) {
 
 /* ═══════════════════════════════════════════════════════════════════
    SCREEN 3 · CONTEXT SEEDING (UC-HO-01 steps 6–9)
-   Mid-flight state · 3 stages done, 1 active, 4 pending.
    ═══════════════════════════════════════════════════════════════════ */
 
 function SeedingScreen() {
@@ -385,7 +386,7 @@ function SeedingScreen() {
     <div className="max-w-3xl mx-auto p-6">
       <PageHeader
         eyebrow="Step 6–9 · context seeding · 3m 12s elapsed"
-        title={`Scanning ${SCENARIO.name}'s work history`}
+        title={`Scanning ${SCENARIO.name}'s shared work history`}
         subtitle="This typically takes 5 to 10 minutes. You can leave this page — we'll notify you when the knowledge map is ready."
         actor="Hà Vy · Manager · Engineering"
       />
@@ -415,13 +416,13 @@ function SeedingScreen() {
           />
           <ProgressStage
             status="active"
-            label="Extracting Google Drive file metadata"
-            detail="318 of 412 files · titles and edit recency only · no raw content stored"
+            label="Extracting GitHub metadata"
+            detail="18 of 23 shared repos · PR descriptions, commit messages, wiki pages"
           />
           <ProgressStage
             status="pending"
-            label="Extracting email metadata"
-            detail="Subject lines and participants only · email content is never read or stored"
+            label="Extracting Google Drive file metadata"
+            detail="412 files · titles and edit recency only · no raw content read until the interview"
           />
           <ProgressStage
             status="pending"
@@ -467,9 +468,6 @@ function ActivityTile({ label, value, detail }) {
 
 /* ═══════════════════════════════════════════════════════════════════
    SCREEN 4 · PRELIMINARY KNOWLEDGE MAP (UC-HO-01 steps 10–13)
-   Per CL-013, exclusion count shown without revealing what was
-   excluded. Per CL-016, gaps framed warmly. Per CL-012, "sensitive"
-   not "PII".
    ═══════════════════════════════════════════════════════════════════ */
 
 function KnowledgeMapScreen() {
@@ -505,7 +503,7 @@ function KnowledgeMapScreen() {
         <div className="grid grid-cols-3 gap-3">
           <ProjectCard icon={Layers}        name="Project Atlas"           detail="32 tickets · primary contributor · 8 months" />
           <ProjectCard icon={Network}       name="Payment Gateway v2"      detail="19 tickets · most recent owner · critical service" />
-          <ProjectCard icon={MessageSquare} name="Vendor XYZ renewal"      detail="High email volume · no project doc · negotiation lead" />
+          <ProjectCard icon={MessageSquare} name="Vendor XYZ renewal"      detail="Multiple Drive docs · no central project page · negotiation lead" />
         </div>
       </FormSection>
 
@@ -518,7 +516,7 @@ function KnowledgeMapScreen() {
             />
             <KnowledgeGap
               title="Vendor XYZ renewal · SLA terms"
-              detail="Heavy email traffic · no project page captures the negotiated penalty clause · pricing renegotiation trigger mentioned but undocumented"
+              detail="Several Drive docs but no project page captures the negotiated penalty clause · pricing renegotiation trigger mentioned but undocumented"
             />
             <KnowledgeGap
               title="Project Atlas · rollback procedure"
