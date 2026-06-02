@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import {
   ChevronLeft, ChevronRight, Check, X, AlertTriangle, AlertCircle, Info,
-  Clock, RefreshCw, Calendar, Mail, Folder, GitBranch, Briefcase, ShieldAlert,
+  Clock, RefreshCw, Calendar, Mail, Github, Folder, GitBranch, Briefcase, ShieldAlert,
   Lock, ArrowRight, Database, Hourglass, PauseCircle, UserX, AlertOctagon,
   Loader2, ChevronsRight
 } from "lucide-react";
@@ -19,21 +19,21 @@ import {
      EX.4 — Sensitivity classification service unavailable
      EX.5 — RBAC scope cannot be resolved
 
-   Out of 5 exceptions, 2 are hard blocks (EX.2, EX.5), 1 is an
-   expedited variant (EX.3), 1 is a partial-success completion
-   (EX.1), and 1 is a paused-with-auto-retry state (EX.4). The UI
-   shape for each reflects that material difference — blocks lead
-   with the obstacle, recoverable ones lead with the state.
+   Sources used here are restricted to approved shared workspaces ·
+   Jira · GitHub · Google Drive. Email is NEVER an automated data
+   source per the data-ingestion governance rule.
+
+   Note · the "Email HR Admin" action button in EX.2 is a USER ACTION
+   (compose an outbound email), not data collection — that's a
+   notification channel, distinct from email-as-a-source-for-scanning.
 
    Honors the locked S1 v2 visual system:
      · CL-054 violet primary + pastel yellow secondary + rose critical
-     · CL-056 RBAC failure pattern: rose header, mono error ref,
-              3-step remediation, Retry / Back-to-Dashboard
+     · CL-056 RBAC failure pattern
      · CL-014 critical-notice copy names the actual person
-     · CL-013 "sensitivity classification", never "Microsoft Purview"
+     · CL-013 "sensitivity classification", never vendor names
      · CL-012 "sensitive content", never "PII"
-     · CL-017 "Skipped" with strikethrough on dependent stages,
-              not "Failed"
+     · CL-017 "Skipped" with strikethrough, not "Failed"
      · CL-065 critical urgency · 2px rose left-border + Urgent pill
    ═══════════════════════════════════════════════════════════════════ */
 
@@ -185,7 +185,7 @@ function EX1SeedingPartial({ scenario }) {
 
       <Banner tone="warning" icon={AlertTriangle}>
         <strong>Context seeding from Google Drive could not be completed.</strong>{" "}
-        Interview questions may be less targeted for topics covered by Drive. Jira and email metadata seeded successfully — the session can proceed.
+        Interview questions may be less targeted for topics covered by Drive. Jira and GitHub seeded successfully — the session can proceed.
       </Banner>
 
       <FormSection title="Seeding pipeline" subtitle="Per-stage status. Failed and skipped stages are preserved here for traceability.">
@@ -206,14 +206,14 @@ function EX1SeedingPartial({ scenario }) {
             detail="47 tickets · titles, statuses, labels, comment counts · 1.4 minutes"
           />
           <ProgressStage
+            status="done"
+            label="Extracting GitHub metadata"
+            detail="23 shared repos · PR descriptions, commit messages, wiki pages · 2.8 minutes"
+          />
+          <ProgressStage
             status="failed"
             label="Extracting Google Drive file metadata"
             detail="OAuth refresh token rejected after 12 retries across 8 minutes · marked Seeding Failed · escalated to Platform Admin"
-          />
-          <ProgressStage
-            status="done"
-            label="Extracting email metadata"
-            detail="Subject lines and participants only · email content is never read or stored · 53 seconds"
           />
           <ProgressStage
             status="done"
@@ -317,7 +317,7 @@ function EX2ProfileMissing({ scenario }) {
             <div className="flex items-center gap-2">
               <SecondaryButton>
                 <Mail className="w-3 h-3" />
-                Email HR Admin
+                Notify HR Admin
               </SecondaryButton>
               <SecondaryButton>
                 <ChevronLeft className="w-3 h-3" />
@@ -346,8 +346,6 @@ function RemediationStep({ n, children }) {
 
 /* ═══════════════════════════════════════════════════════════════════
    EX.3 — Last working date is fewer than 3 business days away
-   Per CL-014, names the actual person.
-   Per CL-065, 2px rose left-border + Urgent pill.
    ═══════════════════════════════════════════════════════════════════ */
 
 function EX3CriticalShortNotice({ scenario }) {
@@ -439,7 +437,6 @@ function DetailRow({ label, value, mono, icon: Icon, last }) {
 
 /* ═══════════════════════════════════════════════════════════════════
    EX.4 — Sensitivity classification service unavailable
-   Per CL-013, never names "Microsoft Purview" in user copy.
    ═══════════════════════════════════════════════════════════════════ */
 
 function EX4ClassificationPaused({ scenario }) {
@@ -476,13 +473,13 @@ function EX4ClassificationPaused({ scenario }) {
           />
           <ProgressStage
             status="done"
-            label="Extracting Google Drive file metadata"
-            detail="412 files · 2.1 minutes"
+            label="Extracting GitHub metadata"
+            detail="23 shared repos · 2.8 minutes"
           />
           <ProgressStage
             status="done"
-            label="Extracting email metadata"
-            detail="Subject lines and participants only · 53 seconds"
+            label="Extracting Google Drive file metadata"
+            detail="412 files · 2.1 minutes"
           />
           <ProgressStage
             status="paused"
@@ -544,8 +541,6 @@ function StatPill({ label, value }) {
 
 /* ═══════════════════════════════════════════════════════════════════
    EX.5 — RBAC scope cannot be resolved
-   Per CL-056 — rose header, mono error ref, 3-step remediation,
-   Retry / Back-to-Dashboard actions.
    ═══════════════════════════════════════════════════════════════════ */
 
 function EX5RBACUnresolvable({ scenario }) {
