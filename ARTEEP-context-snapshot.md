@@ -2,6 +2,8 @@
 
 *Conversation compaction · 2026-05-22 · Use this as the seed document for any future session.*
 
+*Updated 2026-06-02 · email removed as an automated data source per data-ingestion governance rule; persona material types updated to use approved shared workspaces only.*
+
 ---
 
 ## 1. Project Overview
@@ -28,6 +30,8 @@
 | Dynamic N-domain coverage in voice interview | Replaces hardcoded 4 sections |
 | GraphRAG dual-strategy retrieval | Combines graph + vector search |
 | Atomic KG commit pipeline with rollback | Data integrity |
+| **Data-ingestion scope · shared workspaces only** | Automated collection restricted to Jira · GitHub · Google Drive (shared) · SharePoint · Trello · Microsoft Planner. Email, personal directories, and individual messaging are NEVER scanned. Personal files only via manual upload. |
+| **3-phase user-facing lifecycle** | Internal 8-stage pipeline grouped as **Prepare · Capture · Deliver** at every glance-level UI view. Reduces cognitive load. |
 
 ---
 
@@ -42,10 +46,12 @@
 | **Phương Anh Nguyễn** | Offboarder | Sales | Senior Account Executive; demonstrates non-engineering source mix |
 | **An Quân Vũ** | Platform Admin / IT | — | NEW (Plan v2 CL-068); owns Step Zero |
 
-Each persona has different handover material types:
-- **Engineering (Minh Lê)**: Jira tickets, Drive files, Email metadata
-- **Sales (Phương Anh)**: Salesforce deals, Calendar, Email metadata
-- **People Ops (Khánh Linh)**: HR records, Notion policies, Email metadata
+Each persona has different handover material types · scoped to approved shared workspaces only:
+- **Engineering (Minh Lê)**: Jira tickets, GitHub repos (PR descriptions, commit messages, wiki pages), Google Drive (shared) files
+- **Sales (Phương Anh)**: Salesforce deals, shared Calendar, SharePoint sales-collateral documents
+- **People Ops (Khánh Linh)**: HRIS records, Notion policy pages, SharePoint policy archive
+
+Email, personal mailboxes, and private direct messages are excluded from automated collection per the data-ingestion governance rule. Where role-specific context lives in email threads, it surfaces through the voice interview (UC-HO-02) or manual file upload, not automated scanning.
 
 ---
 
@@ -108,7 +114,7 @@ Each persona has different handover material types:
 |---|---|---|---|
 | **S0 Platform Foundation** | 1 week | Infra + design system | COMPLETED |
 | **SZ Step Zero (NEW)** | 2 weeks | Z01–Z04 | PENDING (5 blockers) |
-| **S1 Handover Initiation** | 2 weeks | UC-HO-01, UC-HO-05 | COMPLETED (v2 with violet/yellow) |
+| **S1 Handover Initiation** | 2 weeks | UC-HO-01, UC-HO-05 | COMPLETED (v2 with violet/yellow; redesigned 2026-06-02 to 3-phase + drawer→command-view + one-click initiation) |
 | **S2 Capture & Verify** | 2 weeks | UC-HO-02, UC-HO-03 | COMPLETED (old amber palette — needs migration) |
 | **S3 KG Commit** | 1.5 weeks | UC-HO-04 | COMPLETED (old amber palette) |
 | **S4 Onboarding Gen & Read** | 2 weeks | UC-ON-01, UC-ON-02 | COMPLETED (old amber palette) |
@@ -121,14 +127,15 @@ Each persona has different handover material types:
 
 ## 7. Step Zero MVP Scope
 
-**4 screens (Z01–Z04)** · **8 curated connectors:**
-1. Microsoft 365 (Email + OneDrive + SharePoint + Teams)
-2. Google Workspace (Drive + Gmail + Calendar)
+**4 screens (Z01–Z04)** · **8 curated connectors** — note that automated data collection is scoped to shared workspaces only; email components below are listed for completeness of the connector platform integration, but ART-EEP does NOT scan email content at any point:
+
+1. Microsoft 365 (OneDrive + SharePoint + Teams · *email integration is platform-level only · never scanned for ART-EEP knowledge*)
+2. Google Workspace (Drive shared + Calendar · *Gmail integration platform-only · never scanned*)
 3. Jira
 4. Salesforce
-5. Slack
-6. Notion
-7. GitHub
+5. Slack (shared channels only, no DMs)
+6. Notion (shared workspaces only)
+7. GitHub (shared repos only)
 8. Generic HRIS (BambooHR/Workday adapter)
 
 **5 Step Zero blockers (TBD-Z1 to TBD-Z5):**
@@ -180,37 +187,41 @@ All files in `/mnt/user-data/outputs/`:
 ### Code Artifacts (React/JSX)
 | File | Status | Notes |
 |---|---|---|
-| `arteep-s0-component-library.jsx` | CANONICAL | 7 shared components (Provenance Chip, Severity/Confidence/Status Badges, Mask Card, Section Card, Audit Log Tile) |
+| `arteep-s0-component-library.jsx` | CANONICAL | 7 shared components |
 | `arteep-s1-handover-initiation.jsx` | SUPERSEDED | V1 with old amber palette |
-| `arteep-s1-handover-initiation-v2.jsx` | CANONICAL | V2 with violet/yellow palette · 5 screens · 3-persona dashboard |
+| `arteep-s1-handover-initiation-v2.jsx` | SUPERSEDED | V2 with violet/yellow palette; replaced by dashboard + quick-initiate + command-view trio (2026-06-02) |
+| `ha-vy-handover-dashboard.jsx` | CURRENT | Multi-session command center · 3-phase progress |
+| `uc-ho-01-quick-initiate.jsx` | CURRENT | One-click session creation · progressive-disclosure customize |
+| `session-command-view.jsx` | CURRENT | Per-session full-screen tabbed workspace |
 | `arteep-s2-capture-verify.jsx` | NEEDS MIGRATION | 5 Offboarder screens · old amber palette |
 | `arteep-s3-kg-commit.jsx` | NEEDS MIGRATION | Manager Completion Report 4 states · old amber palette |
 | `arteep-s4-onboarding-gen-read.jsx` | NEEDS MIGRATION | 5 Onboarder screens · old amber palette |
-| `arteep-system-ui-tour.jsx` | **CURRENT CANONICAL DEMO** | 8 features × 3-4 states · violet/yellow · QA-INT-01 fixes integrated |
-| `arteep-transactional-gateways.jsx` | CANONICAL (specialized) | 3 states · Vietnamese UI (CL-077 deviation) · Ontology Mapping, Seeding Progress, Glass-Box Editor |
+| `arteep-system-ui-tour.jsx` | **CANONICAL DEMO** | 8 features × 3-4 states · violet/yellow · QA-INT-01 fixes integrated |
+| `arteep-transactional-gateways.jsx` | CANONICAL (specialized) | 3 states · Vietnamese UI |
 
 ### Documentation
 | File | Purpose |
 |---|---|
-| `UC-HO-01_initiate-handover-session_v2.md` | UC-HO-01 v2.0 with Semantic Kernel, Purview, RBAC, 13 normal course steps |
-| `UC-HO-02_conduct-ai-guided-voice-interview_v2.md` | UC-HO-02 v2.0 with dynamic N-domain coverage replacing hardcoded 4 sections |
+| `UC-HO-01_initiate-handover-session_v2.md` | UC-HO-01 v2.0 governance spec |
+| `UC-HO-02_conduct-ai-guided-voice-interview_v2.md` | UC-HO-02 v2.0 spec |
 | `ARTEEP-master-uc-index.md` | All 10 UCs, dependency matrix, 22 TBDs |
-| `ARTEEP-implementation-plan.md` | V1 7-sprint roadmap (SUPERSEDED) |
-| `ARTEEP-implementation-plan-v2.md` | V2 with Step Zero, 12-week timeline, 24-screen inventory, risk register |
-| `QA-INT-01-Dual-Verification-Rule.md` | Foundational governance rule + compliance matrix |
-| `ARTEEP-design-change-log.md` | Living document — 86 entries (CL-001 through CL-086) |
+| `ARTEEP-implementation-plan-v2.md` | V2 with Step Zero, 12-week timeline |
+| `QA-INT-01-Dual-Verification-Rule.md` | Foundational governance rule |
+| `ARTEEP-design-change-log.md` | Living document — 86+ entries |
+| `Sprint-1-compact.md` | Sprint 1 snapshot (3-phase lifecycle, post-redesign) |
 
 ---
 
-## 10. Design Change Log Summary (CL-001 through CL-086)
+## 10. Design Change Log Summary (CL-001 through CL-086+)
 
-86 entries across these major themes:
+86+ entries across these major themes:
 
 ### S0 Foundation (CL-001 to CL-010)
 English UI · UX writing principles · persona lock · 14-state taxonomy · 2-accent palette · animation budget · 1px borders
 
 ### S1 (CL-011 to CL-020)
 CTAs advance happy path · "sensitive content" copy · Purview not named in UI · audit log tile reuse
+- *Note · CL-015 (email scanning constraint inline) deprecated 2026-06-02 — email is no longer a data source; the inline scope-reminder pattern generalizes to all sources via the data-ingestion governance rule.*
 
 ### S2 (CL-021 to CL-033)
 Pulsing rings · text mode equal choice · transcript auto-highlight · 4 draft-item badges · Manager flag avatar · sign disabled · auth failure attempts remaining
@@ -219,13 +230,13 @@ Pulsing rings · text mode equal choice · transcript auto-highlight · 4 draft-
 Progress Stage reuse · "Needs your call" not "Disambiguation" · "Up next" front-loaded · skill chips by status · partial commit framed by success
 
 ### S4 (CL-041 to CL-053)
-Smart preset rationale · custom prompt interpretation before generation · skeleton+typewriter+glow vocabulary · Critical can't hide · inline entity underline · entity mini-card hover · Persistent Copilot Bar · named source chips · spotlight 30% dimming · restricted content explains what+why
+Smart preset rationale · custom prompt interpretation · skeleton+typewriter+glow vocabulary · Critical can't hide · inline entity underline · entity mini-card hover · Persistent Copilot Bar · named source chips · spotlight 30% dimming · restricted content explains what+why
 
 ### S1 v2 Rebuild (CL-054 to CL-062)
-Violet primary + Pastel Yellow palette migration · primary buttons branded · RBAC scope failure state · PII override action · empty section removed · focus rings · AI prompts violet-tinted
+Violet primary + Pastel Yellow palette · primary buttons branded · RBAC scope failure state · PII override action · empty section removed · focus rings · AI prompts violet-tinted
 
 ### Multi-Persona Dashboard (CL-063 to CL-065)
-3 concurrent sessions · source chips inline · critical urgency layered signals (left border + Urgent pill + rose days)
+3 concurrent sessions · source chips inline · critical urgency layered signals
 
 ### Plan v2 (CL-066 to CL-073)
 Step Zero introduction · 4 MVP screens · Platform Admin persona · 8 MVP connectors · UC refinements · 5 new blockers · 12-week timeline
@@ -234,16 +245,16 @@ Step Zero introduction · 4 MVP screens · Platform Admin persona · 8 MVP conne
 Single navigable artifact · Feedback Loop combines HO-06/HO-07 · skill progress bar two-tone
 
 ### Transactional Gateways (CL-077 to CL-079)
-Vietnamese UI deviation · 3 entity badge categories (project blue / person gray / concept violet) · low-confidence yellow underline pattern
+Vietnamese UI deviation · 3 entity badge categories · low-confidence yellow underline pattern
 
 ### QA-INT-01 Adoption (CL-080 to CL-086)
-- CL-080 — Rule formally adopted as foundational governance
-- CL-081 — Gap A identified: Canonical Fact surface needed
-- CL-082 — Gap B identified: Per-item lineage view needed (partial reversal of CL-067)
-- CL-083 — Refinement C identified: Inline edit diff visualization
-- CL-084 — Gap A resolved: `CanonicalBadge` implemented
-- CL-085 — Gap B resolved: `LineageDrawer` implemented
-- CL-086 — Refinement C resolved: Inline diff in `DraftItemEditing`
+Foundational governance rule · 3 gaps remediated (`CanonicalBadge`, `LineageDrawer`, inline diff)
+
+### S1 Redesign (CL-087+, 2026-06-02)
+- Drawer pattern (480px right-side) replaced with dedicated full-screen command-view route at `/session/[id]`
+- 8-stage lifecycle compressed to 3 user-facing phases (Prepare · Capture · Deliver) for cognitive simplicity
+- One-click quick-initiate pattern replaces multi-step wizard
+- Email removed as automated data source; CL-015 deprecated and replaced with general data-ingestion governance pattern
 
 ---
 
@@ -278,7 +289,7 @@ Vietnamese UI deviation · 3 entity badge categories (project blue / person gray
 
 The system reads/writes to:
 - **Azure Key Vault** — OAuth tokens, API keys (Step Zero secrets management)
-- **Microsoft Graph Connectors** — MS-stack source integration
+- **Microsoft Graph Connectors** — MS-stack source integration platform (scoped to shared workspaces only; email never scanned)
 - **Azure AI Search** — Per-source indexes; pre-retrieval ACL trimming
 - **Cosmos DB Gremlin** — Knowledge Graph; partition-keyed by org
 - **Microsoft Purview** — Mandatory PII gate (no fallback path)
@@ -292,15 +303,15 @@ The system reads/writes to:
 
 The hackathon pitch opens with a 10–15 second Step Zero moment ("Before any handover can happen, our Platform Admin configures the integrations once"), demonstrating Z01 → Z02 → Z03. Then transitions to "Now Hà Vy can run a handover session…" and proceeds through the canonical flow:
 
-1. Hà Vy's Dashboard (3 pending sessions, urgency visible)
-2. Initiate session for Minh Lê
-3. Seeding progress with live AI activity feed
+1. Hà Vy's Dashboard (3 pending sessions, 3-phase progress visible)
+2. One-click initiate session for Minh Lê (quick-initiate page)
+3. Command-view Overview tab · Phase 1 Prepare · live seeding from Jira / GitHub / Drive
 4. Minh Lê's voice interview (rose recording rings, AI questions with Manager Priority badges)
-5. Review & sign with QA-INT-01 inline diff visible
-6. KG Commit with Canonical Facts surfaced
-7. Trần Hữu Nam's Day 1 playbook with Canonical badge + clickable lineage drawer
+5. Phase 2 transcript review with QA-INT-01 inline diff
+6. Phase 3 KG Commit with Canonical Facts surfaced
+7. Trần Hữu Nam's Day 1 playbook with Canonical badge + lineage drawer
 8. Skill Gap analysis
-9. Feedback loop: hallucination reported → Manager reviews diff → Canonical promotion → propagation
+9. Feedback loop · hallucination reported → Manager reviews → Canonical promotion → propagation
 
 Total runtime: ~3 minutes.
 
@@ -310,14 +321,14 @@ Total runtime: ~3 minutes.
 
 If picking up where this left off, the next actionable items are:
 
-1. **Stakeholder approval needed** on the 6 Plan v2 decision points (especially Step Zero blockers TBD-Z1 through TBD-Z5)
+1. **Stakeholder approval needed** on the 6 Plan v2 decision points (especially Step Zero blockers)
 2. **Migration sweep** — S2/S3/S4 artifacts need violet/yellow palette migration
-3. **S5 build** — UC-ON-03 (Skill Gap), UC-HO-06 (Report Hallucination), UC-HO-07 (Correction Review) need full per-sprint artifacts (currently only in System UI Tour condensed form)
-4. **UC-HO-01 v2.1 update** — incorporate Step Zero references per CL-070
-5. **Master UC Index refresh** — reflect Step Zero per CL-072
-6. **Demo script** — write the 3-minute narrative tying all the states together
+3. **S5 build** — UC-ON-03 (Skill Gap), UC-HO-06 (Report Hallucination), UC-HO-07 (Correction Review) need full per-sprint artifacts
+4. **UC-HO-01 v2 governance spec update** — reflect 3-phase lifecycle + data-ingestion governance (CL-015 deprecation)
+5. **Master UC Index refresh** — reflect Step Zero per CL-072 and S1 redesign per CL-087+
+6. **Demo script** — write the 3-minute narrative tying all the states together with the 3-phase lifecycle visible throughout
 
-**Canonical artifact for current state:** `arteep-system-ui-tour.jsx` — fully QA-INT-01 compliant with violet/yellow palette.
+**Canonical artifact for current state:** `arteep-system-ui-tour.jsx` — fully QA-INT-01 compliant with violet/yellow palette; Sprint 1 work since 2026-06-02 lives at the dashboard + quick-initiate + command-view trio.
 
 ---
 
