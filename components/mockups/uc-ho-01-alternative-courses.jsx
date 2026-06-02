@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import {
   ChevronLeft, ChevronRight, Check, AlertTriangle, AlertCircle, Info,
-  Plus, Pencil, Calendar, Mail, Folder, GitBranch, Briefcase, ShieldCheck,
+  Plus, Pencil, Calendar, Github, Folder, GitBranch, Briefcase, ShieldCheck,
   Lock, Sparkles, ArrowRight, ArrowUpRight, Database, Eye, Tag, Network,
   MessageSquare, FileText, Users, Layers
 } from "lucide-react";
@@ -11,30 +11,37 @@ import {
 /* ═══════════════════════════════════════════════════════════════════
    UC-HO-01 · Alternative Courses — clickable flow
 
-   Four screens, one per AC, strictly traced to UC-HO-01 v2.0:
+   Four screens, one per AC. Originally traced to UC-HO-01 v2.0 but
+   AC.2 has been REPURPOSED — email is no longer a data source per
+   the data-ingestion governance rule, so the original "Email excluded"
+   alternative course has been replaced with the more general
+   "Manager deselects a shared workspace" pattern, using GitHub as the
+   demonstration case.
 
      AC.1 — Manual initiation (no HR sync)
-     AC.2 — Manager excludes email data sources
+     AC.2 — Manager deselects a data source (GitHub example)
      AC.3 — Offboarder has no integrated data sources
      AC.4 — Sensitivity classification excludes >30% of content
 
+   Sources used throughout are restricted to approved shared
+   workspaces · Jira · GitHub · Google Drive (shared) · SharePoint ·
+   Trello · Microsoft Planner. Email, personal directories, and
+   private messaging are NEVER scanned.
+
    Honors the locked S1 v2 visual system:
      · CL-054 violet primary + pastel yellow secondary
-     · CL-055 primary CTAs carry the brand color · 32px button height
-     · CL-057 AC.4 offers two parallel actions (priority prompts +
-              override review)
-     · CL-059 explicit focus rings on every interactive
-     · CL-060 AI-generated content sits on violet-tinted background
+     · CL-055 primary CTAs · 32px button height
+     · CL-057 AC.4 offers two parallel actions
+     · CL-059 explicit focus rings
+     · CL-060 AI-generated content on violet-tinted background
      · CL-062 yellow dot bullets for knowledge gaps
-     · CL-013 no vendor names in user copy ("sensitivity classification"
-              not "Microsoft Purview")
+     · CL-013 no vendor names in user copy
      · CL-012 "sensitive content" not "PII"
-     · CL-015 email scanning constraint surfaced inline at the source row
    ═══════════════════════════════════════════════════════════════════ */
 
 const FLOW = [
   { id: "ac1", uc: "AC.1", label: "Manual initiation",         trigger: "Triggered at step 1 — HR sync hasn't occurred yet." },
-  { id: "ac2", uc: "AC.2", label: "Email excluded",            trigger: "Triggered at step 4 — Manager deselects email for privacy." },
+  { id: "ac2", uc: "AC.2", label: "Source deselected",         trigger: "Triggered at step 4 — Manager deselects a shared workspace (GitHub) for relevance." },
   { id: "ac3", uc: "AC.3", label: "No integrated sources",     trigger: "Triggered at step 3 — no integrations available for this account." },
   { id: "ac4", uc: "AC.4", label: "High sensitivity exclusion",trigger: "Triggered at step 8 — classification redacts >30% of one source." },
 ];
@@ -154,7 +161,7 @@ function FooterNav({ stepIdx, step, onChange }) {
 
 function StepRenderer({ id, scenario }) {
   if (id === "ac1") return <AC1ManualInitiation scenario={scenario} />;
-  if (id === "ac2") return <AC2EmailExcluded scenario={scenario} />;
+  if (id === "ac2") return <AC2SourceDeselected scenario={scenario} />;
   if (id === "ac3") return <AC3NoSources scenario={scenario} />;
   if (id === "ac4") return <AC4HighExclusion scenario={scenario} />;
   return null;
@@ -206,7 +213,7 @@ function AC1ManualInitiation({ scenario }) {
       </div>
 
       <p className="text-[11px] text-gray-500 mt-5 leading-relaxed">
-        <span className="text-gray-700 font-medium">After you continue ·</span> the wizard proceeds identically to the normal course (steps 3–5), with the data sources, review deadline, and focus-note panels populated from the manual entries above.
+        <span className="text-gray-700 font-medium">After you continue ·</span> the wizard proceeds identically to the normal course, with the data sources, review deadline, and focus-note panels populated from the manual entries above.
       </p>
     </div>
   );
@@ -230,14 +237,16 @@ function ManualField({ label, value, icon: Icon, mono }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   AC.2 — Email excluded for privacy
+   AC.2 — Manager deselects a shared workspace (GitHub example)
+   Previously "Email excluded" — repurposed since email is no longer
+   an automated source per the data-ingestion governance rule.
    ═══════════════════════════════════════════════════════════════════ */
 
-function AC2EmailExcluded({ scenario }) {
+function AC2SourceDeselected({ scenario }) {
   return (
     <div className="max-w-3xl mx-auto p-6">
       <PageHeader
-        eyebrow="Session setup · steps 3–5"
+        eyebrow="Session setup · data sources"
         title="Set up a handover session"
         subtitle="Confirm the details, review deadline, and data sources. Then start context seeding."
         actor="Hà Vy · Manager · Engineering"
@@ -264,21 +273,21 @@ function AC2EmailExcluded({ scenario }) {
         </div>
       </FormSection>
 
-      <FormSection title="Data sources" subtitle="Email has been deselected for this session.">
+      <FormSection title="Data sources" subtitle="Approved shared workspaces only. Manager has deselected GitHub for this session.">
         <div className="space-y-2">
           <SourceRow icon={GitBranch} name="Jira"           detail="47 active tickets · 6 months of comments"           selected />
-          <SourceRow icon={Folder}    name="Google Drive"   detail="412 files · titles and edit recency only"           selected />
-          <SourceRow icon={Mail}      name="Email metadata" detail="Subject lines and participants only. Email content is never read or stored." excluded />
+          <SourceRow icon={Folder}    name="Google Drive"   detail="412 files · titles and edit recency only · content read only during interview" selected />
+          <SourceRow icon={Github}    name="GitHub"         detail="23 shared repos — mostly archived legacy code, not relevant to the successor's scope." excluded />
         </div>
 
         <div className="mt-3 rounded-md border border-yellow-200 bg-yellow-50/50 px-3 py-2.5 flex items-start gap-2.5">
           <AlertTriangle className="w-3.5 h-3.5 text-yellow-700 shrink-0 mt-0.5" strokeWidth={1.75} />
           <div className="flex-1">
             <p className="text-[12px] text-yellow-900 leading-relaxed">
-              <strong>Email data excluded.</strong> Knowledge map coverage may be reduced for communication-heavy work — vendor negotiations, escalation threads, cross-team alignment. The session will proceed normally.
+              <strong>GitHub data excluded.</strong> Knowledge map coverage may be reduced for code-related decisions — PR review history, design discussions in wikis, commit message context. The session will proceed normally.
             </p>
             <p className="text-[11px] text-yellow-900/70 mt-1 leading-relaxed">
-              The interview can still cover these topics through priority prompts (UC-HO-05). The Offboarder can also bring them up directly.
+              The interview can still cover these topics through priority prompts (UC-HO-05). The Offboarder can also bring them up directly. You can re-enable GitHub before seeding starts.
             </p>
           </div>
         </div>
@@ -299,6 +308,10 @@ function AC2EmailExcluded({ scenario }) {
           <ArrowRight className="w-3.5 h-3.5" />
         </PrimaryButton>
       </div>
+
+      <p className="text-[11px] text-gray-500 mt-5 leading-relaxed">
+        <span className="text-gray-700 font-medium">Data ingestion scope ·</span> automated collection is restricted to approved shared workspaces. Email, personal directories, and private messaging are never scanned. Manual file upload remains available for anything outside this scope.
+      </p>
     </div>
   );
 }
@@ -347,15 +360,15 @@ function AC3NoSources({ scenario }) {
   return (
     <div className="max-w-3xl mx-auto p-6">
       <PageHeader
-        eyebrow="Session setup · steps 3–5"
+        eyebrow="Session setup · data sources"
         title="Set up a handover session"
         subtitle="No data sources are connected for this Offboarder. The interview will fall back to a generic question bank."
         actor="Hà Vy · Manager · Sales"
       />
 
       <Banner tone="warning" icon={AlertTriangle}>
-        <strong>No integrated data sources are available for {scenario.name}.</strong>{" "}
-        Context seeding (steps 7–9) will be skipped. The interview will use a generic question bank based on her role and department.
+        <strong>No integrated shared workspaces are available for {scenario.name}.</strong>{" "}
+        Context seeding will be skipped. The interview will use a generic question bank based on her role and department.
       </Banner>
 
       <FormSection title="Session details" subtitle="Pre-filled from the HR record.">
@@ -385,7 +398,7 @@ function AC3NoSources({ scenario }) {
             <Lock className="w-4 h-4 text-gray-400" strokeWidth={1.75} />
           </div>
           <div className="flex-1 min-w-0">
-            <h4 className="text-sm font-medium text-gray-900">No integrated data sources found</h4>
+            <h4 className="text-sm font-medium text-gray-900">No integrated shared workspaces found</h4>
             <p className="text-[12px] text-gray-600 mt-1 leading-relaxed">
               {scenario.name}'s tools either aren't integrated with ART-EEP or her account no longer has access. The interview will run from a generic question bank tailored to her role.
             </p>
@@ -416,9 +429,6 @@ function AC3NoSources({ scenario }) {
 
 /* ═══════════════════════════════════════════════════════════════════
    AC.4 — High sensitivity exclusion (>30%)
-   Per CL-057, offers two parallel actions (priority prompts + override).
-   Per CL-012, uses "sensitive content" not "PII".
-   Per CL-013, no vendor name in user copy.
    ═══════════════════════════════════════════════════════════════════ */
 
 function AC4HighExclusion({ scenario }) {
