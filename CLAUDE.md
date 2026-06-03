@@ -1,8 +1,46 @@
 # esb-mockup
 
-A Next.js mockup playground for **ART-EEP**. Every page in `/m/<slug>` is a clickable React mockup PMs/designers use for user testing, flow verification, and brainstorming.
+A Next.js mockup of the **ART-EEP** app — a real, navigable web app (not a flow-by-flow demo site) that PMs/designers use for user testing and brainstorming. Each surface is a real route inside a shared AppShell.
 
-**Workflow:** PM/designer brainstorms in Claude.ai (or Gemini) → asks Claude to apply the idea via the `apply-to-mockup` flow → Claude commits to `main` via the GitHub connector → Vercel deploys → team views at the password-protected URL.
+**Workflow:** PM/designer brainstorms in Claude.ai → asks Claude to apply the idea via the `apply-to-mockup` skill → Claude commits to `main` via the GitHub connector → Vercel deploys → team views the updated app at the password-protected URL.
+
+## App route map (current)
+
+```
+REAL APP — shared sidebar + topbar via components/app/AppShell.tsx
+─────────────────────────────────────────────────────────────────
+/                         → Hà Vy's handover dashboard (home)
+                            components/mockups/ha-vy-handover-dashboard.jsx
+
+/session/new              → Quick initiate (one-click session creation)
+                            components/mockups/uc-ho-01-quick-initiate.jsx
+                            ?customize=1 opens the customize expander
+
+/session/[id]             → Session command view (tabbed full-screen)
+                            components/mockups/session-command-view.jsx
+                            Valid ids · minh-le · phuong-anh
+                            ?tab=stages opens the Stages tab (minh-le only)
+
+SPEC TRACES — standalone walkthroughs (no AppShell, Prev/Next chrome)
+─────────────────────────────────────────────────────────────────
+/spec                     → Index of traces (lives in AppShell)
+                            app/spec/page.tsx
+/spec/uc-ho-01/normal     → 8-state happy path walkthrough
+                            components/mockups/uc-ho-01-normal-flow.jsx
+/spec/uc-ho-01/edges      → 10-state edge cases walkthrough
+                            components/mockups/uc-ho-01-edge-cases.jsx
+
+INFRASTRUCTURE — don't touch unless asked
+─────────────────────────────────────────────────────────────────
+/login                    → Password gate UI (app/login/page.tsx)
+/api/auth                 → Cookie set/clear (app/api/auth/route.ts)
+/guide                    → Team guide rendered from TEAM-GUIDE.md
+middleware.ts             → Sitewide password redirect
+```
+
+**Embedded mode.** The three "feature" mockups (dashboard, quick-initiate, command-view) accept an `embedded` prop and a `view` prop. When `embedded={true}`, they skip their internal demo chrome (TopBar / FlowBar / FooterNav) and let `AppShell` provide navigation. The same files work standalone (demo mode) or embedded — they're the same component tree.
+
+**Spec traces.** The two flow walkthroughs (`uc-ho-01-normal-flow`, `uc-ho-01-edge-cases`) keep their internal Prev/Next chrome because they're inherently demo artifacts, not app pages.
 
 ## Read this first
 
@@ -21,7 +59,7 @@ Two are file-writing, one is a router. They must not bleed into each other.
 
 | Skill | Touches | Use for |
 |---|---|---|
-| **`apply-to-mockup`** | `components/mockups/`, `lib/mockups-registry.ts` | Turning an idea **or a JSX artifact Claude generated in chat** into a visible mockup at `/m/<slug>` |
+| **`apply-to-mockup`** | `components/mockups/`, `components/app/`, `app/**/page.tsx` | Updating a part of the real app, adding a new tab/section, or adding a new route. Also still handles "save this JSX artifact Claude generated in chat" |
 | **`update-context`** | `ARTEEP-context-snapshot.md`, `docs/arteep/*.md` | Persisting a *written* decision (new CL entry, persona/UC/sprint/palette change) so the next contributor sees it |
 | **`ship-it`** (router) | Delegates only | One-shot "save what we just did" — surveys the chat, picks one or both of the above, runs them in the right order |
 
@@ -33,29 +71,61 @@ Two are file-writing, one is a router. They must not bleed into each other.
 - User is non-specific ("ship it", "save this", "save everything", "sync to repo") → **`ship-it`** — it surveys the chat and dispatches.
 - When both apply (e.g. *"log the new rule and update S2 to follow it"*), the order is always **context first, then mockup**, as two separate commits. `ship-it` enforces this automatically.
 
-## How to add a mockup
+## How to update the app
 
-When asked to add or update a mockup, follow this sequence. Do not invent a different structure.
+When asked to change a part of the app, follow this sequence. Identify *which surface* the request touches first (see the route map above), then make the surgical edit.
 
-1. **Pick a slug.** lowercase-kebab-case, descriptive: `ha-vy-handover-dashboard`, `minh-le-voice-interview-recording`, etc.
-2. **Create the component file** at `components/mockups/<slug>.tsx`.
-   - Must `export default` a React component.
-   - Add `"use client";` at the top if the mockup uses hooks (`useState`, etc.).
-   - Use Tailwind classes only. Use `lucide-react` for icons. Do not introduce new UI libraries without being asked.
-   - Wrap the mockup in a top-level `<div className="min-h-screen bg-gray-50">` so it fills the route.
-3. **Register it** in `lib/mockups-registry.ts`:
-   - Add an `import` for the default export.
-   - Add an entry to the `mockups` array with `slug`, `title`, `description`, `sprint`, `personas`, `useCases`, and optionally `tags`.
-   - Keep entries roughly in sprint order (S0, SZ, S1, S2, S3, S4, S5, S6).
-4. **(Optional) Wire a flow.** If the new mockup is part of a multi-step clickthrough, set `flow: { id, label, steps: [...] }` on every mockup in the flow. `steps` is an ordered array of slugs. The Prev/Next overlay appears automatically.
-5. **Commit and push directly to `main`** with a short message describing what was added or changed. Vercel will redeploy in ~30s.
+### Updating an existing surface
+
+For tweaks to the dashboard, quick-initiate, or session command view — by far the most common ask — edit the matching JSX file in `components/mockups/`:
+
+| Ask refers to… | File to edit |
+|---|---|
+| The dashboard, pending session cards, completed row, activity feed | `components/mockups/ha-vy-handover-dashboard.jsx` |
+| The quick-initiate page, default tiles, customize expander | `components/mockups/uc-ho-01-quick-initiate.jsx` |
+| Any session-detail tab (Overview, Stages, Data, Audit log, Settings), the 3-phase hero | `components/mockups/session-command-view.jsx` |
+| The sidebar, top bar, search, notifications, user pill | `components/app/AppShell.tsx` |
+| The team guide content | `TEAM-GUIDE.md` (rendered at `/guide`) |
+| A spec-trace state | `components/mockups/uc-ho-01-normal-flow.jsx` or `uc-ho-01-edge-cases.jsx` |
+
+Inside each feature JSX, sub-sections are normal React functions (e.g. `PendingSessionCard`, `ActiveDashboard`, `OverviewTab`). Edit the smallest function that matches the request — don't rewrite the whole file.
+
+### Adding a new section/tab to an existing surface
+
+Edit only the matching JSX file. For example, adding a new tab to the command view: add the new entry to its `TABS` array and the matching `case` to its `StepRenderer`.
+
+### Adding a brand-new surface (new top-level route)
+
+1. **Pick the route.** Match the locked architecture (e.g. `/knowledge-graph`, `/admin/connectors`). Use Next.js App Router conventions.
+2. **Create the surface component** in `components/mockups/<descriptive-name>.jsx`:
+   - `"use client";` at top if it uses hooks.
+   - Default-export a React component. Accept an `embedded?: boolean` prop and skip any internal chrome when true.
+   - Use Tailwind + `lucide-react` only.
+3. **Create the route** at `app/<segment>/page.tsx`:
+   ```tsx
+   import { AppShell } from "@/components/app/AppShell";
+   import NewSurface from "@/components/mockups/<name>.jsx";
+
+   export default function Page() {
+     return <AppShell><NewSurface embedded /></AppShell>;
+   }
+   ```
+4. **Add the route to the sidebar.** Open `components/app/AppShell.tsx` and add an entry to `PRIMARY_NAV` (or `SECONDARY_NAV` for "More").
+5. **Commit and push to `main`.** Vercel deploys in ~60s.
+
+### Adding a new spec trace
+
+1. Build the walkthrough JSX in `components/mockups/<uc-id>-<kind>.jsx` (keep the standalone TopBar/FooterNav pattern — these are demo artifacts, not embedded surfaces).
+2. Create the route at `app/spec/<uc-id>/<kind>/page.tsx` that simply renders the component (no AppShell).
+3. Register it in the `TRACES` array of `app/spec/page.tsx` so it appears on the spec index.
 
 **Don't:**
-- Don't create new routes outside `/m/[slug]`. The index page auto-lists every registered mockup.
+- Don't recreate `/m/[slug]` or a "registry of mockups". The app *is* the registry — routes in `app/` define what exists.
 - Don't fetch real data, hit external APIs, or add a backend. Mockups are static UI.
-- Don't add database, auth, or session logic to a mockup. The only auth is the site-wide password gate in `middleware.ts`.
-- Don't edit `app/`, `middleware.ts`, or `lib/auth.ts` unless explicitly asked — those are infrastructure.
-- Don't open a PR unless the user asks for one. Direct push to `main` is the default for fast iteration.
+- Don't add database, auth, or session logic to a surface. The only auth is the sitewide password gate in `middleware.ts`.
+- Don't touch `middleware.ts`, `app/api/auth/`, or `app/login/` unless explicitly asked.
+- Don't introduce new UI libraries. Tailwind + `lucide-react` are the toolkit.
+- Don't open a PR unless the user asks. Direct push to `main` is the default.
 
 ## How to update context
 

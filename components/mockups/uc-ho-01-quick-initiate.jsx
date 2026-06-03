@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import {
   ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Check, X,
   Calendar, Github, Folder, GitBranch, User, Sparkles, ArrowRight,
@@ -58,10 +59,17 @@ const SCENARIO = {
   seedingEstimate: "About 7 minutes",
 };
 
-export default function UCHO01QuickInitiate() {
-  const [stepIdx, setStepIdx] = useState(0);
+export default function UCHO01QuickInitiate({ embedded = false, view = "ready" } = {}) {
+  const [stepIdx, setStepIdx] = useState(() => {
+    const i = FLOW.findIndex((s) => s.id === view);
+    return i >= 0 ? i : 0;
+  });
   const step = FLOW[stepIdx];
   const showCustomize = stepIdx === 1;
+
+  if (embedded) {
+    return <QuickInitiateScreen showCustomize={showCustomize} />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col text-gray-900" style={{ fontFamily: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif' }}>
@@ -194,7 +202,10 @@ function QuickInitiateScreen({ showCustomize }) {
 
       {/* Progressive disclosure: Customize */}
       <article className={`rounded-lg border ${showCustomize ? "border-violet-200 bg-violet-50/20" : "border-gray-200 bg-white"} mb-5 transition-colors`}>
-        <button className={`w-full px-4 py-3 flex items-center justify-between text-left focus:outline-none focus:ring-2 focus:ring-violet-500/20 rounded-lg`}>
+        <Link
+          href={showCustomize ? "/session/new" : "/session/new?customize=1"}
+          className={`w-full px-4 py-3 flex items-center justify-between text-left focus:outline-none focus:ring-2 focus:ring-violet-500/20 rounded-lg`}
+        >
           <div className="flex items-center gap-2 min-w-0">
             <Settings className="w-3.5 h-3.5 text-gray-500 shrink-0" strokeWidth={1.75} />
             <span className="text-sm font-medium text-gray-900">Customize before starting</span>
@@ -204,21 +215,27 @@ function QuickInitiateScreen({ showCustomize }) {
             ? <ChevronUp className="w-4 h-4 text-gray-500 shrink-0" />
             : <ChevronDown className="w-4 h-4 text-gray-500 shrink-0" />
           }
-        </button>
+        </Link>
 
         {showCustomize && <CustomizeBody />}
       </article>
 
       {/* Primary action row */}
       <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-        <button className="h-8 px-2 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 text-xs font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20">
+        <Link
+          href="/"
+          className="h-8 px-2 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 text-xs font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20"
+        >
           Cancel
-        </button>
-        <button className="h-10 px-4 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold inline-flex items-center gap-2 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30 shadow-sm shadow-violet-600/20">
+        </Link>
+        <Link
+          href="/session/minh-le"
+          className="h-10 px-4 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold inline-flex items-center gap-2 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30 shadow-sm shadow-violet-600/20"
+        >
           <Sparkles className="w-4 h-4" strokeWidth={2} />
           Start session
           <ArrowRight className="w-3.5 h-3.5" />
-        </button>
+        </Link>
       </div>
 
       {/* Inline explainer footer */}

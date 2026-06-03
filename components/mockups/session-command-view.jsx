@@ -1,13 +1,15 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import {
   ChevronLeft, ChevronRight, ChevronDown, X, Check,
   Settings, FileText, MessageSquare, Network, Database, Eye,
   AlertTriangle, AlertOctagon, Clock, CheckCircle2, Loader2,
   Calendar, ArrowRight, ArrowUpRight, ExternalLink, MoreHorizontal,
   Users, Tag, GitBranch, Github, Folder, Sparkles, Hash, Lock,
-  PlayCircle, PauseCircle, RefreshCw, Inbox, ShieldCheck
+  PlayCircle, PauseCircle, RefreshCw, Inbox, ShieldCheck,
+  UploadCloud, History
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -84,6 +86,7 @@ function getSubStage(subStageId) {
 const SESSIONS = {
   ml: {
     id: "sess-minhle",
+    urlSlug: "minh-le",
     sessionRef: "SESSION-2026-05-29-7a3c",
     offboarder: "Minh Lê",
     role: "Senior Backend Engineer",
@@ -98,6 +101,7 @@ const SESSIONS = {
   },
   pa: {
     id: "sess-phuonganh",
+    urlSlug: "phuong-anh",
     sessionRef: "SESSION-2026-05-27-3f2b",
     offboarder: "Phương Anh Nguyễn",
     role: "Senior Account Executive",
@@ -120,8 +124,22 @@ const TABS = [
   { id: "settings",  label: "Settings" },
 ];
 
-export default function SessionCommandView() {
-  const [stepIdx, setStepIdx] = useState(0);
+export default function SessionCommandView({ embedded = false, view = "ml-overview" } = {}) {
+  const [stepIdx, setStepIdx] = useState(() => {
+    const i = FLOW.findIndex((s) => s.id === view);
+    return i >= 0 ? i : 0;
+  });
+
+  if (embedded) {
+    // view encodes "<sessionKey>-<tabId>", e.g. "ml-overview", "pa-audit"
+    const dash = view.indexOf("-");
+    const sessKey = dash > 0 ? view.slice(0, dash) : "ml";
+    const tab = dash > 0 ? view.slice(dash + 1) : "overview";
+    const session = SESSIONS[sessKey];
+    if (!session) return null;
+    return <CommandView session={session} activeTab={tab} />;
+  }
+
   const step = FLOW[stepIdx];
 
   return (
@@ -219,11 +237,14 @@ function CommandView({ session, activeTab }) {
   return (
     <div className="max-w-7xl mx-auto">
       <Hero session={session} />
-      <TabBar activeTab={activeTab} />
+      <TabBar session={session} activeTab={activeTab} />
       <div className="grid grid-cols-[1fr_280px] gap-5 p-6">
         <div className="min-w-0">
           {activeTab === "overview" && <OverviewTab session={session} />}
           {activeTab === "stages"   && <StagesTab session={session} />}
+          {activeTab === "data"     && <DataTab session={session} />}
+          {activeTab === "audit"    && <AuditTab session={session} />}
+          {activeTab === "settings" && <SettingsTab session={session} />}
         </div>
         <ActionSidebar session={session} />
       </div>
@@ -336,16 +357,20 @@ function PhaseProgress({ subStageId }) {
 
 /* ─── TabBar ────────────────────────────────────────────────────────── */
 
-function TabBar({ activeTab }) {
+function TabBar({ session, activeTab }) {
+  const slug = session?.urlSlug;
+  const base = slug ? `/session/${slug}` : "#";
   return (
     <div className="bg-white border-b border-gray-200 px-6 sticky top-[3.25rem] z-10">
       <div className="flex items-center gap-1">
         {TABS.map((tab) => {
           const isActive = tab.id === activeTab;
+          const href = tab.id === "overview" ? base : `${base}?tab=${tab.id}`;
           return (
-            <button
+            <Link
               key={tab.id}
-              className={`h-10 px-3 text-sm font-medium border-b-2 transition-colors focus:outline-none ${
+              href={href}
+              className={`h-10 px-3 text-sm font-medium border-b-2 transition-colors focus:outline-none inline-flex items-center ${
                 isActive
                   ? "border-violet-600 text-violet-700"
                   : "border-transparent text-gray-500 hover:text-gray-900"
@@ -353,7 +378,7 @@ function TabBar({ activeTab }) {
             >
               {tab.label}
               {tab.id === "audit" && <span className="ml-1 text-[10px] text-gray-400" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>14</span>}
-            </button>
+            </Link>
           );
         })}
       </div>
@@ -752,5 +777,235 @@ function InfoRow({ label, value, mono }) {
 function SectionLabel({ children }) {
   return (
     <h2 className="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-medium">{children}</h2>
+  );
+}
+
+/* ─── Tab content · Data ─────────────────────────────────────────────── */
+
+function DataTab({ session }) {
+  return (
+    <div className="space-y-5">
+      <div>
+        <SectionLabel>Data sources for this session</SectionLabel>
+        <p className="text-[12px] text-gray-500 mt-1 leading-relaxed">
+          Approved shared workspaces only. Personal directories, individual mailboxes, and private messaging are never scanned. Per the data-ingestion governance rule.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <SourceRow icon={GitBranch} name="Jira"         detail="47 tickets · 6 months · comments included"                                             status="done"    subDetail="last sync 4m ago" />
+        <SourceRow icon={Github}    name="GitHub"       detail="23 shared repos · PR descriptions, commit messages, wiki pages"                       status="active"  subDetail="18 of 23 · 78%" />
+        <SourceRow icon={Folder}    name="Google Drive" detail="412 files · titles and edit recency only · content read only during interview"       status="pending" subDetail="queued" />
+      </div>
+
+      <div>
+        <SectionLabel>Manual upload</SectionLabel>
+        <article className="mt-2 rounded-lg border border-dashed border-gray-300 bg-gray-50/40 p-5 text-center">
+          <UploadCloud className="w-5 h-5 text-gray-400 mx-auto mb-1.5" strokeWidth={1.75} />
+          <p className="text-[13px] text-gray-700 font-medium">Drop files here or click to upload</p>
+          <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
+            Add files from personal folders or external systems that {session.offboarder} flags as important. Files inherit this session's access scope.
+          </p>
+        </article>
+      </div>
+
+      <div>
+        <SectionLabel>Excluded by governance</SectionLabel>
+        <ul className="mt-2 space-y-1 text-[12px] text-gray-600">
+          <ExcludedRow icon={Lock} label="Personal mailbox" reason="Per data-ingestion governance · email is never scanned" />
+          <ExcludedRow icon={Lock} label="Direct messages"  reason="Per data-ingestion governance · private messaging is never scanned" />
+          <ExcludedRow icon={Lock} label="Personal Drive"   reason="Per data-ingestion governance · personal folders are never scanned" />
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function ExcludedRow({ icon: Icon, label, reason }) {
+  return (
+    <li className="flex items-start gap-2.5 px-3 py-2 rounded-md bg-gray-50 border border-gray-200">
+      <Icon className="w-3.5 h-3.5 text-gray-400 shrink-0 mt-0.5" strokeWidth={1.75} />
+      <div className="flex-1 min-w-0">
+        <span className="font-medium text-gray-700">{label}</span>
+        <span className="text-gray-300 mx-1.5">·</span>
+        <span className="text-gray-500">{reason}</span>
+      </div>
+    </li>
+  );
+}
+
+/* ─── Tab content · Audit log ────────────────────────────────────────── */
+
+const AUDIT_ML = [
+  { ts: "2026-05-29 · 14:32:08Z", actor: "Hà Vy",              action: "Session created",                  detail: "Quick-initiate · 3 sources selected · review deadline 2026-06-08 17:00", severity: "low" },
+  { ts: "2026-05-29 · 14:32:15Z", actor: "System",             action: "Connector scope validated",         detail: "Jira · GitHub · Google Drive · all within OAuth scope",                  severity: "low" },
+  { ts: "2026-05-29 · 14:32:18Z", actor: "System",             action: "Seeding job decomposed",            detail: "3 source tasks queued · estimated 7 minutes",                            severity: "low" },
+  { ts: "2026-05-29 · 14:33:42Z", actor: "System",             action: "Jira extraction completed",         detail: "47 tickets · 6 months · 2,184 comments",                                 severity: "low" },
+  { ts: "2026-05-29 · 14:34:01Z", actor: "System",             action: "GitHub extraction started",         detail: "18 of 23 shared repos in progress",                                      severity: "low" },
+  { ts: "2026-05-29 · 14:34:15Z", actor: "Hà Vy",              action: "Added priority prompt",             detail: "Focus on payment-service migration · weighted +0.3 for interview",       severity: "low" },
+];
+
+const AUDIT_PA = [
+  { ts: "2026-05-27 · 09:14:22Z", actor: "Hà Vy",              action: "Session created",                  detail: "Quick-initiate · Salesforce · SharePoint · Calendar",                    severity: "low" },
+  { ts: "2026-05-27 · 09:18:04Z", actor: "System",             action: "Seeding completed",                 detail: "286 items pulled · 4 knowledge gaps inferred",                           severity: "low" },
+  { ts: "2026-05-28 · 14:02:18Z", actor: "Phương Anh Nguyễn",  action: "Voice interview started",           detail: "Scheduled session begun · estimated 45 minutes",                         severity: "low" },
+  { ts: "2026-05-28 · 14:47:53Z", actor: "Phương Anh Nguyễn",  action: "Voice interview signed",            detail: "Transcript reviewed and signed off · awaiting Manager review",           severity: "medium" },
+  { ts: "2026-05-28 · 16:31:09Z", actor: "System",             action: "Sensitivity classification",        detail: "12 items flagged for sensitive-content review",                          severity: "medium" },
+  { ts: "2026-05-29 · 08:04:11Z", actor: "System",             action: "Awaiting Manager review",           detail: "Transcript ready · 4 days until review deadline",                        severity: "medium" },
+];
+
+function AuditTab({ session }) {
+  const rows = session.urlSlug === "phuong-anh" ? AUDIT_PA : AUDIT_ML;
+  return (
+    <div className="space-y-3">
+      <div className="flex items-end justify-between gap-2">
+        <div>
+          <SectionLabel>Audit log · per-item lineage</SectionLabel>
+          <p className="text-[12px] text-gray-500 mt-1 leading-relaxed">
+            Immutable record of every action on this session. Per QA-INT-01 §2.3.
+          </p>
+        </div>
+        <span className="text-[10px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>
+          {rows.length} events
+        </span>
+      </div>
+
+      <ul className="space-y-1.5">
+        {rows.slice().reverse().map((r, i) => (
+          <AuditRow key={i} {...r} />
+        ))}
+      </ul>
+
+      <button
+        type="button"
+        className="w-full h-9 rounded-md border border-gray-200 bg-white hover:bg-gray-50 text-[12px] text-gray-600 inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20"
+      >
+        <History className="w-3.5 h-3.5" strokeWidth={1.75} />
+        Show all events
+      </button>
+    </div>
+  );
+}
+
+function AuditRow({ ts, actor, action, detail, severity }) {
+  const leftCls =
+    severity === "high"   ? "border-l-rose-500"   :
+    severity === "medium" ? "border-l-yellow-500" :
+                            "border-l-gray-200";
+  return (
+    <li className={`rounded-md border border-gray-200 bg-white px-3 py-2 border-l-2 ${leftCls}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] text-gray-900 font-medium leading-snug">{action}</p>
+          <p className="text-[12px] text-gray-600 mt-0.5 leading-snug">{detail}</p>
+        </div>
+        <div className="text-right shrink-0">
+          <p className="text-[11px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{ts}</p>
+          <p className="text-[10px] text-gray-500 mt-0.5">{actor}</p>
+        </div>
+      </div>
+    </li>
+  );
+}
+
+/* ─── Tab content · Settings ─────────────────────────────────────────── */
+
+function SettingsTab({ session }) {
+  return (
+    <div className="space-y-6">
+      <div>
+        <SectionLabel>Session details</SectionLabel>
+        <article className="mt-2 rounded-lg border border-gray-200 bg-white divide-y divide-gray-200">
+          <SettingsRow label="Session ref"      value={session.sessionRef} mono />
+          <SettingsRow label="Anchored at"      value={session.anchoredAt} mono />
+          <SettingsRow label="Scope hash"       value={session.scopeHash}  mono />
+          <SettingsRow label="Offboarder"       value={`${session.offboarder} · ${session.role}`} />
+          <SettingsRow label="Successor"        value={session.successor} />
+        </article>
+      </div>
+
+      <div>
+        <SectionLabel>Review deadline</SectionLabel>
+        <article className="mt-2 rounded-lg border border-gray-200 bg-white p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[13px] text-gray-900 font-medium">{session.deadline}</p>
+              <p className="text-[11px] text-gray-500 mt-0.5">{session.daysLeft} days remaining</p>
+            </div>
+            <button
+              type="button"
+              className="h-8 px-3 rounded-md border border-gray-200 bg-white hover:bg-gray-50 text-[12px] text-gray-700 inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20"
+            >
+              <PauseCircle className="w-3.5 h-3.5" strokeWidth={1.75} />
+              Request extension
+            </button>
+          </div>
+        </article>
+      </div>
+
+      <div>
+        <SectionLabel>Notifications</SectionLabel>
+        <article className="mt-2 rounded-lg border border-gray-200 bg-white divide-y divide-gray-200">
+          <SettingsToggle label="Notify me on phase transitions" enabled />
+          <SettingsToggle label="Notify me when sensitivity-flagged items appear" enabled />
+          <SettingsToggle label="Daily summary email" />
+        </article>
+      </div>
+
+      <div>
+        <h2 className="text-[10px] uppercase tracking-[0.2em] text-rose-600 font-medium">Danger zone</h2>
+        <article className="mt-2 rounded-lg border-2 border-rose-200 bg-rose-50/40 p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[13px] text-gray-900 font-medium">Cancel session</p>
+              <p className="text-[12px] text-gray-700 mt-0.5 leading-relaxed">
+                Discards seeded context. {session.offboarder} will not be interviewed. This is permanent.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="h-8 px-3 rounded-md border border-rose-300 bg-white hover:bg-rose-50 text-[12px] text-rose-700 inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-rose-500/20 shrink-0"
+            >
+              <X className="w-3.5 h-3.5" strokeWidth={1.75} />
+              Cancel session
+            </button>
+          </div>
+        </article>
+      </div>
+    </div>
+  );
+}
+
+function SettingsRow({ label, value, mono }) {
+  return (
+    <div className="flex items-center justify-between px-4 py-2.5 text-[12px]">
+      <span className="text-gray-500">{label}</span>
+      <span
+        className="text-gray-900 font-medium text-right truncate ml-3"
+        style={mono ? { fontFamily: "ui-monospace, Menlo, monospace" } : undefined}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function SettingsToggle({ label, enabled }) {
+  return (
+    <div className="flex items-center justify-between px-4 py-2.5 text-[12px]">
+      <span className="text-gray-700">{label}</span>
+      <span
+        className={`inline-flex h-4 w-7 items-center rounded-full transition-colors ${
+          enabled ? "bg-violet-600" : "bg-gray-200"
+        }`}
+        title={enabled ? "On" : "Off"}
+      >
+        <span
+          className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+            enabled ? "translate-x-3.5" : "translate-x-0.5"
+          }`}
+        />
+      </span>
+    </div>
   );
 }

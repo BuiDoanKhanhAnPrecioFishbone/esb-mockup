@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import {
   ChevronLeft, ChevronRight, ChevronDown, X,
   Search, Filter, MoreHorizontal, Bell, Plus, Settings,
@@ -95,7 +96,7 @@ const SESSIONS_ACTIVE = [
     urgency: "critical",
     statusText: "Awaiting your initiation",
     activeDetail: "HR sync detected · 38 minutes ago",
-    action: { label: "Start setup", primary: true, route: "/session/sess-kltran/setup" },
+    action: { label: "Start setup", primary: true, route: "/session/new" },
     successor: null,
   },
   {
@@ -108,7 +109,7 @@ const SESSIONS_ACTIVE = [
     urgency: "in-progress",
     statusText: "Context seeding in progress",
     activeDetail: "4m 12s elapsed · ~4m remaining",
-    action: { label: "Open session", primary: false, route: "/session/sess-minhle" },
+    action: { label: "Open session", primary: false, route: "/session/minh-le" },
     successor: "Trần Hữu Nam",
   },
   {
@@ -121,7 +122,7 @@ const SESSIONS_ACTIVE = [
     urgency: "needs-action",
     statusText: "Awaiting your review",
     activeDetail: "Signed by Phương Anh · 38 minutes ago",
-    action: { label: "Review transcript", primary: true, route: "/session/sess-pha" },
+    action: { label: "Review transcript", primary: true, route: "/session/phuong-anh" },
     successor: "Đặng Khải Hoàn",
   },
 ];
@@ -146,9 +147,16 @@ const ACTIVITY = [
   { ts: "4 hours ago", actor: "Hà Vy",             text: "Added 3 priority prompts to Minh Lê's session",  severity: "low" },
 ];
 
-export default function HaVyHandoverDashboard() {
-  const [stepIdx, setStepIdx] = useState(0);
+export default function HaVyHandoverDashboard({ embedded = false, view = "active" } = {}) {
+  const [stepIdx, setStepIdx] = useState(() => {
+    const i = FLOW.findIndex((s) => s.id === view);
+    return i >= 0 ? i : 0;
+  });
   const step = FLOW[stepIdx];
+
+  if (embedded) {
+    return <StepRenderer id={step.id} />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col text-gray-900" style={{ fontFamily: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif' }}>
@@ -285,10 +293,13 @@ function ActiveDashboard() {
           <SectionLabel count={SESSIONS_ACTIVE.length}>Active sessions</SectionLabel>
           {SESSIONS_ACTIVE.map((s) => <SessionCard key={s.id} session={s} />)}
 
-          <button className="w-full h-10 rounded-md border border-dashed border-gray-300 text-sm text-gray-500 hover:text-gray-700 hover:border-gray-400 inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20">
+          <Link
+            href="/session/new"
+            className="w-full h-10 rounded-md border border-dashed border-gray-300 text-sm text-gray-500 hover:text-gray-700 hover:border-gray-400 inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20"
+          >
             <Plus className="w-3.5 h-3.5" />
             Create a manual handover session
-          </button>
+          </Link>
         </div>
 
         <div className="space-y-3">
@@ -447,12 +458,13 @@ function SessionCard({ session }) {
   const subStage = getSubStage(session.subStageId);
 
   return (
-    <article
-      className={`rounded-lg border bg-white transition-all hover:border-gray-300 hover:shadow-sm cursor-pointer ${cardCls}`}
+    <Link
+      href={session.action.route}
+      className={`block rounded-lg border bg-white transition-all hover:border-gray-300 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 ${cardCls}`}
       style={leftBorder ? { borderLeft: leftBorder } : undefined}
       title={`Opens ${session.action.route}`}
     >
-      <div className="p-4 flex items-start gap-4">
+      <article className="p-4 flex items-start gap-4">
         <div className={`w-10 h-10 rounded-full text-[11px] font-semibold inline-flex items-center justify-center shrink-0 border ${
           isUrgent ? "bg-rose-50 text-rose-700 border-rose-200"
             : needsAction ? "bg-emerald-50 text-emerald-700 border-emerald-200"
@@ -491,21 +503,21 @@ function SessionCard({ session }) {
         </div>
 
         <div className="flex flex-col items-end gap-2 shrink-0">
-          <button className={`h-8 px-3 rounded-md text-sm font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 ${
+          <span className={`h-8 px-3 rounded-md text-sm font-medium inline-flex items-center gap-1.5 transition-colors ${
             session.action.primary
-              ? "bg-violet-600 hover:bg-violet-700 text-white focus:ring-violet-500/30"
-              : "border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 focus:ring-violet-500/20"
+              ? "bg-violet-600 group-hover:bg-violet-700 text-white"
+              : "border border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
           }`}>
             {session.action.label}
             <ArrowRight className="w-3 h-3" />
-          </button>
+          </span>
           <span className="text-[10px] text-gray-400 inline-flex items-center gap-1" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>
             <ExternalLink className="w-2.5 h-2.5" />
             {session.action.route}
           </span>
         </div>
-      </div>
-    </article>
+      </article>
+    </Link>
   );
 }
 

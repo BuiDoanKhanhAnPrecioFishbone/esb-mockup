@@ -28,13 +28,13 @@ Claude will:
 - Confirm in one sentence what it's about to do
 - Save it, push it, and tell you the URL
 
-### 🎨 "Save this artifact" — for a new mockup
+### 🎨 "Save this artifact" — for a new mockup or page update
 
 Use right after Claude has drawn / rendered something in the chat that you like.
 
-> "save this artifact" · "put this on the mockup site" · "make this viewable" · "ship the artifact"
+> "save this artifact" · "put this on the mockup site" · "make this viewable" · "ship the artifact" · "update the dashboard with this" · "replace the Stages tab with this"
 
-Claude saves the artifact as a new mockup. You get a URL like `/m/ha-vy-dashboard` to share with teammates.
+Claude figures out which page to update. If it's a new screen, it adds a new route. If it's a change to an existing page (the dashboard, a session tab, the sidebar), Claude edits that page directly. You get the URL to visit when it's done — typically `/`, `/session/[id]`, or a new route like `/admin/connectors`.
 
 ### 📝 "Log this decision" — for a rule we agreed on
 
@@ -95,10 +95,15 @@ Claude writes it into the project's design log. The next person (or the next moc
 
 - **Main URL:** the Vercel deployment (ask your tech lead for the link, then bookmark it).
 - **Password:** the team password (ask verbally — don't share in chat or commits).
-- **Direct mockup URL:** `<main-url>/m/<slug>` — Claude tells you the slug when you ship.
-- **Home page:** lists all mockups grouped by sprint (S0, S1, S2, …). Each card shows the persona and use case.
+- **The site IS a real app.** Open the main URL and you land on Hà Vy's dashboard. Use the left sidebar to navigate to a session, the spec traces, or the team guide.
+- **Key routes:**
+  - `/` — Dashboard
+  - `/session/new` — Quick initiate
+  - `/session/minh-le` and `/session/phuong-anh` — Session command view
+  - `/spec` — Spec walkthroughs (UC-HO-01 normal flow + edge cases)
+  - `/guide` — This guide
 
-Deploys take **~60 seconds** after `ship it` finishes. If you don't see your update after a minute, hard-refresh (Ctrl+Shift+R / Cmd+Shift+R).
+Claude tells you the route when it ships. Deploys take **~60 seconds**. If you don't see your update after a minute, hard-refresh (Ctrl+Shift+R / Cmd+Shift+R).
 
 ---
 
@@ -140,10 +145,11 @@ You'll notice it — Claude won't fire "ship it" reliably and may ask basic ques
 | Save the artifact Claude just drew | *"save this artifact"* or *"ship the artifact"* |
 | Save a rule or decision you agreed on | *"log this decision"* or *"update the context"* |
 | Save everything from this chat (mixed) | *"ship it"* or *"save everything"* |
-| See it live | Open `<main-url>/m/<slug>` (Claude tells you the slug) |
+| See it live | Open the route Claude tells you — e.g. `/`, `/session/minh-le`, or a new route |
 | Undo something | *"revert the last commit"* or *"undo what you just did"* |
-| Start a new mockup from scratch | *"draw a mockup for [persona] doing [task] in [state]"* |
-| Update an existing mockup | *"on /m/some-slug, change X to Y, then ship"* |
+| Update an existing page | *"on the dashboard, change X to Y, then ship"* or *"in the Stages tab, …"* |
+| Add a brand-new page | *"add a /knowledge-graph page that shows ... then ship"* |
+| Tweak the app sidebar | *"add a 'Reports' link to the sidebar pointing to /reports, then ship"* |
 
 ---
 

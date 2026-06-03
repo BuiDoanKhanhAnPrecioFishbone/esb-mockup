@@ -23,7 +23,7 @@ The conversation has produced decisions or shifts that affect future mockup work
 
 Use even for small changes — many small CL entries beat one big retroactive edit later.
 
-**Not for visual artifacts.** If the user wants to save a JSX/React artifact Claude just generated in the chat (or any visual component to render at `/m/<slug>`), that's `apply-to-mockup`'s job, not this one. If they want both — log the decision *and* update or add a mockup — do this skill first (so the new context is in place), then chain into `apply-to-mockup` as a second commit.
+**Not for visual artifacts or app changes.** If the user wants to save a JSX artifact Claude generated in chat, update a part of the app (dashboard, a session tab, the sidebar), or add a new route, that's `apply-to-mockup`'s job — not this one. If they want both — log the decision *and* update the UI to follow it — do this skill **first** (so the new context is the source of truth), then chain into `apply-to-mockup` as a second commit.
 
 ## What to do
 
@@ -63,7 +63,7 @@ Never:
 - Don't invent CL numbers. Always grep the change log file for the current highest `CL-###` and add 1. If two entries are added in one commit, they get consecutive IDs (CL-087, CL-088).
 - Don't restructure the snapshot beyond the targeted edits. The numbered §sections, the tables, and the footer are load-bearing for downstream readers (including `apply-to-mockup`).
 - Don't capture things that are still being deliberated. If the user is mid-thought, ask whether to log the final position or just a TBD entry.
-- Don't touch `components/mockups/` or `lib/mockups-registry.ts` from this skill — that's `apply-to-mockup`'s territory.
+- Don't touch `components/mockups/`, `components/app/`, or anything under `app/` from this skill — that's `apply-to-mockup`'s territory. This skill writes only to docs.
 - Don't open a PR unless the user explicitly asks. Direct push to `main` is the default, matching the rest of the workflow.
 - Don't modify `middleware.ts`, `app/api/auth/`, or `app/login/`.
 
@@ -76,4 +76,4 @@ Report back, briefly:
 - The branch and commit SHA / URL if available.
 - A note that the next `apply-to-mockup` call — from this chat or any future one — will now see the new context.
 
-If a captured change implies a follow-up mockup edit (e.g., "all critical states use rose 2px accent" → S2/S3/S4 amber-era mockups need updating), say so explicitly and offer to chain into `apply-to-mockup`.
+If a captured change implies a follow-up UI edit (e.g., "all critical states use a 2px rose left-edge accent" → the dashboard's urgent session card already uses this pattern but the Settings Danger Zone doesn't), say so explicitly and offer to chain into `apply-to-mockup`. Reference the affected surface by route, not by abstract sprint name (`/`, `/session/<id>?tab=settings`).

@@ -24,18 +24,18 @@ If the user is explicit about which workflow they want (e.g. *"save this artifac
 ## What to do
 
 1. **Survey the chat for saveable output.** Identify each independently:
-   - **Visual artifacts** — any JSX/React artifact Claude rendered (this turn or recent turns) that the user wants live at `/m/<slug>`. Includes "remix this existing mockup with X change."
-   - **Written decisions** — any design rule, CL-worthy entry, persona change, sprint status shift, UC behavior change, new/resolved TBD, or QA-INT-01 status update.
+   - **App / UI changes** — any JSX artifact Claude rendered, any in-chat agreement to edit a specific surface ("update the dashboard's session card"), any agreement to add a new route ("build /admin/connectors"), or any tweak to the sidebar / notifications / top bar. All of these go through `apply-to-mockup`.
+   - **Written decisions** — any design rule, CL-worthy entry, persona change, sprint status shift, UC behavior change, new/resolved TBD, or QA-INT-01 status update. These go through `update-context`.
 2. **Pick the plan based on what's present:**
-   - Only visual artifacts → run `apply-to-mockup` rules only (see `.claude/skills/apply-to-mockup/SKILL.md` and the "How to add a mockup" section of `CLAUDE.md`).
+   - Only UI changes → run `apply-to-mockup` rules only (see `.claude/skills/apply-to-mockup/SKILL.md` and the "How to update the app" section of `CLAUDE.md`).
    - Only written decisions → run `update-context` rules only (see `.claude/skills/update-context/SKILL.md` and the "How to update context" section of `CLAUDE.md`).
-   - **Both** → run `update-context` **first**, then `apply-to-mockup`. Two separate commits. The mockup work consumes the freshly-updated context.
+   - **Both** → run `update-context` **first**, then `apply-to-mockup`. Two separate commits. The UI work consumes the freshly-updated context.
    - Neither → tell the user there's nothing saveable yet and stop. Don't push empty commits.
-3. **Confirm before writing files.** One short paragraph: "I'll log CL-### (…) via update-context, then ship `/m/<slug>` via apply-to-mockup. OK?" Use the user's own phrasing. Skip the confirm only if the user explicitly told you to skip ("just ship it, no preview").
-4. **Execute each sub-workflow in full** — read its target files, follow its rules (CL numbering, slug conventions, palette guards, never-touch list), and push each as its own commit with the commit-message format that sub-workflow specifies.
+3. **Confirm before writing files.** One short paragraph: *"I'll log CL-### (…) via update-context, then edit the Settings tab via apply-to-mockup. Two commits. OK?"* Name the route or surface, not a slug. Skip the confirm only if the user explicitly says to ("just ship it, no preview").
+4. **Execute each sub-workflow in full** — read its target files, follow its rules (CL numbering, file-routing cheat sheet, palette guards, never-touch list), and push each as its own commit with the commit-message format that sub-workflow specifies.
 5. **Report at the end:**
    - For context: CL IDs added and snapshot §sections touched.
-   - For mockup: slug(s) shipped, `/m/<slug>` route(s), reminder that Vercel takes ~60s.
+   - For UI: the route(s) the user should open (e.g. `/`, `/session/minh-le?tab=settings`, or a brand-new `/admin/connectors`), the file(s) changed, and a reminder that Vercel takes ~60s.
    - Both commit SHAs / URLs if available.
 
 ## Never
@@ -49,8 +49,10 @@ If the user is explicit about which workflow they want (e.g. *"save this artifac
 
 ## Quick examples
 
-- *"Ship it"* after Claude rendered an artifact and you discussed a new "rose 2px critical accent" rule →
-  1. `update-context`: log `CL-###` for the rose 2px rule, bump §4
-  2. `apply-to-mockup`: save the artifact at `/m/<slug>`
-- *"Save everything"* after only a discussion (no artifact) → `update-context` only.
-- *"Save this"* right after an artifact appeared and no rules were discussed → `apply-to-mockup` only.
+- *"Ship it"* after Claude rendered a new Stages-tab artifact AND you discussed a new "rose 2px critical accent" rule →
+  1. `update-context`: log `CL-###` for the rose 2px rule, bump §4 of the snapshot.
+  2. `apply-to-mockup`: swap the new `StagesTab` JSX into `components/mockups/session-command-view.jsx`, push.
+  3. Tell the user to open `/session/minh-le?tab=stages` once Vercel finishes (~60s).
+- *"Save everything"* after only a discussion (no artifact, no specific surface mentioned) → `update-context` only.
+- *"Save this"* right after an artifact appeared (e.g. a new admin page) → `apply-to-mockup` only — adds the new surface + route + sidebar entry.
+- *"Update the dashboard to show the manager-priority badge and ship it"* → `apply-to-mockup` only — edits `ha-vy-handover-dashboard.jsx`. No context change, no second commit.
