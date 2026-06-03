@@ -3,6 +3,8 @@ import type { ComponentType } from "react";
 import HaVyHandoverDashboard from "@/components/mockups/ha-vy-handover-dashboard.jsx";
 import UcHo01QuickInitiate from "@/components/mockups/uc-ho-01-quick-initiate.jsx";
 import SessionCommandView from "@/components/mockups/session-command-view.jsx";
+import UcHo01NormalFlow from "@/components/mockups/uc-ho-01-normal-flow.jsx";
+import UcHo01EdgeCases from "@/components/mockups/uc-ho-01-edge-cases.jsx";
 
 export type MockupEntry = {
   /** URL slug — used at `/m/<slug>`. Lowercase-kebab. */
@@ -26,38 +28,29 @@ export type MockupEntry = {
 };
 
 /* ─────────────────────────────────────────────────────────────
-   2026-06-02 · registry stripped to the three S1 redesign mockups
-   that embody the current definition · 3-phase lifecycle (CL-088),
-   approved-shared-workspaces-only data ingestion (CL-087), and the
-   command-view route replacing the side drawer (CL-089).
+   2026-06-03 · Sprint 1 registry · 5 active mockups
+
+   The current definition is locked at:
+     · 3-phase user-facing lifecycle (CL-088)
+     · Approved shared workspaces only · no email (CL-087)
+     · /session/[id] command-view route · no side drawer (CL-089)
+     · One-click initiation · progressive-disclosure customize
+
+   The three feature mockups (dashboard, quick-initiate, command-
+   view) are the production-shaped surfaces. The two flow mockups
+   (normal-flow, edge-cases) are the spec-trace overlays — each
+   walks the complete UC-HO-01 v2.1 happy path or edge-case set
+   as a clickable Prev/Next walkthrough, built on the same
+   primitives so dev can compare 1:1.
 
    Previously-registered mockups are intentionally not imported
-   here — the JSX files remain in components/mockups/ for git-
-   history reference but are unreachable via /m/[slug] until
-   re-registered. Recoverable if needed:
-
-     · system-ui-tour                    (S6 canonical demo)
-     · s0-component-library              (S0 foundation)
-     · transactional-gateways            (SZ specialized · Vietnamese)
-     · uc-ho-01-normal-course            (superseded · pre-redesign wizard)
-     · uc-ho-01-alternative-courses      (pre-redesign · AC.2 repurposed)
-     · uc-ho-01-exceptions               (pre-redesign · email→GitHub swept)
-     · uc-ho-05-configure-prompts-draft  (v0.1 DRAFT · pending BA review)
-     · s1-handover-initiation-v2         (canonical S1 v2 · predates the trio)
-     · s1-handover-initiation            (v1 amber · superseded)
-     · s2-capture-verify                 (S2 · amber · needs migration)
-     · s3-kg-commit                      (S3 · amber · needs migration)
-     · s4-onboarding-gen-read            (S4 · amber · needs migration)
-     · dashboard / dashboard-light       (early dashboard explorations)
-     · prototype / hackathon-demo        (early walkthrough prototypes)
-
-   To restore any of the above · add an import line and append the
-   corresponding entry to the `mockups` array. Prior registry
-   content is recoverable from git at SHA
+   here — JSX preserved in components/mockups/ for git history.
+   Prior registry content is recoverable from git at SHA
    71e19d4fd157a4b1aae11974fe00bf18e887b91c.
    ───────────────────────────────────────────────────────────── */
 
 export const mockups: MockupEntry[] = [
+  /* ─── Feature surfaces ─── */
   {
     slug: "ha-vy-handover-dashboard",
     title: "Hà Vy's handover dashboard — multi-session, 3-phase",
@@ -90,6 +83,30 @@ export const mockups: MockupEntry[] = [
     useCases: ["UC-HO-01", "UC-HO-02", "UC-HO-03", "UC-HO-04"],
     tags: ["s1", "session-detail", "tabbed", "command-view", "3-phase", "current"],
     Component: SessionCommandView,
+  },
+
+  /* ─── Spec-trace flow walkthroughs ─── */
+  {
+    slug: "uc-ho-01-normal-flow",
+    title: "UC-HO-01 · Normal flow — 8-state walkthrough",
+    description:
+      "Clickable 8-state walkthrough of the complete UC-HO-01 v2.1 happy path · dashboard entry → quick-initiate (default + customize) → command-view through Phase 1 sub-stages (start → mid-seeding → Knowledge Map ready → Next Actions) → dashboard refreshed at Phase 2. Prev/Next chrome with state selector. Built on the same primitives as the feature surfaces for 1:1 comparison.",
+    sprint: "S1",
+    personas: ["Hà Vy", "Minh Lê", "Khánh Linh Trần", "Phương Anh Nguyễn", "Trần Hữu Nam"],
+    useCases: ["UC-HO-01"],
+    tags: ["s1", "flow", "normal-course", "spec-trace", "current", "comprehensive"],
+    Component: UcHo01NormalFlow,
+  },
+  {
+    slug: "uc-ho-01-edge-cases",
+    title: "UC-HO-01 · Edge cases — E1 through E10",
+    description:
+      "Clickable 10-state coverage of every edge case in UC-HO-01 v2.1 · profile not provisioned (E1) · RBAC unresolvable (E2) · source seeding failure (E3) · classification service paused (E4) · manual initiation (E5) · customize expander (E6) · no integrated sources (E7) · urgent <3 days (E8) · >30% sensitivity exclusion (E9) · paused page (E10). Chrome accent changes per edge-case kind (rose for blocks, yellow for partial/pause, violet for alt, gray for idle).",
+    sprint: "S1",
+    personas: ["Hà Vy", "Minh Lê", "Khánh Linh Trần", "Phương Anh Nguyễn", "Hoàng Anh Lê"],
+    useCases: ["UC-HO-01"],
+    tags: ["s1", "flow", "edge-cases", "spec-trace", "current", "comprehensive"],
+    Component: UcHo01EdgeCases,
   },
 ];
 
