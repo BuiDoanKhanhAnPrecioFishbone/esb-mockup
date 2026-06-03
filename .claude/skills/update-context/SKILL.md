@@ -76,4 +76,4 @@ Report back, briefly:
 - The branch and commit SHA / URL if available.
 - A note that the next `apply-to-mockup` call — from this chat or any future one — will now see the new context.
 
-If a captured change implies a follow-up UI edit (e.g., "all critical states use a 2px rose left-edge accent" → the dashboard's urgent session card already uses this pattern but the Settings Danger Zone doesn't), say so explicitly and offer to chain into `apply-to-mockup`. Reference the affected surface by route, not by abstract sprint name (`/`, `/session/<id>?tab=settings`).
+If a captured change implies a follow-up UI edit (e.g., "all critical states use a 2px rose left-edge accent" → the dashboard's urgent session card already uses this pattern but the Settings Danger Zone doesn't), say so explicitly and offer to chain into `apply-to-mockup`. Reference the affected surface by route, not by abstract sprint name (`/`, `/session/[id]?tab=settings`).

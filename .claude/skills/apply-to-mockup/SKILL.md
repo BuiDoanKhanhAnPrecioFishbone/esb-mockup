@@ -1,6 +1,6 @@
 ---
 name: apply-to-mockup
-description: Update a section, tab, or component of the esb-mockup web app, add a brand-new top-level route, or save a JSX artifact Claude generated in chat — so the team sees the change at the deployed app URL after CI/CD. Use whenever the user wants to add, update, or remix anything visible at `/`, `/session/<id>`, `/spec/...`, or a new route. Common triggers — "save this artifact", "ship the artifact", "put this on the site", "update the dashboard", "on the Stages tab change …", "add a /admin page", "swap the danger zone for …", "make this viewable", "/apply-to-mockup".
+description: Update a section, tab, or component of the esb-mockup web app, add a brand-new top-level route, or save a JSX artifact Claude generated in chat — so the team sees the change at the deployed app URL after CI/CD. Use whenever the user wants to add, update, or remix anything visible at `/`, `/session/[id]`, `/spec/...`, or a new route. Common triggers — "save this artifact", "ship the artifact", "put this on the site", "update the dashboard", "on the Stages tab change …", "add a /admin page", "swap the danger zone for …", "make this viewable", "/apply-to-mockup".
 ---
 
 # apply-to-mockup
