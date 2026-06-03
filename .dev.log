@@ -131,3 +131,120 @@
  ⚠ Fast Refresh had to perform a full reload due to a runtime error.
  ✓ Compiled in 572ms (733 modules)
  GET /session/minh-le?tab=audit 200 in 636ms
+ GET /session/minh-le 200 in 109ms
+ GET /session/minh-le?tab=stages 200 in 144ms
+ GET /session/minh-le?tab=data 200 in 121ms
+ GET /session/minh-le?tab=audit 200 in 126ms
+ GET /session/minh-le?tab=settings 200 in 139ms
+ GET /session/phuong-anh 200 in 191ms
+ GET /session/phuong-anh?tab=data 200 in 150ms
+ GET /session/phuong-anh?tab=audit 200 in 138ms
+ GET /session/phuong-anh?tab=settings 200 in 143ms
+ ✓ Compiled /session/new in 221ms (443 modules)
+ GET /session/new 200 in 420ms
+ GET /session/new?customize=1 200 in 92ms
+ GET / 200 in 162ms
+ ✓ Compiled /spec in 339ms (742 modules)
+ GET /spec 200 in 697ms
+ ✓ Compiled in 242ms (301 modules)
+ ✓ Compiled in 252ms (301 modules)
+ GET /session/minh-le?tab=audit 200 in 158ms
+ ✓ Compiled in 174ms (301 modules)
+ GET /session/minh-le?tab=audit 200 in 77ms
+ GET /session/minh-le?tab=audit 200 in 51ms
+ ✓ Compiled in 132ms (301 modules)
+ ✓ Compiled in 171ms (301 modules)
+ GET /session/minh-le?tab=audit 200 in 190ms
+ GET /session/minh-le?tab=audit 200 in 51ms
+ ✓ Compiled in 175ms (301 modules)
+ GET /session/minh-le?tab=audit 200 in 94ms
+ ✓ Compiled in 102ms (301 modules)
+ ✓ Compiled in 139ms (301 modules)
+ GET /session/minh-le?tab=audit 200 in 87ms
+ ✓ Compiled in 186ms (301 modules)
+ GET /session/minh-le?tab=audit 200 in 124ms
+ GET /session/minh-le?tab=audit 200 in 43ms
+ ✓ Compiled in 120ms (301 modules)
+ ✓ Compiled in 160ms (301 modules)
+ GET /session/minh-le?tab=audit 200 in 106ms
+ GET /session/minh-le?tab=audit 200 in 47ms
+ ✓ Compiled in 168ms (301 modules)
+ GET /session/minh-le?tab=audit 200 in 47ms
+ ✓ Compiled in 152ms (301 modules)
+ ✓ Compiled in 235ms (301 modules)
+ GET /session/minh-le?tab=audit 200 in 226ms
+ ✓ Compiled in 170ms (301 modules)
+ GET /session/minh-le?tab=audit 200 in 78ms
+ GET /session/minh-le?tab=audit 200 in 39ms
+ ✓ Compiled in 157ms (301 modules)
+ ✓ Compiled in 148ms (301 modules)
+ GET /session/minh-le?tab=audit 200 in 110ms
+ ✓ Compiled in 171ms (301 modules)
+ GET /session/minh-le?tab=audit 200 in 99ms
+ GET /session/minh-le?tab=audit 200 in 39ms
+ ✓ Compiled in 172ms (301 modules)
+ ✓ Compiled in 163ms (301 modules)
+ ✓ Compiled in 244ms (301 modules)
+ GET /session/minh-le?tab=audit 200 in 273ms
+ GET /session/minh-le?tab=audit 200 in 60ms
+ GET /session/minh-le?tab=audit 200 in 45ms
+ ✓ Compiled in 229ms (301 modules)
+ ✓ Compiled in 182ms (301 modules)
+ GET /session/minh-le?tab=audit 200 in 248ms
+ ✓ Compiled in 208ms (301 modules)
+ GET /session/minh-le?tab=audit 200 in 40ms
+ GET /session/minh-le?tab=audit 200 in 52ms
+ ✓ Compiled in 113ms (301 modules)
+ ✓ Compiled in 115ms (301 modules)
+ GET /session/minh-le?tab=audit 200 in 91ms
+ GET /session/minh-le?tab=audit 200 in 35ms
+ ✓ Compiled in 150ms (301 modules)
+ GET /session/minh-le?tab=audit 200 in 95ms
+ GET / 200 in 38ms
+ GET /session/minh-le 200 in 42ms
+ GET /session/minh-le?tab=stages 200 in 41ms
+ GET /session/minh-le?tab=data 200 in 40ms
+ GET /session/minh-le?tab=audit 200 in 38ms
+ GET /session/minh-le?tab=settings 200 in 44ms
+ ✓ Compiled in 150ms (301 modules)
+ ✓ Compiled in 176ms (301 modules)
+ GET /session/minh-le?tab=settings 200 in 176ms
+ ✓ Compiled in 148ms (301 modules)
+ GET /session/minh-le?tab=settings 200 in 42ms
+ GET /session/minh-le?tab=settings 200 in 28ms
+ ✓ Compiled in 150ms (301 modules)
+ GET /session/minh-le?tab=settings 200 in 153ms
+ ✓ Compiled in 167ms (301 modules)
+ ✓ Compiled in 183ms (301 modules)
+ GET /session/minh-le?tab=settings 200 in 294ms
+ ✓ Compiled in 1076ms (835 modules)
+ GET /session/minh-le?tab=settings 200 in 1114ms
+ GET /session/minh-le?tab=settings 200 in 39ms
+ GET /session/minh-le?tab=settings 200 in 33ms
+ ✓ Compiled in 196ms (301 modules)
+ ✓ Compiled in 211ms (301 modules)
+ ✓ Compiled in 171ms (301 modules)
+ GET /session/minh-le?tab=settings 200 in 191ms
+ ✓ Compiled in 59ms (287 modules)
+ GET /session/minh-le?tab=settings 200 in 68ms
+ GET /session/minh-le?tab=settings 200 in 45ms
+ ✓ Compiled in 124ms (301 modules)
+ GET /session/minh-le?tab=settings 200 in 36ms
+ ✓ Compiled in 152ms (301 modules)
+ ✓ Compiled in 228ms (301 modules)
+ GET /session/minh-le?tab=settings 200 in 286ms
+ ⨯ Failed to generate static paths for /session/[id]:
+[Error [PageNotFoundError]: Cannot find module for page: /session/[id]/page] {
+  type: 'PageNotFoundError',
+  code: 'ENOENT'
+}
+ ✓ Compiled in 662ms (835 modules)
+ GET /session/minh-le?tab=settings 200 in 1148ms
+ GET /session/minh-le?tab=settings 200 in 56ms
+ GET /session/minh-le?tab=settings 200 in 53ms
+ ✓ Compiled in 155ms (301 modules)
+ ✓ Compiled in 154ms (301 modules)
+ GET /session/minh-le?tab=settings 200 in 123ms
+ GET /session/minh-le?tab=settings 200 in 55ms
+ ✓ Compiled in 991ms (734 modules)
+ GET /session/minh-le?tab=settings 200 in 154ms

@@ -36,8 +36,18 @@ const PRIMARY_NAV: NavItem[] = [
     icon: Briefcase,
     match: (p) => p.startsWith("/session"),
   },
-  { label: "Knowledge graph", icon: Network, disabled: true, hint: "S3 · soon" },
-  { label: "Settings", icon: Settings, disabled: true, hint: "SZ · soon" },
+  {
+    label: "Knowledge graph",
+    href: "/knowledge-graph",
+    icon: Network,
+    match: (p) => p.startsWith("/knowledge-graph"),
+  },
+  {
+    label: "Settings",
+    href: "/settings",
+    icon: Settings,
+    match: (p) => p.startsWith("/settings"),
+  },
 ];
 
 const SECONDARY_NAV: NavItem[] = [
