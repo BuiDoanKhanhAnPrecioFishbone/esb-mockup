@@ -4,11 +4,15 @@
 
 *Updated 2026-06-02 · email removed as an automated data source per data-ingestion governance rule; persona material types updated to use approved shared workspaces only.*
 
+*Updated 2026-06-05 · grill-me session on the Automated Handover Knowledge Lake architecture (`ART_EEP_Architecture_Summary_EN.md`). Scope narrowed (Peer Programming removed), Trello selected as the POC showcase source, layered sanitization + hybrid security tiering + Knowledge Graph consumer-plane model adopted, `MASTER.md` scoped to the Consumer plane, English-only showcase. See CL-090–097.*
+
 ---
 
 ## 1. Project Overview
 
 **ART-EEP** is an enterprise Knowledge Graph platform for employee handover and onboarding, built on Azure. It captures departing employees' tacit knowledge via AI-guided voice interviews, commits verified content to a knowledge graph, and generates personalized onboarding playbooks for successors with active learning correction loops.
+
+**Scope (CL-090):** 100% focused on the **Automated Handover Knowledge Lake**. Peer Programming / developer-performance evaluation is explicitly out of scope — it bloated the system and diluted the core message.
 
 **Hackathon scoring:** 40% Agentic Workflow / 40% Human-in-the-Loop / 20% Token Efficiency
 
@@ -23,14 +27,19 @@
 | Semantic Kernel Orchestrator with Planner Agent | Coordinates Worker/Expert routing |
 | ComplexityScore-based dynamic Worker/Expert routing | Phi-3/GPT-4o-mini for low complexity, GPT-4o for high |
 | Confidence-gate escalation Worker → Expert | Quality control at each tier |
-| Pre-retrieval ACL trimming at Azure AI Search + Cosmos DB partition level | Security by design |
-| Microsoft Purview as mandatory PII gate (no fallback) | Compliance non-negotiable |
+| Pre-retrieval ACL trimming at Azure AI Search + Cosmos DB partition level | Security by design (see CL-093 Tier-1 stub exception) |
+| Microsoft Purview as mandatory PII gate (no fallback) | Compliance non-negotiable (now fronted by CL-092 pre-passes) |
 | Cosmos DB Integrated Cache (Redis rejected) | Simpler architecture |
 | Section Blueprint primitive for dynamic N-section generation | Avoids hardcoded structure |
 | Dynamic N-domain coverage in voice interview | Replaces hardcoded 4 sections |
 | GraphRAG dual-strategy retrieval | Combines graph + vector search |
 | Atomic KG commit pipeline with rollback | Data integrity |
 | **Data-ingestion scope · shared workspaces only** | Automated collection restricted to Jira · GitHub · Google Drive (shared) · SharePoint · Trello · Microsoft Planner. Email, personal directories, and individual messaging are NEVER scanned. Personal files only via manual upload. |
+| **Flexible multi-source model · Trello POC (CL-091)** | The source mix is driven by department / role / position — not a fixed list. The 4-Layer Hard-Filter (time-decay removed · list/status · content-depth · label-priority) is a **source-agnostic ingestion contract**. **Trello is the POC showcase source** (the company's primary third-party system today); other sources map onto the same four layers. |
+| **Hybrid Sanitization Pipeline (CL-092)** | Filter-at-capture: Regex redaction (0-token) → Few-Shot neutralization → **Purview as the authoritative mandatory gate**. The two pre-passes sit in front of Purview; they do not replace it. |
+| **Hybrid Security Tiering (CL-093)** | Tier auto-assigned from Purview sensitivity + source labels. **Tier 2** (sensitive / legal) ghosted via strict ACL trim. **Tier 1** (operational, access-controlled) returns a metadata-only stub for the Lock + "Request access" affordance — a narrow exception to pre-retrieval ACL trimming. |
+| **Knowledge Graph Consumer plane (CL-094)** | Progressive Disclosure (central node + 1-hop · double-click expand/collapse) · Contextual-AI quick-start chips (center/zoom/dim) · 0-token hover (stored 15-word `short_summary`) · Timeline + Heatmap split-screen · Prompt Disambiguation on broad queries. |
+| **Feedback triage · commit gate preserved (CL-095)** | Token-free tag-based routing (Critical → real-time alert / Batch → weekly digest). A report immediately flags the node "under review" (0-token). **No correction auto-commits — QA-INT-01 §1.4 stays absolute.** 2-cycle SLA escalation. |
 | **3-phase user-facing lifecycle** | Internal 8-stage pipeline grouped as **Prepare · Capture · Deliver** at every glance-level UI view. Reduces cognitive load. |
 
 ---
@@ -47,11 +56,13 @@
 | **An Quân Vũ** | Platform Admin / IT | — | NEW (Plan v2 CL-068); owns Step Zero |
 
 Each persona has different handover material types · scoped to approved shared workspaces only:
-- **Engineering (Minh Lê)**: Jira tickets, GitHub repos (PR descriptions, commit messages, wiki pages), Google Drive (shared) files
+- **Engineering (Minh Lê)**: Jira tickets, GitHub repos (PR descriptions, commit messages, wiki pages), Google Drive (shared) files. *POC showcase source: Trello (CL-091).*
 - **Sales (Phương Anh)**: Salesforce deals, shared Calendar, SharePoint sales-collateral documents
 - **People Ops (Khánh Linh)**: HRIS records, Notion policy pages, SharePoint policy archive
 
 Email, personal mailboxes, and private direct messages are excluded from automated collection per the data-ingestion governance rule. Where role-specific context lives in email threads, it surfaces through the voice interview (UC-HO-02) or manual file upload, not automated scanning.
+
+**POC showcase rendering (CL-097):** within the Consumer-plane POC showcase, persona names render as diacritic-free latinized handles (`Minh Le`, `Ha Vy`, `@minh.le`). Persona identities are unchanged — only the on-screen string is latinized, and no Vietnamese text appears in the showcase.
 
 ---
 
@@ -80,7 +91,12 @@ Email, personal mailboxes, and private direct messages are excluded from automat
 - Sentence case · active voice · Linear/Notion/Stripe register
 - Named humans not roles ("Hà Vy will review" not "your manager will review")
 - "Sensitive content" not "PII" · "Microsoft Purview" not in user copy
-- Vietnamese system terms preserved in tooltips: "Canonical · Sự thật gốc"
+- Vietnamese system terms preserved in tooltips: "Canonical · Sự thật gốc" *(overridden in the POC showcase — see below)*
+
+### Consumer-plane design system (CL-096 · scoped deviation)
+The **Knowledge Graph Consumer plane / POC showcase** uses the `MASTER.md` "AI-Native Minimal" shell as its **presentation layer only** — indigo `#6366F1` primary, glassmorphism cards, light/dark toggle, `rounded-xl`/`2xl`, soft shadows, floating navbar. This does **NOT** apply to the Management / Capture surfaces (dashboard, quick-initiate, command-view), which stay on the locked light-mode system above. The ART-EEP **semantic palette is preserved as the meaning layer everywhere** — rose = critical / locked, yellow = low-confidence / contested, emerald = verified / canonical, violet = AI signal. Same scoping shape as the Transactional Gateways deviations (CL-077 / CL-078).
+
+**English-only showcase (CL-097):** no Vietnamese text appears in the Consumer-plane showcase. The "Canonical · Sự thật gốc" / bilingual-tooltip rule above is overridden within the showcase — Canonical renders in English only ("Canonical" / "Canonical fact"). Usernames are latinized handles (see §3).
 
 ---
 
@@ -100,6 +116,9 @@ Email, personal mailboxes, and private direct messages are excluded from automat
 - **UC-ON-02** Read Playbook with Inline Knowledge Tools
 - **UC-ON-03** Skill Gap Analysis and Growth Plan
 
+### Consumption plane — Knowledge Graph explorer (NEW · CL-094 / CL-095)
+The successor-facing Knowledge Graph explorer is the **Consumption plane** surface (extends UC-ON-02). Interaction model: Progressive Disclosure, Contextual-AI quick-start chips, 0-token hover via stored `short_summary`, Timeline + Heatmap split-screen, Prompt Disambiguation. The feedback loop (UC-HO-06 / UC-HO-07) runs through **token-free triage** with a contested-flag-on-report and the preserved §1.4 commit gate (CL-095). Three-plane architecture is now explicit: **Management** (dashboard / command-view) · **Capture** (interview / verify) · **Consumption** (KG explorer).
+
 ### Step Zero (Plan v2, NEW)
 - **Z01** Connector Library (browse 8 integrations)
 - **Z02** Connector Setup Wizard (OAuth + scope confirmation)
@@ -118,10 +137,11 @@ Email, personal mailboxes, and private direct messages are excluded from automat
 | **S2 Capture & Verify** | 2 weeks | UC-HO-02, UC-HO-03 | COMPLETED (old amber palette — needs migration) |
 | **S3 KG Commit** | 1.5 weeks | UC-HO-04 | COMPLETED (old amber palette) |
 | **S4 Onboarding Gen & Read** | 2 weeks | UC-ON-01, UC-ON-02 | COMPLETED (old amber palette) |
+| **S-KG Consumption plane (NEW)** | TBD | Knowledge Graph explorer (CL-094) · feedback triage (CL-095) | PENDING — next build · target route `/knowledge-graph` · `MASTER.md` shell |
 | **S5 Skill Gap & Feedback** | 1.5 weeks | UC-ON-03, HO-06, HO-07 | PENDING (also home for QA-INT-01 gap fixes) |
 | **S6 Polish & Demo** | 1 week | Cross-cutting | PENDING |
 
-**Total timeline:** ~12 weeks (was ~7–8 in v1; Step Zero added 2 weeks). Hackathon-compressed mode can cut SZ to 1 week with 2 connectors instead of 8.
+**Total timeline:** ~12 weeks (was ~7–8 in v1; Step Zero added 2 weeks). Hackathon-compressed mode can cut SZ to 1 week with 2 connectors instead of 8. Peer Programming evaluation removed from scope (CL-090).
 
 ---
 
@@ -137,6 +157,8 @@ Email, personal mailboxes, and private direct messages are excluded from automat
 6. Notion (shared workspaces only)
 7. GitHub (shared repos only)
 8. Generic HRIS (BambooHR/Workday adapter)
+
+*Trello is the POC showcase source (CL-091); in the curated connector library it joins the list above as the demonstrated integration.*
 
 **5 Step Zero blockers (TBD-Z1 to TBD-Z5):**
 - TBD-Z1: OAuth scope minimums per connector (IT Security)
@@ -178,6 +200,8 @@ Email, personal mailboxes, and private direct messages are excluded from automat
 | **Gap B (CL-082)** — Per-item lineage view | CL-085 — `LineageDrawer` component | 400px right drawer with 4-event timeline (Created → Verified → Committed → Propagated); opens from Canonical badge in Feature 06 |
 | **Refinement C (CL-083)** — Inline edit diff | CL-086 — Updated `DraftItemEditing` | Original AI text greyed/strikethrough above editable field with "Original · AI-generated" label and QA-INT-01 §1.3 citation in footer |
 
+**§1.4 reaffirmed (CL-095):** the feedback-loop token-free triage changes only *when* and *how* a Manager is notified of a reported error — never *whether* they sign off. A report flags the node "under review" (a 0-token status flag), but no correction auto-commits. §1.4 remains absolute, including for the Batch path and the 2-cycle SLA escalation.
+
 ---
 
 ## 9. Artifact Inventory
@@ -198,6 +222,7 @@ All files in `/mnt/user-data/outputs/`:
 | `arteep-s4-onboarding-gen-read.jsx` | NEEDS MIGRATION | 5 Onboarder screens · old amber palette |
 | `arteep-system-ui-tour.jsx` | **CANONICAL DEMO** | 8 features × 3-4 states · violet/yellow · QA-INT-01 fixes integrated |
 | `arteep-transactional-gateways.jsx` | CANONICAL (specialized) | 3 states · Vietnamese UI |
+| Knowledge Graph explorer (Consumer plane) | NOT YET BUILT | Next build · `MASTER.md` shell · target route `/knowledge-graph` (CL-094 / CL-096 / CL-097) |
 
 ### Documentation
 | File | Purpose |
@@ -207,14 +232,15 @@ All files in `/mnt/user-data/outputs/`:
 | `ARTEEP-master-uc-index.md` | All 10 UCs, dependency matrix, 22 TBDs |
 | `ARTEEP-implementation-plan-v2.md` | V2 with Step Zero, 12-week timeline |
 | `QA-INT-01-Dual-Verification-Rule.md` | Foundational governance rule |
-| `ARTEEP-design-change-log.md` | Living document — 86+ entries |
+| `ARTEEP-design-change-log.md` | Living document — 97+ entries |
 | `Sprint-1-compact.md` | Sprint 1 snapshot (3-phase lifecycle, post-redesign) |
+| `ART_EEP_Architecture_Summary_EN.md` | Grill-me session record — Knowledge Lake architecture (source of CL-090–097) |
 
 ---
 
-## 10. Design Change Log Summary (CL-001 through CL-086+)
+## 10. Design Change Log Summary (CL-001 through CL-097)
 
-86+ entries across these major themes:
+97+ entries across these major themes:
 
 ### S0 Foundation (CL-001 to CL-010)
 English UI · UX writing principles · persona lock · 14-state taxonomy · 2-accent palette · animation budget · 1px borders
@@ -250,11 +276,21 @@ Vietnamese UI deviation · 3 entity badge categories · low-confidence yellow un
 ### QA-INT-01 Adoption (CL-080 to CL-086)
 Foundational governance rule · 3 gaps remediated (`CanonicalBadge`, `LineageDrawer`, inline diff)
 
-### S1 Redesign (CL-087+, 2026-06-02)
+### S1 Redesign (CL-087 to CL-089, 2026-06-02)
 - Drawer pattern (480px right-side) replaced with dedicated full-screen command-view route at `/session/[id]`
 - 8-stage lifecycle compressed to 3 user-facing phases (Prepare · Capture · Deliver) for cognitive simplicity
 - One-click quick-initiate pattern replaces multi-step wizard
 - Email removed as automated data source; CL-015 deprecated and replaced with general data-ingestion governance pattern
+
+### Knowledge Lake Architecture (CL-090 to CL-097, 2026-06-05)
+- Scope narrowed to the Handover Knowledge Lake; Peer Programming removed (CL-090)
+- Flexible multi-source model retained; Trello = POC showcase source; 4-Layer Hard-Filter as a source-agnostic contract (CL-091)
+- Layered sanitization Regex → Few-Shot → Purview, Purview not replaced (CL-092)
+- Hybrid security tiering: Tier-2 ghost / Tier-1 metadata stub exception to ACL trimming (CL-093)
+- Knowledge Graph consumer-plane interaction model: progressive disclosure, contextual chips, 0-token hover, Timeline + Heatmap, prompt disambiguation (CL-094)
+- Feedback triage: contested-flag-on-report, commit gate (§1.4) preserved, 2-cycle SLA escalation; resolves HO-06 TBD-1 (CL-095)
+- `MASTER.md` scoped to the Consumer plane as presentation shell (CL-096)
+- English-only POC showcase; latinized usernames (CL-097)
 
 ---
 
@@ -270,7 +306,7 @@ Foundational governance rule · 3 gaps remediated (`CanonicalBadge`, `LineageDra
 - HO-03 TBD-1 — E-signature standard (Vietnam-specific)
 - ON-01 TBD-2 — Static vs interactive Playbook
 - ON-02 TBD-3 — Mobile parity scope (desktop-first v1 default)
-- HO-06 TBD-1 — SLA for Manager correction review
+- ~~HO-06 TBD-1 — SLA for Manager correction review~~ → **RESOLVED 2026-06-05 (CL-095): 2 weekly cycles, then auto-escalate to the Critical path; sign-off still required.**
 
 ### Step Zero Blockers (Plan v2)
 - TBD-Z1 — OAuth scope minimums per connector
@@ -290,9 +326,9 @@ Foundational governance rule · 3 gaps remediated (`CanonicalBadge`, `LineageDra
 The system reads/writes to:
 - **Azure Key Vault** — OAuth tokens, API keys (Step Zero secrets management)
 - **Microsoft Graph Connectors** — MS-stack source integration platform (scoped to shared workspaces only; email never scanned)
-- **Azure AI Search** — Per-source indexes; pre-retrieval ACL trimming
-- **Cosmos DB Gremlin** — Knowledge Graph; partition-keyed by org
-- **Microsoft Purview** — Mandatory PII gate (no fallback path)
+- **Azure AI Search** — Per-source indexes; pre-retrieval ACL trimming (Tier-1 stub exception per CL-093)
+- **Cosmos DB Gremlin** — Knowledge Graph; partition-keyed by org; stores per-node `short_summary` for 0-token hover (CL-094)
+- **Microsoft Purview** — Mandatory PII gate (no fallback path); fronted by Regex + Few-Shot pre-passes (CL-092)
 - **Entra ID** — RBAC; Platform Admin role distinct from Manager
 - **Azure OpenAI** — GPT-4o-mini (Worker) + GPT-4o (Expert) routing
 - **Semantic Kernel** — Orchestrator + Planner Agent
@@ -305,15 +341,18 @@ The hackathon pitch opens with a 10–15 second Step Zero moment ("Before any ha
 
 1. Hà Vy's Dashboard (3 pending sessions, 3-phase progress visible)
 2. One-click initiate session for Minh Lê (quick-initiate page)
-3. Command-view Overview tab · Phase 1 Prepare · live seeding from Jira / GitHub / Drive
+3. Command-view Overview tab · Phase 1 Prepare · live seeding from Trello (POC source) — 4-Layer Hard-Filter visibly dropping noise
 4. Minh Lê's voice interview (rose recording rings, AI questions with Manager Priority badges)
 5. Phase 2 transcript review with QA-INT-01 inline diff
-6. Phase 3 KG Commit with Canonical Facts surfaced
-7. Trần Hữu Nam's Day 1 playbook with Canonical badge + lineage drawer
-8. Skill Gap analysis
-9. Feedback loop · hallucination reported → Manager reviews → Canonical promotion → propagation
+6. Phase 3 KG Commit with Canonical Facts surfaced (Regex + Few-Shot sanitization shown, Purview behind)
+7. Successor's Knowledge Graph explorer (Consumer plane) — Progressive Disclosure → Contextual-AI chips → 0-token hover → Timeline + Heatmap; Tier-1 locked stub with "Request access"
+8. Trần Hữu Nam's Day 1 playbook with Canonical badge + lineage drawer
+9. Skill Gap analysis
+10. Feedback loop · hallucination reported → node flagged "under review" → token-free triage → Manager reviews → Canonical promotion → propagation
 
-Total runtime: ~3 minutes.
+Total runtime: ~3–4 minutes.
+
+**Pitch spine (CL-090 / business value):** *Data Gravity creates Vendor Lock-in.* Two ROI metrics — **Time-to-Productivity** (onboarding 2 months → 2 weeks) and **Tacit Knowledge Capture Rate** (X risk factors + Y undocumented procedures captured before an employee leaves). The Knowledge Graph explorer beat (step 7) runs on Trello-sourced data in the English-only Consumer-plane shell.
 
 ---
 
@@ -321,14 +360,15 @@ Total runtime: ~3 minutes.
 
 If picking up where this left off, the next actionable items are:
 
-1. **Stakeholder approval needed** on the 6 Plan v2 decision points (especially Step Zero blockers)
-2. **Migration sweep** — S2/S3/S4 artifacts need violet/yellow palette migration
-3. **S5 build** — UC-ON-03 (Skill Gap), UC-HO-06 (Report Hallucination), UC-HO-07 (Correction Review) need full per-sprint artifacts
-4. **UC-HO-01 v2 governance spec update** — reflect 3-phase lifecycle + data-ingestion governance (CL-015 deprecation)
-5. **Master UC Index refresh** — reflect Step Zero per CL-072 and S1 redesign per CL-087+
-6. **Demo script** — write the 3-minute narrative tying all the states together with the 3-phase lifecycle visible throughout
+1. **Build the Knowledge Graph explorer (Consumer plane)** — the next surface · `MASTER.md` shell · route `/knowledge-graph` · progressive disclosure, contextual chips, 0-token hover, Timeline + Heatmap, Tier-1/Tier-2 rendering, feedback triage (CL-094–097)
+2. **Stakeholder approval needed** on the 6 Plan v2 decision points (especially Step Zero blockers)
+3. **Migration sweep** — S2/S3/S4 artifacts need violet/yellow palette migration
+4. **S5 build** — UC-ON-03 (Skill Gap), UC-HO-06 (Report Hallucination), UC-HO-07 (Correction Review) need full per-sprint artifacts
+5. **UC-HO-01 v2 governance spec update** — reflect 3-phase lifecycle + data-ingestion governance (CL-015 deprecation)
+6. **Master UC Index refresh** — reflect Step Zero per CL-072, S1 redesign per CL-087+, and the Consumption plane + scope cut per CL-090–095
+7. **Demo script** — write the 3–4 minute narrative tying all the states together with the 3-phase lifecycle and the KG explorer visible throughout
 
-**Canonical artifact for current state:** `arteep-system-ui-tour.jsx` — fully QA-INT-01 compliant with violet/yellow palette; Sprint 1 work since 2026-06-02 lives at the dashboard + quick-initiate + command-view trio.
+**Canonical artifact for current state:** `arteep-system-ui-tour.jsx` — fully QA-INT-01 compliant with violet/yellow palette; Sprint 1 work since 2026-06-02 lives at the dashboard + quick-initiate + command-view trio. The Knowledge Graph explorer (Consumer plane) is the next build (CL-094).
 
 ---
 
