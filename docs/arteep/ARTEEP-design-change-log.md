@@ -498,6 +498,108 @@
 
 ---
 
+## Knowledge Lake Architecture (grill-me session · 2026-06-05)
+
+*Decisions from the grill-me interrogation of the Automated Handover Knowledge Lake architecture (`ART_EEP_Architecture_Summary_EN.md`). These define the Consumption plane (Knowledge Graph explorer) plus the data-pipeline, security, and feedback model that feeds it. All eight were resolved decision-by-decision down the dependency tree.*
+
+### CL-090 — Scope narrowed to the Automated Handover Knowledge Lake (Peer Programming eliminated)
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-05 |
+| Sprint | Cross-cutting (scope) |
+| Change | All goals related to Peer Programming / developer performance evaluation are removed from scope. 100% of scope focuses on the Automated Handover Knowledge Lake — capture a departing employee's tacit knowledge, commit verified content to the Knowledge Graph, and serve it to successors. |
+| UC Reference | Cross-cutting |
+| Why | The dual mandate (handover + dev-performance evaluation) bloated the system, diluted the core message, and put resources at risk. A single, sharp value proposition pitches better and ships. |
+| Decided By | Stakeholder + BA |
+| Category | Scope Deferral |
+
+### CL-091 — Flexible multi-source model retained; Trello selected as the POC showcase source
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-05 |
+| Sprint | Cross-cutting (data ingestion) |
+| Change | The data-source model stays flexible — the source mix is driven by department / role / position, not a fixed list (this clarifies, and does not narrow, CL-087's shared-workspaces scope). For the POC showcase, **Trello is the demonstrated source** because it is the company's primary third-party system in use today. The 4-Layer Hard-Filter from the architecture summary is adopted as a **source-agnostic ingestion contract**, demonstrated on Trello: (1) Time-decay — removed, to retain history for Timeline + Heatmap; (2) List/Status filter — ingest only "In Progress / Review / Done"-equivalent stages, skip Backlog / To-Do; (3) Content-depth filter — drop title-only cards with empty description and zero comments; (4) Label-prioritization — prioritize Bug/Hotfix, Architecture, Core-Feature labels, ignore administrative labels (e.g. "Team Building"). Other sources (Jira statuses, GitHub PR states, etc.) map onto the same four layers. |
+| UC Reference | UC-HO-01 step 4 · UC-HO-04 ingestion · builds on CL-087 |
+| Why | A single clean source lets the POC run end-to-end without contradicting the persona source mix or rewriting the locked flexible model. Framing the filter as a contract keeps it generalizable to every other source. The hard-filter protects the token budget (Cost-Optimization criterion) and keeps graph noise down. |
+| Decided By | Stakeholder + BA |
+| Category | Performance · Scope |
+
+### CL-092 — Hybrid Sanitization Pipeline layered in front of Purview (Purview not replaced)
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-05 |
+| Sprint | Cross-cutting (capture / security) |
+| Change | Filter-at-capture sanitization runs as two cheap pre-passes ahead of the mandatory Purview gate: **Layer 1 (Regex)** redacts secrets / API keys and PII (emails, phone numbers) to `[REDACTED]` at 0-token cost; **Layer 2 (Few-Shot prompting)** neutralizes toxic / emotional comments into objective statements. **Microsoft Purview remains the authoritative mandatory PII gate with no fallback** — the new layers sit in front of it, they do not replace it. In the POC the Regex + Few-Shot layers are demoed visibly; Purview runs behind. |
+| UC Reference | UC-HO-04 · QA-INT-01 · preserves the locked Purview decision (snapshot §2) |
+| Why | The 0-token Regex pass shrinks what reaches the expensive gate (token efficiency) and the Few-Shot pass protects graph quality — without discarding a locked, compliance-non-negotiable commitment. |
+| Decided By | BA |
+| Category | Performance · Visual System |
+
+### CL-093 — Hybrid Security Tiering with auto-assignment and a Tier-1 stub exception to ACL trimming
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-05 |
+| Sprint | Consumption plane (Knowledge Graph) |
+| Change | Graph nodes carry a security tier, **auto-assigned** from signals already computed in the pipeline (Purview sensitivity output + source labels) — no manual tagging step. **Tier 2 (highly sensitive / legal · e.g. `[Finance]` `[Legal]` `[Risk]`)** is ghosted: removed by the locked pre-retrieval ACL trimming, never enters the result set. **Tier 1 (operational · access-controlled)** renders a metadata-only stub — node id, type, lock state, and nothing else (no `short_summary`, no content) — so a Lock icon + "Request access" affordance can show. The Tier-1 stub is a deliberate, narrow exception to the locked "pre-retrieval ACL trimming at Azure AI Search + Cosmos DB" decision (§2): strict trimming still applies to Tier 2; Tier 1 returns the redacted stub instead of being trimmed away entirely. |
+| UC Reference | Consumption plane · modifies the practical meaning of the locked ACL-trimming decision (§2) |
+| Why | Ghosting everything is safe but loses the "knowledge exists here — ask for it" discovery moment, a strong pitch beat. The stub surfaces existence without leaking content. Auto-assignment avoids a manual classification step that would not scale. |
+| Decided By | BA |
+| Category | BA Gap · Visual System |
+
+### CL-094 — Knowledge Graph Consumer-plane interaction model adopted
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-05 |
+| Sprint | Consumption plane (Knowledge Graph) |
+| Change | The Consumption plane (Knowledge Graph explorer) interaction model is locked: **Progressive Disclosure** — the graph opens showing only the central node + its 1-hop links; double-click expands / collapses branches (solves "the hairball problem"). **Contextual AI** — the Copilot offers Quick-Start chips (e.g. "Show risks"); clicking centers / zooms the relevant node and dims the rest, highlighting the path. **0-token hover** — the AI generates a 15-word `short_summary` per node at graph-creation time and stores it in the DB; hover reads from the DB (0 token, ~0 ms), never an API call. **Historical visualization** — split-screen Timeline (ticket / card change over time) + Heatmap (interaction / workload / update frequency) for managers. **Prompt Disambiguation** — on an over-broad query ("tell me about Project A") the Copilot asks a clarifying question with clickable chips (Risk areas · Stakeholders · Recent timeline) rather than pulling the whole graph, protecting the context window. |
+| UC Reference | UC-ON-02 (read with inline knowledge tools) · new Consumption-plane surface |
+| Why | Cognitive-load control for graph UX, token / latency optimization (pre-compute on write, ~0 cost on read), and context-window protection on query. Each choice maps to a hackathon scoring axis (Human-in-the-Loop / Token Efficiency). |
+| Decided By | BA + UX |
+| Category | UX Refinement · Performance |
+
+### CL-095 — Feedback triage with contested-flag-on-report; commit gate (QA-INT-01 §1.4) preserved; resolves HO-06 TBD-1
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-05 |
+| Sprint | Consumption plane / Feedback (UC-HO-06 · UC-HO-07) |
+| Change | Token-free Triage routes an error report by the reported node's existing tag: **Critical path** (`[Finance]` `[Risk]`) fires a real-time Manager alert; **Batch path** (`[Guidelines]` etc.) drops into a weekly review digest — routing is tag-based and 0-token. The moment a report is filed, the node immediately enters a visible **"flagged — under review"** state (reuses the yellow low-confidence pattern · a pure status flag · 0-token · no LLM call) so consumers see it is contested while it waits. **No correction ever auto-commits** — QA-INT-01 §1.4 (explicit Manager sign-off before KG commit) stays absolute; Critical and Batch both require sign-off. Triage governs only notification timing and the contested flag, never the commit gate. **SLA backstop**: a batch item unreviewed past **two weekly cycles** auto-escalates to the Critical path (real-time nudge), still requiring sign-off. The two-cycle window is a policy default and is logged as the resolution of **HO-06 TBD-1** (SLA for Manager correction review); change the window if stakeholders prefer. |
+| UC Reference | UC-HO-06 · UC-HO-07 · QA-INT-01 §1.4 · resolves HO-06 TBD-1 |
+| Why | Prevents Manager alert fatigue while never letting a node already known to be wrong masquerade as authoritative — and without reopening a locked governance clause. |
+| Decided By | BA (Claude recommendation, accepted by stakeholder) |
+| Category | BA Gap · UX Refinement |
+
+### CL-096 — MASTER.md "AI-Native Minimal" design system scoped to the Consumer plane
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-05 |
+| Sprint | Consumption plane (Knowledge Graph) |
+| Change | The `MASTER.md` "AI-Native Minimal / WriteAI" design system (indigo `#6366F1` primary, glassmorphism cards, light / dark toggle, `rounded-xl` / `2xl`, soft shadows, floating navbar) is scoped to the **Knowledge Graph Consumer plane / POC showcase only** as its presentation shell. It does **not** apply to the Management or Capture surfaces (dashboard, quick-initiate, command-view), which stay on the locked ART-EEP light-mode system (snapshot §4). The ART-EEP **semantic palette is preserved as the meaning layer everywhere**: rose = critical / locked, yellow = low-confidence / contested, emerald = verified / canonical, violet = AI signal. Same scoping shape as the Transactional Gateways deviations (CL-077 / CL-078). |
+| UC Reference | Consumption plane · scoped deviation from §4 |
+| Why | Graph viz reads better on a dark, glass canvas (dimming, progressive disclosure), which `MASTER.md` provides; the rest of the app already has a working system not worth re-migrating. Scoping rather than replacing keeps both intact and follows existing precedent. |
+| Decided By | Stakeholder + UX |
+| Category | Visual System |
+
+### CL-097 — POC showcase is English-only; latinized usernames; personas otherwise locked
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-05 |
+| Sprint | Consumption plane / POC showcase |
+| Change | The POC showcase (Consumer plane) contains **no Vietnamese text**. The Vietnamese system terms preserved by §4 (e.g. "Sự thật gốc" on the Canonical badge, bilingual tooltips) are **dropped within the showcase** — Canonical renders in English only ("Canonical" / "Canonical fact"). **Usernames render as diacritic-free latinized handles** (e.g. `Minh Le`, `Ha Vy`, `@minh.le`); the locked personas (§3) are unchanged in identity — only the on-screen string is latinized for the showcase. Scoped override; does not change CL-077's Vietnamese deviation for the Transactional Gateways artifact, nor the locked persona names elsewhere in the app. |
+| UC Reference | Cross-cutting (showcase) · scoped override of the §4 Vietnamese-terms rule |
+| Why | The POC showcase audience reads English; consistency and legibility matter most in the pitch surface. Keeping personas locked preserves narrative continuity with the rest of the demo. |
+| Decided By | Stakeholder |
+| Category | UX Refinement |
+
+---
+
 ## Pending Decisions (Need Stakeholder Input)
 
 The defaults in CL-003, CL-004, and CL-005 are working assumptions. The following decisions remain open and should be confirmed before their respective sprints begin:
@@ -510,6 +612,7 @@ The defaults in CL-003, CL-004, and CL-005 are working assumptions. The followin
 | HO-03 e-signature standard | Vietnam local | S2 | Legal |
 | ON-01 Playbook delivery model | Static + Copilot overlay | S4 | Product / UX |
 | ON-02 mobile parity scope | Desktop-first v1 | S4 | Product / UX |
+| HO-06 SLA for Manager correction review | **RESOLVED 2026-06-05 (CL-095) — 2 weekly cycles, then auto-escalate** | S5 | Product (resolved) |
 | **TBD-Z1 OAuth scope minimums per connector** | (no default — hard block) | SZ | IT Security |
 | **TBD-Z2 Connector approval workflow + SLA** | (no default — hard block) | SZ | IT + Legal |
 | **TBD-Z3 Default sync frequency vs. rate limits** | (no default — hard block) | SZ | Product + IT |
