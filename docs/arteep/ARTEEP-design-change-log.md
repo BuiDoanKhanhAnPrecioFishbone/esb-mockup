@@ -508,7 +508,7 @@
 |---|---|
 | Date | 2026-06-05 |
 | Sprint | Cross-cutting (scope) |
-| Change | All goals related to Peer Programming / developer performance evaluation are removed from scope. 100% of scope focuses on the Automated Handover Knowledge Lake — capture a departing employee's tacit knowledge, commit verified content to the Knowledge Graph, and serve it to successors. |
+| Change | All goals related to Peer Programming / developer-performance evaluation are removed from scope. 100% of scope focuses on the Automated Handover Knowledge Lake — capture a departing employee's tacit knowledge, commit verified content to the Knowledge Graph, and serve it to successors. |
 | UC Reference | Cross-cutting |
 | Why | The dual mandate (handover + dev-performance evaluation) bloated the system, diluted the core message, and put resources at risk. A single, sharp value proposition pitches better and ships. |
 | Decided By | Stakeholder + BA |
@@ -600,6 +600,60 @@
 
 ---
 
+## POC Capture Model (2026-06-05)
+
+*The POC swaps the live voice interview for a self-serve, network-sourced capture model. These entries follow CL-090–097 and are the second half of the 2026-06-05 session.*
+
+### CL-098 — Voice interview (UC-HO-02) deferred to Phase 2; out of POC scope
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-05 |
+| Sprint | POC scope |
+| Change | UC-HO-02 (Conduct AI-Guided Voice Interview) is removed from the POC and deferred to **Phase 2**. The `uc-ho-02-interview-canvas` surface and the rose recording-rings animation grammar (CL-009) are retained in the repo for Phase 2 but do not appear in the POC build or demo. The 3-phase lifecycle (Prepare · Capture · Deliver) is unchanged — only the Capture *mechanism* changes (see CL-099). |
+| UC Reference | UC-HO-02 (deferred) · 3-phase lifecycle (CL-088) unaffected |
+| Why | The voice interview is the heaviest surface to build and the riskiest to demo live. Deferring it lets the POC prove the end-to-end value (capture → verify → commit → consume) with a simpler, more reliable capture path, and keeps the voice work intact for Phase 2. |
+| Decided By | Stakeholder |
+| Category | Scope Deferral |
+
+### CL-099 — POC capture model = self-serve upload + asynchronous question queue
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-05 |
+| Sprint | POC scope |
+| Change | In the POC, the Offboarder captures knowledge two ways, asynchronously and at their own pace: (a) **uploading their own files**, and (b) **answering a question queue** in text. The queue is the union of **Manager Priority Prompts** (UC-HO-05) and **network-solicited questions** (CL-100), plus the Offboarder's own freely-added contributions ("answer on their own needs"). This replaces the live voice interview as the POC Capture mechanism. Because the Offboarder now answers the prompts directly, the prompts are visible to them by design (resolves the spirit of HO-05 TBD-2 for the POC). |
+| UC Reference | Replaces UC-HO-02 within the POC · extends UC-HO-05 · feeds UC-HO-03 (review/sign) |
+| Why | Async self-serve capture is lower-risk to build and demo than voice, lets the Offboarder lead with what they think matters, and naturally absorbs the network's questions and the manager's prompts into one queue. |
+| Decided By | Stakeholder + BA |
+| Category | UX Refinement (architectural) |
+
+### CL-100 — Network knowledge requests in the Prepare stage (new UC-HO-08)
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-05 |
+| Sprint | POC scope · Prepare stage |
+| Change | New Prepare-stage use case **UC-HO-08 — Solicit Handover Inputs from the Employee's Network**. When a session is initiated, the system notifies the offboarding employee's **connection set** and asks two things: *what do you still need to know from them?* (questions) and *did the AI collect anything wrong or insufficient?* (flags). The connection set is **auto-derived** from the ingested data (for the POC: Trello card co-members, comment participants, co-assignees) plus the manager and any explicitly named coach / mentor; the manager can add or remove people before requests go out — no manual list-building from scratch. Questions feed the unified capture queue (CL-099); flags feed the pre-commit correction loop (CL-101). |
+| UC Reference | New UC-HO-08 (Prepare) · feeds CL-099 queue and CL-101 flags · added to master UC index v1.1 |
+| Why | The offboarder's network knows what's missing better than any prompt template. Crowd-sourcing the questions and the corrections raises capture quality and coverage, and auto-deriving the network from data we already ingested means it costs the manager nothing to set up. |
+| Decided By | Stakeholder + BA |
+| Category | BA Gap (new UC) |
+
+### CL-101 — Pre-commit, network-driven data-flag correction loop (ACL-bounded; sibling of CL-095)
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-05 |
+| Sprint | POC scope · Prepare / Capture |
+| Change | A colleague in the connection set can flag an AI-collected item as **wrong or insufficient** during Prepare. The flag becomes a correction request assigned to the **Offboarder**, who fixes or clarifies it before that content moves toward commit. This reuses the **"flagged — under review"** visual grammar and is the **pre-commit, network-driven sibling** of the post-commit, consumer-driven triage in CL-095 (same pattern, different actor and timing). **ACL-bounded**: a colleague can only see and flag items they **already had access to** (e.g. a Trello card they were already on) — flagging never grants net-new visibility, staying consistent with pre-retrieval ACL trimming and Tier-2 ghosting (CL-093). |
+| UC Reference | UC-HO-08 · pre-commit variant of UC-HO-06 / UC-HO-07 · CL-093 · CL-095 |
+| Why | The people who know the captured work is wrong should be able to say so before it ever reaches the graph — without widening who can see what. Mirroring CL-095's grammar keeps the two correction loops (pre-commit network / post-commit consumer) legible as one family. |
+| Decided By | Stakeholder + BA |
+| Category | BA Gap |
+
+---
+
 ## Pending Decisions (Need Stakeholder Input)
 
 The defaults in CL-003, CL-004, and CL-005 are working assumptions. The following decisions remain open and should be confirmed before their respective sprints begin:
@@ -612,6 +666,7 @@ The defaults in CL-003, CL-004, and CL-005 are working assumptions. The followin
 | HO-03 e-signature standard | Vietnam local | S2 | Legal |
 | ON-01 Playbook delivery model | Static + Copilot overlay | S4 | Product / UX |
 | ON-02 mobile parity scope | Desktop-first v1 | S4 | Product / UX |
+| HO-05 prompts visible to Offboarder pre-capture | **RESOLVED 2026-06-05 (CL-099) — yes; prompts are the queue the Offboarder answers** | S1 | Product (resolved) |
 | HO-06 SLA for Manager correction review | **RESOLVED 2026-06-05 (CL-095) — 2 weekly cycles, then auto-escalate** | S5 | Product (resolved) |
 | **TBD-Z1 OAuth scope minimums per connector** | (no default — hard block) | SZ | IT Security |
 | **TBD-Z2 Connector approval workflow + SLA** | (no default — hard block) | SZ | IT + Legal |
