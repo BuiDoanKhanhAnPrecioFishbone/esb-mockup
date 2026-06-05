@@ -6,11 +6,13 @@
 
 *Updated 2026-06-05 · grill-me session on the Automated Handover Knowledge Lake architecture (`ART_EEP_Architecture_Summary_EN.md`). Scope narrowed (Peer Programming removed), Trello selected as the POC showcase source, layered sanitization + hybrid security tiering + Knowledge Graph consumer-plane model adopted, `MASTER.md` scoped to the Consumer plane, English-only showcase. See CL-090–097.*
 
+*Updated 2026-06-05 (later) · POC capture model. Voice interview (UC-HO-02) deferred to Phase 2; POC capture = self-serve upload + an asynchronous question queue; new UC-HO-08 (network knowledge requests) added in the Prepare stage. See CL-098–101.*
+
 ---
 
 ## 1. Project Overview
 
-**ART-EEP** is an enterprise Knowledge Graph platform for employee handover and onboarding, built on Azure. It captures departing employees' tacit knowledge via AI-guided voice interviews, commits verified content to a knowledge graph, and generates personalized onboarding playbooks for successors with active learning correction loops.
+**ART-EEP** is an enterprise Knowledge Graph platform for employee handover and onboarding, built on Azure. It captures departing employees' tacit knowledge, commits verified content to a knowledge graph, and generates personalized onboarding playbooks for successors with active learning correction loops. *(Capture is via AI-guided voice interview in Phase 2; in the POC it is self-serve upload + an async question queue — see §2.)*
 
 **Scope (CL-090):** 100% focused on the **Automated Handover Knowledge Lake**. Peer Programming / developer-performance evaluation is explicitly out of scope — it bloated the system and diluted the core message.
 
@@ -40,6 +42,8 @@
 | **Hybrid Security Tiering (CL-093)** | Tier auto-assigned from Purview sensitivity + source labels. **Tier 2** (sensitive / legal) ghosted via strict ACL trim. **Tier 1** (operational, access-controlled) returns a metadata-only stub for the Lock + "Request access" affordance — a narrow exception to pre-retrieval ACL trimming. |
 | **Knowledge Graph Consumer plane (CL-094)** | Progressive Disclosure (central node + 1-hop · double-click expand/collapse) · Contextual-AI quick-start chips (center/zoom/dim) · 0-token hover (stored 15-word `short_summary`) · Timeline + Heatmap split-screen · Prompt Disambiguation on broad queries. |
 | **Feedback triage · commit gate preserved (CL-095)** | Token-free tag-based routing (Critical → real-time alert / Batch → weekly digest). A report immediately flags the node "under review" (0-token). **No correction auto-commits — QA-INT-01 §1.4 stays absolute.** 2-cycle SLA escalation. |
+| **POC capture model · voice deferred (CL-098 / CL-099)** | The POC replaces the live voice interview (UC-HO-02 → **Phase 2**) with self-serve **file upload + an asynchronous question queue** the Offboarder answers in text. The queue = Manager Priority Prompts (UC-HO-05) + network-solicited questions (UC-HO-08) + the Offboarder's own additions. The 3-phase lifecycle is unchanged; only the Capture *mechanism* changes. |
+| **Network knowledge requests · UC-HO-08 (CL-100 / CL-101)** | In Prepare, the system notifies the offboarder's **auto-derived connection set** (Trello card co-members / comment participants / co-assignees + manager + named coach; manager-editable) and collects **questions** (→ capture queue) and **flags** on wrong/insufficient AI-collected data (→ pre-commit, **ACL-bounded** correction requests to the Offboarder — a colleague only flags what they already had access to). |
 | **3-phase user-facing lifecycle** | Internal 8-stage pipeline grouped as **Prepare · Capture · Deliver** at every glance-level UI view. Reduces cognitive load. |
 
 ---
@@ -60,7 +64,7 @@ Each persona has different handover material types · scoped to approved shared 
 - **Sales (Phương Anh)**: Salesforce deals, shared Calendar, SharePoint sales-collateral documents
 - **People Ops (Khánh Linh)**: HRIS records, Notion policy pages, SharePoint policy archive
 
-Email, personal mailboxes, and private direct messages are excluded from automated collection per the data-ingestion governance rule. Where role-specific context lives in email threads, it surfaces through the voice interview (UC-HO-02) or manual file upload, not automated scanning.
+Email, personal mailboxes, and private direct messages are excluded from automated collection per the data-ingestion governance rule. Where role-specific context lives in email threads, it surfaces through the POC question queue or manual file upload, not automated scanning.
 
 **POC showcase rendering (CL-097):** within the Consumer-plane POC showcase, persona names render as diacritic-free latinized handles (`Minh Le`, `Ha Vy`, `@minh.le`). Persona identities are unchanged — only the on-screen string is latinized, and no Vietnamese text appears in the showcase.
 
@@ -100,16 +104,19 @@ The **Knowledge Graph Consumer plane / POC showcase** uses the `MASTER.md` "AI-N
 
 ---
 
-## 5. Use Cases (10 + Step Zero)
+## 5. Use Cases (11 + Step Zero)
 
 ### Handover (HO)
 - **UC-HO-01** Initiate Handover Session
-- **UC-HO-02** Conduct AI-Guided Voice Interview (Dynamic N-Domain Coverage)
+- **UC-HO-02** Conduct AI-Guided Voice Interview (Dynamic N-Domain Coverage) — ⏸ **deferred to Phase 2 (out of POC)**
 - **UC-HO-03** Review and Sign Transcript
 - **UC-HO-04** Submit Handover Record to Knowledge Graph
-- **UC-HO-05** Configure Custom Prompts and Section Blueprints
+- **UC-HO-05** Configure Custom Prompts and Section Blueprints *(POC: prompts feed the capture queue)*
 - **UC-HO-06** Report Hallucination or Error
 - **UC-HO-07** Approve Knowledge Graph Correction
+- **UC-HO-08** Solicit Handover Inputs from the Employee's Network — **NEW · Prepare stage (CL-100 / CL-101)**
+
+**POC capture model (CL-098 / CL-099):** the voice interview is Phase 2. In the POC, capture is **self-serve upload + an asynchronous question queue** the Offboarder answers in text — the queue being manager prompts (UC-HO-05) + network questions (UC-HO-08) + the Offboarder's own additions. The captured content is reviewed and signed via UC-HO-03 as before, then committed via UC-HO-04. A pre-commit, ACL-bounded correction loop (UC-HO-08 flags → Offboarder fixes) runs alongside (CL-101).
 
 ### Onboarding (ON)
 - **UC-ON-01** Generate Personalized Onboarding Playbook
@@ -117,7 +124,7 @@ The **Knowledge Graph Consumer plane / POC showcase** uses the `MASTER.md` "AI-N
 - **UC-ON-03** Skill Gap Analysis and Growth Plan
 
 ### Consumption plane — Knowledge Graph explorer (NEW · CL-094 / CL-095)
-The successor-facing Knowledge Graph explorer is the **Consumption plane** surface (extends UC-ON-02). Interaction model: Progressive Disclosure, Contextual-AI quick-start chips, 0-token hover via stored `short_summary`, Timeline + Heatmap split-screen, Prompt Disambiguation. The feedback loop (UC-HO-06 / UC-HO-07) runs through **token-free triage** with a contested-flag-on-report and the preserved §1.4 commit gate (CL-095). Three-plane architecture is now explicit: **Management** (dashboard / command-view) · **Capture** (interview / verify) · **Consumption** (KG explorer).
+The successor-facing Knowledge Graph explorer is the **Consumption plane** surface (extends UC-ON-02). Interaction model: Progressive Disclosure, Contextual-AI quick-start chips, 0-token hover via stored `short_summary`, Timeline + Heatmap split-screen, Prompt Disambiguation. The feedback loop (UC-HO-06 / UC-HO-07) runs through **token-free triage** with a contested-flag-on-report and the preserved §1.4 commit gate (CL-095). Three-plane architecture is now explicit: **Management** (dashboard / command-view) · **Capture** (POC: upload + question queue + UC-HO-08 network requests; voice interview is Phase 2) · **Consumption** (KG explorer).
 
 ### Step Zero (Plan v2, NEW)
 - **Z01** Connector Library (browse 8 integrations)
@@ -134,7 +141,7 @@ The successor-facing Knowledge Graph explorer is the **Consumption plane** surfa
 | **S0 Platform Foundation** | 1 week | Infra + design system | COMPLETED |
 | **SZ Step Zero (NEW)** | 2 weeks | Z01–Z04 | PENDING (5 blockers) |
 | **S1 Handover Initiation** | 2 weeks | UC-HO-01, UC-HO-05 | COMPLETED (v2 with violet/yellow; redesigned 2026-06-02 to 3-phase + drawer→command-view + one-click initiation) |
-| **S2 Capture & Verify** | 2 weeks | UC-HO-02, UC-HO-03 | COMPLETED (old amber palette — needs migration) |
+| **S2 Capture & Verify** | 2 weeks | UC-HO-02, UC-HO-03 | COMPLETED (old amber palette — needs migration). **POC: voice interview deferred to Phase 2 (CL-098); capture = self-serve upload + question queue (CL-099). New surfaces pending.** |
 | **S3 KG Commit** | 1.5 weeks | UC-HO-04 | COMPLETED (old amber palette) |
 | **S4 Onboarding Gen & Read** | 2 weeks | UC-ON-01, UC-ON-02 | COMPLETED (old amber palette) |
 | **S-KG Consumption plane (NEW)** | TBD | Knowledge Graph explorer (CL-094) · feedback triage (CL-095) | PENDING — next build · target route `/knowledge-graph` · `MASTER.md` shell |
@@ -142,6 +149,8 @@ The successor-facing Knowledge Graph explorer is the **Consumption plane** surfa
 | **S6 Polish & Demo** | 1 week | Cross-cutting | PENDING |
 
 **Total timeline:** ~12 weeks (was ~7–8 in v1; Step Zero added 2 weeks). Hackathon-compressed mode can cut SZ to 1 week with 2 connectors instead of 8. Peer Programming evaluation removed from scope (CL-090).
+
+**Prepare-stage addition:** UC-HO-08 (network knowledge requests · CL-100) lands in the Prepare stage (S1 family). Its surfaces — the network-request fan-out and the Offboarder's capture queue + upload — are the POC's replacement for the S2 voice interview and are pending build.
 
 ---
 
@@ -200,7 +209,7 @@ The successor-facing Knowledge Graph explorer is the **Consumption plane** surfa
 | **Gap B (CL-082)** — Per-item lineage view | CL-085 — `LineageDrawer` component | 400px right drawer with 4-event timeline (Created → Verified → Committed → Propagated); opens from Canonical badge in Feature 06 |
 | **Refinement C (CL-083)** — Inline edit diff | CL-086 — Updated `DraftItemEditing` | Original AI text greyed/strikethrough above editable field with "Original · AI-generated" label and QA-INT-01 §1.3 citation in footer |
 
-**§1.4 reaffirmed (CL-095):** the feedback-loop token-free triage changes only *when* and *how* a Manager is notified of a reported error — never *whether* they sign off. A report flags the node "under review" (a 0-token status flag), but no correction auto-commits. §1.4 remains absolute, including for the Batch path and the 2-cycle SLA escalation.
+**§1.4 reaffirmed (CL-095):** the feedback-loop token-free triage changes only *when* and *how* a Manager is notified of a reported error — never *whether* they sign off. A report flags the node "under review" (a 0-token status flag), but no correction auto-commits. §1.4 remains absolute, including for the Batch path and the 2-cycle SLA escalation. The pre-commit network-flag loop (CL-101) likewise routes corrections through the Offboarder and then UC-HO-03 sign-off — it never writes to the KG directly.
 
 ---
 
@@ -217,30 +226,32 @@ All files in `/mnt/user-data/outputs/`:
 | `ha-vy-handover-dashboard.jsx` | CURRENT | Multi-session command center · 3-phase progress |
 | `uc-ho-01-quick-initiate.jsx` | CURRENT | One-click session creation · progressive-disclosure customize |
 | `session-command-view.jsx` | CURRENT | Per-session full-screen tabbed workspace |
+| `uc-ho-02-interview-canvas` (Capture plane) | DEFERRED TO PHASE 2 | Voice interview focus-mode surface · retained for Phase 2, not in the POC (CL-098) |
 | `arteep-s2-capture-verify.jsx` | NEEDS MIGRATION | 5 Offboarder screens · old amber palette |
 | `arteep-s3-kg-commit.jsx` | NEEDS MIGRATION | Manager Completion Report 4 states · old amber palette |
 | `arteep-s4-onboarding-gen-read.jsx` | NEEDS MIGRATION | 5 Onboarder screens · old amber palette |
 | `arteep-system-ui-tour.jsx` | **CANONICAL DEMO** | 8 features × 3-4 states · violet/yellow · QA-INT-01 fixes integrated |
 | `arteep-transactional-gateways.jsx` | CANONICAL (specialized) | 3 states · Vietnamese UI |
+| POC Capture surfaces (upload + question queue · UC-HO-08 network requests) | NOT YET BUILT | POC Capture plane · replaces voice interview (CL-099 / CL-100 / CL-101) |
 | Knowledge Graph explorer (Consumer plane) | NOT YET BUILT | Next build · `MASTER.md` shell · target route `/knowledge-graph` (CL-094 / CL-096 / CL-097) |
 
 ### Documentation
 | File | Purpose |
 |---|---|
 | `UC-HO-01_initiate-handover-session_v2.md` | UC-HO-01 v2.0 governance spec |
-| `UC-HO-02_conduct-ai-guided-voice-interview_v2.md` | UC-HO-02 v2.0 spec |
-| `ARTEEP-master-uc-index.md` | All 10 UCs, dependency matrix, 22 TBDs |
+| `UC-HO-02_conduct-ai-guided-voice-interview_v2.md` | UC-HO-02 v2.0 spec (Phase 2) |
+| `ARTEEP-master-uc-index.md` | v1.1 · 11 UCs (UC-HO-08 added), dependency matrix, TBD register |
 | `ARTEEP-implementation-plan-v2.md` | V2 with Step Zero, 12-week timeline |
 | `QA-INT-01-Dual-Verification-Rule.md` | Foundational governance rule |
-| `ARTEEP-design-change-log.md` | Living document — 97+ entries |
+| `ARTEEP-design-change-log.md` | Living document — 101+ entries |
 | `Sprint-1-compact.md` | Sprint 1 snapshot (3-phase lifecycle, post-redesign) |
-| `ART_EEP_Architecture_Summary_EN.md` | Grill-me session record — Knowledge Lake architecture (source of CL-090–097) |
+| `ART_EEP_Architecture_Summary_EN.md` | Grill-me session record — Knowledge Lake architecture (source of CL-090–101) |
 
 ---
 
-## 10. Design Change Log Summary (CL-001 through CL-097)
+## 10. Design Change Log Summary (CL-001 through CL-101)
 
-97+ entries across these major themes:
+101+ entries across these major themes:
 
 ### S0 Foundation (CL-001 to CL-010)
 English UI · UX writing principles · persona lock · 14-state taxonomy · 2-accent palette · animation budget · 1px borders
@@ -292,6 +303,12 @@ Foundational governance rule · 3 gaps remediated (`CanonicalBadge`, `LineageDra
 - `MASTER.md` scoped to the Consumer plane as presentation shell (CL-096)
 - English-only POC showcase; latinized usernames (CL-097)
 
+### POC Capture Model (CL-098 to CL-101, 2026-06-05)
+- Voice interview (UC-HO-02) deferred to Phase 2; out of POC scope (CL-098)
+- POC capture = self-serve upload + asynchronous question queue (CL-099); resolves HO-05 TBD-2 for the POC
+- Network knowledge requests in Prepare = new UC-HO-08; auto-derived, manager-editable connection set solicits questions + data flags (CL-100)
+- Pre-commit, network-driven, ACL-bounded data-flag correction loop — sibling of CL-095 (CL-101)
+
 ---
 
 ## 11. Pending Decisions (Need Stakeholder Input)
@@ -306,7 +323,12 @@ Foundational governance rule · 3 gaps remediated (`CanonicalBadge`, `LineageDra
 - HO-03 TBD-1 — E-signature standard (Vietnam-specific)
 - ON-01 TBD-2 — Static vs interactive Playbook
 - ON-02 TBD-3 — Mobile parity scope (desktop-first v1 default)
+- ~~HO-05 TBD-2 — Manager prompts visible to Offboarder pre-capture~~ → **RESOLVED 2026-06-05 (CL-099): yes — the prompts are the queue the Offboarder answers.**
 - ~~HO-06 TBD-1 — SLA for Manager correction review~~ → **RESOLVED 2026-06-05 (CL-095): 2 weekly cycles, then auto-escalate to the Critical path; sign-off still required.**
+
+### New — UC-HO-08 (opened 2026-06-05)
+- HO-08 TBD-1 — How far the auto-derived connection set reaches (1-hop collaborators only vs N-hop) + manager edit window before send
+- HO-08 TBD-2 — Notification channel + reminder cadence for network requests
 
 ### Step Zero Blockers (Plan v2)
 - TBD-Z1 — OAuth scope minimums per connector
@@ -341,9 +363,9 @@ The hackathon pitch opens with a 10–15 second Step Zero moment ("Before any ha
 
 1. Hà Vy's Dashboard (3 pending sessions, 3-phase progress visible)
 2. One-click initiate session for Minh Lê (quick-initiate page)
-3. Command-view Overview tab · Phase 1 Prepare · live seeding from Trello (POC source) — 4-Layer Hard-Filter visibly dropping noise
-4. Minh Lê's voice interview (rose recording rings, AI questions with Manager Priority badges)
-5. Phase 2 transcript review with QA-INT-01 inline diff
+3. Command-view Overview tab · Phase 1 Prepare · live seeding from Trello (POC source) — 4-Layer Hard-Filter visibly dropping noise; the system fans out **network knowledge requests** (UC-HO-08) to Minh Lê's auto-derived connections
+4. **POC capture** — Minh Lê uploads his files and works through the **question queue** (manager prompts + questions from his network); colleagues' flags on wrong/insufficient AI-collected data arrive as his correction tasks. *(The voice interview is Phase 2.)*
+5. Phase 2 transcript/content review with QA-INT-01 inline diff
 6. Phase 3 KG Commit with Canonical Facts surfaced (Regex + Few-Shot sanitization shown, Purview behind)
 7. Successor's Knowledge Graph explorer (Consumer plane) — Progressive Disclosure → Contextual-AI chips → 0-token hover → Timeline + Heatmap; Tier-1 locked stub with "Request access"
 8. Trần Hữu Nam's Day 1 playbook with Canonical badge + lineage drawer
@@ -360,15 +382,16 @@ Total runtime: ~3–4 minutes.
 
 If picking up where this left off, the next actionable items are:
 
-1. **Build the Knowledge Graph explorer (Consumer plane)** — the next surface · `MASTER.md` shell · route `/knowledge-graph` · progressive disclosure, contextual chips, 0-token hover, Timeline + Heatmap, Tier-1/Tier-2 rendering, feedback triage (CL-094–097)
-2. **Stakeholder approval needed** on the 6 Plan v2 decision points (especially Step Zero blockers)
-3. **Migration sweep** — S2/S3/S4 artifacts need violet/yellow palette migration
-4. **S5 build** — UC-ON-03 (Skill Gap), UC-HO-06 (Report Hallucination), UC-HO-07 (Correction Review) need full per-sprint artifacts
-5. **UC-HO-01 v2 governance spec update** — reflect 3-phase lifecycle + data-ingestion governance (CL-015 deprecation)
-6. **Master UC Index refresh** — reflect Step Zero per CL-072, S1 redesign per CL-087+, and the Consumption plane + scope cut per CL-090–095
-7. **Demo script** — write the 3–4 minute narrative tying all the states together with the 3-phase lifecycle and the KG explorer visible throughout
+1. **Build the POC Capture surfaces** — self-serve file upload + the asynchronous question queue + UC-HO-08 network-request fan-out (Prepare stage). This is the POC's replacement for the voice interview; voice (UC-HO-02) is Phase 2 (CL-098–101).
+2. **Build the Knowledge Graph explorer (Consumer plane)** — `MASTER.md` shell · route `/knowledge-graph` · progressive disclosure, contextual chips, 0-token hover, Timeline + Heatmap, Tier-1/Tier-2 rendering, feedback triage (CL-094–097)
+3. **Stakeholder approval needed** on the Plan v2 decision points (especially Step Zero blockers) + the two new UC-HO-08 TBDs
+4. **Migration sweep** — S2/S3/S4 artifacts need violet/yellow palette migration
+5. **S5 build** — UC-ON-03 (Skill Gap), UC-HO-06 (Report Hallucination), UC-HO-07 (Correction Review) need full per-sprint artifacts
+6. **UC-HO-01 v2 governance spec update** — reflect 3-phase lifecycle + data-ingestion governance (CL-015 deprecation)
+7. **UC-HO-08 spec** — author the full use case (currently only logged via CL-100 / CL-101 and indexed in the master UC index v1.1)
+8. **Demo script** — write the 3–4 minute narrative tying all the states together with the 3-phase lifecycle, POC capture, and the KG explorer visible throughout
 
-**Canonical artifact for current state:** `arteep-system-ui-tour.jsx` — fully QA-INT-01 compliant with violet/yellow palette; Sprint 1 work since 2026-06-02 lives at the dashboard + quick-initiate + command-view trio. The Knowledge Graph explorer (Consumer plane) is the next build (CL-094).
+**Canonical artifact for current state:** `arteep-system-ui-tour.jsx` — fully QA-INT-01 compliant with violet/yellow palette; Sprint 1 work since 2026-06-02 lives at the dashboard + quick-initiate + command-view trio. The POC Capture surfaces and the Knowledge Graph explorer (Consumer plane) are the next builds (CL-098–101, CL-094).
 
 ---
 
