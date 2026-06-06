@@ -7,6 +7,8 @@ import UcHo01NormalFlow from "@/components/mockups/uc-ho-01-normal-flow.jsx";
 import UcHo01EdgeCases from "@/components/mockups/uc-ho-01-edge-cases.jsx";
 import UcHo02InterviewCanvas from "@/components/mockups/uc-ho-02-interview-canvas.jsx";
 import UcOn02ConsumerNewcomer from "@/components/mockups/uc-on-02-consumer-newcomer.jsx";
+import UcOn02ConsumerColleague from "@/components/mockups/uc-on-02-consumer-colleague.jsx";
+import UcOn02ConsumerManager from "@/components/mockups/uc-on-02-consumer-manager.jsx";
 
 export type MockupEntry = {
   /** URL slug — used at `/m/<slug>`. Lowercase-kebab. */
@@ -30,7 +32,7 @@ export type MockupEntry = {
 };
 
 /* ─────────────────────────────────────────────────────────────
-   Registry · 7 active mockups across three architectural planes.
+   Registry · 9 active mockups across three architectural planes.
 
    ┌─────────────────────────────────────────────────────────┐
    │  S1 · MANAGEMENT PLANE · Ha Vy + HR Admin              │
@@ -54,20 +56,38 @@ export type MockupEntry = {
    │  MASTER.md "AI-Native Minimal" indigo/glassmorphism     │
    │  per CL-096 (scoped) · semantic palette preserved as    │
    │  meaning layer · same GLOBAL graph, three RBAC lenses   │
-   │   · uc-on-02-consumer-newcomer    (8 states · ready)    │
-   │   · uc-on-02-consumer-colleague   (pending)             │
-   │   · uc-on-02-consumer-manager     (pending · Timeline   │
-   │                                    drag affordance)     │
+   │   · uc-on-02-consumer-newcomer    (8 states · current)  │
+   │   · uc-on-02-consumer-colleague   (8 states · current)  │
+   │   · uc-on-02-consumer-manager     (8 states · current · │
+   │                                    Timeline + Heatmap   │
+   │                                    + lineage + critical)│
    └─────────────────────────────────────────────────────────┘
+
+   The three Consumer mockups render the SAME global knowledge
+   graph through three different RBAC lenses (CL-093 hybrid
+   security tiering). Visibility delta:
+
+     Newcomer  · 1 visible Lock stub  · personalized playbook
+                · narrower reading scope · Quick Check flow
+     Colleague · 3 visible Lock stubs · search-first · no
+                playbook · narrower Copilot scope · Tier-2
+                ghost hints visible · external handoff to
+                Trello when out of scope
+     Manager   · 0 Lock stubs in team scope · Timeline scrub
+                · Heatmap overlay · UC-HO-07 sign-off gate ·
+                CL-085 lineage drawer · CL-095 Critical alerts
 
    Plane isolation invariants (CL-094 + CL-096 + CL-093):
    · Management uses AppShell · full sidebar · session enum
    · Capture uses OffboarderShell · zero sidebar · focus mode
-   · Consumption uses ConsumerShell · floating navbar · split-
-     pane reading + global graph + persistent Copilot
-   The three shells share design tokens for semantic meaning
-   (rose/yellow/emerald/violet as canonical signals) but no
-   navigation, no breadcrumbs, no top-bar layout.
+   · Consumption uses ConsumerShell (or ManagerShell · same
+     floating navbar pattern) · split-pane reading + global
+     graph + persistent Copilot. Manager adds left actions
+     panel + Timeline ribbon + right details panel.
+
+   The three shells share semantic tokens (rose/yellow/emerald/
+   violet) as meaning signals but DO NOT share navigation,
+   breadcrumbs, or top-bar layout. Each shell is its own world.
 
    Prior registry content recoverable from git at SHA
    71e19d4fd157a4b1aae11974fe00bf18e887b91c (17 hidden mockups).
@@ -157,6 +177,28 @@ export const mockups: MockupEntry[] = [
     useCases: ["UC-ON-02", "UC-ON-03"],
     tags: ["s4", "consumption", "newcomer", "playbook", "knowledge-graph", "master-md", "current"],
     Component: UcOn02ConsumerNewcomer,
+  },
+  {
+    slug: "uc-on-02-consumer-colleague",
+    title: "UC-ON-02 · Colleague · Duy Nguyen's cross-team lookup",
+    description:
+      "The Colleague's lookup experience · search-first entry (no playbook), narrower RBAC lens, more visible Tier 1 Lock stubs, narrower Copilot scope. 8 states walk hero search with suggested queries + recent searches → typed query with optimistic UI showing pre-retrieval ACL trim + Worker SLM telemetry → Prompt Disambiguation with 3 narrowed chips (most likely highlighted) → grounded canonical answer with named source chips and team-owned step badge → lock-heavy view exposing 3 Tier 1 stubs (Compensation FW, Engineering succession plan) plus ghost-stub indicator for Tier 2 → out-of-scope rejection with CL-019 redirect grammar (HR portal + People Ops) → 1-hop neighborhood browsing → follow-entity re-centering (Cosmos becomes the new center, Atlas becomes a spoke).",
+    sprint: "S4",
+    personas: ["Duy Nguyen", "Minh Le", "Ha Vy"],
+    useCases: ["UC-ON-02"],
+    tags: ["s4", "consumption", "colleague", "search-first", "lock-heavy", "knowledge-graph", "master-md", "current"],
+    Component: UcOn02ConsumerColleague,
+  },
+  {
+    slug: "uc-on-02-consumer-manager",
+    title: "UC-ON-02 · Manager · Ha Vy's audit + correction workspace",
+    description:
+      "The Manager's view of the same global graph · richest set of affordances. 8 states walk arrival with KPI bar (Canonical / Contested / Sign-offs pending) + Timeline at 'now' + Hot Spots panel → Heatmap overlay (warm/cool/cold zones with insights) → Timeline drag rewinding 2 weeks (ghost nodes + 'Changes since' panel listing 14 events) → Contested flag drill-down with flagger reason + AI recommendation + 4 supporting signals + QA-INT-01 §1.4 commit gate reminder → UC-HO-07 correction approval with side-by-side diff (CL-086 grammar) + propagation preview + sign-off action bar → CL-085 LineageDrawer with 4-event timeline (Created → Verified → Committed → Propagated) + cryptographic anchor → CL-095 Critical alert (real-time [Risk] route with 4h SLA, two flaggers, Expert LLM escalation) → after-signoff confirmation with audit log entry visible. The signature Manager affordance · the draggable Timeline ribbon spanning the full graph width with 9 event dots.",
+    sprint: "S4",
+    personas: ["Ha Vy", "Minh Le", "Tran Huu Nam", "Duy Nguyen"],
+    useCases: ["UC-ON-02", "UC-HO-06", "UC-HO-07"],
+    tags: ["s4", "consumption", "manager", "audit", "timeline", "heatmap", "lineage", "critical-alert", "uc-ho-07", "knowledge-graph", "master-md", "current"],
+    Component: UcOn02ConsumerManager,
   },
 ];
 
