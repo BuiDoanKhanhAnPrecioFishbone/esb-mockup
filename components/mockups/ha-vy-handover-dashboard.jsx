@@ -17,28 +17,20 @@ import {
 
    Architectural intent · separate the dashboard (Manager's command
    center) from per-session work, which lives on dedicated routes:
+     · /session/new   → uc-ho-01-quick-initiate (one-click)
+     · /session/[id]  → session-command-view (2-tab full page · CL-107)
 
-     · /session/[id]/setup  → uc-ho-01-quick-initiate (one-click)
-     · /session/[id]        → session-command-view (tabbed full page)
+   3 user-facing phases (Prepare · Capture · Deliver · CL-088); the 8
+   internal sub-stages remain for tracking. POC source is Trello
+   (CL-091) and Capture is the async question queue (CL-098/099) — no
+   voice interview. Dashboard renders no source chips or forms.
 
-   THIS VERSION compresses the previous 8-stage lifecycle into 3
-   user-facing phases (Prepare · Capture · Deliver), per UX feedback
-   that 8 stages was cognitively heavy. The 8 internal stages still
-   exist as sub-stages within each phase for system tracking, but
-   the dashboard surfaces only 3 phases.
-
-   Data sources comply with the data-ingestion governance rule —
-   email is NEVER an automated source. Sources for Engineering
-   personas are Jira · GitHub · Google Drive.
-
-   Two screens demonstrate the dashboard's stateful behavior:
-     1. Active dashboard — 3 sessions in different phases
-     2. Just completed — Minh Lê's session moved to "Completed" section
+   CL-107 · labels + values only; explainer subtitles/paragraphs removed.
    ═══════════════════════════════════════════════════════════════════ */
 
 const FLOW = [
-  { id: "active",    label: "Active dashboard",       trigger: "3 sessions in flight at different lifecycle phases." },
-  { id: "completed", label: "Just completed",         trigger: "Minh Lê's session finished · moves to Completed section." },
+  { id: "active",    label: "Active dashboard", trigger: "3 sessions in flight at different lifecycle phases." },
+  { id: "completed", label: "Just completed",   trigger: "Minh Lê's session finished · moves to Completed section." },
 ];
 
 // 3 user-facing phases · each contains 2-3 internal sub-stages
@@ -55,12 +47,12 @@ const LIFECYCLE_PHASES = [
   },
   {
     id: 2, key: "capture", label: "Capture",
-    description: "AI-guided interview, then Manager review",
+    description: "Offboarder answers the question queue, then Manager reviews",
     actor: "Offboarder + Manager",
     subStages: [
-      { id: 4, label: "Interview scheduled",  actor: "Offboarder" },
-      { id: 5, label: "Voice interview",      actor: "Offboarder" },
-      { id: 6, label: "Transcript reviewed",  actor: "Manager"    },
+      { id: 4, label: "Questions assigned", actor: "Offboarder" },
+      { id: 5, label: "Answering queue",    actor: "Offboarder" },
+      { id: 6, label: "Answers reviewed",   actor: "Manager"    },
     ],
   },
   {
@@ -122,7 +114,7 @@ const SESSIONS_ACTIVE = [
     urgency: "needs-action",
     statusText: "Awaiting your review",
     activeDetail: "Signed by Phương Anh · 38 minutes ago",
-    action: { label: "Review transcript", primary: true, route: "/session/phuong-anh" },
+    action: { label: "Review answers", primary: true, route: "/session/phuong-anh" },
     successor: "Đặng Khải Hoàn",
   },
 ];
@@ -142,7 +134,7 @@ const SESSION_COMPLETED_ML = {
 const ACTIVITY = [
   { ts: "2 min ago",   actor: "System",            text: "Minh Lê's playbook generated for Trần Hữu Nam",   severity: "low" },
   { ts: "7 min ago",   actor: "System",            text: "Minh Lê's session committed to knowledge graph · 487 items", severity: "low" },
-  { ts: "38 min ago",  actor: "Phương Anh Nguyễn", text: "Signed handover transcript · awaiting Hà Vy's review", severity: "medium" },
+  { ts: "38 min ago",  actor: "Phương Anh Nguyễn", text: "Signed handover answers · awaiting Hà Vy's review", severity: "medium" },
   { ts: "1 hour ago",  actor: "System",            text: "Khánh Linh Trần's departure record synced from HR · urgent (2 days)", severity: "high" },
   { ts: "4 hours ago", actor: "Hà Vy",             text: "Added 3 priority prompts to Minh Lê's session",  severity: "low" },
 ];
@@ -279,10 +271,7 @@ function StepRenderer({ id }) {
 function ActiveDashboard() {
   return (
     <div className="max-w-7xl mx-auto p-6">
-      <PageHeader
-        title="Good afternoon, Hà Vy"
-        subtitle="You have 3 active handover sessions. One needs your action right now."
-      />
+      <PageHeader title="Good afternoon, Hà Vy" />
 
       <KpiRow active={3} needsAction={1} completedThisWeek={2} />
 
@@ -332,10 +321,7 @@ function JustCompletedDashboard() {
 
   return (
     <div className="max-w-7xl mx-auto p-6">
-      <PageHeader
-        title="Good afternoon, Hà Vy"
-        subtitle="Minh Lê's session just finished. Trần Hữu Nam's playbook is being prepared."
-      />
+      <PageHeader title="Good afternoon, Hà Vy" />
 
       <CompletionCelebration />
 
@@ -375,9 +361,7 @@ function CompletionCelebration() {
       </div>
       <div className="flex-1 min-w-0">
         <h3 className="text-sm font-semibold text-gray-900">Minh Lê's handover is complete</h3>
-        <p className="text-[12px] text-gray-700 mt-0.5 leading-relaxed">
-          487 items committed to the knowledge graph · 12 canonical facts · 9 knowledge gaps resolved. Trần Hữu Nam's personalized onboarding playbook is being prepared and will be ready in a few minutes.
-        </p>
+        <p className="text-[12px] text-gray-500 mt-0.5">487 items · 12 canonical facts · 9 gaps resolved</p>
       </div>
       <button className="h-8 px-3 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center gap-1.5 transition-colors shrink-0 focus:outline-none focus:ring-2 focus:ring-violet-500/30">
         View Nam's playbook
@@ -417,7 +401,7 @@ function CompletedSessionCard({ session }) {
         <div className="flex flex-col items-end gap-2 shrink-0">
           <button className="h-8 px-3 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20">
             <FileText className="w-3 h-3" />
-            View transcript
+            View answers
           </button>
           <button className="h-8 w-8 rounded-md hover:bg-gray-100 inline-flex items-center justify-center text-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20">
             <MoreHorizontal className="w-3.5 h-3.5" />
@@ -441,8 +425,7 @@ function SmallStat({ icon: Icon, label, value }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   Reusable session card · entire card is clickable
-   Now shows 3 PHASES instead of 8 stages
+   Reusable session card · entire card is clickable · shows 3 phases
    ═══════════════════════════════════════════════════════════════════ */
 
 function SessionCard({ session }) {
@@ -521,9 +504,8 @@ function SessionCard({ session }) {
   );
 }
 
-/* 3-phase progress · each phase is one segment.
-   Current phase shows within-phase fill (proportional to sub-stage position).
-   Completed phases are fully emerald. Future phases are gray. */
+/* 3-phase progress · current phase shows within-phase fill;
+   completed phases fully emerald; future phases gray. */
 function PhaseProgress({ subStageId, done }) {
   const currentPhase = getPhase(subStageId);
   const currentSubStage = getSubStage(subStageId);
