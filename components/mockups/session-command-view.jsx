@@ -25,6 +25,11 @@ import UCHO04ManagerReview from "./uc-ho-04-manager-review.jsx";
        governance. POC showcase source is Trello (CL-091), ingested
        through the 4-layer hard-filter (active lists only · thin cards
        skipped · labels prioritized · sensitive-content checked).
+     · Capture mechanism is the POC async question queue + file upload
+       (CL-098/099) — the Offboarder answers Manager prompts and
+       network-solicited questions in text and uploads files at their
+       own pace. The legacy voice interview is deferred to Phase 2 and
+       does not appear here.
      · CL-103 · UC-HO-04 Manager Review is wired as a 6th tab. The
        review tab special-cases the wrapper layout — UC-HO-04 has its
        own ItemListRail + DecisionRail, so we skip the standard
@@ -48,7 +53,7 @@ import UCHO04ManagerReview from "./uc-ho-04-manager-review.jsx";
 const FLOW = [
   { id: "ml-overview", label: "Minh Lê · Overview",   trigger: "Phase 1 of 3 · Prepare · context seeding in progress." },
   { id: "ml-stages",   label: "Minh Lê · Stages",     trigger: "Stages tab · 3-phase timeline · sub-stages expand within current phase." },
-  { id: "pa-overview", label: "Phương Anh · Overview", trigger: "Phase 2 of 3 · Capture · awaiting your transcript review." },
+  { id: "pa-overview", label: "Phương Anh · Overview", trigger: "Phase 2 of 3 · Capture · awaiting your review of her answers." },
 ];
 
 // 3 user-facing phases · each contains 2-3 internal sub-stages
@@ -65,12 +70,12 @@ const LIFECYCLE_PHASES = [
   },
   {
     id: 2, key: "capture", label: "Capture",
-    description: "AI-guided interview captures tacit knowledge, then Manager reviews",
+    description: "Offboarder answers the question queue and uploads files, then Manager reviews",
     actor: "Offboarder + Manager",
     subStages: [
-      { id: 4, label: "Interview scheduled",  actor: "Offboarder", note: "Offboarder picks a time" },
-      { id: 5, label: "Voice interview",      actor: "Offboarder", note: "AI-guided dynamic questioning" },
-      { id: 6, label: "Transcript reviewed",  actor: "Manager",    note: "Manager approves captured content" },
+      { id: 4, label: "Questions assigned",   actor: "Offboarder", note: "Manager prompts + network questions queued" },
+      { id: 5, label: "Answering queue",      actor: "Offboarder", note: "Self-serve · text answers + file uploads" },
+      { id: 6, label: "Answers reviewed",     actor: "Manager",    note: "Manager approves captured content" },
     ],
   },
   {
@@ -119,7 +124,7 @@ const SESSIONS = {
     role: "Senior Account Executive",
     dept: "Sales",
     initials: "PA",
-    subStageId: 6, // transcript review in Phase 2 (Capture)
+    subStageId: 6, // answers review in Phase 2 (Capture)
     daysLeft: 4,
     successor: "Đặng Khải Hoàn",
     deadline: "June 5, 2026 · 17:00",
@@ -490,9 +495,9 @@ function OverviewTranscriptReview({ session }) {
             <FileText className="w-4 h-4 text-emerald-700" strokeWidth={1.75} />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold text-gray-900">Transcript signed and ready for your review</h3>
+            <h3 className="text-sm font-semibold text-gray-900">Answers signed and ready for your review</h3>
             <p className="text-[12px] text-gray-700 mt-0.5 leading-relaxed">
-              {session.offboarder} reviewed and signed the captured transcript 38 minutes ago. 7 sections · 23 verified facts · 2 facts flagged for clarification. Your review unblocks the KG commit.
+              {session.offboarder} reviewed and signed her captured answers 38 minutes ago. 7 sections · 23 verified facts · 2 facts flagged for clarification. Your review unblocks the KG commit.
             </p>
           </div>
           <span className="text-[10px] text-gray-500 shrink-0" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>
@@ -736,12 +741,12 @@ function ActionSidebar({ session }) {
               <strong className="text-gray-900">2 sections need your decision</strong> before the content can commit to the knowledge graph.
             </p>
             <button className="w-full h-9 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30 mb-1.5">
-              Review transcript
+              Review answers
               <ArrowRight className="w-3 h-3" />
             </button>
             <button className="w-full h-8 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20">
               <RefreshCw className="w-3 h-3" />
-              Request re-interview
+              Request more detail
             </button>
           </article>
         )}
@@ -751,7 +756,7 @@ function ActionSidebar({ session }) {
         <SectionLabel>Quick links</SectionLabel>
         <div className="space-y-1 mt-2">
           <QuickLink icon={Network}       label="Knowledge map preview"   disabled={isSeeding} />
-          <QuickLink icon={MessageSquare} label="Interview transcript"    disabled={isSeeding} />
+          <QuickLink icon={MessageSquare} label="Captured answers"        disabled={isSeeding} />
           <QuickLink icon={Tag}           label="Priority prompts"        count={3} />
           <QuickLink icon={FileText}      label="Audit log"               count={14} />
         </div>
@@ -876,10 +881,10 @@ const AUDIT_ML = [
 const AUDIT_PA = [
   { ts: "2026-05-27 · 09:14:22Z", actor: "Hà Vy",              action: "Session created",                  detail: "Quick-initiate · Salesforce · SharePoint · Calendar",                    severity: "low" },
   { ts: "2026-05-27 · 09:18:04Z", actor: "System",             action: "Seeding completed",                 detail: "286 items pulled · 4 knowledge gaps inferred",                           severity: "low" },
-  { ts: "2026-05-28 · 14:02:18Z", actor: "Phương Anh Nguyễn",  action: "Voice interview started",           detail: "Scheduled session begun · estimated 45 minutes",                         severity: "low" },
-  { ts: "2026-05-28 · 14:47:53Z", actor: "Phương Anh Nguyễn",  action: "Voice interview signed",            detail: "Transcript reviewed and signed off · awaiting Manager review",           severity: "medium" },
+  { ts: "2026-05-28 · 14:02:18Z", actor: "Phương Anh Nguyễn",  action: "Started answering queue",           detail: "Began self-serve capture · text answers + file uploads",                 severity: "low" },
+  { ts: "2026-05-28 · 14:47:53Z", actor: "Phương Anh Nguyễn",  action: "Submitted answers for review",      detail: "Captured answers signed off · awaiting Manager review",                  severity: "medium" },
   { ts: "2026-05-28 · 16:31:09Z", actor: "System",             action: "Sensitivity classification",        detail: "12 items flagged for sensitive-content review",                          severity: "medium" },
-  { ts: "2026-05-29 · 08:04:11Z", actor: "System",             action: "Awaiting Manager review",           detail: "Transcript ready · 4 days until review deadline",                        severity: "medium" },
+  { ts: "2026-05-29 · 08:04:11Z", actor: "System",             action: "Awaiting Manager review",           detail: "Answers ready · 4 days until review deadline",                           severity: "medium" },
 ];
 
 function AuditTab({ session }) {
