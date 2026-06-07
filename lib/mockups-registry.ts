@@ -7,6 +7,7 @@ import UcHo01NormalFlow from "@/components/mockups/uc-ho-01-normal-flow.jsx";
 import UcHo01EdgeCases from "@/components/mockups/uc-ho-01-edge-cases.jsx";
 import UcHo02InterviewCanvas from "@/components/mockups/uc-ho-02-interview-canvas.jsx";
 import UcHo02CaptureQueue from "@/components/mockups/uc-ho-02-capture-queue.jsx";
+import UcHo04ManagerReview from "@/components/mockups/uc-ho-04-manager-review.jsx";
 import UcOn02ConsumerNewcomer from "@/components/mockups/uc-on-02-consumer-newcomer.jsx";
 import UcOn02ConsumerColleague from "@/components/mockups/uc-on-02-consumer-colleague.jsx";
 import UcOn02ConsumerManager from "@/components/mockups/uc-on-02-consumer-manager.jsx";
@@ -33,7 +34,7 @@ export type MockupEntry = {
 };
 
 /* ─────────────────────────────────────────────────────────────
-   Registry · 10 active mockups across three architectural planes.
+   Registry · 11 active mockups across three architectural planes.
 
    ┌─────────────────────────────────────────────────────────┐
    │  S1 · MANAGEMENT PLANE · Ha Vy + HR Admin              │
@@ -43,6 +44,8 @@ export type MockupEntry = {
    │   · session-command-view                                │
    │   · uc-ho-01-normal-flow      (spec-trace · 8 states)   │
    │   · uc-ho-01-edge-cases       (spec-trace · 10 states)  │
+   │   · uc-ho-04-manager-review   (S3 commit gate · WIP ·   │
+   │                                S1 full, S2-S8 stubs)    │
    ├─────────────────────────────────────────────────────────┤
    │  S2 · CAPTURE PLANE · Offboarder                        │
    │  ART-EEP visual system · OffboarderShell isolation      │
@@ -63,6 +66,15 @@ export type MockupEntry = {
      to Phase 2 · retained as design reference only. The POC uses
      the text question queue + self-upload + UC-HO-08 network
      requests · all surfaced through uc-ho-02-capture-queue.
+
+   POC Commit gate · QA-INT-01 §1.4:
+     The capture queue submits to uc-ho-04-manager-review · the
+     Manager's bundle review + sign-off surface. Nothing reaches
+     the KG without explicit Manager sign-off. The mockup is
+     under incremental build · Step A landed (architecture + S1
+     Arrival full), Steps B-E fill in the inner states (review +
+     accept, edit inline, send back, flag fix, bundle summary,
+     QA-INT-01 §1.4 sign-off).
 
    The three Consumer mockups render the SAME global knowledge
    graph through three different RBAC lenses (CL-093 hybrid
@@ -136,6 +148,19 @@ export const mockups: MockupEntry[] = [
     useCases: ["UC-HO-01"],
     tags: ["s1", "management", "flow", "edge-cases", "spec-trace", "current", "comprehensive"],
     Component: UcHo01EdgeCases,
+  },
+
+  /* ─── S1 · Management plane · UC-HO-04 commit gate ─── */
+  {
+    slug: "uc-ho-04-manager-review",
+    title: "UC-HO-04 · Manager review + sign-off — QA-INT-01 §1.4 commit gate",
+    description:
+      "WORK IN PROGRESS · Step A landed (architecture + S1 Arrival full · S2-S8 currently scaffolded with build-step placeholder cards). Hà Vy's review workspace for Minh Lê's submitted capture bundle · the QA-INT-01 §1.4 commit gate that decides what reaches the Knowledge Graph. 3-column layout · left item rail with 14 bundle items grouped by source (Manager priorities / Network questions / Pre-commit flag fixes / Own contributions / Uploaded files / Redirected) · center pane shows the current item's side-by-side diff (Minh's raw text vs AI-structured) · right decision rail context-switches per action (review / accept / edit / send back / flag fix). S1 Arrival shows the bundle overview with 4 stat tiles, recommended review order, and pre-review checks (CL-092 sanitization + CL-101 flag window + CL-093 Tier auto-assignment all visibly cleared). Steps B-E land remaining states: side-by-side diff review + quick accept + propagation preview · CL-086 inline edit grammar with greyed/strikethrough original · send-back form returning items to the Offboarder's queue · 3-way pre-commit flag diff (AI original + flagger correction + Offboarder fix) · bundle summary with per-team propagation breakdown · QA-INT-01 §1.4 sign-off with SHA-256 cryptographic anchor.",
+    sprint: "S1",
+    personas: ["Hà Vy", "Minh Lê", "Trần Hữu Nam", "Duy Nguyễn", "Phương Anh Nguyễn"],
+    useCases: ["UC-HO-04", "UC-HO-03"],
+    tags: ["s1", "management", "uc-ho-04", "review", "sign-off", "qa-int-01", "commit-gate", "wip", "step-a"],
+    Component: UcHo04ManagerReview,
   },
 
   /* ─── S2 · Capture plane · POC (CL-099) + Phase 2 reference (CL-098) ─── */
