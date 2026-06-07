@@ -12,7 +12,8 @@ import {
   ChevronDown, ChevronUp, ShieldAlert, Star, Activity,
   GitMerge, FileCheck, Crosshair, Hourglass, Settings,
   Inbox, Network, Cpu, FileQuestion, BookOpen, Hammer,
-  PenTool, RotateCcw, Flag, ListChecks, Volume2, Quote
+  PenTool, RotateCcw, Flag, ListChecks, Volume2, Quote,
+  Zap, ArrowLeftRight
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -22,10 +23,10 @@ import {
    it commits to the Knowledge Graph. The QA-INT-01 §1.4 commit gate
    in action · nothing reaches the KG without her sign-off.
 
-   BUILD STATUS · Steps A + B landed.
+   BUILD STATUS · Steps A + B + C landed.
      · Step A · architecture + S1 Arrival full
      · Step B · S2 Reviewing + S3 Accept (side-by-side diff core)
-     · Step C (pending) · S4 Edit inline + S5 Send back
+     · Step C · S4 Edit inline (CL-086) + S5 Send back form
      · Step D (pending) · S6 Pre-commit flag fix (3-way diff)
      · Step E (pending) · S7 Bundle summary + S8 Sign-off
      · Step F (DONE early) · registered in mockups-registry
@@ -35,7 +36,7 @@ import {
      · QA-INT-01 §1.3 · side-by-side diff (Minh's raw vs AI-structured)
      · QA-INT-01 §2.2 · Canonical vs Verified status visibly distinct
      · QA-INT-01 §2.3 · immutable audit trail · cryptographic anchor on sign-off
-     · CL-086 · inline edit diff grammar
+     · CL-086 · inline edit diff grammar (strikethrough original + violet additions)
      · CL-092 · sanitization pipeline visible (already ran during capture)
      · CL-093 · auto-assigned Tier 1/2 visibility for each item
      · CL-099 · Manager sees text-queue contributions (not transcript)
@@ -46,8 +47,8 @@ const FLOW = [
   { id: "s1", uc: "Step 1", label: "Arrival · bundle overview",        trigger: "Hà Vy opens Minh's submitted bundle · 14 items + 4 files + 1 redirect · pre-commit network flag loop already cleared." },
   { id: "s2", uc: "Step 2", label: "Reviewing Manager Priority",       trigger: "First item · Vendor XYZ SLA penalty clause · side-by-side · Minh's raw text + AI-structured version." },
   { id: "s3", uc: "Step 3", label: "Quick accept · all green",         trigger: "All confidence signals positive · sources cited · one-click acceptance · auto-canonical." },
-  { id: "s4", uc: "Step 4", label: "Edit inline · CL-086 grammar",     trigger: "Item needs a small correction · Hà Vy edits inline · original AI text greyed/strikethrough above." },
-  { id: "s5", uc: "Step 5", label: "Send back for clarification",      trigger: "Hà Vy needs more from Minh · sends item back with a note · returns to his queue as a follow-up question." },
+  { id: "s4", uc: "Step 4", label: "Edit inline · CL-086 grammar",     trigger: "Item 4 (Vendor XYZ grace period) needs a small wording fix · Hà Vy edits inline · original AI text shown strikethrough with violet additions." },
+  { id: "s5", uc: "Step 5", label: "Send back for clarification",      trigger: "Item 5 (2am Saturday coverage) is incomplete · Hà Vy sends it back to Minh with a specific follow-up question · returns to his queue." },
   { id: "s6", uc: "Step 6", label: "Pre-commit flag fix · 3-way",      trigger: "The Atlas rollback flag Trần raised · Hà Vy sees the original AI version, Trần's flag, and Minh's correction · approves the chain." },
   { id: "s7", uc: "Step 7", label: "Bundle summary · propagation",     trigger: "All 14 items reviewed · 9 accepted as Canonical, 3 Verified-only, 2 sent back · propagation preview shows downstream impact." },
   { id: "s8", uc: "Step 8", label: "Sign-off · QA-INT-01 commit gate", trigger: "Hà Vy signs off · cryptographic anchor created · KG commit begins · propagation to playbook + graph + downstream consumers." },
@@ -67,6 +68,7 @@ const SESSION = {
   successorInitials: "TN",
   flaggerNet: "Duy Nguyễn",
   flaggerNetInitials: "DN",
+  flaggerNetTeam: "Data Platform",
   corroboratorName: "Phương Anh Nguyễn",
   corroboratorInitials: "PA",
   corroboratorTeam: "Sales",
@@ -179,8 +181,8 @@ function StateRenderer({ id }) {
   if (id === "s1") return <S1Arrival />;
   if (id === "s2") return <S2ReviewingPriority />;
   if (id === "s3") return <S3QuickAccept />;
-  if (id === "s4") return <S4Placeholder />;
-  if (id === "s5") return <S5Placeholder />;
+  if (id === "s4") return <S4EditInline />;
+  if (id === "s5") return <S5SendBack />;
   if (id === "s6") return <S6Placeholder />;
   if (id === "s7") return <S7Placeholder />;
   if (id === "s8") return <S8Placeholder />;
@@ -273,9 +275,9 @@ function BundleProgress() {
   return (
     <div className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 flex items-center gap-2">
       <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Reviewed</div>
-      <div className="text-[13px] font-bold text-violet-700" style={{ fontFamily: MONO_STACK }}>2 / 14</div>
+      <div className="text-[13px] font-bold text-violet-700" style={{ fontFamily: MONO_STACK }}>4 / 14</div>
       <div className="w-20 h-1.5 rounded-full bg-gray-100 overflow-hidden">
-        <div className="h-full bg-gradient-to-r from-violet-500 to-violet-600 rounded-full" style={{ width: "14%" }} />
+        <div className="h-full bg-gradient-to-r from-violet-500 to-violet-600 rounded-full" style={{ width: "28%" }} />
       </div>
     </div>
   );
@@ -294,18 +296,18 @@ function ItemListRail({ activeState }) {
 
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
         <ItemListGroup label="Manager priorities" count={2} items={[
-          { id: "mp1", n: 1, title: "Vendor XYZ SLA penalty", source: "manager", status: activeState === "reviewing-mp" ? "active" : activeState === "accepting" ? "just-accepted" : "pending" },
+          { id: "mp1", n: 1, title: "Vendor XYZ SLA penalty", source: "manager", status: activeState === "reviewing-mp" ? "active" : activeState === "accepting" ? "just-accepted" : "accepted" },
           { id: "mp2", n: 2, title: "Payment Gateway fix", source: "manager", status: "pending" },
         ]} />
 
         <ItemListGroup label="Network questions" count={3} items={[
           { id: "nq1", n: 3, title: "Cosmos rollback heuristic", source: "network", status: "accepted" },
-          { id: "nq2", n: 4, title: "Vendor XYZ grace period", source: "network", status: "edit-pending", active: activeState === "editing" },
-          { id: "nq3", n: 5, title: "2am Saturday coverage", source: "network", status: "send-back-pending", active: activeState === "send-back" },
+          { id: "nq2", n: 4, title: "Vendor XYZ grace period", source: "network", status: activeState === "editing" ? "active" : "edit-pending" },
+          { id: "nq3", n: 5, title: "2am Saturday coverage", source: "network", status: activeState === "send-back" ? "active" : "pending" },
         ]} />
 
         <ItemListGroup label="Pre-commit flag fixes" count={1} items={[
-          { id: "fl1", n: 6, title: "Atlas rollback correction", source: "flag", status: "flag-review", active: activeState === "flag-fix" },
+          { id: "fl1", n: 6, title: "Atlas rollback correction", source: "flag", status: activeState === "flag-fix" ? "active" : "flag-review" },
         ]} />
 
         <ItemListGroup label="Own contributions" count={5} items={[
@@ -391,6 +393,8 @@ function DecisionRail({ state }) {
       <div className="flex-1 overflow-y-auto px-4 py-4">
         {state === "reviewing-mp" && <DecisionPanelReviewing />}
         {state === "accepting" && <DecisionPanelAccepted />}
+        {state === "editing" && <DecisionPanelEditing />}
+        {state === "send-back" && <DecisionPanelSendBack />}
         {!state && <DecisionPanelDefault />}
       </div>
     </aside>
@@ -493,6 +497,101 @@ function DecisionPanelAccepted() {
   );
 }
 
+function DecisionPanelEditing() {
+  return (
+    <div className="space-y-3">
+      <div className="rounded-lg border-2 border-violet-300 bg-violet-50/50 p-3">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-8 h-8 rounded-lg bg-violet-100 border border-violet-300 flex items-center justify-center shrink-0">
+            <Edit3 className="w-4 h-4 text-violet-700" strokeWidth={2} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[12px] font-semibold text-violet-900">Editing inline</div>
+            <div className="text-[10px] text-violet-800/80 leading-snug">
+              CL-086 · original kept in audit trail
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-1.5 mt-3">
+          <DiffStatTile value="+24" label="Added" tone="violet" />
+          <DiffStatTile value="−18" label="Removed" tone="rose" />
+          <DiffStatTile value="3" label="Spans" tone="gray" />
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <PrimaryDecisionButton icon={Check} label="Save edit · promote to Canonical" tone="emerald" />
+        <PrimaryDecisionButton icon={Award} label="Save edit · keep as Verified" tone="violet" subtle />
+        <PrimaryDecisionButton icon={RotateCcw} label="Discard edits · revert to AI" tone="rose" subtle />
+      </div>
+
+      <div className="pt-3 border-t border-gray-100">
+        <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold mb-2">Edit lineage</div>
+        <ol className="space-y-1.5 text-[10px] text-gray-600 leading-snug">
+          <LineageRowSm n={1} label={`${SESSION.offboarder} raw`} detail="Original capture" done />
+          <LineageRowSm n={2} label="AI structured" detail="Worker SLM auto-format" done />
+          <LineageRowSm n={3} label={`${SESSION.reviewer} edit`} detail="Your wording fix · live" active />
+        </ol>
+      </div>
+
+      <div className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2 text-[10px] text-gray-600 leading-snug">
+        <Info className="w-3 h-3 text-gray-500 inline-block mr-1 -mt-0.5" strokeWidth={2} />
+        {SESSION.offboarderShort} sees your edits in his audit trail · he can flag if your change misrepresents what he meant.
+      </div>
+    </div>
+  );
+}
+
+function DecisionPanelSendBack() {
+  return (
+    <div className="space-y-3">
+      <div className="rounded-lg border-2 border-yellow-300 bg-yellow-50/50 p-3">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-8 h-8 rounded-lg bg-yellow-100 border border-yellow-300 flex items-center justify-center shrink-0">
+            <RotateCcw className="w-4 h-4 text-yellow-700" strokeWidth={2} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[12px] font-semibold text-yellow-900">Sending back to {SESSION.offboarderShort}</div>
+            <div className="text-[10px] text-yellow-800/80 leading-snug">
+              Appears in his queue as a follow-up · doesn't block sign-off of other items
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <PrimaryDecisionButton icon={Send} label={`Send to ${SESSION.offboarderShort}'s queue`} tone="yellow" />
+        <PrimaryDecisionButton icon={Save} label="Save draft · send later" tone="violet" subtle />
+        <PrimaryDecisionButton icon={X} label="Cancel · go back to accept" tone="rose" subtle />
+      </div>
+
+      <div className="pt-3 border-t border-gray-100">
+        <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold mb-2">When he answers</div>
+        <ul className="space-y-1.5 text-[10px] text-gray-600 leading-snug">
+          <li className="flex items-start gap-1.5">
+            <ArrowRight className="w-2.5 h-2.5 text-yellow-700 shrink-0 mt-0.5" strokeWidth={2} />
+            <span>Comes back to this bundle as a clarified item</span>
+          </li>
+          <li className="flex items-start gap-1.5">
+            <ArrowRight className="w-2.5 h-2.5 text-yellow-700 shrink-0 mt-0.5" strokeWidth={2} />
+            <span>You can sign off the rest of the bundle without waiting</span>
+          </li>
+          <li className="flex items-start gap-1.5">
+            <ArrowRight className="w-2.5 h-2.5 text-yellow-700 shrink-0 mt-0.5" strokeWidth={2} />
+            <span>If urgent · he gets a notification + email</span>
+          </li>
+        </ul>
+      </div>
+
+      <div className="rounded-lg bg-rose-50/30 border border-rose-100 px-3 py-2 text-[10px] text-rose-900/80 leading-snug">
+        <AlertTriangle className="w-3 h-3 text-rose-700 inline-block mr-1 -mt-0.5" strokeWidth={2} />
+        {SESSION.offboarderShort} has {SESSION.daysUntilLastDay} days left · consider marking urgent so he sees this on his next login.
+      </div>
+    </div>
+  );
+}
+
 function PrimaryDecisionButton({ icon: Icon, label, tone, subtle }) {
   const cfg = {
     emerald: subtle ? "border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50" : "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600",
@@ -539,6 +638,36 @@ function PropagateRowSm({ label, detail }) {
     <li className="flex items-start gap-1.5">
       <GitMerge className="w-2.5 h-2.5 text-violet-600 shrink-0 mt-0.5" strokeWidth={2} />
       <span><strong className="text-gray-700">{label}</strong> · {detail}</span>
+    </li>
+  );
+}
+
+function DiffStatTile({ value, label, tone }) {
+  const cfg = {
+    violet: { bg: "bg-violet-100", border: "border-violet-200", text: "text-violet-700" },
+    rose: { bg: "bg-rose-100", border: "border-rose-200", text: "text-rose-700" },
+    gray: { bg: "bg-gray-100", border: "border-gray-200", text: "text-gray-700" },
+  }[tone];
+  return (
+    <div className={`rounded-md ${cfg.bg} border ${cfg.border} px-2 py-1.5 text-center`}>
+      <div className={`text-sm font-bold ${cfg.text} leading-none`} style={{ fontFamily: MONO_STACK }}>{value}</div>
+      <div className="text-[9px] text-gray-600 mt-1 uppercase tracking-wider">{label}</div>
+    </div>
+  );
+}
+
+function LineageRowSm({ n, label, detail, done, active }) {
+  return (
+    <li className="flex items-start gap-2">
+      <span className={`w-4 h-4 rounded shrink-0 flex items-center justify-center text-[8px] font-bold ${
+        active ? "bg-violet-600 text-white" :
+        done ? "bg-emerald-100 text-emerald-700 border border-emerald-300" :
+        "bg-white border border-gray-300 text-gray-400"
+      }`} style={{ fontFamily: MONO_STACK }}>{active ? <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> : done ? <Check className="w-2 h-2" strokeWidth={3} /> : n}</span>
+      <div className="flex-1 min-w-0">
+        <div className={`text-[10px] ${active ? "font-semibold text-gray-900" : "text-gray-700"}`}>{label}</div>
+        <div className="text-[9px] text-gray-500 leading-snug">{detail}</div>
+      </div>
     </li>
   );
 }
@@ -679,7 +808,6 @@ function S2ReviewingPriority() {
           title="Vendor XYZ · the SLA penalty clause"
           subtitle="Manager priority · from you to Minh · #1 of 2"
           tagBadge="Vendor XYZ"
-          tagBadgeKind="topic"
           itemId="ITEM-2026-06-03-007"
         />
 
@@ -741,7 +869,6 @@ function S3QuickAccept() {
           title="Vendor XYZ · the SLA penalty clause"
           subtitle="Manager priority · from you to Minh · #1 of 2"
           tagBadge="Vendor XYZ"
-          tagBadgeKind="topic"
           itemId="ITEM-2026-06-03-007"
           status="accepted"
         />
@@ -821,10 +948,520 @@ function PostAcceptInlineActions() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
+   S4 · Edit inline · CL-086 grammar
+   Original AI text shown strikethrough + violet additions inline
+   ═══════════════════════════════════════════════════════════════════ */
+
+function S4EditInline() {
+  return (
+    <ReviewShell bundleState="editing">
+      <div className="px-6 py-6 max-w-[900px]">
+        <ItemHeader
+          n={4}
+          source="network"
+          title="Vendor XYZ · the 5-day grace period story"
+          subtitle="Network question · from Phương Anh · #2 of 3"
+          tagBadge="Vendor XYZ"
+          itemId="ITEM-2026-06-03-011"
+          status="editing"
+        />
+
+        <NetworkQuestionCard
+          asker={SESSION.corroboratorName}
+          askerInitials={SESSION.corroboratorInitials}
+          askerTeam={SESSION.corroboratorTeam}
+          question={`Minh, I think you and Linh worked out a verbal grace period on the SLA penalty clause — can you confirm the exact terms? My team will need to know when we close out the contract paperwork.`}
+          when="asked 2 days ago · UC-HO-08 network question"
+        />
+
+        <EditableDiffEditor />
+
+        <EditLineageFooter />
+      </div>
+    </ReviewShell>
+  );
+}
+
+function NetworkQuestionCard({ asker, askerInitials, askerTeam, question, when }) {
+  return (
+    <div className="rounded-xl bg-indigo-50/30 border border-indigo-200 p-4 mb-4">
+      <div className="flex items-start gap-3">
+        <div className="w-8 h-8 rounded-full bg-indigo-100 border border-indigo-200 flex items-center justify-center shrink-0">
+          <span className="text-[10px] font-semibold text-indigo-700">{askerInitials}</span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <span className="text-[11px] font-semibold text-gray-900">{asker}</span>
+            <span className="text-[10px] text-gray-500">· {askerTeam} team</span>
+            <span className="text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded-full bg-indigo-100 border border-indigo-200 text-indigo-700 inline-flex items-center gap-1">
+              <Users className="w-2.5 h-2.5" strokeWidth={2.5} />
+              Network
+            </span>
+          </div>
+          <blockquote className="text-[13px] text-gray-700 leading-relaxed italic flex items-start gap-2">
+            <Quote className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" strokeWidth={1.75} />
+            <span>{question}</span>
+          </blockquote>
+          <div className="text-[10px] text-gray-500 mt-2" style={{ fontFamily: MONO_STACK }}>{when}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EditableDiffEditor() {
+  return (
+    <div className="rounded-xl border-2 border-violet-300 bg-white overflow-hidden mb-4 shadow-sm">
+      <div className="px-4 py-2.5 border-b border-violet-200 bg-violet-50/40 flex items-center gap-2 flex-wrap">
+        <Edit3 className="w-3.5 h-3.5 text-violet-700" strokeWidth={2} />
+        <span className="text-[12px] font-semibold text-violet-900">You are editing this item · CL-086 inline grammar</span>
+        <span className="ml-auto text-[10px] text-violet-700 inline-flex items-center gap-1">
+          <ArrowLeftRight className="w-2.5 h-2.5" strokeWidth={2} />
+          <button className="hover:underline cursor-pointer">Show original side-by-side</button>
+        </span>
+      </div>
+
+      <div className="px-5 py-5 text-[14px] text-gray-800 leading-[1.7]">
+        <p className="mb-4">
+          <DelSpan>The vendor has provided a verbal commitment that</DelSpan>
+          {" "}
+          <InsSpan>Linh at Vendor XYZ verbally agreed:</InsSpan>
+          {" "}
+          <DelSpan>any single SLA miss occurring within a</DelSpan>
+          {" "}
+          <InsSpan>a single SLA miss within</InsSpan>
+          {" "}
+          5
+          {" "}
+          <DelSpan>-business-day grace period following resolution</DelSpan>
+          {" "}
+          <InsSpan>business days of resolution</InsSpan>
+          {" "}
+          <DelSpan>does not trigger the contractual penalty clause</DelSpan>
+          <InsSpan>doesn't trigger the penalty</InsSpan>
+          .
+        </p>
+
+        <p className="mb-2 font-semibold text-gray-900">Context</p>
+        <p>
+          Sourced from
+          {" "}
+          <DelSpan>the</DelSpan>
+          {" "}
+          <InsSpan>a</InsSpan>
+          {" "}
+          Q3 negotiation
+          {" "}
+          <DelSpan>session following</DelSpan>
+          {" "}
+          <InsSpan>after</InsSpan>
+          {" "}
+          an incident where
+          {" "}
+          <DelSpan>they exceeded SLA by 4 hours</DelSpan>
+          {" "}
+          <InsSpan>they were 4h late</InsSpan>
+          {" "}
+          due to
+          {" "}
+          <DelSpan>their infrastructure-side failure</DelSpan>
+          <InsSpan>their infrastructure</InsSpan>
+          . Linh
+          {" "}
+          <DelSpan>extended this courtesy</DelSpan>
+          {" "}
+          <InsSpan>offered the grace</InsSpan>
+          {" "}
+          for similar scenarios going forward.
+        </p>
+
+        <p className="mt-4 text-gray-900">
+          <strong>How to invoke:</strong> phone call only ·
+          {" "}
+          <InsSpan>don't put in writing.</InsSpan>
+          {" "}
+          <DelSpan>this grace period should not be referenced in written communication with the vendor.</DelSpan>
+        </p>
+
+        <div className="mt-4 pt-3 border-t border-gray-100 flex items-center gap-2 text-[10px] text-gray-500">
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-violet-100 border border-violet-200 text-violet-700 font-semibold">
+            <Sparkles className="w-2.5 h-2.5" strokeWidth={2.5} />
+            Your edits
+          </span>
+          <span>· cursor at end · ⌘S to save draft · ⌘↵ to save + accept</span>
+        </div>
+      </div>
+
+      <div className="px-4 py-2 border-t border-gray-100 bg-gray-50/40 flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-3 text-[10px] text-gray-500">
+          <span className="inline-flex items-center gap-1">
+            <span className="w-2 h-2 rounded bg-rose-200 inline-block" />
+            <span>removed</span>
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="w-2 h-2 rounded bg-violet-200 inline-block" />
+            <span>your additions</span>
+          </span>
+          <span>·</span>
+          <span style={{ fontFamily: MONO_STACK }}>6 spans changed · 24 words added · 18 removed</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <button className="h-6 px-2 rounded text-[10px] text-gray-500 hover:text-violet-700 inline-flex items-center gap-1 cursor-pointer">
+            <RotateCcw className="w-2.5 h-2.5" strokeWidth={2} />
+            Reset to AI version
+          </button>
+          <button className="h-6 px-2 rounded text-[10px] text-gray-500 hover:text-violet-700 inline-flex items-center gap-1 cursor-pointer">
+            <Sparkles className="w-2.5 h-2.5 text-violet-500" strokeWidth={2} />
+            AI · suggest tighter wording
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DelSpan({ children }) {
+  return (
+    <span className="bg-rose-100 text-rose-800 line-through decoration-rose-400 decoration-1.5 px-1 py-0.5 rounded-sm">
+      {children}
+    </span>
+  );
+}
+
+function InsSpan({ children }) {
+  return (
+    <span className="bg-violet-100 text-violet-900 underline decoration-violet-400 decoration-1.5 underline-offset-2 px-1 py-0.5 rounded-sm font-medium">
+      {children}
+    </span>
+  );
+}
+
+function EditLineageFooter() {
+  return (
+    <div className="rounded-xl bg-gray-50 border border-gray-200 p-4 mb-4">
+      <div className="text-[10px] uppercase tracking-[0.18em] text-gray-500 font-semibold mb-3 inline-flex items-center gap-1.5">
+        <History className="w-3 h-3" strokeWidth={2} />
+        Edit lineage · QA-INT-01 §2.3 preserves all versions
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <LineageCard
+          n={1}
+          stage="Raw capture"
+          actor={SESSION.offboarder}
+          actorInitials={SESSION.offboarderInitials}
+          when="6 hours ago"
+          preview={`The verbal grace period from Linh isn't in the contract — she said any single miss within 5 business days of resolution doesn't trigger the penalty clock.`}
+          tone="gray"
+          done
+        />
+        <LineageCard
+          n={2}
+          stage="AI-structured"
+          actor="Worker SLM"
+          actorInitials="AI"
+          when="5 min ago"
+          preview={`The vendor has provided a verbal commitment that any single SLA miss occurring within a 5-business-day grace period following resolution does not trigger the contractual penalty clause...`}
+          tone="emerald"
+          done
+        />
+        <LineageCard
+          n={3}
+          stage={`${SESSION.reviewer}'s edit`}
+          actor={SESSION.reviewer}
+          actorInitials={SESSION.reviewerInitials}
+          when="editing live"
+          preview={`Linh at Vendor XYZ verbally agreed: a single SLA miss within 5 business days of resolution doesn't trigger the penalty...`}
+          tone="violet"
+          active
+        />
+      </div>
+
+      <div className="mt-3 pt-3 border-t border-gray-200 text-[10px] text-gray-500 leading-relaxed inline-flex items-start gap-1.5">
+        <Info className="w-3 h-3 text-gray-400 shrink-0 mt-0.5" strokeWidth={2} />
+        <span>{SESSION.offboarderShort} will see your edits in his audit trail. If your change misrepresents what he meant, he can raise a flag in the post-commit review window (CL-101).</span>
+      </div>
+    </div>
+  );
+}
+
+function LineageCard({ n, stage, actor, actorInitials, when, preview, tone, done, active }) {
+  const cfg = {
+    gray: { ring: "border-gray-200", bg: "bg-white", avatar: "bg-gray-100 text-gray-700 border-gray-200", header: "text-gray-900" },
+    emerald: { ring: "border-emerald-200", bg: "bg-emerald-50/30", avatar: "bg-emerald-100 text-emerald-700 border-emerald-200", header: "text-gray-900" },
+    violet: { ring: active ? "border-violet-400 ring-2 ring-violet-500/20" : "border-violet-200", bg: "bg-violet-50/30", avatar: "bg-violet-100 text-violet-700 border-violet-200", header: "text-violet-900" },
+  }[tone];
+  return (
+    <div className={`rounded-lg border ${cfg.ring} ${cfg.bg} p-3 relative`}>
+      {active && (
+        <span className="absolute -top-2 right-2 px-1.5 py-0.5 rounded-full bg-violet-600 text-white text-[8px] font-bold uppercase tracking-wider">Live</span>
+      )}
+      <div className="flex items-center gap-2 mb-2">
+        <span className={`w-5 h-5 rounded ${cfg.avatar} border flex items-center justify-center text-[9px] font-bold`} style={{ fontFamily: MONO_STACK }}>{n}</span>
+        <div className="flex-1 min-w-0">
+          <div className={`text-[11px] font-semibold ${cfg.header} truncate`}>{stage}</div>
+        </div>
+        {done && <Check className="w-3 h-3 text-emerald-600 shrink-0" strokeWidth={2.5} />}
+      </div>
+      <div className="flex items-center gap-1.5 text-[10px] text-gray-600 mb-2">
+        <span className={`w-4 h-4 rounded-full ${cfg.avatar} border flex items-center justify-center text-[8px] font-semibold`}>{actorInitials}</span>
+        <span className="truncate">{actor}</span>
+        <span className="text-gray-400">·</span>
+        <span style={{ fontFamily: MONO_STACK }} className="text-gray-500">{when}</span>
+      </div>
+      <p className="text-[10px] text-gray-600 leading-snug line-clamp-3 italic">"{preview}"</p>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   S5 · Send back for clarification
+   ═══════════════════════════════════════════════════════════════════ */
+
+function S5SendBack() {
+  return (
+    <ReviewShell bundleState="send-back">
+      <div className="px-6 py-6 max-w-[900px]">
+        <ItemHeader
+          n={5}
+          source="network"
+          title="On-call · 2am Saturday slot coverage"
+          subtitle="Network question · from Duy Nguyễn · #3 of 3"
+          tagBadge="On-call rotation"
+          itemId="ITEM-2026-06-03-015"
+          status="sending-back"
+        />
+
+        <NetworkQuestionCard
+          asker={SESSION.flaggerNet}
+          askerInitials={SESSION.flaggerNetInitials}
+          askerTeam={SESSION.flaggerNetTeam}
+          question={`Minh — I noticed in your calendar that you cover the 2am Saturday slot pretty often. Who's been doing that when you're not? Want to make sure Trần knows.`}
+          when="asked 3 hours ago · UC-HO-08 network question"
+        />
+
+        <IncompleteAnswerCard />
+
+        <SendBackComposer />
+
+        <SendBackImpactNote />
+      </div>
+    </ReviewShell>
+  );
+}
+
+function IncompleteAnswerCard() {
+  return (
+    <div className="rounded-xl border-2 border-yellow-200 bg-yellow-50/30 p-4 mb-4">
+      <div className="flex items-center gap-2 mb-2">
+        <AlertTriangle className="w-3.5 h-3.5 text-yellow-700" strokeWidth={2} />
+        <span className="text-[11px] font-semibold text-gray-900">{SESSION.offboarderShort}'s answer is incomplete</span>
+        <span className="ml-auto text-[10px] text-gray-500" style={{ fontFamily: MONO_STACK }}>answered 1 hour ago</span>
+      </div>
+
+      <div className="rounded-lg bg-white border border-yellow-200 px-3 py-3 mb-3">
+        <p className="text-[13px] text-gray-700 leading-relaxed">
+          "<span>It varies week to week. </span><span className="bg-yellow-100 text-yellow-900 px-0.5 rounded-sm">Daniel and Tuan have been alternating mostly</span><span>, but sometimes Hieu picks it up if they're both out. The pattern isn't documented anywhere — we just figure it out in the team chat at the start of each month.</span>"
+        </p>
+      </div>
+
+      <div className="rounded-md bg-yellow-100/60 border border-yellow-200 px-3 py-2 flex items-start gap-2">
+        <AlertTriangle className="w-3 h-3 text-yellow-700 shrink-0 mt-0.5" strokeWidth={2} />
+        <div className="text-[10px] text-yellow-900/90 leading-relaxed">
+          <strong>What's missing:</strong> the actual upcoming schedule, last names, contact preferences for after-hours pings, and whether anyone is responsible during planned leave. {SESSION.successorShort} needs concrete names and rotation order, not just first names.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SendBackComposer() {
+  return (
+    <div className="rounded-xl border-2 border-yellow-300 bg-white mb-4 overflow-hidden">
+      <div className="px-4 py-2.5 border-b border-yellow-200 bg-yellow-50/50 flex items-center gap-2">
+        <Send className="w-3.5 h-3.5 text-yellow-700" strokeWidth={2} />
+        <span className="text-[12px] font-semibold text-yellow-900">Your follow-up question for {SESSION.offboarderShort}</span>
+        <span className="ml-auto text-[10px] text-yellow-700 inline-flex items-center gap-1">
+          <Sparkles className="w-2.5 h-2.5" strokeWidth={2} />
+          AI drafted from the gaps · edit before sending
+        </span>
+      </div>
+
+      <div className="px-4 py-4">
+        <RecipientPill />
+
+        <div className="mt-3">
+          <label className="text-[10px] uppercase tracking-[0.18em] font-semibold text-gray-500 mb-1.5 block">Question</label>
+          <div className="rounded-lg border border-gray-300 bg-white focus-within:border-yellow-400 focus-within:ring-2 focus-within:ring-yellow-500/30 transition-colors">
+            <textarea
+              className="w-full px-3 py-3 text-[13px] text-gray-900 outline-none resize-none bg-transparent rounded-lg"
+              rows={6}
+              defaultValue={`Minh — you mentioned Daniel and Tuan alternate the 2am Saturday slot but didn't give the actual schedule. Trần will need to know who to ping. Three things:
+
+1. Can you list the rotation through end of Q3 (or however far you know)?
+2. Last names + Slack handles for Daniel, Tuan, and Hieu?
+3. What's the escalation if all three are unreachable?
+
+Also — is this rotation written down anywhere, or just lived in your head and the team chat?`}
+            />
+          </div>
+          <div className="mt-1.5 text-[10px] text-gray-500 inline-flex items-center gap-1">
+            <Hash className="w-2.5 h-2.5" strokeWidth={2} />
+            <span style={{ fontFamily: MONO_STACK }}>92 words · 0.4 min to read</span>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+          <UrgencySelector />
+          <SourceContextPanel />
+        </div>
+      </div>
+
+      <div className="px-4 py-3 border-t border-gray-100 bg-gray-50/40 flex items-center justify-between gap-2 flex-wrap">
+        <div className="text-[10px] text-gray-500 inline-flex items-center gap-1">
+          <ShieldCheck className="w-3 h-3 text-emerald-600" strokeWidth={2} />
+          <span>{SESSION.offboarderShort} will see this in his capture queue · doesn't trigger a new sanitization pass when he answers</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <button className="h-8 px-3 rounded-md text-gray-600 hover:text-gray-900 text-[11px] font-medium inline-flex items-center gap-1.5">
+            <Save className="w-3 h-3" strokeWidth={2} />
+            Save draft
+          </button>
+          <button className="h-8 px-3 rounded-md text-gray-600 hover:text-gray-900 text-[11px] font-medium inline-flex items-center gap-1.5">
+            <Sparkles className="w-3 h-3 text-violet-500" strokeWidth={2} />
+            Improve with AI
+          </button>
+          <button className="h-9 px-4 rounded-md bg-yellow-600 hover:bg-yellow-700 text-white text-[12px] font-semibold inline-flex items-center gap-1.5">
+            <Send className="w-3.5 h-3.5" strokeWidth={2.5} />
+            Send to {SESSION.offboarderShort}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RecipientPill() {
+  return (
+    <div className="rounded-lg bg-gray-50 border border-gray-200 px-3 py-2 flex items-center gap-2">
+      <span className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">To</span>
+      <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-white border border-gray-200">
+        <span className="w-5 h-5 rounded-full bg-violet-100 border border-violet-200 flex items-center justify-center text-[9px] font-semibold text-violet-700">{SESSION.offboarderInitials}</span>
+        <span className="text-[11px] font-medium text-gray-900">{SESSION.offboarder}</span>
+        <span className="text-[10px] text-gray-500" style={{ fontFamily: MONO_STACK }}>{SESSION.offboarderHandle}</span>
+      </div>
+      <span className="ml-auto text-[10px] text-gray-500 inline-flex items-center gap-1">
+        <Clock className="w-2.5 h-2.5" strokeWidth={2} />
+        <span style={{ fontFamily: MONO_STACK }}>{SESSION.daysUntilLastDay}d left</span>
+      </span>
+    </div>
+  );
+}
+
+function UrgencySelector() {
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white p-3">
+      <div className="text-[10px] uppercase tracking-[0.18em] font-semibold text-gray-500 mb-2 inline-flex items-center gap-1.5">
+        <Zap className="w-3 h-3 text-yellow-600" strokeWidth={2} />
+        Urgency
+      </div>
+      <div className="space-y-1.5">
+        <UrgencyOption label="Urgent" detail={`Notify ${SESSION.offboarderShort} now · email + push`} tone="rose" active />
+        <UrgencyOption label="Standard" detail="Shows in his queue on next login" tone="violet" />
+        <UrgencyOption label="Whenever" detail="No notification · low priority" tone="gray" />
+      </div>
+    </div>
+  );
+}
+
+function UrgencyOption({ label, detail, tone, active }) {
+  const cfg = {
+    rose: { dot: "bg-rose-500", text: "text-rose-700", ring: "border-rose-300 bg-rose-50/40 ring-2 ring-rose-500/15" },
+    violet: { dot: "bg-violet-500", text: "text-violet-700", ring: "border-violet-200" },
+    gray: { dot: "bg-gray-400", text: "text-gray-600", ring: "border-gray-200" },
+  }[tone];
+  return (
+    <button className={`w-full text-left rounded-md border ${active ? cfg.ring : "border-gray-200 hover:border-gray-300"} px-2 py-1.5 flex items-center gap-2 transition-colors`}>
+      <span className={`w-2 h-2 rounded-full ${cfg.dot} shrink-0`} />
+      <div className="flex-1 min-w-0">
+        <div className={`text-[11px] font-semibold ${active ? cfg.text : "text-gray-900"}`}>{label}</div>
+        <div className="text-[9px] text-gray-500 leading-snug">{detail}</div>
+      </div>
+      {active && <Check className="w-3 h-3 text-rose-600 shrink-0" strokeWidth={2.5} />}
+    </button>
+  );
+}
+
+function SourceContextPanel() {
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white p-3">
+      <div className="text-[10px] uppercase tracking-[0.18em] font-semibold text-gray-500 mb-2 inline-flex items-center gap-1.5">
+        <FileText className="w-3 h-3 text-violet-600" strokeWidth={2} />
+        Context attached
+      </div>
+      <ul className="space-y-1">
+        <SourceContextRow icon={Calendar} label={`${SESSION.offboarderShort}'s Google calendar`} detail="Last 90 days · auto-pulled" />
+        <SourceContextRow icon={MessageSquare} label="On-call Slack channel" detail="#oncall-platform" />
+        <SourceContextRow icon={GitBranch} label="Existing rotation doc" detail="Trello · On-Call board (incomplete)" warning />
+      </ul>
+      <button className="mt-2 w-full text-[10px] text-gray-500 hover:text-violet-700 inline-flex items-center justify-center gap-1 py-1 border border-dashed border-gray-200 rounded hover:border-violet-300 hover:bg-violet-50/40 transition-colors">
+        <Plus className="w-2.5 h-2.5" strokeWidth={2} />
+        Attach more context
+      </button>
+    </div>
+  );
+}
+
+function SourceContextRow({ icon: Icon, label, detail, warning }) {
+  return (
+    <li className="flex items-center gap-2">
+      <Icon className={`w-3 h-3 shrink-0 ${warning ? "text-yellow-700" : "text-gray-500"}`} strokeWidth={2} />
+      <div className="flex-1 min-w-0">
+        <div className="text-[11px] text-gray-900 truncate">{label}</div>
+        <div className={`text-[9px] truncate ${warning ? "text-yellow-700" : "text-gray-500"}`} style={{ fontFamily: MONO_STACK }}>
+          {detail}
+        </div>
+      </div>
+      <button className="text-gray-400 hover:text-gray-700 p-0.5"><X className="w-2.5 h-2.5" strokeWidth={2.5} /></button>
+    </li>
+  );
+}
+
+function SendBackImpactNote() {
+  return (
+    <div className="rounded-xl bg-violet-50/30 border border-violet-200 p-4 mb-4">
+      <div className="text-[10px] uppercase tracking-[0.18em] text-violet-700 font-semibold mb-2 inline-flex items-center gap-1.5">
+        <Activity className="w-3 h-3" strokeWidth={2} />
+        What happens when {SESSION.offboarderShort} answers
+      </div>
+
+      <ol className="space-y-2">
+        <SendBackImpactStep n={1} title="Item moves to 'Awaiting Minh' group" detail="Stays in your bundle · doesn't block sign-off of the other 13 items" />
+        <SendBackImpactStep n={2} title={`${SESSION.offboarderShort} sees the question in his capture queue`} detail="Yellow accent · marked urgent · he gets a push + email notification" />
+        <SendBackImpactStep n={3} title="When he answers · returns here as a fresh review item" detail="You'll see his new answer + your original question + the lineage · ready to accept" />
+        <SendBackImpactStep n={4} title="If he can't or won't · you can sign off the rest" detail={`After sign-off, this item stays open as a UC-HO-06 follow-up for the post-handover review window`} last />
+      </ol>
+    </div>
+  );
+}
+
+function SendBackImpactStep({ n, title, detail, last }) {
+  return (
+    <li className={`flex items-start gap-2.5 ${!last ? "pb-2 border-b border-violet-100" : ""}`}>
+      <span className="w-5 h-5 rounded-md bg-white border border-violet-200 flex items-center justify-center shrink-0 text-[10px] font-bold text-violet-700" style={{ fontFamily: MONO_STACK }}>{n}</span>
+      <div className="flex-1 min-w-0">
+        <div className="text-[11px] font-semibold text-gray-900">{title}</div>
+        <div className="text-[10px] text-gray-600 leading-snug">{detail}</div>
+      </div>
+    </li>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
    Shared primitives for S2/S3 (and reused by C/D/E)
    ═══════════════════════════════════════════════════════════════════ */
 
-function ItemHeader({ n, source, title, subtitle, tagBadge, tagBadgeKind, itemId, status }) {
+function ItemHeader({ n, source, title, subtitle, tagBadge, itemId, status }) {
   const cfg = {
     "manager-priority": { borderL: "border-l-violet-500", iconCls: "bg-violet-50 border-violet-200 text-violet-700", icon: Sparkles },
     "network": { borderL: "border-l-indigo-500", iconCls: "bg-indigo-50 border-indigo-200 text-indigo-700", icon: Users },
@@ -844,6 +1481,8 @@ function ItemHeader({ n, source, title, subtitle, tagBadge, tagBadgeKind, itemId
           <span className="text-[11px] text-gray-600">{subtitle}</span>
           {tagBadge && <span className="text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-gray-700 inline-flex items-center gap-1"><Tag className="w-2.5 h-2.5" strokeWidth={2} />{tagBadge}</span>}
           {status === "accepted" && <span className="text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 inline-flex items-center gap-1"><Check className="w-2.5 h-2.5" strokeWidth={2.5} />Accepted</span>}
+          {status === "editing" && <span className="text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded-full bg-violet-100 border border-violet-300 text-violet-800 inline-flex items-center gap-1"><Edit3 className="w-2.5 h-2.5" strokeWidth={2} />Editing live</span>}
+          {status === "sending-back" && <span className="text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded-full bg-yellow-100 border border-yellow-300 text-yellow-800 inline-flex items-center gap-1"><RotateCcw className="w-2.5 h-2.5" strokeWidth={2} />Sending back</span>}
         </div>
         <h2 className="text-lg font-bold text-gray-900 tracking-tight leading-tight">{title}</h2>
         {itemId && <div className="text-[9px] text-gray-400 mt-1" style={{ fontFamily: MONO_STACK }}>{itemId}</div>}
@@ -885,19 +1524,8 @@ function OriginalQuestionCard() {
 function DiffPanes({ rawTitle, rawAuthor, rawContent, structuredTitle, structuredAuthor, structuredContent, structuredAccepted }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-4">
-      <DiffPane
-        side="raw"
-        title={rawTitle}
-        author={rawAuthor}
-        content={rawContent}
-      />
-      <DiffPane
-        side="structured"
-        title={structuredTitle}
-        author={structuredAuthor}
-        content={structuredContent}
-        accepted={structuredAccepted}
-      />
+      <DiffPane side="raw" title={rawTitle} author={rawAuthor} content={rawContent} />
+      <DiffPane side="structured" title={structuredTitle} author={structuredAuthor} content={structuredContent} accepted={structuredAccepted} />
     </div>
   );
 }
@@ -1011,7 +1639,7 @@ function NetworkCorroborationCard() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   S4-S8 · Placeholder cards · filled in by Steps C-E
+   S6-S8 · Placeholder cards · filled in by Steps D + E
    ═══════════════════════════════════════════════════════════════════ */
 
 function StatePlaceholder({ stateNum, plannedStep, purpose, willShow }) {
@@ -1050,43 +1678,11 @@ function StatePlaceholder({ stateNum, plannedStep, purpose, willShow }) {
 
           <div className="mt-4 flex items-center gap-2 text-[10px] text-gray-500">
             <Info className="w-3 h-3" strokeWidth={2} />
-            <span>States 1, 2, 3 are now complete. Navigate via the dev chrome step dots to see them.</span>
+            <span>States 1, 2, 3, 4, 5 are now complete. Navigate via the dev chrome step dots to see them.</span>
           </div>
         </div>
       </div>
     </ReviewShell>
-  );
-}
-
-function S4Placeholder() {
-  return (
-    <StatePlaceholder
-      stateNum={4}
-      plannedStep="C"
-      purpose="Edit inline · CL-086 grammar"
-      willShow={[
-        "Editable version of the AI-structured text · Hà Vy makes a small correction",
-        "Original AI text greyed/strikethrough above the edited version (CL-086)",
-        "Edit history breadcrumb · Minh raw → AI structure → Hà Vy edit",
-        "Decision rail · Save edit + accept primary action",
-      ]}
-    />
-  );
-}
-
-function S5Placeholder() {
-  return (
-    <StatePlaceholder
-      stateNum={5}
-      plannedStep="C"
-      purpose="Send back for clarification"
-      willShow={[
-        "Send-back form with prefilled question for Minh",
-        "Returns to his queue as a follow-up question (visible in Capture Queue mockup)",
-        "Item moves to 'Awaiting Minh' group in the rail · doesn't block sign-off of other items",
-        "Decision rail · Send back to Minh CTA with yellow accent",
-      ]}
-    />
   );
 }
 
