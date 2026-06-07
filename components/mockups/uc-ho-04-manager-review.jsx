@@ -32,10 +32,27 @@ import { S7BundleSummaryView, S8SignOffView, DecisionPanelSummary, DecisionPanel
      · Step D · S6 Pre-commit flag fix (3-way) · ./uc-ho-04-s6-flag-fix.jsx
      · Step E · S7 Bundle summary + S8 Sign-off · ./uc-ho-04-s7s8-signoff.jsx
      · Step F (DONE early) · registered in mockups-registry
+     · Step G (2026-06-07 · CL-103) · made embeddable via `embedded` + `state`
+       props · wired into SessionCommandView as the "Manager review" tab
 
    File-size note · S6 and S7+S8 live in sibling files because the
    single-file write threshold sits around 100KB; with all states
    inlined, the file would push 130KB+. The pattern is intentional.
+
+   Embedded contract (CL-103):
+     · Default export accepts `embedded` and `state` props.
+     · When `embedded={true}`, DevChrome + DevFooterNav are replaced
+       by an inline EmbeddedStateStrip, and ReviewShell skips the
+       ManagementHeader (the breadcrumb bar) since the host surface
+       (SessionCommandView) already provides Dashboard nav via its
+       AppShell + Hero + TabBar. ReviewSubHeader is preserved because
+       its bundle-specific status (sanitization · flag-loop · progress)
+       is unique to UC-HO-04 and meaningful inside the tab.
+     · `state` accepts any of FLOW[].id ("s1" through "s8"); the
+       component manages its own stepIdx so the inline state strip
+       still navigates between states without parent involvement.
+     · When `embedded={false}` (default), behavior is unchanged from
+       the original standalone mockup.
 
    Honors:
      · QA-INT-01 §1.4 · explicit Manager sign-off required for KG commit
@@ -47,6 +64,7 @@ import { S7BundleSummaryView, S8SignOffView, DecisionPanelSummary, DecisionPanel
      · CL-093 · auto-assigned Tier 1/2 visibility for each item
      · CL-099 · Manager sees text-queue contributions (not transcript)
      · CL-101 · pre-commit network flag · 3-way visible in S6
+     · CL-103 · embedded into SessionCommandView's Manager review tab
    ═══════════════════════════════════════════════════════════════════ */
 
 const FLOW = [
@@ -86,9 +104,35 @@ const SESSION = {
 
 const MONO_STACK = 'ui-monospace, "Geist Mono", "JetBrains Mono", Menlo, monospace';
 
-export default function UCHO04ManagerReview() {
-  const [stepIdx, setStepIdx] = useState(0);
+/* ─── CL-103 · Embedded mode context ──────────────────────────────────
+   ReviewShell reads this to decide whether to skip ManagementHeader.
+   Provided as `true` only by the default export when `embedded` prop
+   is set. Sibling files don't need to import it — they render inside
+   ReviewShell, which handles the conditional in one place. */
+const EmbeddedContext = React.createContext(false);
+
+export default function UCHO04ManagerReview({ embedded = false, state } = {}) {
+  const initialIdx = (() => {
+    if (state) {
+      const i = FLOW.findIndex((s) => s.id === state);
+      if (i >= 0) return i;
+    }
+    return 0;
+  })();
+  const [stepIdx, setStepIdx] = useState(initialIdx);
   const step = FLOW[stepIdx];
+
+  if (embedded) {
+    return (
+      <EmbeddedContext.Provider value={true}>
+        <div className="bg-white text-gray-900" style={{ fontFamily: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif' }}>
+          <EmbeddedStateStrip step={step} stepIdx={stepIdx} onJump={setStepIdx} />
+          <StateRenderer id={step.id} />
+        </div>
+      </EmbeddedContext.Provider>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col text-gray-900" style={{ fontFamily: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif' }}>
       <DevChrome step={step} stepIdx={stepIdx} onJump={setStepIdx} />
@@ -100,7 +144,7 @@ export default function UCHO04ManagerReview() {
   );
 }
 
-/* ─── Dev chrome ─── */
+/* ─── Dev chrome (standalone only) ─── */
 
 function DevChrome({ step, stepIdx, onJump }) {
   return (
@@ -183,6 +227,43 @@ function DevFooterNav({ stepIdx, step, onChange }) {
   );
 }
 
+/* ─── CL-103 · Embedded state strip ──────────────────────────────────
+   Replaces DevChrome + DevFooterNav when rendered inside the
+   SessionCommandView "Manager review" tab. Compact horizontal row of
+   8 state chips · keeps the mockup-y feel of state selection without
+   duplicating the page-level header / breadcrumb / nav. */
+function EmbeddedStateStrip({ step, stepIdx, onJump }) {
+  return (
+    <div className="px-5 py-2 bg-violet-50/30 border-b border-violet-100 flex items-center gap-2 flex-wrap shrink-0">
+      <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-violet-700 font-semibold shrink-0">
+        <Sparkles className="w-2.5 h-2.5" strokeWidth={2.5} />
+        UC-HO-04 states
+      </span>
+      <span className="text-gray-300 text-xs shrink-0">·</span>
+      <div className="flex items-center gap-1 flex-wrap">
+        {FLOW.map((s, i) => (
+          <button
+            key={s.id}
+            onClick={() => onJump(i)}
+            title={s.label}
+            className={`h-6 px-2 rounded-md border text-[10px] font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20 cursor-pointer ${
+              i === stepIdx
+                ? "bg-violet-600 text-white border-violet-600"
+                : "bg-white text-violet-700 border-violet-200 hover:border-violet-400"
+            }`}
+            style={{ fontFamily: MONO_STACK }}
+          >
+            S{i + 1}
+          </button>
+        ))}
+      </div>
+      <span className="ml-auto text-[10px] text-gray-500 truncate min-w-0 hidden sm:inline" style={{ fontFamily: MONO_STACK }}>
+        {step.label}
+      </span>
+    </div>
+  );
+}
+
 function StateRenderer({ id }) {
   if (id === "s1") return <S1Arrival />;
   if (id === "s2") return <S2ReviewingPriority />;
@@ -197,12 +278,19 @@ function StateRenderer({ id }) {
 
 /* ═══════════════════════════════════════════════════════════════════
    ReviewShell · Management plane chrome
+
+   CL-103 · When EmbeddedContext is true, ManagementHeader is omitted
+   (the breadcrumb bar duplicates SessionCommandView's AppShell + Hero
+   above). ReviewSubHeader stays — its bundle-specific status (sanitization
+   cleared, flag loop closed, BundleProgress) is unique to UC-HO-04 and
+   reads naturally as the tab's own subheader.
    ═══════════════════════════════════════════════════════════════════ */
 
 function ReviewShell({ children, bundleState, hideRightRail }) {
+  const isEmbedded = React.useContext(EmbeddedContext);
   return (
     <div className="flex flex-col flex-1 min-h-[820px]">
-      <ManagementHeader />
+      {!isEmbedded && <ManagementHeader />}
       <ReviewSubHeader bundleState={bundleState} />
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-[240px_1fr_300px] min-h-0">
         <ItemListRail activeState={bundleState} />
