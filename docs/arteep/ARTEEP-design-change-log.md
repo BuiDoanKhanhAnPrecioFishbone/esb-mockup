@@ -14,7 +14,7 @@
 | UC Reference | The Use Case step, rule, or TBD this traces to (or "cross-cutting" if system-wide) |
 | Why | The rationale — the "because" behind the decision |
 | Decided By | Role / team that owns this decision |
-| Category | BA Gap · UX Refinement · Visual System · Performance · Scope Deferral · Default Pending Confirmation |
+| Category | BA Gap · UX Refinement · Visual System · Performance · Scope Deferral · Default Pending Confirmation · Engineering Pattern |
 
 ---
 
@@ -651,6 +651,36 @@
 | Why | The people who know the captured work is wrong should be able to say so before it ever reaches the graph — without widening who can see what. Mirroring CL-095's grammar keeps the two correction loops (pre-commit network / post-commit consumer) legible as one family. |
 | Decided By | Stakeholder + BA |
 | Category | BA Gap |
+
+---
+
+## UC-HO-04 Manager Review build (2026-06-07)
+
+*Decisions arising from the incremental build of the UC-HO-04 Manager Review + Sign-off mockup (Sprint 3 deliverable · violet/yellow palette · all 8 states real). These supersede the "needs migration" note on Sprint 3 in §6 of the snapshot.*
+
+### CL-102 — Sibling-file pattern for mockup state extraction
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-07 |
+| Sprint | S3 build (UC-HO-04) |
+| Change | When a mockup JSX file exceeds ~100KB (the practical safe-write threshold for the GitHub `create_or_update_file` API used by the build workflow), extract self-contained state views into **sibling files** alongside the main file. Pattern · the main file owns the **shared scaffolding** (shell, header, navigation, list rails, dispatch) and exports nothing for siblings; **sibling files own one or more state views + their accompanying decision-panel right-rail content** and export named functions consumed by the main file's `StateRenderer` and `DecisionRail`. The boundary is the state view + its decision panel; shared primitives (`ItemHeader`, `DiffPanes`, `LineageCard`, `ContextStrip`, etc.) stay in the main file. SESSION constants and `MONO_STACK` are duplicated across siblings (cheap; avoids a shared module). Established on UC-HO-04 with two siblings · `uc-ho-04-s6-flag-fix.jsx` (S6) and `uc-ho-04-s7s8-signoff.jsx` (S7 + S8). With this split the main file lands at 90KB and each sibling fits comfortably under 50KB; without it, a 130KB monolithic write fails silently mid-stream. |
+| UC Reference | Cross-cutting build pattern · first applied to UC-HO-04 |
+| Why | A single failed write loses the entire build step, not just the new code; recovery requires diff-from-memory which is error-prone. Splitting at the natural state boundary keeps each write under threshold, preserves build-step granularity (each step is one safe commit), and makes the diff in code review reflect the build narrative rather than churn across one giant file. Duplicating SESSION across siblings is a deliberate cost — it keeps each sibling self-contained and avoids a shared-module dependency tree that would couple commits. |
+| Decided By | Engineering (Claude, accepted by Tram) |
+| Category | Engineering Pattern |
+
+### CL-103 — UC-HO-04 wired into SessionCommandView as the "Manager review" tab (orphan resolved)
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-07 |
+| Sprint | S3 → live |
+| Change | The UC-HO-04 Manager Review + Sign-off mockup is wired into the live app as a **6th tab "Manager review"** on `SessionCommandView` at `/session/[id]?tab=review`. Three coordinated changes: (1) `UCHO04ManagerReview` accepts `embedded` and `state` props on its default export — when `embedded={true}`, the outer dev chrome (top step-dot bar + footer prev/next) is replaced by a single inline `EmbeddedStateStrip`, and its `ReviewShell` is told via React context to skip the redundant `ManagementHeader` + `ReviewSubHeader` (which would duplicate the SessionCommandView Hero + TabBar above). (2) `SessionCommandView` imports `UCHO04ManagerReview`, adds `{ id: "review", label: "Manager review" }` to the `TABS` array, and gates the tab to Minh Lê's session (since UC-HO-04's SESSION constant is built for that persona); other sessions get a friendly placeholder. (3) `app/session/[id]/page.tsx` adds `"review"` to `VALID_TABS`. All 8 states (`s1` through `s8`) remain accessible via the embedded state strip. Standalone behavior preserved when `embedded={false}` — UC-HO-04 still renders with its full dev chrome on a hypothetical direct route. Removes the "orphan mockup" state where a built component existed at a file path but had no live entry point. |
+| UC Reference | UC-HO-04 · architectural · pairs with CL-089 (command-view tab system) |
+| Why | The standalone mockup at `components/mockups/uc-ho-04-manager-review.jsx` was an orphan — built but unreachable from the live app. Tram's directive "merge mockup live into 1 control only, likely a system" calls for absorbing the mockup into the existing single control surface (the session command view) rather than spawning new top-level routes or a separate `/m/<slug>` registry (which CLAUDE.md explicitly retired). Mirrors the existing `embedded` + `view` prop contract that `SessionCommandView` already uses for the management feature surfaces, so the team's mental model of "embedded mockups" is consistent. |
+| Decided By | Stakeholder + UX |
+| Category | BA Gap (architectural) · resolves orphan-mockup state |
 
 ---
 
