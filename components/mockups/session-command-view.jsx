@@ -7,7 +7,7 @@ import {
   Settings, FileText, MessageSquare, Network, Database, Eye,
   AlertTriangle, AlertOctagon, Clock, CheckCircle2, Loader2,
   Calendar, ArrowRight, ArrowUpRight, ExternalLink, MoreHorizontal,
-  Users, Tag, GitBranch, Github, Folder, Sparkles, Hash, Lock,
+  Users, Tag, GitBranch, Github, Folder, Trello, Sparkles, Hash, Lock,
   PlayCircle, PauseCircle, RefreshCw, Inbox, ShieldCheck,
   UploadCloud, History, ShieldAlert
 } from "lucide-react";
@@ -22,7 +22,9 @@ import UCHO04ManagerReview from "./uc-ho-04-manager-review.jsx";
        was cognitively heavy. Internal sub-stages (8 of them) still
        exist for system tracking.
      · Removes all email-as-source references per data-ingestion
-       governance. Engineering sources are now Jira · GitHub · Drive.
+       governance. POC showcase source is Trello (CL-091), ingested
+       through the 4-layer hard-filter (active lists only · thin cards
+       skipped · labels prioritized · sensitive-content checked).
      · CL-103 · UC-HO-04 Manager Review is wired as a 6th tab. The
        review tab special-cases the wrapper layout — UC-HO-04 has its
        own ItemListRail + DecisionRail, so we skip the standard
@@ -57,8 +59,8 @@ const LIFECYCLE_PHASES = [
     actor: "Manager + System",
     subStages: [
       { id: 1, label: "Setup confirmed",     actor: "Manager",    note: "Quick-initiate page · one click" },
-      { id: 2, label: "Context seeding",     actor: "System",     note: "Scan Jira / GitHub / Drive" },
-      { id: 3, label: "Knowledge map ready", actor: "System",     note: "Gaps inferred · ready for interview" },
+      { id: 2, label: "Context seeding",     actor: "System",     note: "Scan Trello · 4-layer hard-filter" },
+      { id: 3, label: "Knowledge map ready", actor: "System",     note: "Gaps inferred · ready for capture" },
     ],
   },
   {
@@ -436,7 +438,7 @@ function OverviewSeedingActive({ session }) {
           <div className="flex-1 min-w-0">
             <h3 className="text-sm font-semibold text-gray-900">Context seeding in progress</h3>
             <p className="text-[12px] text-gray-700 mt-0.5 leading-relaxed">
-              Scanning {session.offboarder}'s accessible work across approved shared workspaces. About 4 minutes remaining. You can leave this page — seeding continues in the background.
+              Gathering {session.offboarder}'s work from Trello through the 4-layer hard-filter. About 4 minutes remaining. You can leave this page — seeding continues in the background.
             </p>
           </div>
           <span className="text-[11px] text-gray-500 shrink-0" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>
@@ -446,33 +448,31 @@ function OverviewSeedingActive({ session }) {
 
         <ul className="space-y-1 text-[11px] text-gray-600">
           <SubStep done>Authorization scope established · 2.1s</SubStep>
-          <SubStep done>Decomposed seeding job · 3 sources · 0.8s</SubStep>
-          <SubStep done>Extracted Jira metadata · 47 tickets · 1m 24s</SubStep>
-          <SubStep active>Extracting GitHub · 18 of 23 shared repos</SubStep>
-          <SubStep>Google Drive · titles and edit recency only</SubStep>
-          <SubStep>Sensitivity classification gate</SubStep>
+          <SubStep done>Connected Trello · 1 source · 0.8s</SubStep>
+          <SubStep done>Scanned active lists · In Progress / Review / Done · 1m 24s</SubStep>
+          <SubStep active>Filtering by content depth · 24 cards kept · 11 thin skipped</SubStep>
+          <SubStep>Prioritizing labels · Bug/Hotfix · Architecture · Core Feature</SubStep>
+          <SubStep>Sensitive-content check · redact &amp; neutralize</SubStep>
           <SubStep>Knowledge gaps inference</SubStep>
           <SubStep>Preliminary knowledge map build</SubStep>
         </ul>
       </article>
 
       <div>
-        <SectionLabel>Sources being scanned</SectionLabel>
+        <SectionLabel>Source being scanned</SectionLabel>
         <div className="space-y-2 mt-2">
-          <SourceRow icon={GitBranch} name="Jira"           detail="47 tickets · 6 months · comments included" status="done" />
-          <SourceRow icon={Github}    name="GitHub"         detail="23 shared repos · PR descriptions, commit messages, wiki pages" status="active" subDetail="18 of 23 · 78%" />
-          <SourceRow icon={Folder}    name="Google Drive"   detail="412 files · titles and edit recency only · file content is not read until interview" status="pending" />
+          <SourceRow icon={Trello} name="Trello" detail="In Progress / Review / Done · thin cards skipped · Bug/Hotfix · Architecture · Core Feature prioritized" status="active" subDetail="4-layer filter" />
         </div>
         <p className="text-[10px] text-gray-500 mt-2 leading-relaxed">
-          Per the data-ingestion governance rule, automated collection is restricted to shared workspaces only. Personal directories and individual messaging are excluded; manual upload of specific files is supported via the interview workflow.
+          Per the data-ingestion governance rule, automated collection is restricted to shared workspaces only. Personal directories and individual messaging are excluded; manual upload of specific files is supported via the capture workflow.
         </p>
       </div>
 
       <div>
         <SectionLabel>Recent activity</SectionLabel>
         <div className="rounded-lg border border-gray-200 bg-white mt-2 overflow-hidden">
-          <ActivityEntry ts="14:36:24" actor="Worker Agent"        text="Jira extraction complete · 47 tickets · 0 redacted" />
-          <ActivityEntry ts="14:35:00" actor="Planner Agent"       text="Decomposed seeding plan · 3 parallel source jobs" />
+          <ActivityEntry ts="14:36:24" actor="Worker Agent"        text="Trello scan complete · 24 cards kept · 11 thin skipped · 0 redacted" />
+          <ActivityEntry ts="14:35:00" actor="Planner Agent"       text="Applied 4-layer hard-filter to Trello" />
           <ActivityEntry ts="14:32:18" actor="Auth Service"        text="RBAC scope hash computed · b7e29f...4ac1" />
           <ActivityEntry ts="14:32:08" actor="Hà Vy"               text="Started session · accepted defaults" last />
         </div>
@@ -691,11 +691,11 @@ function PhaseBlock({ phase, session, status }) {
             <div className="text-[10px] uppercase tracking-[0.2em] text-violet-700 font-semibold mb-2">Live detail · context seeding</div>
             <ul className="space-y-1 text-[11px]">
               <SubStep done>Authorization scope established · 2.1s</SubStep>
-              <SubStep done>Decomposed seeding job · 3 sources · 0.8s</SubStep>
-              <SubStep done>Extracted Jira metadata · 47 tickets · 1m 24s</SubStep>
-              <SubStep active>Extracting GitHub · 18 of 23 shared repos</SubStep>
-              <SubStep>Google Drive · titles and edit recency only</SubStep>
-              <SubStep>Sensitivity classification gate</SubStep>
+              <SubStep done>Connected Trello · 1 source · 0.8s</SubStep>
+              <SubStep done>Scanned active lists · In Progress / Review / Done · 1m 24s</SubStep>
+              <SubStep active>Filtering by content depth · 24 cards kept · 11 thin skipped</SubStep>
+              <SubStep>Prioritizing labels · Bug/Hotfix · Architecture · Core Feature</SubStep>
+              <SubStep>Sensitive-content check · redact &amp; neutralize</SubStep>
               <SubStep>Knowledge gaps inference</SubStep>
               <SubStep>Preliminary knowledge map build</SubStep>
             </ul>
@@ -816,16 +816,14 @@ function DataTab({ session }) {
   return (
     <div className="space-y-5">
       <div>
-        <SectionLabel>Data sources for this session</SectionLabel>
+        <SectionLabel>Data source for this session</SectionLabel>
         <p className="text-[12px] text-gray-500 mt-1 leading-relaxed">
           Approved shared workspaces only. Personal directories, individual mailboxes, and private messaging are never scanned. Per the data-ingestion governance rule.
         </p>
       </div>
 
       <div className="space-y-2">
-        <SourceRow icon={GitBranch} name="Jira"         detail="47 tickets · 6 months · comments included"                                             status="done"    subDetail="last sync 4m ago" />
-        <SourceRow icon={Github}    name="GitHub"       detail="23 shared repos · PR descriptions, commit messages, wiki pages"                       status="active"  subDetail="18 of 23 · 78%" />
-        <SourceRow icon={Folder}    name="Google Drive" detail="412 files · titles and edit recency only · content read only during interview"       status="pending" subDetail="queued" />
+        <SourceRow icon={Trello} name="Trello" detail="In Progress / Review / Done · thin cards skipped · Bug/Hotfix · Architecture · Core Feature prioritized · 4-layer hard-filter" status="active" subDetail="last sync 4m ago" />
       </div>
 
       <div>
@@ -867,12 +865,12 @@ function ExcludedRow({ icon: Icon, label, reason }) {
 /* ─── Tab content · Audit log ────────────────────────────────────────── */
 
 const AUDIT_ML = [
-  { ts: "2026-05-29 · 14:32:08Z", actor: "Hà Vy",              action: "Session created",                  detail: "Quick-initiate · 3 sources selected · review deadline 2026-06-08 17:00", severity: "low" },
-  { ts: "2026-05-29 · 14:32:15Z", actor: "System",             action: "Connector scope validated",         detail: "Jira · GitHub · Google Drive · all within OAuth scope",                  severity: "low" },
-  { ts: "2026-05-29 · 14:32:18Z", actor: "System",             action: "Seeding job decomposed",            detail: "3 source tasks queued · estimated 7 minutes",                            severity: "low" },
-  { ts: "2026-05-29 · 14:33:42Z", actor: "System",             action: "Jira extraction completed",         detail: "47 tickets · 6 months · 2,184 comments",                                 severity: "low" },
-  { ts: "2026-05-29 · 14:34:01Z", actor: "System",             action: "GitHub extraction started",         detail: "18 of 23 shared repos in progress",                                      severity: "low" },
-  { ts: "2026-05-29 · 14:34:15Z", actor: "Hà Vy",              action: "Added priority prompt",             detail: "Focus on payment-service migration · weighted +0.3 for interview",       severity: "low" },
+  { ts: "2026-05-29 · 14:32:08Z", actor: "Hà Vy",              action: "Session created",                  detail: "Quick-initiate · Trello source · review deadline 2026-06-08 17:00",      severity: "low" },
+  { ts: "2026-05-29 · 14:32:15Z", actor: "System",             action: "Connector scope validated",         detail: "Trello · within OAuth scope",                                            severity: "low" },
+  { ts: "2026-05-29 · 14:32:18Z", actor: "System",             action: "Seeding job created",               detail: "Trello · 4-layer hard-filter · estimated 7 minutes",                     severity: "low" },
+  { ts: "2026-05-29 · 14:33:42Z", actor: "System",             action: "Trello scan completed",             detail: "24 cards kept · 11 thin skipped · In Progress / Review / Done",           severity: "low" },
+  { ts: "2026-05-29 · 14:34:01Z", actor: "System",             action: "Label prioritization applied",      detail: "Bug/Hotfix · Architecture · Core Feature · admin labels ignored",        severity: "low" },
+  { ts: "2026-05-29 · 14:34:15Z", actor: "Hà Vy",              action: "Added priority prompt",             detail: "Focus on payment-service migration · weighted +0.3 for the queue",       severity: "low" },
 ];
 
 const AUDIT_PA = [
@@ -1034,7 +1032,7 @@ function SettingsTab({ session }) {
             <div className="min-w-0">
               <p className="text-[13px] text-gray-900 font-medium">Cancel session</p>
               <p className="text-[12px] text-gray-700 mt-0.5 leading-relaxed">
-                Discards seeded context. {session.offboarder} will not be interviewed. This is permanent.
+                Discards seeded context. {session.offboarder} will not be asked to capture. This is permanent.
               </p>
             </div>
             <button
