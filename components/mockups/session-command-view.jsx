@@ -7,7 +7,8 @@ import {
   FileText, MessageSquare, Network, Eye,
   AlertTriangle, AlertOctagon, Clock, CheckCircle2, Loader2,
   ArrowRight, MoreHorizontal, Tag, Trello, Lock,
-  RefreshCw, UploadCloud, History, ShieldAlert
+  RefreshCw, UploadCloud, History, ShieldAlert,
+  Check, Award, Send, ShieldCheck
 } from "lucide-react";
 import UCHO04ManagerReview from "./uc-ho-04-manager-review.jsx";
 
@@ -23,12 +24,16 @@ import UCHO04ManagerReview from "./uc-ho-04-manager-review.jsx";
        ONLY on the two destructive actions (cancel, request more detail).
      · Trello 4-layer source (CL-091) · async question-queue capture
        (CL-098/099) · UC-HO-04 review wired in (CL-103).
+     · CL-109 · Phương Anh's Manager review is now a real surface (her
+       7 Sales sections, per-item accept / send-back, sign-off CTA),
+       not a placeholder. Minh Lê still routes to the full UC-HO-04.
    ═══════════════════════════════════════════════════════════════════ */
 
 const FLOW = [
   { id: "ml-overview", label: "Minh Lê · Overview",    trigger: "Phase 1 · Prepare · seeding from Trello." },
   { id: "ml-review",   label: "Minh Lê · Review",      trigger: "Manager review · UC-HO-04 decision workspace." },
   { id: "pa-overview", label: "Phương Anh · Overview", trigger: "Phase 2 · Capture · answers ready for review." },
+  { id: "pa-review",   label: "Phương Anh · Review",   trigger: "Manager review · her 7 Sales sections." },
 ];
 
 // 3 user-facing phases · 8 internal sub-stages kept for tracking
@@ -174,6 +179,7 @@ function StepRenderer({ id }) {
   if (id === "ml-overview") return <CommandView session={SESSIONS.ml} activeTab="overview" />;
   if (id === "ml-review")   return <CommandView session={SESSIONS.ml} activeTab="review" />;
   if (id === "pa-overview") return <CommandView session={SESSIONS.pa} activeTab="overview" />;
+  if (id === "pa-review")   return <CommandView session={SESSIONS.pa} activeTab="review" />;
   return null;
 }
 
@@ -407,13 +413,9 @@ function OverviewReview({ session }) {
       <div>
         <SectionLabel>Sections to review</SectionLabel>
         <div className="space-y-2 mt-2">
-          <SectionRow title="Sales pipeline · Q3 outlook"         status="verified" meta="1,247 words · 4 facts" />
-          <SectionRow title="Vendor XYZ renewal · penalty clause" status="flagged"  meta="864 words · 1 flagged" />
-          <SectionRow title="Account TXM · escalation paths"      status="verified" meta="932 words · 5 facts" />
-          <SectionRow title="Forecast methodology"                status="verified" meta="513 words · 3 facts" />
-          <SectionRow title="Customer success · churn signals"    status="verified" meta="678 words · 4 facts" />
-          <SectionRow title="Internal team dynamics"              status="redacted" meta="Redacted by sensitivity" muted />
-          <SectionRow title="Reflection · what worked"            status="flagged"  meta="442 words · 1 flagged" />
+          {PA_SECTIONS.map((s) => (
+            <SectionRow key={s.title} title={s.title} status={s.status} meta={s.meta} muted={s.status === "redacted"} />
+          ))}
         </div>
         <AuditLink session={session} />
       </div>
@@ -479,15 +481,20 @@ function ActivityEntry({ ts, actor, text, last }) {
   );
 }
 
-function SectionRow({ title, status, meta, muted }) {
+function SectionRow({ title, status, meta, muted, onClick }) {
   const cfg = {
     verified: { icon: CheckCircle2, iconCls: "text-emerald-600", badge: "bg-emerald-50 border-emerald-200 text-emerald-700", label: "Verified" },
     flagged:  { icon: AlertTriangle, iconCls: "text-yellow-600", badge: "bg-yellow-50 border-yellow-200 text-yellow-800",   label: "Flagged" },
     redacted: { icon: Lock,         iconCls: "text-gray-400",   badge: "bg-gray-50 border-gray-200 text-gray-500",         label: "Redacted" },
+    accepted: { icon: CheckCircle2, iconCls: "text-violet-600", badge: "bg-violet-50 border-violet-200 text-violet-700",   label: "Accepted" },
+    "sent-back": { icon: RefreshCw, iconCls: "text-yellow-700", badge: "bg-yellow-50 border-yellow-200 text-yellow-800",   label: "Sent back" },
   }[status];
   const Icon = cfg.icon;
   return (
-    <article className={`rounded-md border border-gray-200 bg-white px-3 py-2.5 flex items-center gap-3 hover:border-gray-300 transition-colors cursor-pointer ${muted ? "opacity-60" : ""}`}>
+    <article
+      onClick={onClick}
+      className={`rounded-md border border-gray-200 bg-white px-3 py-2.5 flex items-center gap-3 hover:border-gray-300 transition-colors cursor-pointer ${muted ? "opacity-60" : ""}`}
+    >
       <Icon className={`w-3.5 h-3.5 shrink-0 ${cfg.iconCls}`} strokeWidth={1.75} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
@@ -601,36 +608,187 @@ function SectionLabel({ children }) {
   return <h2 className="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-medium">{children}</h2>;
 }
 
-/* ─── Manager review (CL-103) ───────────────────────────────────────── */
+/* ─── Manager review (CL-103 · Minh Lê) / (CL-109 · Phương Anh) ─────── */
 
 function ReviewTab({ session, state }) {
   if (session.urlSlug === "minh-le") {
     return <UCHO04ManagerReview embedded state={state || "s1"} />;
   }
+  if (session.urlSlug === "phuong-anh") {
+    return <PhuongAnhReview session={session} />;
+  }
+  return null;
+}
+
+/* ─── CL-109 · Phương Anh's real review surface ───────────────────────
+   Her 7 Sales sections as a working item list. Each item shows the
+   captured answer + AI-structured version, with per-item accept /
+   send-back. Labels-only style (CL-107); helper text kept on the
+   destructive send-back only. Selecting a section opens it inline. */
+
+const PA_SECTIONS = [
+  { id: 1, title: "Sales pipeline · Q3 outlook",          status: "verified", meta: "1,247 words · 4 facts",
+    answer: "Pipeline is $2.4M weighted across 14 open deals. Three are committed for Q3 close: TXM ($480K), Helios ($210K), and the Vanta renewal ($95K). The rest are best-case. Vanta and TXM are the two Đặng Khải Hoàn should call in week one.",
+    source: "Salesforce · shared pipeline · SharePoint Q3 deck" },
+  { id: 2, title: "Vendor XYZ renewal · penalty clause",  status: "flagged",  meta: "864 words · 1 flagged",
+    answer: "There's a verbal 5-business-day grace on the SLA penalty that isn't in the signed contract. I worked it out with their account lead last March. It should be confirmed by phone, never email — they'll deny it on record.",
+    source: "SharePoint · Vendor-Contracts · call notes",
+    flag: "Verbal-only commitment with no written record. Confirm before relying on it in the renewal." },
+  { id: 3, title: "Account TXM · escalation paths",        status: "verified", meta: "932 words · 5 facts",
+    answer: "TXM escalates through their VP of Ops, not procurement. Procurement stalls everything. Direct line and the two-touch cadence that's worked are in the notes.",
+    source: "Salesforce · account history · shared Calendar" },
+  { id: 4, title: "Forecast methodology",                 status: "verified", meta: "513 words · 3 facts",
+    answer: "I weight commit at 90%, best-case at 40%, pipeline at 15%. It's conservative on purpose — leadership prefers a beat to a miss. The spreadsheet logic is documented.",
+    source: "SharePoint · forecast model" },
+  { id: 5, title: "Customer success · churn signals",     status: "verified", meta: "678 words · 4 facts",
+    answer: "Two early churn signals matter most: a drop in weekly active seats and a quiet renewal quarter with no exec touch. Both are leading indicators I track monthly.",
+    source: "Salesforce · usage exports" },
+  { id: 6, title: "Internal team dynamics",               status: "redacted", meta: "Redacted by sensitivity",
+    answer: null, source: null },
+  { id: 7, title: "Reflection · what worked",             status: "flagged",  meta: "442 words · 1 flagged",
+    answer: "The single thing that moved deals was getting to the economic buyer early. One specific claim about a competitor's pricing should be verified before it goes in the playbook.",
+    source: "Own contribution",
+    flag: "Contains a competitor-pricing claim — verify before it reaches the graph." },
+];
+
+function PhuongAnhReview({ session }) {
+  const [openId, setOpenId] = React.useState(null);
+  const [decisions, setDecisions] = React.useState({});
+
+  const setDecision = (id, d) => setDecisions((prev) => ({ ...prev, [id]: d }));
+
+  const decidableIds = PA_SECTIONS.filter((s) => s.status !== "redacted").map((s) => s.id);
+  const decidedCount = decidableIds.filter((id) => decisions[id]).length;
+  const allDecided = decidedCount === decidableIds.length;
+
   return (
-    <div className="p-6">
-      <article className="rounded-lg border border-yellow-200 bg-yellow-50/30 p-6 max-w-2xl mx-auto">
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-md bg-white border border-yellow-200 flex items-center justify-center shrink-0">
-            <ShieldAlert className="w-5 h-5 text-yellow-700" strokeWidth={1.75} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold text-gray-900 mb-1">Review is wired for Minh Lê in this POC</h3>
-            <p className="text-[12px] text-gray-500 leading-relaxed mb-3">
-              {session.offboarder}'s session uses the same contract — her review opens here once her answers land in Phase 2.
-            </p>
-            <div className="flex items-center gap-2">
-              <Link href="/session/minh-le?tab=review" className="h-8 px-3 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-[12px] font-semibold inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30">
-                Open Minh Lê's review
-                <ArrowRight className="w-3 h-3" />
-              </Link>
-              <Link href={`/session/${session.urlSlug}`} className="h-8 px-3 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-[12px] font-medium inline-flex items-center transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20">
-                Back to Overview
-              </Link>
+    <div className="grid grid-cols-[1fr_300px] gap-5 p-6 items-start">
+      <div className="min-w-0 space-y-2">
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <SectionLabel>Sections · {PA_SECTIONS.length}</SectionLabel>
+          <span className="text-[10px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>
+            {decidedCount} / {decidableIds.length} decided
+          </span>
+        </div>
+
+        {PA_SECTIONS.map((s) => {
+          const decided = decisions[s.id];
+          const effectiveStatus = decided || s.status;
+          const isOpen = openId === s.id;
+          if (s.status === "redacted") {
+            return <SectionRow key={s.id} title={s.title} status="redacted" meta={s.meta} muted />;
+          }
+          return (
+            <div key={s.id}>
+              <SectionRow
+                title={s.title}
+                status={effectiveStatus}
+                meta={s.meta}
+                onClick={() => setOpenId(isOpen ? null : s.id)}
+              />
+              {isOpen && (
+                <PaSectionDetail
+                  section={s}
+                  decision={decided}
+                  onAccept={() => { setDecision(s.id, "accepted"); setOpenId(null); }}
+                  onSendBack={() => { setDecision(s.id, "sent-back"); setOpenId(null); }}
+                />
+              )}
             </div>
+          );
+        })}
+      </div>
+
+      <aside className="space-y-4">
+        <div>
+          <SectionLabel>Your decision</SectionLabel>
+          <article className="rounded-lg border border-gray-200 bg-white p-3 mt-2 space-y-2 text-[11px]">
+            <InfoRow label="Accepted" value={String(Object.values(decisions).filter((d) => d === "accepted").length)} />
+            <InfoRow label="Sent back" value={String(Object.values(decisions).filter((d) => d === "sent-back").length)} />
+            <InfoRow label="Remaining" value={String(decidableIds.length - decidedCount)} />
+          </article>
+        </div>
+
+        <div>
+          <SectionLabel>Sign off</SectionLabel>
+          <article className={`rounded-lg border p-3 mt-2 ${allDecided ? "border-emerald-200 bg-emerald-50/30" : "border-gray-200 bg-white"}`}>
+            <button
+              disabled={!allDecided}
+              className={`w-full h-9 rounded-md text-sm font-semibold inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 ${
+                allDecided
+                  ? "bg-violet-600 hover:bg-violet-700 text-white focus:ring-violet-500/30"
+                  : "bg-gray-100 text-gray-400 cursor-not-allowed"
+              }`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Sign off &amp; commit
+            </button>
+            {!allDecided && (
+              <p className="text-[10px] text-gray-400 text-center mt-1.5 leading-relaxed">
+                Decide every section first. Nothing reaches the graph until you sign off.
+              </p>
+            )}
+          </article>
+        </div>
+
+        <div>
+          <SectionLabel>Session</SectionLabel>
+          <div className="rounded-md border border-gray-200 bg-white p-3 mt-2 space-y-2 text-[11px]">
+            <InfoRow label="Successor" value={session.successor} />
+            <InfoRow label="Deadline"  value={session.deadline} mono />
           </div>
         </div>
-      </article>
+      </aside>
+    </div>
+  );
+}
+
+function PaSectionDetail({ section, decision, onAccept, onSendBack }) {
+  return (
+    <div className="rounded-md border border-gray-200 border-t-0 rounded-t-none bg-gray-50/40 p-4 -mt-px mb-2 space-y-3">
+      {section.flag && (
+        <div className="rounded-md border border-yellow-200 bg-yellow-50/60 px-3 py-2 flex items-start gap-2">
+          <AlertTriangle className="w-3.5 h-3.5 text-yellow-700 shrink-0 mt-0.5" strokeWidth={2} />
+          <p className="text-[11px] text-yellow-900 leading-relaxed">{section.flag}</p>
+        </div>
+      )}
+
+      <div>
+        <div className="text-[10px] uppercase tracking-[0.18em] text-gray-500 font-medium mb-1">Captured answer</div>
+        <p className="text-[13px] text-gray-800 leading-relaxed">{section.answer}</p>
+      </div>
+
+      <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
+        <FileText className="w-3 h-3" strokeWidth={1.75} />
+        <span>{section.source}</span>
+      </div>
+
+      {decision ? (
+        <div className={`rounded-md border px-3 py-2 text-[12px] font-medium inline-flex items-center gap-1.5 ${
+          decision === "accepted" ? "border-violet-200 bg-violet-50/50 text-violet-700" : "border-yellow-200 bg-yellow-50/50 text-yellow-800"
+        }`}>
+          {decision === "accepted" ? <Check className="w-3.5 h-3.5" /> : <RefreshCw className="w-3.5 h-3.5" />}
+          {decision === "accepted" ? "Accepted · commits on sign-off" : "Sent back to Phương Anh"}
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 pt-1">
+          <button
+            onClick={onAccept}
+            className="h-8 px-3 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-[12px] font-semibold inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+          >
+            <Check className="w-3.5 h-3.5" />
+            Accept
+          </button>
+          <button
+            onClick={onSendBack}
+            className="h-8 px-3 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-[12px] font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20"
+            title="Returns this section to Phương Anh's queue for a clarification"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            Send back
+          </button>
+        </div>
+      )}
     </div>
   );
 }
