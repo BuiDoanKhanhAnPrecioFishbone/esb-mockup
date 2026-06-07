@@ -12,7 +12,7 @@ import {
   ChevronDown, ChevronUp, ShieldAlert, Star, Activity,
   GitMerge, FileCheck, Crosshair, Hourglass, Settings,
   Inbox, Network, Cpu, FileQuestion, BookOpen, Hammer,
-  PenTool, RotateCcw, Flag, ListChecks
+  PenTool, RotateCcw, Flag, ListChecks, Volume2, Quote
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -22,17 +22,13 @@ import {
    it commits to the Knowledge Graph. The QA-INT-01 §1.4 commit gate
    in action · nothing reaches the KG without her sign-off.
 
-   BUILD STATUS · Step A landed · S1 full + S2-S8 placeholder cards.
-   Subsequent steps fill in each state:
-     Step B · S2 Reviewing + S3 Accept (side-by-side diff)
-     Step C · S4 Edit inline + S5 Send back (CL-086 grammar)
-     Step D · S6 Pre-commit flag fix (3-way diff)
-     Step E · S7 Bundle summary + S8 Sign-off (QA-INT-01 §1.4)
-     Step F · Register in mockups-registry
-
-   Architectural plane: Management · AppShell-style chrome ·
-   ART-EEP violet/yellow visual system (snapshot §4). The Offboarder
-   sees the queue submit; the Manager sees the bundle arrive here.
+   BUILD STATUS · Steps A + B landed.
+     · Step A · architecture + S1 Arrival full
+     · Step B · S2 Reviewing + S3 Accept (side-by-side diff core)
+     · Step C (pending) · S4 Edit inline + S5 Send back
+     · Step D (pending) · S6 Pre-commit flag fix (3-way diff)
+     · Step E (pending) · S7 Bundle summary + S8 Sign-off
+     · Step F (DONE early) · registered in mockups-registry
 
    Honors:
      · QA-INT-01 §1.4 · explicit Manager sign-off required for KG commit
@@ -71,6 +67,9 @@ const SESSION = {
   successorInitials: "TN",
   flaggerNet: "Duy Nguyễn",
   flaggerNetInitials: "DN",
+  corroboratorName: "Phương Anh Nguyễn",
+  corroboratorInitials: "PA",
+  corroboratorTeam: "Sales",
   itemsTotal: 14,
   filesTotal: 4,
   redirects: 1,
@@ -178,8 +177,8 @@ function DevFooterNav({ stepIdx, step, onChange }) {
 
 function StateRenderer({ id }) {
   if (id === "s1") return <S1Arrival />;
-  if (id === "s2") return <S2Placeholder />;
-  if (id === "s3") return <S3Placeholder />;
+  if (id === "s2") return <S2ReviewingPriority />;
+  if (id === "s3") return <S3QuickAccept />;
   if (id === "s4") return <S4Placeholder />;
   if (id === "s5") return <S5Placeholder />;
   if (id === "s6") return <S6Placeholder />;
@@ -190,7 +189,6 @@ function StateRenderer({ id }) {
 
 /* ═══════════════════════════════════════════════════════════════════
    ReviewShell · Management plane chrome
-   Used by every state · ensures the layout is consistent
    ═══════════════════════════════════════════════════════════════════ */
 
 function ReviewShell({ children, bundleState, hideRightRail }) {
@@ -296,7 +294,7 @@ function ItemListRail({ activeState }) {
 
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
         <ItemListGroup label="Manager priorities" count={2} items={[
-          { id: "mp1", n: 1, title: "Vendor XYZ SLA penalty", source: "manager", status: activeState === "reviewing-mp" || activeState === "accepting" ? "active" : "accepted" },
+          { id: "mp1", n: 1, title: "Vendor XYZ SLA penalty", source: "manager", status: activeState === "reviewing-mp" ? "active" : activeState === "accepting" ? "just-accepted" : "pending" },
           { id: "mp2", n: 2, title: "Payment Gateway fix", source: "manager", status: "pending" },
         ]} />
 
@@ -352,6 +350,7 @@ function ItemListRow({ n, title, source, status, active }) {
   const statusCfg = {
     pending: { icon: CircleIcon, iconCls: "text-gray-300" },
     active: { icon: CircleDot, iconCls: "text-violet-600" },
+    "just-accepted": { icon: CheckCircle2, iconCls: "text-emerald-600" },
     accepted: { icon: CheckCircle2, iconCls: "text-emerald-600" },
     "edit-pending": { icon: Edit3, iconCls: "text-violet-700" },
     "send-back-pending": { icon: RotateCcw, iconCls: "text-yellow-700" },
@@ -359,14 +358,16 @@ function ItemListRow({ n, title, source, status, active }) {
     redirected: { icon: ArrowUpRight, iconCls: "text-gray-400" },
   }[status];
   const StatusIcon = statusCfg.icon;
-  const isActive = status === "active" || active;
+  const isActive = status === "active" || active || status === "just-accepted";
   return (
     <button className={`w-full text-left rounded-md px-2 py-1.5 flex items-center gap-2 transition-colors cursor-pointer ${
+      status === "just-accepted" ? "bg-emerald-50/40 border border-emerald-200" :
       isActive ? "bg-violet-50 border border-violet-200" : "hover:bg-gray-50 border border-transparent"
     }`}>
       <StatusIcon className={`w-3.5 h-3.5 shrink-0 ${statusCfg.iconCls}`} strokeWidth={2} />
       <SourceIcon className={`w-3 h-3 shrink-0 ${sourceColor}`} strokeWidth={2} />
       <span className={`text-[11px] flex-1 min-w-0 truncate ${
+        status === "just-accepted" ? "font-semibold text-emerald-900" :
         isActive ? "font-semibold text-gray-900" :
         status === "accepted" ? "text-gray-700" :
         status === "redirected" ? "text-gray-400 italic" :
@@ -378,7 +379,7 @@ function ItemListRow({ n, title, source, status, active }) {
   );
 }
 
-/* ─── Decision Rail · right sidebar ─── */
+/* ─── Decision Rail · right sidebar · dispatches on state ─── */
 
 function DecisionRail({ state }) {
   return (
@@ -388,7 +389,9 @@ function DecisionRail({ state }) {
         <h3 className="text-xs font-semibold text-gray-900">Your decision</h3>
       </div>
       <div className="flex-1 overflow-y-auto px-4 py-4">
-        <DecisionPanelDefault />
+        {state === "reviewing-mp" && <DecisionPanelReviewing />}
+        {state === "accepting" && <DecisionPanelAccepted />}
+        {!state && <DecisionPanelDefault />}
       </div>
     </aside>
   );
@@ -413,6 +416,130 @@ function DecisionPanelDefault() {
         </p>
       </div>
     </div>
+  );
+}
+
+function DecisionPanelReviewing() {
+  return (
+    <div className="space-y-3">
+      <ContextStrip
+        label="Confidence signals"
+        items={[
+          { label: "Sources cited", value: "3", positive: true },
+          { label: "Verbatim quotes", value: "2", positive: true },
+          { label: "Network corroboration", value: "yes · Phương Anh", positive: true },
+          { label: "Worker SLM confidence", value: "92%", positive: true },
+        ]}
+      />
+
+      <div className="space-y-1.5">
+        <PrimaryDecisionButton icon={Check} label="Accept · promote to Canonical" tone="emerald" />
+        <PrimaryDecisionButton icon={Award} label="Accept · keep as Verified only" tone="violet" />
+        <PrimaryDecisionButton icon={Edit3} label="Edit inline before accepting" tone="violet" subtle />
+        <PrimaryDecisionButton icon={RotateCcw} label="Send back for clarification" tone="yellow" subtle />
+        <PrimaryDecisionButton icon={X} label="Reject · don't commit this" tone="rose" subtle />
+      </div>
+
+      <div className="pt-3 border-t border-gray-100">
+        <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold mb-2">Quick reference</div>
+        <ul className="space-y-1.5 text-[10px] text-gray-600 leading-snug">
+          <li className="flex items-start gap-1.5">
+            <Award className="w-2.5 h-2.5 text-emerald-600 shrink-0 mt-0.5" strokeWidth={2} />
+            <span><strong>Canonical</strong> · authoritative · propagates everywhere · emerald badge</span>
+          </li>
+          <li className="flex items-start gap-1.5">
+            <ShieldCheck className="w-2.5 h-2.5 text-violet-600 shrink-0 mt-0.5" strokeWidth={2} />
+            <span><strong>Verified</strong> · accurate but not canonical · scoped to this session</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function DecisionPanelAccepted() {
+  return (
+    <div className="space-y-3">
+      <div className="rounded-lg border-2 border-emerald-300 bg-emerald-50/50 p-3 text-center">
+        <div className="w-10 h-10 rounded-full bg-emerald-100 border border-emerald-300 flex items-center justify-center mx-auto mb-2">
+          <Check className="w-5 h-5 text-emerald-700" strokeWidth={2.5} />
+        </div>
+        <div className="text-[12px] font-semibold text-emerald-900">Accepted as Canonical</div>
+        <div className="text-[10px] text-emerald-800/80 mt-1 leading-snug">
+          Will commit to KG when you sign off the whole bundle · propagates to {SESSION.successorShort}'s playbook automatically.
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <SecondaryDecisionButton icon={Edit3} label="Actually, let me edit it" />
+        <SecondaryDecisionButton icon={RotateCcw} label="Change my mind · send back" />
+      </div>
+
+      <div className="pt-3 border-t border-gray-100">
+        <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold mb-2">Propagation preview</div>
+        <ul className="space-y-1.5 text-[10px] text-gray-600 leading-snug">
+          <PropagateRowSm label="Vendor XYZ wiki" detail="Replaces v2.1 entry" />
+          <PropagateRowSm label="Knowledge Graph" detail="Canonical badge applied" />
+          <PropagateRowSm label={`${SESSION.successorShort}'s playbook §3`} detail="Auto-update on commit" />
+          <PropagateRowSm label="Sales team Slack" detail="Notified · @phuong-anh" />
+        </ul>
+      </div>
+
+      <button className="w-full h-9 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-[12px] font-semibold inline-flex items-center justify-center gap-1.5 transition-colors">
+        Continue to item 2
+        <ChevronRight className="w-3 h-3" strokeWidth={2.5} />
+      </button>
+    </div>
+  );
+}
+
+function PrimaryDecisionButton({ icon: Icon, label, tone, subtle }) {
+  const cfg = {
+    emerald: subtle ? "border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50" : "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600",
+    violet: subtle ? "border-violet-200 bg-white text-violet-700 hover:bg-violet-50" : "bg-violet-600 hover:bg-violet-700 text-white border-violet-600",
+    yellow: subtle ? "border-yellow-200 bg-white text-yellow-800 hover:bg-yellow-50" : "bg-yellow-600 hover:bg-yellow-700 text-white border-yellow-600",
+    rose: subtle ? "border-rose-200 bg-white text-rose-700 hover:bg-rose-50" : "bg-rose-600 hover:bg-rose-700 text-white border-rose-600",
+  }[tone];
+  return (
+    <button className={`w-full h-9 px-3 rounded-md border text-[12px] font-semibold inline-flex items-center gap-2 transition-colors cursor-pointer focus:outline-none focus:ring-2 ${cfg}`}>
+      <Icon className="w-3.5 h-3.5 shrink-0" strokeWidth={2} />
+      <span className="flex-1 text-left">{label}</span>
+    </button>
+  );
+}
+
+function SecondaryDecisionButton({ icon: Icon, label }) {
+  return (
+    <button className="w-full h-8 px-3 rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300 text-[11px] font-medium inline-flex items-center gap-2 transition-colors">
+      <Icon className="w-3 h-3 shrink-0" strokeWidth={2} />
+      <span className="flex-1 text-left">{label}</span>
+    </button>
+  );
+}
+
+function ContextStrip({ label, items }) {
+  return (
+    <div className="rounded-lg bg-gray-50 border border-gray-200 px-3 py-2.5">
+      <div className="text-[9px] uppercase tracking-[0.18em] font-semibold text-gray-500 mb-2">{label}</div>
+      <div className="space-y-1.5">
+        {items.map((it, i) => (
+          <div key={i} className="flex items-center gap-2 text-[10px]">
+            {it.positive ? <Check className="w-2.5 h-2.5 text-emerald-600 shrink-0" strokeWidth={2.5} /> : <X className="w-2.5 h-2.5 text-rose-600 shrink-0" strokeWidth={2.5} />}
+            <span className="text-gray-700 flex-1">{it.label}</span>
+            <span className={`font-medium ${it.positive ? "text-emerald-700" : "text-rose-700"}`} style={{ fontFamily: MONO_STACK }}>{it.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PropagateRowSm({ label, detail }) {
+  return (
+    <li className="flex items-start gap-1.5">
+      <GitMerge className="w-2.5 h-2.5 text-violet-600 shrink-0 mt-0.5" strokeWidth={2} />
+      <span><strong className="text-gray-700">{label}</strong> · {detail}</span>
+    </li>
   );
 }
 
@@ -539,7 +666,352 @@ function PreCheckItem({ label, detail, done }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   S2-S8 · Placeholder cards · filled in by Steps B-E
+   S2 · Reviewing a Manager Priority answer · side-by-side
+   ═══════════════════════════════════════════════════════════════════ */
+
+function S2ReviewingPriority() {
+  return (
+    <ReviewShell bundleState="reviewing-mp">
+      <div className="px-6 py-6 max-w-[900px]">
+        <ItemHeader
+          n={1}
+          source="manager-priority"
+          title="Vendor XYZ · the SLA penalty clause"
+          subtitle="Manager priority · from you to Minh · #1 of 2"
+          tagBadge="Vendor XYZ"
+          tagBadgeKind="topic"
+          itemId="ITEM-2026-06-03-007"
+        />
+
+        <OriginalQuestionCard />
+
+        <DiffPanes
+          rawTitle={`${SESSION.offboarder}'s raw text`}
+          rawAuthor={`${SESSION.offboarder} · written 6 hours ago · 2 attachments`}
+          rawContent={
+            <>
+              <p>The contract says 2% penalty on next quarter's invoice if we miss SLA more than once per quarter. But the verbal grace period from Linh at XYZ that I negotiated last March isn't in the contract — she said any single miss within 5 business days of resolution doesn't trigger the penalty clock.</p>
+              <p className="mt-3">Came up after a Q3 incident where we missed by 4 hours due to their infrastructure. She offered the grace period verbally · I have it in a voicemail attached.</p>
+              <p className="mt-3 text-gray-600 italic">⚠ Don't email Linh about this · she'll deny it on record. Talk to her by phone if it comes up · she's good about it as long as it's not in writing.</p>
+            </>
+          }
+          structuredTitle="AI-structured version"
+          structuredAuthor="Worker SLM · auto-generated · 5 min ago"
+          structuredContent={
+            <>
+              <p><strong className="text-emerald-800">Vendor XYZ SLA penalty clause</strong></p>
+              <ul className="list-disc pl-5 mt-2 space-y-1.5">
+                <li><strong>Contractual:</strong> 2% penalty on next quarter's invoice if SLA missed more than once per quarter.</li>
+                <li><strong>Verbal grace period (off-contract):</strong> Linh at Vendor XYZ verbally committed in March that any single miss within 5 business days of resolution does not trigger the penalty clock. Sourced from Q3 negotiation following an incident where they were 4h late due to their infrastructure.</li>
+                <li><strong>How to invoke:</strong> Phone call only · do not put in writing.</li>
+              </ul>
+              <p className="mt-3 text-[11px] text-emerald-700/80 italic">Auto-tagged: <code style={{ fontFamily: MONO_STACK }} className="text-[11px] bg-emerald-100/60 px-1 rounded">[Vendor]</code> <code style={{ fontFamily: MONO_STACK }} className="text-[11px] bg-emerald-100/60 px-1 rounded">[Off-contract]</code> · Tier 1 lock applied (legal-adjacent)</p>
+            </>
+          }
+        />
+
+        <SourceProvenanceStrip
+          sources={[
+            { kind: "doc", label: "Vendor XYZ contract v2.1.pdf", source: "SharePoint · Vendor-Contracts" },
+            { kind: "voicemail", label: "Linh confirming grace period (0:42)", source: "Voicemail · uploaded with bundle" },
+            { kind: "board", label: "March 14 renewal call notes", source: "Trello · Vendor-Mgmt" },
+            { kind: "person", label: "Phương Anh corroboration", source: "Cross-team · independently confirmed" },
+          ]}
+        />
+
+        <NetworkCorroborationCard />
+      </div>
+    </ReviewShell>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   S3 · Quick accept · all signals green · one-click
+   ═══════════════════════════════════════════════════════════════════ */
+
+function S3QuickAccept() {
+  return (
+    <ReviewShell bundleState="accepting">
+      <div className="px-6 py-6 max-w-[900px]">
+        <AcceptedToastBar />
+
+        <ItemHeader
+          n={1}
+          source="manager-priority"
+          title="Vendor XYZ · the SLA penalty clause"
+          subtitle="Manager priority · from you to Minh · #1 of 2"
+          tagBadge="Vendor XYZ"
+          tagBadgeKind="topic"
+          itemId="ITEM-2026-06-03-007"
+          status="accepted"
+        />
+
+        <OriginalQuestionCard />
+
+        <DiffPanes
+          rawTitle={`${SESSION.offboarder}'s raw text`}
+          rawAuthor={`${SESSION.offboarder} · written 6 hours ago · 2 attachments`}
+          rawContent={
+            <>
+              <p>The contract says 2% penalty on next quarter's invoice if we miss SLA more than once per quarter. But the verbal grace period from Linh at XYZ that I negotiated last March isn't in the contract — she said any single miss within 5 business days of resolution doesn't trigger the penalty clock.</p>
+              <p className="mt-3">Came up after a Q3 incident where we missed by 4 hours due to their infrastructure. She offered the grace period verbally · I have it in a voicemail attached.</p>
+              <p className="mt-3 text-gray-600 italic">⚠ Don't email Linh about this · she'll deny it on record. Talk to her by phone if it comes up · she's good about it as long as it's not in writing.</p>
+            </>
+          }
+          structuredTitle="AI-structured version · now Canonical"
+          structuredAuthor="Worker SLM · auto-generated · accepted as Canonical by you 3 sec ago"
+          structuredContent={
+            <>
+              <p><strong className="text-emerald-800">Vendor XYZ SLA penalty clause</strong></p>
+              <ul className="list-disc pl-5 mt-2 space-y-1.5">
+                <li><strong>Contractual:</strong> 2% penalty on next quarter's invoice if SLA missed more than once per quarter.</li>
+                <li><strong>Verbal grace period (off-contract):</strong> Linh at Vendor XYZ verbally committed in March that any single miss within 5 business days of resolution does not trigger the penalty clock. Sourced from Q3 negotiation following an incident where they were 4h late due to their infrastructure.</li>
+                <li><strong>How to invoke:</strong> Phone call only · do not put in writing.</li>
+              </ul>
+            </>
+          }
+          structuredAccepted
+        />
+
+        <PostAcceptInlineActions />
+      </div>
+    </ReviewShell>
+  );
+}
+
+function AcceptedToastBar() {
+  return (
+    <div className="rounded-xl border border-emerald-300 bg-emerald-50/60 px-4 py-3 mb-4 flex items-center gap-3">
+      <div className="w-9 h-9 rounded-lg bg-emerald-100 border border-emerald-300 flex items-center justify-center shrink-0">
+        <Check className="w-4 h-4 text-emerald-700" strokeWidth={2.5} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-[13px] font-semibold text-emerald-900">Item 1 accepted as Canonical</div>
+        <div className="text-[11px] text-emerald-800/80 mt-0.5">
+          Will commit to KG when you sign off the full bundle · 4 downstream targets queued · audit entry created.
+        </div>
+      </div>
+      <button className="text-[11px] text-emerald-800 hover:text-emerald-900 font-medium inline-flex items-center gap-1">
+        <RotateCcw className="w-3 h-3" strokeWidth={2} />
+        Undo
+      </button>
+    </div>
+  );
+}
+
+function PostAcceptInlineActions() {
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 mt-4 flex items-center justify-between gap-3 flex-wrap">
+      <div className="flex items-center gap-2 text-[11px] text-gray-600">
+        <Sparkles className="w-3 h-3 text-violet-500" strokeWidth={2} />
+        <span>Next up · <strong className="text-gray-900">item 2 · Payment Gateway timeout fix</strong> · also a Manager priority.</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <button className="h-8 px-3 rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 text-[11px] font-medium inline-flex items-center gap-1.5 transition-colors">
+          <Save className="w-3 h-3" strokeWidth={2} />
+          Save + finish later
+        </button>
+        <button className="h-8 px-3 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-[12px] font-semibold inline-flex items-center gap-1.5 transition-colors">
+          Continue to item 2
+          <ChevronRight className="w-3 h-3" strokeWidth={2.5} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Shared primitives for S2/S3 (and reused by C/D/E)
+   ═══════════════════════════════════════════════════════════════════ */
+
+function ItemHeader({ n, source, title, subtitle, tagBadge, tagBadgeKind, itemId, status }) {
+  const cfg = {
+    "manager-priority": { borderL: "border-l-violet-500", iconCls: "bg-violet-50 border-violet-200 text-violet-700", icon: Sparkles },
+    "network": { borderL: "border-l-indigo-500", iconCls: "bg-indigo-50 border-indigo-200 text-indigo-700", icon: Users },
+    "flag": { borderL: "border-l-yellow-500", iconCls: "bg-yellow-50 border-yellow-200 text-yellow-700", icon: AlertTriangle },
+    "own": { borderL: "border-l-gray-400", iconCls: "bg-gray-50 border-gray-200 text-gray-700", icon: Plus },
+  }[source];
+  const SourceIcon = cfg.icon;
+  return (
+    <div className={`rounded-xl bg-white border border-gray-200 border-l-[3px] ${cfg.borderL} px-4 py-3 mb-4 flex items-center gap-3`}>
+      <div className={`w-10 h-10 rounded-lg border flex items-center justify-center shrink-0 ${cfg.iconCls}`}>
+        <SourceIcon className="w-4.5 h-4.5" strokeWidth={2} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap mb-0.5">
+          <span className="text-[10px] uppercase tracking-[0.18em] font-semibold text-gray-500">Item {n}</span>
+          <span className="text-gray-300">·</span>
+          <span className="text-[11px] text-gray-600">{subtitle}</span>
+          {tagBadge && <span className="text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-gray-700 inline-flex items-center gap-1"><Tag className="w-2.5 h-2.5" strokeWidth={2} />{tagBadge}</span>}
+          {status === "accepted" && <span className="text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 inline-flex items-center gap-1"><Check className="w-2.5 h-2.5" strokeWidth={2.5} />Accepted</span>}
+        </div>
+        <h2 className="text-lg font-bold text-gray-900 tracking-tight leading-tight">{title}</h2>
+        {itemId && <div className="text-[9px] text-gray-400 mt-1" style={{ fontFamily: MONO_STACK }}>{itemId}</div>}
+      </div>
+      <button className="text-gray-400 hover:text-gray-700 p-1.5 shrink-0">
+        <MoreHorizontal className="w-4 h-4" strokeWidth={1.75} />
+      </button>
+    </div>
+  );
+}
+
+function OriginalQuestionCard() {
+  return (
+    <div className="rounded-xl bg-violet-50/30 border border-violet-200 p-4 mb-4">
+      <div className="flex items-start gap-3">
+        <div className="w-8 h-8 rounded-full bg-violet-100 border border-violet-200 flex items-center justify-center shrink-0">
+          <span className="text-[10px] font-semibold text-violet-700">{SESSION.reviewerInitials}</span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[11px] font-semibold text-gray-900">{SESSION.reviewer} · you</span>
+            <span className="text-[10px] text-gray-500">asked this on May 31 · 2 days ago</span>
+            <span className="text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700">Critical</span>
+          </div>
+          <blockquote className="text-[13px] text-gray-700 leading-relaxed italic flex items-start gap-2">
+            <Quote className="w-4 h-4 text-violet-400 shrink-0 mt-0.5" strokeWidth={1.75} />
+            <span>What's the exact penalty clause you negotiated, and is there a verbal commitment from the vendor that isn't in the contract? Anything that would surprise {SESSION.successorShort} during the renewal.</span>
+          </blockquote>
+          <div className="text-[10px] text-gray-500 mt-2 inline-flex items-center gap-1">
+            <Sparkles className="w-2.5 h-2.5 text-violet-500" strokeWidth={2} />
+            Tagged as critical because {SESSION.successorShort}'s renewal call is in 9 days
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DiffPanes({ rawTitle, rawAuthor, rawContent, structuredTitle, structuredAuthor, structuredContent, structuredAccepted }) {
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-4">
+      <DiffPane
+        side="raw"
+        title={rawTitle}
+        author={rawAuthor}
+        content={rawContent}
+      />
+      <DiffPane
+        side="structured"
+        title={structuredTitle}
+        author={structuredAuthor}
+        content={structuredContent}
+        accepted={structuredAccepted}
+      />
+    </div>
+  );
+}
+
+function DiffPane({ side, title, author, content, accepted }) {
+  const cfg = {
+    raw: {
+      border: "border-rose-200",
+      header: "bg-rose-50/40 border-rose-100",
+      badge: "bg-rose-100 border-rose-200 text-rose-700",
+      badgeLabel: "Raw input",
+      icon: Edit3,
+    },
+    structured: {
+      border: accepted ? "border-emerald-400" : "border-emerald-200",
+      header: accepted ? "bg-emerald-50/60 border-emerald-200" : "bg-emerald-50/40 border-emerald-100",
+      badge: accepted ? "bg-emerald-600 text-white border-emerald-600" : "bg-emerald-100 border-emerald-200 text-emerald-700",
+      badgeLabel: accepted ? "Canonical · accepted" : "AI-structured",
+      icon: accepted ? Award : Sparkles,
+    },
+  }[side];
+  const HeaderIcon = cfg.icon;
+  return (
+    <article className={`rounded-xl bg-white border ${cfg.border} overflow-hidden flex flex-col ${accepted ? "ring-2 ring-emerald-500/15" : ""}`}>
+      <header className={`px-4 py-2.5 border-b ${cfg.header} flex items-center gap-2`}>
+        <HeaderIcon className={`w-3.5 h-3.5 ${side === "raw" ? "text-rose-700" : "text-emerald-700"}`} strokeWidth={2} />
+        <span className="text-[12px] font-semibold text-gray-900 truncate flex-1">{title}</span>
+        <span className={`text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded-full border ${cfg.badge} inline-flex items-center gap-1 shrink-0`}>
+          {accepted && <Check className="w-2.5 h-2.5" strokeWidth={2.5} />}
+          {cfg.badgeLabel}
+        </span>
+      </header>
+      <div className="px-4 py-4 text-[13px] text-gray-800 leading-relaxed flex-1">
+        {content}
+      </div>
+      <footer className="px-4 py-2 border-t border-gray-100 bg-gray-50/50 text-[10px] text-gray-500 truncate">
+        {author}
+      </footer>
+    </article>
+  );
+}
+
+function SourceProvenanceStrip({ sources }) {
+  const iconFor = (kind) => ({
+    doc: FileText,
+    voicemail: Volume2,
+    board: GitBranch,
+    person: Users,
+    transcript: MessageSquare,
+    incident: AlertOctagon,
+    ticket: Tag,
+  }[kind] || FileText);
+  return (
+    <div className="rounded-xl bg-gray-50 border border-gray-200 p-3 mb-4">
+      <div className="flex items-center gap-2 mb-2">
+        <ShieldCheck className="w-3 h-3 text-emerald-600" strokeWidth={2} />
+        <h3 className="text-[11px] font-semibold text-gray-900">Source provenance · {sources.length} cited</h3>
+        <span className="ml-auto text-[9px] text-gray-500" style={{ fontFamily: MONO_STACK }}>QA-INT-01 §1.3</span>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+        {sources.map((s, i) => {
+          const Icon = iconFor(s.kind);
+          return (
+            <button key={i} className="rounded-md border border-gray-200 bg-white px-2.5 py-1.5 hover:border-violet-300 hover:bg-violet-50/30 transition-colors text-left inline-flex items-center gap-2 cursor-pointer">
+              <Icon className="w-3 h-3 text-violet-600 shrink-0" strokeWidth={2} />
+              <div className="flex-1 min-w-0">
+                <div className="text-[11px] font-medium text-gray-900 truncate">{s.label}</div>
+                <div className="text-[9px] text-gray-500 truncate" style={{ fontFamily: MONO_STACK }}>{s.source}</div>
+              </div>
+              <ArrowUpRight className="w-2.5 h-2.5 text-gray-400 shrink-0" strokeWidth={2} />
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function NetworkCorroborationCard() {
+  return (
+    <div className="rounded-xl border border-indigo-200 bg-indigo-50/30 p-4 mb-4">
+      <div className="flex items-start gap-3">
+        <div className="w-9 h-9 rounded-lg bg-white border border-indigo-200 flex items-center justify-center shrink-0">
+          <Users className="w-4 h-4 text-indigo-700" strokeWidth={2} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <span className="text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded-full bg-indigo-100 border border-indigo-200 text-indigo-700">Network corroboration</span>
+            <span className="text-[10px] text-gray-500">independently confirmed by {SESSION.corroboratorName}</span>
+          </div>
+          <h3 className="text-[13px] font-semibold text-gray-900 mb-2">
+            {SESSION.corroboratorName.split(" ")[0]} flagged the same grace period in her UC-HO-08 network question
+          </h3>
+          <blockquote className="text-[11px] text-gray-700 leading-relaxed italic border-l-2 border-indigo-300 pl-2.5 mb-2">
+            "From my Sales team's view, we have a 5-business-day grace on the penalty clause that I think you negotiated verbally. The contract doesn't show it explicitly · could you confirm and document the back-and-forth?"
+          </blockquote>
+          <div className="flex items-center gap-2 text-[10px] text-gray-500">
+            <span className="inline-flex items-center gap-1">
+              <span className="w-4 h-4 rounded-full bg-indigo-100 border border-indigo-200 flex items-center justify-center">
+                <span className="text-[8px] font-semibold text-indigo-700">{SESSION.corroboratorInitials}</span>
+              </span>
+              {SESSION.corroboratorName} · {SESSION.corroboratorTeam}
+            </span>
+            <span>·</span>
+            <span style={{ fontFamily: MONO_STACK }}>asked 2 days ago · answered in Minh's queue</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   S4-S8 · Placeholder cards · filled in by Steps C-E
    ═══════════════════════════════════════════════════════════════════ */
 
 function StatePlaceholder({ stateNum, plannedStep, purpose, willShow }) {
@@ -561,7 +1033,7 @@ function StatePlaceholder({ stateNum, plannedStep, purpose, willShow }) {
           </div>
 
           <p className="text-[13px] text-gray-700 leading-relaxed mb-4">
-            This state is scaffolded in Step A · the architecture, shell, item list rail, and decision rail are all in place. The state-specific content lands in Step {plannedStep}.
+            This state is scaffolded · the architecture, shell, item list rail, and decision rail are all in place. The state-specific content lands in Step {plannedStep}.
           </p>
 
           <div className="rounded-lg bg-white border border-violet-200 px-4 py-3">
@@ -578,44 +1050,11 @@ function StatePlaceholder({ stateNum, plannedStep, purpose, willShow }) {
 
           <div className="mt-4 flex items-center gap-2 text-[10px] text-gray-500">
             <Info className="w-3 h-3" strokeWidth={2} />
-            <span>Navigate to State 1 to see the completed Arrival surface · the shell, item list, and decision rail are real.</span>
+            <span>States 1, 2, 3 are now complete. Navigate via the dev chrome step dots to see them.</span>
           </div>
         </div>
       </div>
     </ReviewShell>
-  );
-}
-
-function S2Placeholder() {
-  return (
-    <StatePlaceholder
-      stateNum={2}
-      plannedStep="B"
-      purpose="Reviewing a Manager Priority answer"
-      willShow={[
-        "Side-by-side diff · Minh's raw text on the left, AI-structured version on the right",
-        "Original question card showing what Hà Vy asked",
-        "Source provenance strip · 4 cited sources with kind icons (transcript, doc, ticket, board)",
-        "Network corroboration card · Phương Anh independently confirmed the grace period",
-        "Decision rail · confidence signals + 5 action buttons (Accept Canonical · Accept Verified · Edit · Send back · Reject)",
-      ]}
-    />
-  );
-}
-
-function S3Placeholder() {
-  return (
-    <StatePlaceholder
-      stateNum={3}
-      plannedStep="B"
-      purpose="Quick accept · all signals green · one-click"
-      willShow={[
-        "Same side-by-side diff layout as S2",
-        "Decision rail switches to 'Accepted as Canonical' confirmation",
-        "Propagation preview · 4 downstream targets (wiki, KG, Trần's playbook, Slack)",
-        "Continue to next item CTA",
-      ]}
-    />
   );
 }
 
