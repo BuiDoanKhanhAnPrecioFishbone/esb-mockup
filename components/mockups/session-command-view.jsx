@@ -9,8 +9,9 @@ import {
   Calendar, ArrowRight, ArrowUpRight, ExternalLink, MoreHorizontal,
   Users, Tag, GitBranch, Github, Folder, Sparkles, Hash, Lock,
   PlayCircle, PauseCircle, RefreshCw, Inbox, ShieldCheck,
-  UploadCloud, History
+  UploadCloud, History, ShieldAlert
 } from "lucide-react";
+import UCHO04ManagerReview from "./uc-ho-04-manager-review.jsx";
 
 /* ═══════════════════════════════════════════════════════════════════
    Session Command View — dedicated full-screen page at /session/[id]
@@ -22,10 +23,16 @@ import {
        exist for system tracking.
      · Removes all email-as-source references per data-ingestion
        governance. Engineering sources are now Jira · GitHub · Drive.
+     · CL-103 · UC-HO-04 Manager Review is wired as a 6th tab. The
+       review tab special-cases the wrapper layout — UC-HO-04 has its
+       own ItemListRail + DecisionRail, so we skip the standard
+       1fr_280px grid + ActionSidebar that the other tabs share.
 
    Layout · TopBar with breadcrumb · Hero with persona + 3-phase
-   progress · Tab navigation (Overview · Stages · Data · Audit · Settings)
-   · Two-column main with content (left) + action sidebar (right).
+   progress · Tab navigation (Overview · Stages · Data · Audit ·
+   Manager review · Settings) · Two-column main with content (left) +
+   action sidebar (right) — except for Manager review which is full
+   width inside the page container.
 
    Three screens demonstrate state diversity:
      1. Minh Lê · Overview tab · mid-seeding (Phase 1 · Prepare)
@@ -121,6 +128,7 @@ const TABS = [
   { id: "stages",    label: "Stages" },
   { id: "data",      label: "Data" },
   { id: "audit",     label: "Audit log" },
+  { id: "review",    label: "Manager review" },
   { id: "settings",  label: "Settings" },
 ];
 
@@ -131,7 +139,7 @@ export default function SessionCommandView({ embedded = false, view = "ml-overvi
   });
 
   if (embedded) {
-    // view encodes "<sessionKey>-<tabId>", e.g. "ml-overview", "pa-audit"
+    // view encodes "<sessionKey>-<tabId>", e.g. "ml-overview", "pa-audit", "ml-review"
     const dash = view.indexOf("-");
     const sessKey = dash > 0 ? view.slice(0, dash) : "ml";
     const tab = dash > 0 ? view.slice(dash + 1) : "overview";
@@ -230,10 +238,24 @@ function StepRenderer({ id }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   The command view — shared layout for all 3 screens
+   The command view — shared layout for all 6 tabs
+
+   The "review" tab special-cases the wrapper: UC-HO-04 owns its own
+   ItemListRail + DecisionRail layout, so we skip the standard
+   1fr_280px grid + ActionSidebar to avoid a redundant right column.
    ═══════════════════════════════════════════════════════════════════ */
 
 function CommandView({ session, activeTab }) {
+  if (activeTab === "review") {
+    return (
+      <div className="max-w-7xl mx-auto">
+        <Hero session={session} />
+        <TabBar session={session} activeTab={activeTab} />
+        <ReviewTab session={session} />
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto">
       <Hero session={session} />
@@ -377,7 +399,8 @@ function TabBar({ session, activeTab }) {
               }`}
             >
               {tab.label}
-              {tab.id === "audit" && <span className="ml-1 text-[10px] text-gray-400" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>14</span>}
+              {tab.id === "audit"  && <span className="ml-1 text-[10px] text-gray-400" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>14</span>}
+              {tab.id === "review" && <span className="ml-1 text-[10px] px-1 py-0.5 rounded-sm bg-violet-50 border border-violet-200 text-violet-700 font-semibold" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>UC-HO-04</span>}
             </Link>
           );
         })}
@@ -905,6 +928,50 @@ function AuditRow({ ts, actor, action, detail, severity }) {
         </div>
       </div>
     </li>
+  );
+}
+
+/* ─── Tab content · Manager review (CL-103) ──────────────────────────
+   Renders UC-HO-04 inside the session for Minh Lê; shows a POC-scope
+   placeholder for Phương Anh.
+   ──────────────────────────────────────────────────────────────────── */
+
+function ReviewTab({ session }) {
+  if (session.urlSlug === "minh-le") {
+    return <UCHO04ManagerReview embedded state="s1" />;
+  }
+
+  return (
+    <div className="p-6">
+      <article className="rounded-lg border border-yellow-200 bg-yellow-50/30 p-6 max-w-2xl mx-auto">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-md bg-white border border-yellow-200 flex items-center justify-center shrink-0">
+            <ShieldAlert className="w-5 h-5 text-yellow-700" strokeWidth={1.75} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-semibold text-gray-900 mb-1">Manager review is wired for Minh Lê's session in this POC</h3>
+            <p className="text-[12px] text-gray-700 leading-relaxed mb-3">
+              The UC-HO-04 review surface (sourced-vs-AI diff, inline edit, pre-commit flag fix, SHA-256 sign-off) is currently scoped to Minh Lê's Engineering session as the canonical demo persona. {session.offboarder}'s Sales session uses the same data contract; when reviewer-side content for this session lands in Phase 2, this tab will render the same UC-HO-04 surface keyed to her bundle.
+            </p>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/session/minh-le?tab=review"
+                className="h-8 px-3 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-[12px] font-semibold inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+              >
+                Open Minh Lê's Manager review
+                <ArrowRight className="w-3 h-3" />
+              </Link>
+              <Link
+                href={`/session/${session.urlSlug}`}
+                className="h-8 px-3 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-[12px] font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20"
+              >
+                Back to Overview
+              </Link>
+            </div>
+          </div>
+        </div>
+      </article>
+    </div>
   );
 }
 
