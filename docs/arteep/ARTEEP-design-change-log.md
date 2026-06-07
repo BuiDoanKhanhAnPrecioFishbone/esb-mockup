@@ -710,6 +710,36 @@
 
 ---
 
+## POC Live-App Migration (2026-06-07)
+
+*Triggered by PO direction "use trello" + "apply all" while deploying Module 1 into the live app. Brings the canonical Management-plane surfaces onto the agreed POC source and codifies the field-visibility rule observed during the deploy.*
+
+### CL-105 — Form fields are shown and selectable, pre-filled to happy-path defaults — never hidden or disabled (POC)
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-07 |
+| Sprint | POC build · cross-cutting |
+| Change | Across POC build surfaces, configuration fields are not hidden behind collapsed progressive-disclosure panels and are not rendered as read-only / disabled text. Every field is visible and interactive (selects, toggles, editable inputs), with the happy-path value pre-filled. The Customize panel on the quick-initiate surface (UC-HO-01 · `/session/new`) is therefore open by default with all fields adjustable — review deadline, data-source toggle, section blueprint, question-queue mode, focus note, and a successor select. This refines the "Manager confirms, not configures" rationale of the quick-initiate redesign: on the happy path the manager still does nothing (everything is pre-filled), but nothing is concealed — each field is present and editable if they want it. Applies to POC build surfaces; does not change the locked palette (§4) or the 3-phase model (CL-088). |
+| UC Reference | UC-HO-01 (quick-initiate) · cross-cutting POC build rule |
+| Why | PO direction: hidden or disabled fields make the POC feel non-functional and conceal the system's actual configurability from reviewers clicking through. Showing every field, pre-filled, keeps the happy path one-click while making the full control surface legible and testable. |
+| Decided By | PO + BA |
+| Category | UX Refinement |
+
+### CL-106 — Canonical Management-plane surfaces migrated to Trello (implements CL-091)
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-07 |
+| Sprint | POC build · S1 surfaces |
+| Change | The live Management-plane surfaces are migrated off the stale Jira / GitHub / Google Drive source mix onto **Trello** as the POC showcase source with the 4-layer hard-filter, implementing CL-091 on surfaces that predated it. (1) `uc-ho-01-quick-initiate.jsx` (`/session/new`) — single Trello source with the 4-layer contract; capture copy updated from the voice interview to the async question queue (CL-099). (2) `session-command-view.jsx` (`/session/[id]`) — Prepare-phase seeding and the Data tab present the Trello 4-layer ingestion (active lists scanned, thin cards skipped, prioritized labels, sensitive-content check) in place of the old sources. The dashboard (`ha-vy-handover-dashboard.jsx`) needed no change — in the 3-phase redesign it renders no source chips and no forms. The new `/m1-initiation` walkthrough already used Trello. |
+| UC Reference | UC-HO-01 · implements CL-091 · CL-099 capture-copy alignment |
+| Why | The deployed surfaces still showed the pre-CL-091 source mix, contradicting the agreed POC showcase source and producing an inconsistent click-through (Trello on initiate → old sources on the command view). Bringing them onto Trello makes the live flow internally consistent with the locked POC direction. |
+| Decided By | PO + BA |
+| Category | Visual System · Scope |
+
+---
+
 ## Pending Decisions (Need Stakeholder Input)
 
 The defaults in CL-003, CL-004, and CL-005 are working assumptions. The following decisions remain open and should be confirmed before their respective sprints begin:
