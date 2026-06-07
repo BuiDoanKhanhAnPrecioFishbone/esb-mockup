@@ -8,6 +8,8 @@
 
 *Updated 2026-06-05 (later) · POC capture model. Voice interview (UC-HO-02) deferred to Phase 2; POC capture = self-serve upload + an asynchronous question queue; new UC-HO-08 (network knowledge requests) added in the Prepare stage. See CL-098–101.*
 
+*Updated 2026-06-07 · UC-HO-04 Manager Review + Sign-off mockup completed (violet/yellow palette · all 8 states real · S1 Arrival → S8 SHA-256 sign-off). Sibling-file pattern adopted (CL-102) and the mockup wired into the live `SessionCommandView` as the 6th "Manager review" tab (CL-103). See §15 for the full delta and the live route map; the older sections below remain authoritative for everything else.*
+
 ---
 
 ## 1. Project Overview
@@ -45,6 +47,8 @@
 | **POC capture model · voice deferred (CL-098 / CL-099)** | The POC replaces the live voice interview (UC-HO-02 → **Phase 2**) with self-serve **file upload + an asynchronous question queue** the Offboarder answers in text. The queue = Manager Priority Prompts (UC-HO-05) + network-solicited questions (UC-HO-08) + the Offboarder's own additions. The 3-phase lifecycle is unchanged; only the Capture *mechanism* changes. |
 | **Network knowledge requests · UC-HO-08 (CL-100 / CL-101)** | In Prepare, the system notifies the offboarder's **auto-derived connection set** (Trello card co-members / comment participants / co-assignees + manager + named coach; manager-editable) and collects **questions** (→ capture queue) and **flags** on wrong/insufficient AI-collected data (→ pre-commit, **ACL-bounded** correction requests to the Offboarder — a colleague only flags what they already had access to). |
 | **3-phase user-facing lifecycle** | Internal 8-stage pipeline grouped as **Prepare · Capture · Deliver** at every glance-level UI view. Reduces cognitive load. |
+| **Sibling-file pattern for mockup state extraction (CL-102 · 2026-06-07)** | When a mockup JSX file exceeds ~100KB (the safe-write threshold), extract self-contained state views into sibling files. Main file owns shared scaffolding; siblings own one or more state views + their decision-panel content. First applied to UC-HO-04 (`uc-ho-04-s6-flag-fix.jsx`, `uc-ho-04-s7s8-signoff.jsx`). |
+| **Mockups merged into 1 live control (CL-103 · 2026-06-07)** | Standalone mockups under `components/mockups/` are wired into existing live control surfaces (e.g. `SessionCommandView`) as tabs via the `embedded` + `state` props contract — not exposed as separate `/m/<slug>` routes (retired) or new top-level routes. The session command view is the system for per-session work, including Manager review (UC-HO-04). |
 
 ---
 
@@ -110,7 +114,7 @@ The **Knowledge Graph Consumer plane / POC showcase** uses the `MASTER.md` "AI-N
 - **UC-HO-01** Initiate Handover Session
 - **UC-HO-02** Conduct AI-Guided Voice Interview (Dynamic N-Domain Coverage) — ⏸ **deferred to Phase 2 (out of POC)**
 - **UC-HO-03** Review and Sign Transcript
-- **UC-HO-04** Submit Handover Record to Knowledge Graph
+- **UC-HO-04** Submit Handover Record to Knowledge Graph — **MOCKUP COMPLETE 2026-06-07 · live at `/session/[id]?tab=review` (CL-103)**
 - **UC-HO-05** Configure Custom Prompts and Section Blueprints *(POC: prompts feed the capture queue)*
 - **UC-HO-06** Report Hallucination or Error
 - **UC-HO-07** Approve Knowledge Graph Correction
@@ -124,7 +128,7 @@ The **Knowledge Graph Consumer plane / POC showcase** uses the `MASTER.md` "AI-N
 - **UC-ON-03** Skill Gap Analysis and Growth Plan
 
 ### Consumption plane — Knowledge Graph explorer (NEW · CL-094 / CL-095)
-The successor-facing Knowledge Graph explorer is the **Consumption plane** surface (extends UC-ON-02). Interaction model: Progressive Disclosure, Contextual-AI quick-start chips, 0-token hover via stored `short_summary`, Timeline + Heatmap split-screen, Prompt Disambiguation. The feedback loop (UC-HO-06 / UC-HO-07) runs through **token-free triage** with a contested-flag-on-report and the preserved §1.4 commit gate (CL-095). Three-plane architecture is now explicit: **Management** (dashboard / command-view) · **Capture** (POC: upload + question queue + UC-HO-08 network requests; voice interview is Phase 2) · **Consumption** (KG explorer).
+The successor-facing Knowledge Graph explorer is the **Consumption plane** surface (extends UC-ON-02). Interaction model: Progressive Disclosure, Contextual-AI quick-start chips, 0-token hover via stored `short_summary`, Timeline + Heatmap split-screen, Prompt Disambiguation. The feedback loop (UC-HO-06 / UC-HO-07) runs through **token-free triage** with a contested-flag-on-report and the preserved §1.4 commit gate (CL-095). Three-plane architecture is now explicit: **Management** (dashboard / command-view, with UC-HO-04 inline as the Manager review tab) · **Capture** (POC: upload + question queue + UC-HO-08 network requests; voice interview is Phase 2) · **Consumption** (KG explorer).
 
 ### Step Zero (Plan v2, NEW)
 - **Z01** Connector Library (browse 8 integrations)
@@ -142,7 +146,7 @@ The successor-facing Knowledge Graph explorer is the **Consumption plane** surfa
 | **SZ Step Zero (NEW)** | 2 weeks | Z01–Z04 | PENDING (5 blockers) |
 | **S1 Handover Initiation** | 2 weeks | UC-HO-01, UC-HO-05 | COMPLETED (v2 with violet/yellow; redesigned 2026-06-02 to 3-phase + drawer→command-view + one-click initiation) |
 | **S2 Capture & Verify** | 2 weeks | UC-HO-02, UC-HO-03 | COMPLETED (old amber palette — needs migration). **POC: voice interview deferred to Phase 2 (CL-098); capture = self-serve upload + question queue (CL-099). New surfaces pending.** |
-| **S3 KG Commit** | 1.5 weeks | UC-HO-04 | COMPLETED (old amber palette) |
+| **S3 KG Commit · UC-HO-04** | 1.5 weeks | UC-HO-04 Manager Review + Sign-off | **COMPLETED 2026-06-07 with violet/yellow palette.** Mockup at `components/mockups/uc-ho-04-manager-review.jsx` + siblings `uc-ho-04-s6-flag-fix.jsx` + `uc-ho-04-s7s8-signoff.jsx`. All 8 states real (S1 Arrival → S2 Reviewing → S3 Quick accept → S4 Edit inline · CL-086 → S5 Send back → S6 3-way flag fix · CL-101 → S7 Bundle summary · propagation → S8 Sign-off · SHA-256 anchor). Wired into live `/session/[id]` as the **Manager review** tab via CL-103. The old amber `arteep-s3-kg-commit.jsx` is superseded by this build. |
 | **S4 Onboarding Gen & Read** | 2 weeks | UC-ON-01, UC-ON-02 | COMPLETED (old amber palette) |
 | **S-KG Consumption plane (NEW)** | TBD | Knowledge Graph explorer (CL-094) · feedback triage (CL-095) | PENDING — next build · target route `/knowledge-graph` · `MASTER.md` shell |
 | **S5 Skill Gap & Feedback** | 1.5 weeks | UC-ON-03, HO-06, HO-07 | PENDING (also home for QA-INT-01 gap fixes) |
@@ -211,24 +215,27 @@ The successor-facing Knowledge Graph explorer is the **Consumption plane** surfa
 
 **§1.4 reaffirmed (CL-095):** the feedback-loop token-free triage changes only *when* and *how* a Manager is notified of a reported error — never *whether* they sign off. A report flags the node "under review" (a 0-token status flag), but no correction auto-commits. §1.4 remains absolute, including for the Batch path and the 2-cycle SLA escalation. The pre-commit network-flag loop (CL-101) likewise routes corrections through the Offboarder and then UC-HO-03 sign-off — it never writes to the KG directly.
 
+**§1.4 surfaced in UC-HO-04 (2026-06-07):** the S8 state of the new Manager Review mockup renders the commit gate as a SHA-256 cryptographic anchor (`8f3a2b9c…d7a5f` preview) bound to Hà Vy's Entra ID identity, with a visible 15-min undo grace window before the audit trail becomes immutable. Live commit progress shows hash validation → ACL trim → Purview gate → Cosmos writes → Verified edges → playbook propagation → Slack notifications → audit log entry. Surfaces §1.4 + §2.3 in one screen.
+
 ---
 
 ## 9. Artifact Inventory
 
-All files in `/mnt/user-data/outputs/`:
-
-### Code Artifacts (React/JSX)
+### Code Artifacts (React/JSX) · live in repo
 | File | Status | Notes |
 |---|---|---|
 | `arteep-s0-component-library.jsx` | CANONICAL | 7 shared components |
 | `arteep-s1-handover-initiation.jsx` | SUPERSEDED | V1 with old amber palette |
-| `arteep-s1-handover-initiation-v2.jsx` | SUPERSEDED | V2 with violet/yellow palette; replaced by dashboard + quick-initiate + command-view trio (2026-06-02) |
+| `arteep-s1-handover-initiation-v2.jsx` | SUPERSEDED | V2; replaced by dashboard + quick-initiate + command-view trio (2026-06-02) |
 | `ha-vy-handover-dashboard.jsx` | CURRENT | Multi-session command center · 3-phase progress |
 | `uc-ho-01-quick-initiate.jsx` | CURRENT | One-click session creation · progressive-disclosure customize |
-| `session-command-view.jsx` | CURRENT | Per-session full-screen tabbed workspace |
-| `uc-ho-02-interview-canvas` (Capture plane) | DEFERRED TO PHASE 2 | Voice interview focus-mode surface · retained for Phase 2, not in the POC (CL-098) |
+| `session-command-view.jsx` | CURRENT | Per-session tabbed workspace · **6 tabs now: Overview · Stages · Data · Audit log · Settings · Manager review (CL-103)** |
+| `uc-ho-04-manager-review.jsx` | **CURRENT (NEW 2026-06-07)** | Sprint 3 Manager Review + Sign-off · 8 states · violet/yellow · `embedded` + `state` props (CL-103) |
+| `uc-ho-04-s6-flag-fix.jsx` | **CURRENT (NEW 2026-06-07)** | UC-HO-04 sibling · S6 3-way diff for Atlas rollback flag chain (CL-102) |
+| `uc-ho-04-s7s8-signoff.jsx` | **CURRENT (NEW 2026-06-07)** | UC-HO-04 sibling · S7 bundle summary + S8 SHA-256 sign-off (CL-102) |
+| `uc-ho-02-interview-canvas` | DEFERRED TO PHASE 2 | Voice interview focus-mode surface · retained for Phase 2, not in the POC (CL-098) |
 | `arteep-s2-capture-verify.jsx` | NEEDS MIGRATION | 5 Offboarder screens · old amber palette |
-| `arteep-s3-kg-commit.jsx` | NEEDS MIGRATION | Manager Completion Report 4 states · old amber palette |
+| `arteep-s3-kg-commit.jsx` | **SUPERSEDED 2026-06-07** | Old amber-palette Manager Completion Report 4 states; replaced by `uc-ho-04-manager-review.jsx` trio above |
 | `arteep-s4-onboarding-gen-read.jsx` | NEEDS MIGRATION | 5 Onboarder screens · old amber palette |
 | `arteep-system-ui-tour.jsx` | **CANONICAL DEMO** | 8 features × 3-4 states · violet/yellow · QA-INT-01 fixes integrated |
 | `arteep-transactional-gateways.jsx` | CANONICAL (specialized) | 3 states · Vietnamese UI |
@@ -243,71 +250,19 @@ All files in `/mnt/user-data/outputs/`:
 | `ARTEEP-master-uc-index.md` | v1.1 · 11 UCs (UC-HO-08 added), dependency matrix, TBD register |
 | `ARTEEP-implementation-plan-v2.md` | V2 with Step Zero, 12-week timeline |
 | `QA-INT-01-Dual-Verification-Rule.md` | Foundational governance rule |
-| `ARTEEP-design-change-log.md` | Living document — 101+ entries |
+| `ARTEEP-design-change-log.md` | Living document — **103 entries** (latest: CL-102 + CL-103) |
 | `Sprint-1-compact.md` | Sprint 1 snapshot (3-phase lifecycle, post-redesign) |
 | `ART_EEP_Architecture_Summary_EN.md` | Grill-me session record — Knowledge Lake architecture (source of CL-090–101) |
 
 ---
 
-## 10. Design Change Log Summary (CL-001 through CL-101)
+## 10. Design Change Log Summary (CL-001 through CL-103)
 
-101+ entries across these major themes:
+103 entries across these major themes. Sections CL-001 through CL-101 are unchanged — see prior commits of this file or the change-log itself for theme summaries.
 
-### S0 Foundation (CL-001 to CL-010)
-English UI · UX writing principles · persona lock · 14-state taxonomy · 2-accent palette · animation budget · 1px borders
-
-### S1 (CL-011 to CL-020)
-CTAs advance happy path · "sensitive content" copy · Purview not named in UI · audit log tile reuse
-- *Note · CL-015 (email scanning constraint inline) deprecated 2026-06-02 — email is no longer a data source; the inline scope-reminder pattern generalizes to all sources via the data-ingestion governance rule.*
-
-### S2 (CL-021 to CL-033)
-Pulsing rings · text mode equal choice · transcript auto-highlight · 4 draft-item badges · Manager flag avatar · sign disabled · auth failure attempts remaining
-
-### S3 (CL-034 to CL-040)
-Progress Stage reuse · "Needs your call" not "Disambiguation" · "Up next" front-loaded · skill chips by status · partial commit framed by success
-
-### S4 (CL-041 to CL-053)
-Smart preset rationale · custom prompt interpretation · skeleton+typewriter+glow vocabulary · Critical can't hide · inline entity underline · entity mini-card hover · Persistent Copilot Bar · named source chips · spotlight 30% dimming · restricted content explains what+why
-
-### S1 v2 Rebuild (CL-054 to CL-062)
-Violet primary + Pastel Yellow palette · primary buttons branded · RBAC scope failure state · PII override action · empty section removed · focus rings · AI prompts violet-tinted
-
-### Multi-Persona Dashboard (CL-063 to CL-065)
-3 concurrent sessions · source chips inline · critical urgency layered signals
-
-### Plan v2 (CL-066 to CL-073)
-Step Zero introduction · 4 MVP screens · Platform Admin persona · 8 MVP connectors · UC refinements · 5 new blockers · 12-week timeline
-
-### System UI Tour (CL-074 to CL-076)
-Single navigable artifact · Feedback Loop combines HO-06/HO-07 · skill progress bar two-tone
-
-### Transactional Gateways (CL-077 to CL-079)
-Vietnamese UI deviation · 3 entity badge categories · low-confidence yellow underline pattern
-
-### QA-INT-01 Adoption (CL-080 to CL-086)
-Foundational governance rule · 3 gaps remediated (`CanonicalBadge`, `LineageDrawer`, inline diff)
-
-### S1 Redesign (CL-087 to CL-089, 2026-06-02)
-- Drawer pattern (480px right-side) replaced with dedicated full-screen command-view route at `/session/[id]`
-- 8-stage lifecycle compressed to 3 user-facing phases (Prepare · Capture · Deliver) for cognitive simplicity
-- One-click quick-initiate pattern replaces multi-step wizard
-- Email removed as automated data source; CL-015 deprecated and replaced with general data-ingestion governance pattern
-
-### Knowledge Lake Architecture (CL-090 to CL-097, 2026-06-05)
-- Scope narrowed to the Handover Knowledge Lake; Peer Programming removed (CL-090)
-- Flexible multi-source model retained; Trello = POC showcase source; 4-Layer Hard-Filter as a source-agnostic contract (CL-091)
-- Layered sanitization Regex → Few-Shot → Purview, Purview not replaced (CL-092)
-- Hybrid security tiering: Tier-2 ghost / Tier-1 metadata stub exception to ACL trimming (CL-093)
-- Knowledge Graph consumer-plane interaction model: progressive disclosure, contextual chips, 0-token hover, Timeline + Heatmap, prompt disambiguation (CL-094)
-- Feedback triage: contested-flag-on-report, commit gate (§1.4) preserved, 2-cycle SLA escalation; resolves HO-06 TBD-1 (CL-095)
-- `MASTER.md` scoped to the Consumer plane as presentation shell (CL-096)
-- English-only POC showcase; latinized usernames (CL-097)
-
-### POC Capture Model (CL-098 to CL-101, 2026-06-05)
-- Voice interview (UC-HO-02) deferred to Phase 2; out of POC scope (CL-098)
-- POC capture = self-serve upload + asynchronous question queue (CL-099); resolves HO-05 TBD-2 for the POC
-- Network knowledge requests in Prepare = new UC-HO-08; auto-derived, manager-editable connection set solicits questions + data flags (CL-100)
-- Pre-commit, network-driven, ACL-bounded data-flag correction loop — sibling of CL-095 (CL-101)
+### UC-HO-04 Manager Review build (CL-102 to CL-103, 2026-06-07)
+- Sibling-file pattern for mockup state extraction — main file under ~100KB safe-write threshold, sibling files own state views + decision-panel content (CL-102)
+- UC-HO-04 wired into the live `SessionCommandView` as the 6th "Manager review" tab via `embedded` + `state` props; orphan-mockup state resolved; `/m/<slug>` retirement reaffirmed (CL-103)
 
 ---
 
@@ -338,8 +293,8 @@ Foundational governance rule · 3 gaps remediated (`CanonicalBadge`, `LineageDra
 - TBD-Z5 — Connector deprecation behavior
 
 ### Migration Pending
-- S2/S3/S4 artifacts still use old amber palette → migrate to violet/yellow when revisited
-- S2/S3/S4 artifacts could swap remaining `Verified` badges for `CanonicalBadge` where propagation has completed
+- S2 + S4 artifacts still use old amber palette → migrate to violet/yellow when revisited (**S3 done as of 2026-06-07**)
+- S2 + S4 artifacts could swap remaining `Verified` badges for `CanonicalBadge` where propagation has completed
 
 ---
 
@@ -351,7 +306,7 @@ The system reads/writes to:
 - **Azure AI Search** — Per-source indexes; pre-retrieval ACL trimming (Tier-1 stub exception per CL-093)
 - **Cosmos DB Gremlin** — Knowledge Graph; partition-keyed by org; stores per-node `short_summary` for 0-token hover (CL-094)
 - **Microsoft Purview** — Mandatory PII gate (no fallback path); fronted by Regex + Few-Shot pre-passes (CL-092)
-- **Entra ID** — RBAC; Platform Admin role distinct from Manager
+- **Entra ID** — RBAC; Platform Admin role distinct from Manager; commit-gate signer in UC-HO-04 S8 sign-off (visible in mockup)
 - **Azure OpenAI** — GPT-4o-mini (Worker) + GPT-4o (Expert) routing
 - **Semantic Kernel** — Orchestrator + Planner Agent
 
@@ -366,15 +321,16 @@ The hackathon pitch opens with a 10–15 second Step Zero moment ("Before any ha
 3. Command-view Overview tab · Phase 1 Prepare · live seeding from Trello (POC source) — 4-Layer Hard-Filter visibly dropping noise; the system fans out **network knowledge requests** (UC-HO-08) to Minh Lê's auto-derived connections
 4. **POC capture** — Minh Lê uploads his files and works through the **question queue** (manager prompts + questions from his network); colleagues' flags on wrong/insufficient AI-collected data arrive as his correction tasks. *(The voice interview is Phase 2.)*
 5. Phase 2 transcript/content review with QA-INT-01 inline diff
-6. Phase 3 KG Commit with Canonical Facts surfaced (Regex + Few-Shot sanitization shown, Purview behind)
-7. Successor's Knowledge Graph explorer (Consumer plane) — Progressive Disclosure → Contextual-AI chips → 0-token hover → Timeline + Heatmap; Tier-1 locked stub with "Request access"
-8. Trần Hữu Nam's Day 1 playbook with Canonical badge + lineage drawer
-9. Skill Gap analysis
-10. Feedback loop · hallucination reported → node flagged "under review" → token-free triage → Manager reviews → Canonical promotion → propagation
+6. **Manager review tab** (UC-HO-04 · CL-103) — Hà Vy works the bundle item-by-item across the 8 states · side-by-side raw vs AI-structured, inline edit, send-back composer, the 3-way pre-commit flag chain (Trần catches AI · Minh corrects · Duy corroborates), bundle summary, **SHA-256 cryptographic sign-off** binding Entra ID identity + immutable audit trail
+7. Phase 3 KG Commit propagation (animated commit progress in S8) with Canonical Facts surfaced (Regex + Few-Shot sanitization shown, Purview behind)
+8. Successor's Knowledge Graph explorer (Consumer plane) — Progressive Disclosure → Contextual-AI chips → 0-token hover → Timeline + Heatmap; Tier-1 locked stub with "Request access"
+9. Trần Hữu Nam's Day 1 playbook with Canonical badge + lineage drawer
+10. Skill Gap analysis
+11. Feedback loop · hallucination reported → node flagged "under review" → token-free triage → Manager reviews → Canonical promotion → propagation
 
 Total runtime: ~3–4 minutes.
 
-**Pitch spine (CL-090 / business value):** *Data Gravity creates Vendor Lock-in.* Two ROI metrics — **Time-to-Productivity** (onboarding 2 months → 2 weeks) and **Tacit Knowledge Capture Rate** (X risk factors + Y undocumented procedures captured before an employee leaves). The Knowledge Graph explorer beat (step 7) runs on Trello-sourced data in the English-only Consumer-plane shell.
+**Pitch spine (CL-090 / business value):** *Data Gravity creates Vendor Lock-in.* Two ROI metrics — **Time-to-Productivity** (onboarding 2 months → 2 weeks) and **Tacit Knowledge Capture Rate** (X risk factors + Y undocumented procedures captured before an employee leaves). The Manager review beat (step 6) showcases the QA-INT-01 §1.4 commit gate end-to-end; the Knowledge Graph explorer beat (step 8) runs on Trello-sourced data in the English-only Consumer-plane shell.
 
 ---
 
@@ -385,13 +341,45 @@ If picking up where this left off, the next actionable items are:
 1. **Build the POC Capture surfaces** — self-serve file upload + the asynchronous question queue + UC-HO-08 network-request fan-out (Prepare stage). This is the POC's replacement for the voice interview; voice (UC-HO-02) is Phase 2 (CL-098–101).
 2. **Build the Knowledge Graph explorer (Consumer plane)** — `MASTER.md` shell · route `/knowledge-graph` · progressive disclosure, contextual chips, 0-token hover, Timeline + Heatmap, Tier-1/Tier-2 rendering, feedback triage (CL-094–097)
 3. **Stakeholder approval needed** on the Plan v2 decision points (especially Step Zero blockers) + the two new UC-HO-08 TBDs
-4. **Migration sweep** — S2/S3/S4 artifacts need violet/yellow palette migration
+4. **Migration sweep** — S2 + S4 artifacts need violet/yellow palette migration (**S3 done as of 2026-06-07**)
 5. **S5 build** — UC-ON-03 (Skill Gap), UC-HO-06 (Report Hallucination), UC-HO-07 (Correction Review) need full per-sprint artifacts
 6. **UC-HO-01 v2 governance spec update** — reflect 3-phase lifecycle + data-ingestion governance (CL-015 deprecation)
 7. **UC-HO-08 spec** — author the full use case (currently only logged via CL-100 / CL-101 and indexed in the master UC index v1.1)
-8. **Demo script** — write the 3–4 minute narrative tying all the states together with the 3-phase lifecycle, POC capture, and the KG explorer visible throughout
+8. **UC-HO-04 spec** — author the full v2 use case to reflect the new mockup (8-state flow · 3-way flag fix · SHA-256 sign-off) — currently logged via CL-102 / CL-103 and built into the live app
+9. **Demo script** — write the 3–4 minute narrative tying all the states together with the 3-phase lifecycle, POC capture, Manager review, and the KG explorer visible throughout
 
-**Canonical artifact for current state:** `arteep-system-ui-tour.jsx` — fully QA-INT-01 compliant with violet/yellow palette; Sprint 1 work since 2026-06-02 lives at the dashboard + quick-initiate + command-view trio. The POC Capture surfaces and the Knowledge Graph explorer (Consumer plane) are the next builds (CL-098–101, CL-094).
+**Canonical artifact for current state:** `uc-ho-04-manager-review.jsx` (+ siblings) for the Manager review surface; `arteep-system-ui-tour.jsx` for the broader QA-INT-01 demo tour; the dashboard + quick-initiate + command-view trio for everything Sprint 1 since 2026-06-02. The POC Capture surfaces and the Knowledge Graph explorer (Consumer plane) are the next builds (CL-098–101, CL-094).
+
+---
+
+## 15. 2026-06-07 Delta Detail · UC-HO-04 build wrap-up
+
+This section captures the *full* delta from the 2026-06-07 update line at the top, kept here as a single block for clean grep-and-recovery. Earlier sections above are updated in place for the most-visited fields (§5 UC list, §6 sprint roadmap, §8 §1.4 commentary, §9 artifact inventory, §10 CL summary, §11 migration list, §14 next steps). For full per-entry tables of CL-102 and CL-103 see `docs/arteep/ARTEEP-design-change-log.md`.
+
+**Build completed.** UC-HO-04 Manager Review + Sign-off mockup is fully real across 8 states using the violet/yellow palette. State map:
+- S1 · **Arrival** — bundle overview · 14 items · 4 source tiles · pre-review checks panel · recommended review order
+- S2 · **Reviewing Manager Priority** — side-by-side raw text vs AI-structured · source provenance strip · network corroboration card
+- S3 · **Quick accept** — accepted toast bar · structured pane upgrades to Canonical · post-accept inline actions
+- S4 · **Edit inline (CL-086)** — `DelSpan` rose strikethrough + `InsSpan` violet underline · edit-lineage 3-card footer · live audit-trail note
+- S5 · **Send back for clarification** — incomplete-answer card · send-back composer with AI-drafted question · urgency selector · source-context panel · impact note
+- S6 · **Pre-commit 3-way flag fix** (CL-101) — Atlas rollback narrative · AI wrong → Trần flagged → Minh corrected → Duy corroborated in #data-platform · `AuditChainPreview` with 5-row immutable trail
+- S7 · **Bundle summary** — 9/3/2/0 outcome stats · per-category breakdown table · 5-node propagation graph · 3 team-impact cards (Engineering · Sales · Data Platform) · ready-to-sign-off strip
+- S8 · **Sign-off (QA-INT-01 §1.4 commit gate)** — SHA-256 anchor card (`8f3a2b9c…d7a5f`) on dark code-style background · signature card with Entra ID verification · 8-step live commit-progress log · done card with playbook + KG links · 15-min undo grace
+
+**File layout (CL-102 sibling-file pattern · proven twice).** Main file is `components/mockups/uc-ho-04-manager-review.jsx` (~90KB). Two siblings hold state views + their decision-panel content so each file stays under the ~100KB safe-write threshold:
+- `components/mockups/uc-ho-04-s6-flag-fix.jsx` (~28KB) — exports `S6FlagFixView` + `DecisionPanelFlag`
+- `components/mockups/uc-ho-04-s7s8-signoff.jsx` (~43KB) — exports `S7BundleSummaryView` + `S8SignOffView` + `DecisionPanelSummary` + `DecisionPanelSignOff`
+
+Main file owns shared scaffolding · `ReviewShell`, `ItemListRail`, `DecisionRail`, `ItemHeader`, `DiffPanes`, `LineageCard`, `ContextStrip`, `BundleProgress`. SESSION constants and `MONO_STACK` are duplicated across siblings (cheap; avoids a shared module). Pattern is now codified for any future mockup that crosses the threshold.
+
+**Live merge (CL-103).** The mockup is no longer an orphan file. Three coordinated wirings:
+1. `UCHO04ManagerReview` accepts `embedded` + `state` props on its default export. In `embedded` mode the outer dev chrome (top step-dot bar + footer prev/next) collapses to a single inline `EmbeddedStateStrip`, and `ReviewShell` skips the redundant `ManagementHeader` + `ReviewSubHeader` via React context (those duplicate the `SessionCommandView` Hero + TabBar above).
+2. `SessionCommandView` imports `UCHO04ManagerReview`, adds `{ id: "review", label: "Manager review" }` to `TABS`, and renders the embedded view for Minh Lê's session (the only persona with UC-HO-04 wired in for the POC). Other sessions show a friendly placeholder.
+3. `app/session/[id]/page.tsx` adds `"review"` to `VALID_TABS` so `/session/minh-le?tab=review` resolves.
+
+All 8 states are reachable via the inline state strip. Standalone behavior is preserved — `embedded={false}` still renders the full dev chrome, useful for any future direct-route use.
+
+**Architectural read.** Three planes are now visible end-to-end in the live app · **Management** (dashboard · quick-initiate · command-view with all 6 tabs including Manager review) · **Capture** (POC Capture plane, pending build) · **Consumption** (KG explorer, pending build). The `/m/<slug>` registry is fully retired; per CLAUDE.md, the `app/` directory IS the registry. Future mockups follow the same pattern — they get wired into an existing control surface as a tab, or get a new top-level route under `app/`, never `/m/<slug>`.
 
 ---
 
