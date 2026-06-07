@@ -684,6 +684,32 @@
 
 ---
 
+## Consumer Plane Persona Expansion (2026-06-07)
+
+*Triggered by the Microsoft AI prompt review on 2026-06-07, which surfaced that the Consumer class spans four archetypes (newcomer · project peer · cross-departmental colleague · upper management) but our locked persona set modeled only the newcomer. PO confirmed the broader framing because the demo must show how the Knowledge Graph is used internally across the organization, not just by the canonical Onboarder.*
+
+### CL-104 — Consumer-plane personas expanded to four archetypes; locked set 6 → 9
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-07 |
+| Sprint | Cross-cutting (personas) · Consumption plane |
+| Change | The locked persona set expands from 6 to 9 to cover all four Consumer-class archetypes. **Existing six unchanged** (Hà Vy · Minh Lê · Trần Hữu Nam · Khánh Linh Trần · Phương Anh Nguyễn · An Quân Vũ). **Three additions:** (a) **Duy Nguyễn** — promoted from supporting to locked · Senior Data Engineer · Data Platform · already appeared in UC-HO-04 S6 (Atlas rollback 3-way) as the corroborating colleague · now locked as the **project peer** archetype (someone querying the KG for context on adjacent team work). (b) **Linh Phạm** — new · Product Manager · Product · locked as the **cross-departmental colleague** archetype · exercises Tier-1 "Request access" affordances (CL-093) on content scoped to other teams. (c) **Thảo Vũ** — new · Engineering Director · Engineering (leadership tier, distinct from Hà Vy's operational tier) · locked as the **upper management** archetype · **owns the Timeline + Heatmap surface** (CL-094), which had no locked actor in the previous six. The four-archetype mapping: **newcomer** → Trần Hữu Nam · **project peer** → Duy Nguyễn · **cross-departmental colleague** → Linh Phạm · **upper management** → Thảo Vũ. Source-of-truth docs updated by this change: §3 of `ARTEEP-context-snapshot.md` (persona table 6 → 9 rows); §3 and §2.3 of `docs/arteep/ARTEEP-system-overview.md` (persona table + Consumption-plane scope description). |
+| UC Reference | Cross-cutting · primary impact on UC-ON-02 (read playbook · now with four reader archetypes · see follow-up below) · UC-HO-08 (network requests · Duy and Linh are also part of Minh's auto-derived network) |
+| Why | PO requirement is to demonstrate how the Knowledge Graph is used internally across the organization, not only by the canonical Onboarder. Without locked personas for the other three archetypes, the pitch could not credibly show internal breadth. Path B (expand to match the four archetypes) chosen over Path A (stay narrow to newcomer) because the PO's framing extends to all daily KG consumers. Duy is promoted (lowest-cost addition · already in the demo) rather than introducing a fourth net-new persona. Thảo Vũ is the highest-leverage addition because she unlocks the Timeline + Heatmap surface that CL-094 specified but no actor triggered. Linh fills the cross-team gap that is otherwise invisible. |
+| Decided By | PO + BA |
+| Category | BA Gap (personas · scope) |
+
+**Pending follow-ups noted at decision time (not resolved by CL-104):**
+
+1. **Heatmap content definition still unlocked.** CL-094 introduced "Timeline + Heatmap split-screen" as part of the consumer interaction model but never specified what the Heatmap shows. The Microsoft AI prompt review proposed three candidate definitions that all map cleanly onto the existing semantic palette — **Knowledge Hotspots** (most-queried nodes · yellow scale), **Skill Density** (team strengths/gaps when viewing by Team/Department · emerald-to-yellow scale), and **Risk Heatmap** (most-flagged project/process nodes · rose scale). With Thảo Vũ now locked as the Heatmap actor, this needs a separate CL to lock the definition. *(To be opened on confirmation.)*
+
+2. **UC-ON-02 scope may need to split or extend.** The use case is currently scoped to the Onboarder reading the personalized playbook. With four Consumer archetypes, the read patterns differ: Trần Hữu Nam reads a curated playbook · Duy reads handover context for cross-team work · Linh researches another team's work · Thảo views Timeline + Heatmap surfaces. Open question: extend UC-ON-02 to cover all four, or split into UC-ON-02a (Onboarder reads playbook) + UC-ON-02b (general KG consumer exploration)? Flagged for next BA review.
+
+3. **Demo flow narrative expansion.** §12 of the system overview lists an 11-step demo flow that currently shows only Trần Hữu Nam in the Consumption plane (step 8). The flow should add beats for Duy (project peer querying for handover context), Linh (cross-team research), and Thảo (Timeline + Heatmap oversight) to deliver the PO's "show how the KG is used internally" requirement. Not blocking CL-104 but flagged for the demo-script work item in §14 next-builds.
+
+---
+
 ## Pending Decisions (Need Stakeholder Input)
 
 The defaults in CL-003, CL-004, and CL-005 are working assumptions. The following decisions remain open and should be confirmed before their respective sprints begin:
@@ -698,6 +724,8 @@ The defaults in CL-003, CL-004, and CL-005 are working assumptions. The followin
 | ON-02 mobile parity scope | Desktop-first v1 | S4 | Product / UX |
 | HO-05 prompts visible to Offboarder pre-capture | **RESOLVED 2026-06-05 (CL-099) — yes; prompts are the queue the Offboarder answers** | S1 | Product (resolved) |
 | HO-06 SLA for Manager correction review | **RESOLVED 2026-06-05 (CL-095) — 2 weekly cycles, then auto-escalate** | S5 | Product (resolved) |
+| **Heatmap content definition (post-CL-104)** | (no default · 3 candidates proposed · awaiting confirmation) | S-KG | BA + Product |
+| **UC-ON-02 single vs split for 4 archetypes (post-CL-104)** | (no default · flagged) | S-KG | BA |
 | **TBD-Z1 OAuth scope minimums per connector** | (no default — hard block) | SZ | IT Security |
 | **TBD-Z2 Connector approval workflow + SLA** | (no default — hard block) | SZ | IT + Legal |
 | **TBD-Z3 Default sync frequency vs. rate limits** | (no default — hard block) | SZ | Product + IT |
