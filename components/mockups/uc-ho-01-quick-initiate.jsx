@@ -5,35 +5,20 @@ import Link from "next/link";
 import {
   ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Check,
   Calendar, Trello, User, Sparkles, ArrowRight,
-  Info, Settings, Clock, ShieldCheck
+  Settings, Clock, ShieldCheck
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════════════
    UC-HO-01 · Quick Initiate — streamlined session creation
 
-   Principle: HR sync already knows everything needed. The manager
-   confirms, then starts. Defaults are good 95% of the time.
-
-   Field principle (CL-105): no field is hidden or disabled. The
-   Customize panel is shown by default — every option is visible,
-   selectable, and pre-filled with the happy-path value.
-
-   POC data source (CL-091): Trello is the demonstrated source, with
-   the 4-Layer Hard-Filter applied as a source-agnostic ingestion
-   contract. Email and personal directories are never scanned.
-
-   Capture mechanism (CL-098/CL-099): voice interview deferred to
-   Phase 2 — the Offboarder answers an async question queue + uploads
-   files at their own pace.
-
-   Honors locked design rules:
-     · CL-018 sentence-shaped placeholder
-     · CL-054 violet primary · CL-055 32px buttons · CL-059 focus rings
-     · CL-060 AI-derived defaults rendered with subtle violet hint
+   CL-107 · labels + values only; explainer prose removed (no
+   destructive action on this surface, so no helper text retained).
+   CL-105 · every field shown, selectable, pre-filled to happy-path.
+   CL-091 · Trello 4-layer source. CL-099 · async question queue.
    ═══════════════════════════════════════════════════════════════════ */
 
 const FLOW = [
-  { id: "ready",     label: "Ready to start",           trigger: "Defaults from HR sync · all fields pre-filled." },
+  { id: "ready",     label: "Ready to start",            trigger: "Defaults from HR sync · all fields pre-filled." },
   { id: "customize", label: "Customize before starting", trigger: "Every field is shown and adjustable." },
 ];
 
@@ -50,7 +35,7 @@ const SCENARIO = {
   successor: "Trần Hữu Nam",
   successorOptions: ["Trần Hữu Nam", "Duy Nguyễn", "Assign later"],
   sources: [
-    { icon: Trello, name: "Trello", detail: "Primary project system · In Progress / Review / Done · 4-layer hard-filter applied", selected: true },
+    { icon: Trello, name: "Trello", detail: "In Progress / Review / Done · 4-layer hard-filter", selected: true },
   ],
   seedingEstimate: "About 7 minutes",
 };
@@ -147,8 +132,7 @@ function FooterNav({ stepIdx, step, onChange }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   The quick-initiate screen
-   Customize panel shown by default — all fields visible & adjustable
+   Quick-initiate screen · Customize open by default, all fields shown
    ═══════════════════════════════════════════════════════════════════ */
 
 function QuickInitiateScreen() {
@@ -161,9 +145,6 @@ function QuickInitiateScreen() {
         <h1 className="text-2xl font-semibold text-gray-900 tracking-tight mt-1">
           Start {SCENARIO.offboarder}'s handover session
         </h1>
-        <p className="text-sm text-gray-500 mt-1 leading-relaxed">
-          Everything's pre-filled from his HR record — review or adjust any field below, then click <strong className="text-gray-900">Start session</strong>.
-        </p>
       </div>
 
       {/* Identity card */}
@@ -178,7 +159,7 @@ function QuickInitiateScreen() {
             <div className="flex items-center gap-2 mt-2 flex-wrap">
               <span className="text-[10px] uppercase tracking-wider font-medium text-gray-500 inline-flex items-center gap-1">
                 <Calendar className="w-2.5 h-2.5" />
-                Last working day · <span className="text-gray-900" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{SCENARIO.lastDay}</span>
+                Last day · <span className="text-gray-900" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{SCENARIO.lastDay}</span>
               </span>
               <span className="text-gray-300">·</span>
               <span className="text-[10px] uppercase tracking-wider font-medium text-gray-500 inline-flex items-center gap-1">
@@ -192,12 +173,12 @@ function QuickInitiateScreen() {
 
       {/* Pre-configured defaults grid */}
       <div className="grid grid-cols-3 gap-3 mb-4">
-        <DefaultTile icon={Calendar}    label="Review deadline"    value={SCENARIO.defaultDeadline}  detail="+3 business days · default" />
-        <DefaultTile icon={ShieldCheck} label="Data source"        value="Trello · filtered"          detail="4-layer hard-filter applied" />
-        <DefaultTile icon={Clock}       label="Estimated seeding"  value={SCENARIO.seedingEstimate}   detail="Background · you can leave the page" />
+        <DefaultTile icon={Calendar}    label="Review deadline"   value={SCENARIO.defaultDeadline} />
+        <DefaultTile icon={ShieldCheck} label="Data source"       value="Trello · filtered" />
+        <DefaultTile icon={Clock}       label="Estimated seeding" value={SCENARIO.seedingEstimate} />
       </div>
 
-      {/* Customize — shown by default · all fields visible & adjustable */}
+      {/* Customize — open by default · all fields visible & adjustable */}
       <article className={`rounded-lg border ${open ? "border-violet-200 bg-violet-50/20" : "border-gray-200 bg-white"} mb-5 transition-colors`}>
         <button
           type="button"
@@ -207,7 +188,6 @@ function QuickInitiateScreen() {
           <div className="flex items-center gap-2 min-w-0">
             <Settings className="w-3.5 h-3.5 text-gray-500 shrink-0" strokeWidth={1.75} />
             <span className="text-sm font-medium text-gray-900">Customize</span>
-            <span className="text-[11px] text-gray-500">Optional · all fields pre-filled — adjust any of them</span>
           </div>
           {open ? <ChevronUp className="w-4 h-4 text-gray-500 shrink-0" /> : <ChevronDown className="w-4 h-4 text-gray-500 shrink-0" />}
         </button>
@@ -232,23 +212,11 @@ function QuickInitiateScreen() {
           <ArrowRight className="w-3.5 h-3.5" />
         </Link>
       </div>
-
-      {/* Inline explainer footer */}
-      <article className="rounded-md border border-gray-200 bg-gray-50/40 px-3 py-2.5 mt-5 flex items-start gap-2">
-        <Info className="w-3.5 h-3.5 text-gray-500 shrink-0 mt-0.5" strokeWidth={1.75} />
-        <div className="text-[11px] text-gray-700 leading-relaxed flex-1">
-          <strong className="text-gray-900">What happens next ·</strong> we gather from Trello in the background (about 7 minutes, 4-layer filter applied). You'll see live progress on {SCENARIO.offboarder}'s session page. Once the knowledge map is ready, {SCENARIO.offboarder} is notified to start answering his handover question queue.
-        </div>
-      </article>
-
-      <p className="text-[11px] text-gray-500 mt-3 leading-relaxed">
-        <span className="text-gray-700 font-medium">Data ingestion scope ·</span> automated collection is restricted to shared workspaces only (Trello, Jira, GitHub, SharePoint, Google Drive, Planner). Personal directories, individual mailboxes, and private messaging are never scanned. You can manually upload specific files later from the session command view.
-      </p>
     </div>
   );
 }
 
-function DefaultTile({ icon: Icon, label, value, detail }) {
+function DefaultTile({ icon: Icon, label, value }) {
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-3">
       <div className="flex items-center gap-1.5 mb-1">
@@ -256,7 +224,6 @@ function DefaultTile({ icon: Icon, label, value, detail }) {
         <span className="text-[10px] uppercase tracking-[0.18em] text-gray-500 font-medium">{label}</span>
       </div>
       <div className="text-sm font-medium text-gray-900 leading-tight" style={{ fontFamily: value.includes(":") || value.includes("Jun") ? "ui-monospace, Menlo, monospace" : undefined }}>{value}</div>
-      <div className="text-[10px] text-gray-500 mt-0.5 leading-relaxed">{detail}</div>
     </div>
   );
 }
@@ -286,7 +253,7 @@ function CustomizeBody() {
 
       {/* Data source (interactive toggle) */}
       <div>
-        <label className="text-[10px] uppercase tracking-[0.18em] text-gray-500 font-medium block mb-1.5">Data source · POC showcase · tap to include / exclude</label>
+        <label className="text-[10px] uppercase tracking-[0.18em] text-gray-500 font-medium block mb-1.5">Data source</label>
         <div className="space-y-1.5">
           {sources.map((s) => (
             <button
@@ -306,9 +273,6 @@ function CustomizeBody() {
             </button>
           ))}
         </div>
-        <p className="text-[10px] text-gray-500 mt-1.5 leading-relaxed">
-          Shared workspaces only · email and personal directories are excluded by policy. Other sources (Jira, GitHub, Drive) map onto the same 4-layer contract when enabled.
-        </p>
       </div>
 
       {/* Focus note */}
@@ -320,12 +284,11 @@ function CustomizeBody() {
           className="w-full min-h-[60px] px-2.5 py-2 rounded-md border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/15 transition-colors resize-none"
           style={{ fontFamily: "inherit" }}
         />
-        <p className="text-[10px] text-gray-500 mt-1">These priority prompts join the question queue the Offboarder answers (UC-HO-05 · CL-099).</p>
       </div>
 
       {/* Successor (selectable) */}
       <div>
-        <label className="text-[10px] uppercase tracking-[0.18em] text-gray-500 font-medium block mb-1.5">Successor · for the personalized playbook</label>
+        <label className="text-[10px] uppercase tracking-[0.18em] text-gray-500 font-medium block mb-1.5">Successor</label>
         <div className="rounded-md border border-gray-200 bg-white p-2.5 flex items-center gap-2 focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-500/15 transition-colors">
           <User className="w-3.5 h-3.5 text-gray-400 shrink-0" strokeWidth={1.75} />
           <select
