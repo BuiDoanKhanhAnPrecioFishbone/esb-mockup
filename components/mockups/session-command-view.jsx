@@ -33,7 +33,6 @@ const FLOW = [
   { id: "ml-overview", label: "Minh Lê · Overview",    trigger: "Phase 1 · Prepare · seeding from Trello." },
   { id: "ml-review",   label: "Minh Lê · Review",      trigger: "Manager review · UC-HO-04 decision workspace." },
   { id: "pa-overview", label: "Phương Anh · Overview", trigger: "Phase 2 · Capture · answers ready for review." },
-  { id: "pa-review",   label: "Phương Anh · Review",   trigger: "Manager review · her 7 Sales sections." },
 ];
 
 // 3 user-facing phases · 8 internal sub-stages kept for tracking
@@ -179,7 +178,6 @@ function StepRenderer({ id }) {
   if (id === "ml-overview") return <CommandView session={SESSIONS.ml} activeTab="overview" />;
   if (id === "ml-review")   return <CommandView session={SESSIONS.ml} activeTab="review" />;
   if (id === "pa-overview") return <CommandView session={SESSIONS.pa} activeTab="overview" />;
-  if (id === "pa-review")   return <CommandView session={SESSIONS.pa} activeTab="review" />;
   return null;
 }
 
@@ -622,9 +620,9 @@ function ReviewTab({ session, state }) {
 
 /* ─── CL-109 · Phương Anh's real review surface ───────────────────────
    Her 7 Sales sections as a working item list. Each item shows the
-   captured answer + AI-structured version, with per-item accept /
-   send-back. Labels-only style (CL-107); helper text kept on the
-   destructive send-back only. Selecting a section opens it inline. */
+   captured answer + source, with per-item accept / send-back.
+   Labels-only style (CL-107); helper text kept on the destructive
+   send-back only. Selecting a section opens it inline. */
 
 const PA_SECTIONS = [
   { id: 1, title: "Sales pipeline · Q3 outlook",          status: "verified", meta: "1,247 words · 4 facts",
