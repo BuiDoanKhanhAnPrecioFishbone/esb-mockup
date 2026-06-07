@@ -27,6 +27,9 @@ import UCHO04ManagerReview from "./uc-ho-04-manager-review.jsx";
        review tab special-cases the wrapper layout — UC-HO-04 has its
        own ItemListRail + DecisionRail, so we skip the standard
        1fr_280px grid + ActionSidebar that the other tabs share.
+     · CL-103 (deep-link) · the embedded `view` prop now accepts an
+       optional 3rd segment encoding the UC-HO-04 state for deep-link
+       routing, e.g. "ml-review-s4" lands directly on S4 (Edit inline).
 
    Layout · TopBar with breadcrumb · Hero with persona + 3-phase
    progress · Tab navigation (Overview · Stages · Data · Audit ·
@@ -139,13 +142,16 @@ export default function SessionCommandView({ embedded = false, view = "ml-overvi
   });
 
   if (embedded) {
-    // view encodes "<sessionKey>-<tabId>", e.g. "ml-overview", "pa-audit", "ml-review"
-    const dash = view.indexOf("-");
-    const sessKey = dash > 0 ? view.slice(0, dash) : "ml";
-    const tab = dash > 0 ? view.slice(dash + 1) : "overview";
+    // view encodes "<sessionKey>-<tabId>[-<state>]", e.g. "ml-overview",
+    // "pa-audit", "ml-review", or "ml-review-s4" for review tab deep-links.
+    // Tab ids never contain a dash, so split-by-"-" is unambiguous.
+    const parts = view.split("-");
+    const sessKey = parts[0] || "ml";
+    const tab = parts[1] || "overview";
+    const state = parts[2]; // optional · only consumed by the review tab
     const session = SESSIONS[sessKey];
     if (!session) return null;
-    return <CommandView session={session} activeTab={tab} />;
+    return <CommandView session={session} activeTab={tab} state={state} />;
   }
 
   const step = FLOW[stepIdx];
@@ -243,15 +249,16 @@ function StepRenderer({ id }) {
    The "review" tab special-cases the wrapper: UC-HO-04 owns its own
    ItemListRail + DecisionRail layout, so we skip the standard
    1fr_280px grid + ActionSidebar to avoid a redundant right column.
+   The optional `state` prop deep-links into a specific UC-HO-04 state.
    ═══════════════════════════════════════════════════════════════════ */
 
-function CommandView({ session, activeTab }) {
+function CommandView({ session, activeTab, state }) {
   if (activeTab === "review") {
     return (
       <div className="max-w-7xl mx-auto">
         <Hero session={session} />
         <TabBar session={session} activeTab={activeTab} />
-        <ReviewTab session={session} />
+        <ReviewTab session={session} state={state} />
       </div>
     );
   }
@@ -933,12 +940,13 @@ function AuditRow({ ts, actor, action, detail, severity }) {
 
 /* ─── Tab content · Manager review (CL-103) ──────────────────────────
    Renders UC-HO-04 inside the session for Minh Lê; shows a POC-scope
-   placeholder for Phương Anh.
+   placeholder for Phương Anh. The `state` prop deep-links to a
+   specific UC-HO-04 state (s1–s8); defaults to "s1" (Arrival).
    ──────────────────────────────────────────────────────────────────── */
 
-function ReviewTab({ session }) {
+function ReviewTab({ session, state }) {
   if (session.urlSlug === "minh-le") {
-    return <UCHO04ManagerReview embedded state="s1" />;
+    return <UCHO04ManagerReview embedded state={state || "s1"} />;
   }
 
   return (
