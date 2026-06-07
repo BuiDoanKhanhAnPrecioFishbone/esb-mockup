@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Check,
   Calendar, Trello, User, Sparkles, ArrowRight,
-  Settings, Clock, ShieldCheck
+  Settings, Clock, ShieldCheck, Plus, X
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -15,6 +15,10 @@ import {
    destructive action on this surface, so no helper text retained).
    CL-105 · every field shown, selectable, pre-filled to happy-path.
    CL-091 · Trello 4-layer source. CL-099 · async question queue.
+
+   Focus areas · editable checklist pre-filled with suggested items
+   (replaces the free-text focus note · PO direction 2026-06-07). Each
+   item joins the question queue the Offboarder answers (UC-HO-05).
    ═══════════════════════════════════════════════════════════════════ */
 
 const FLOW = [
@@ -38,6 +42,12 @@ const SCENARIO = {
     { icon: Trello, name: "Trello", detail: "In Progress / Review / Done · 4-layer hard-filter", selected: true },
   ],
   seedingEstimate: "About 7 minutes",
+  focusAreas: [
+    { text: "Payment Gateway timeout — recurring incident, no runbook", checked: true },
+    { text: "Vendor XYZ renewal — SLA penalty terms", checked: true },
+    { text: "Atlas rollback procedure", checked: true },
+    { text: "On-call rotation handoff", checked: false },
+  ],
 };
 
 export default function UCHO01QuickInitiate({ embedded = false, view = "ready" } = {}) {
@@ -275,16 +285,8 @@ function CustomizeBody() {
         </div>
       </div>
 
-      {/* Focus note */}
-      <div>
-        <label className="text-[10px] uppercase tracking-[0.18em] text-gray-500 font-medium block mb-1.5">Focus note · optional</label>
-        <textarea
-          placeholder="Add a focus area — for example, 'Probe deeply on the renewal negotiation with Vendor XYZ.'"
-          defaultValue="Probe deeply on the Payment Gateway timeout — recurring incident, no runbook. Also the Vendor XYZ renewal SLA terms."
-          className="w-full min-h-[60px] px-2.5 py-2 rounded-md border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/15 transition-colors resize-none"
-          style={{ fontFamily: "inherit" }}
-        />
-      </div>
+      {/* Focus areas · editable checklist, pre-filled */}
+      <FocusAreas />
 
       {/* Successor (selectable) */}
       <div>
@@ -298,6 +300,80 @@ function CustomizeBody() {
           >
             {SCENARIO.successorOptions.map((o) => <option key={o} value={o}>{o}</option>)}
           </select>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FocusAreas() {
+  const [items, setItems] = useState(SCENARIO.focusAreas.map((f) => ({ ...f })));
+  const [draft, setDraft] = useState("");
+
+  const toggle = (idx) =>
+    setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, checked: !it.checked } : it)));
+  const remove = (idx) =>
+    setItems((prev) => prev.filter((_, i) => i !== idx));
+  const add = () => {
+    const text = draft.trim();
+    if (!text) return;
+    setItems((prev) => [...prev, { text, checked: true }]);
+    setDraft("");
+  };
+
+  const selectedCount = items.filter((it) => it.checked).length;
+
+  return (
+    <div>
+      <label className="text-[10px] uppercase tracking-[0.18em] text-gray-500 font-medium block mb-1.5">
+        Focus areas <span className="text-gray-400">· {selectedCount} selected</span>
+      </label>
+      <div className="space-y-1.5">
+        {items.map((it, idx) => (
+          <div
+            key={idx}
+            className="w-full flex items-center gap-2.5 rounded-md border border-gray-200 bg-white px-2.5 py-2 group"
+          >
+            <button
+              type="button"
+              onClick={() => toggle(idx)}
+              className="shrink-0 focus:outline-none focus:ring-2 focus:ring-violet-500/15 rounded"
+            >
+              <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center ${it.checked ? "bg-violet-600 border-violet-600" : "bg-white border-gray-300"}`}>
+                {it.checked && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
+              </span>
+            </button>
+            <span className={`flex-1 text-sm ${it.checked ? "text-gray-900" : "text-gray-400 line-through"}`}>{it.text}</span>
+            <button
+              type="button"
+              onClick={() => remove(idx)}
+              className="shrink-0 text-gray-300 hover:text-rose-600 opacity-0 group-hover:opacity-100 transition-opacity focus:outline-none focus:opacity-100"
+              title="Remove"
+            >
+              <X className="w-3.5 h-3.5" strokeWidth={2} />
+            </button>
+          </div>
+        ))}
+
+        {/* Add row */}
+        <div className="flex items-center gap-2.5 rounded-md border border-dashed border-gray-300 bg-gray-50/40 px-2.5 py-2 focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-500/15 transition-colors">
+          <Plus className="w-3.5 h-3.5 text-gray-400 shrink-0" strokeWidth={2} />
+          <input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
+            placeholder="Add a focus area"
+            className="flex-1 text-sm text-gray-900 placeholder:text-gray-400 bg-transparent outline-none"
+          />
+          {draft.trim() && (
+            <button
+              type="button"
+              onClick={add}
+              className="shrink-0 h-6 px-2 rounded text-[11px] font-medium text-violet-700 hover:bg-violet-50 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20"
+            >
+              Add
+            </button>
+          )}
         </div>
       </div>
     </div>
