@@ -16,6 +16,7 @@ import {
   Zap, ArrowLeftRight
 } from "lucide-react";
 import { S6FlagFixView, DecisionPanelFlag } from "./uc-ho-04-s6-flag-fix.jsx";
+import { S7BundleSummaryView, S8SignOffView, DecisionPanelSummary, DecisionPanelSignOff } from "./uc-ho-04-s7s8-signoff.jsx";
 
 /* ═══════════════════════════════════════════════════════════════════
    UC-HO-04 · Manager Review + Sign-off · Sprint 3 · Management plane
@@ -24,15 +25,17 @@ import { S6FlagFixView, DecisionPanelFlag } from "./uc-ho-04-s6-flag-fix.jsx";
    it commits to the Knowledge Graph. The QA-INT-01 §1.4 commit gate
    in action · nothing reaches the KG without her sign-off.
 
-   BUILD STATUS · Steps A + B + C + D landed.
+   BUILD STATUS · COMPLETE · all 8 states real.
      · Step A · architecture + S1 Arrival full
      · Step B · S2 Reviewing + S3 Accept (side-by-side diff core)
      · Step C · S4 Edit inline (CL-086) + S5 Send back form
-     · Step D · S6 Pre-commit flag fix (3-way diff) · S6 content is in
-                ./uc-ho-04-s6-flag-fix.jsx (split for file-size safety)
-     · Step E (pending) · S7 Bundle summary + S8 Sign-off (will also
-                use a sibling file for the same reason)
+     · Step D · S6 Pre-commit flag fix (3-way) · ./uc-ho-04-s6-flag-fix.jsx
+     · Step E · S7 Bundle summary + S8 Sign-off · ./uc-ho-04-s7s8-signoff.jsx
      · Step F (DONE early) · registered in mockups-registry
+
+   File-size note · S6 and S7+S8 live in sibling files because the
+   single-file write threshold sits around 100KB; with all states
+   inlined, the file would push 130KB+. The pattern is intentional.
 
    Honors:
      · QA-INT-01 §1.4 · explicit Manager sign-off required for KG commit
@@ -53,7 +56,7 @@ const FLOW = [
   { id: "s4", uc: "Step 4", label: "Edit inline · CL-086 grammar",     trigger: "Item 4 (Vendor XYZ grace period) needs a small wording fix · Hà Vy edits inline · original AI text shown strikethrough with violet additions." },
   { id: "s5", uc: "Step 5", label: "Send back for clarification",      trigger: "Item 5 (2am Saturday coverage) is incomplete · Hà Vy sends it back to Minh with a specific follow-up question · returns to his queue." },
   { id: "s6", uc: "Step 6", label: "Pre-commit flag fix · 3-way",      trigger: "Item 6 · Atlas rollback · Trần caught an AI mistake during CL-101 window, Minh corrected it · Hà Vy approves the 3-way chain." },
-  { id: "s7", uc: "Step 7", label: "Bundle summary · propagation",     trigger: "All 14 items reviewed · 9 accepted as Canonical, 3 Verified-only, 2 sent back · propagation preview shows downstream impact." },
+  { id: "s7", uc: "Step 7", label: "Bundle summary · propagation",     trigger: "All 14 items reviewed · 9 Canonical, 3 Verified, 2 sent back · propagation preview shows downstream impact." },
   { id: "s8", uc: "Step 8", label: "Sign-off · QA-INT-01 commit gate", trigger: "Hà Vy signs off · cryptographic anchor created · KG commit begins · propagation to playbook + graph + downstream consumers." },
 ];
 
@@ -187,8 +190,8 @@ function StateRenderer({ id }) {
   if (id === "s4") return <S4EditInline />;
   if (id === "s5") return <S5SendBack />;
   if (id === "s6") return <S6FlagFix />;
-  if (id === "s7") return <S7Placeholder />;
-  if (id === "s8") return <S8Placeholder />;
+  if (id === "s7") return <S7BundleSummary />;
+  if (id === "s8") return <S8SignOff />;
   return null;
 }
 
@@ -200,7 +203,7 @@ function ReviewShell({ children, bundleState, hideRightRail }) {
   return (
     <div className="flex flex-col flex-1 min-h-[820px]">
       <ManagementHeader />
-      <ReviewSubHeader />
+      <ReviewSubHeader bundleState={bundleState} />
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-[240px_1fr_300px] min-h-0">
         <ItemListRail activeState={bundleState} />
         <div className="min-w-0 bg-gray-50/30 overflow-y-auto">
@@ -243,7 +246,7 @@ function ManagementHeader() {
   );
 }
 
-function ReviewSubHeader() {
+function ReviewSubHeader({ bundleState }) {
   return (
     <div className="px-6 py-3 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap bg-violet-50/20">
       <div className="flex items-center gap-3">
@@ -264,7 +267,7 @@ function ReviewSubHeader() {
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <BundleProgress />
+        <BundleProgress bundleState={bundleState} />
         <button className="h-8 px-3 rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 text-[12px] font-medium inline-flex items-center gap-1.5 transition-colors">
           <MessageSquare className="w-3 h-3" strokeWidth={2} />
           Message {SESSION.offboarderShort}
@@ -274,13 +277,24 @@ function ReviewSubHeader() {
   );
 }
 
-function BundleProgress() {
+function BundleProgress({ bundleState }) {
+  const cfg = (() => {
+    if (bundleState === "sign-off") return { value: "14 / 14", pct: 100, label: "Decided" };
+    if (bundleState === "bundle-summary") return { value: "14 / 14", pct: 100, label: "Decided" };
+    if (bundleState === "flag-fix") return { value: "5 / 14", pct: 36, label: "Reviewed" };
+    if (bundleState === "send-back") return { value: "4 / 14", pct: 28, label: "Reviewed" };
+    if (bundleState === "editing") return { value: "3 / 14", pct: 21, label: "Reviewed" };
+    if (bundleState === "accepting") return { value: "1 / 14", pct: 7, label: "Reviewed" };
+    if (bundleState === "reviewing-mp") return { value: "0 / 14", pct: 0, label: "Reviewed" };
+    return { value: "0 / 14", pct: 0, label: "Reviewed" };
+  })();
+  const isDone = cfg.pct === 100;
   return (
     <div className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 flex items-center gap-2">
-      <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Reviewed</div>
-      <div className="text-[13px] font-bold text-violet-700" style={{ fontFamily: MONO_STACK }}>5 / 14</div>
+      <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">{cfg.label}</div>
+      <div className={`text-[13px] font-bold ${isDone ? "text-emerald-700" : "text-violet-700"}`} style={{ fontFamily: MONO_STACK }}>{cfg.value}</div>
       <div className="w-20 h-1.5 rounded-full bg-gray-100 overflow-hidden">
-        <div className="h-full bg-gradient-to-r from-violet-500 to-violet-600 rounded-full" style={{ width: "36%" }} />
+        <div className={`h-full rounded-full ${isDone ? "bg-gradient-to-r from-emerald-500 to-emerald-600" : "bg-gradient-to-r from-violet-500 to-violet-600"}`} style={{ width: `${cfg.pct}%` }} />
       </div>
     </div>
   );
@@ -289,6 +303,9 @@ function BundleProgress() {
 /* ─── Item List Rail · left sidebar ─── */
 
 function ItemListRail({ activeState }) {
+  const isFinal = activeState === "bundle-summary" || activeState === "sign-off";
+  const fin = (def, final = "accepted") => isFinal ? final : def;
+
   return (
     <aside className="border-r border-gray-200 bg-white flex flex-col">
       <div className="px-4 h-12 border-b border-gray-100 flex items-center gap-2">
@@ -300,31 +317,31 @@ function ItemListRail({ activeState }) {
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
         <ItemListGroup label="Manager priorities" count={2} items={[
           { id: "mp1", n: 1, title: "Vendor XYZ SLA penalty", source: "manager", status: activeState === "reviewing-mp" ? "active" : activeState === "accepting" ? "just-accepted" : "accepted" },
-          { id: "mp2", n: 2, title: "Payment Gateway fix", source: "manager", status: "pending" },
+          { id: "mp2", n: 2, title: "Payment Gateway fix", source: "manager", status: fin("pending") },
         ]} />
 
         <ItemListGroup label="Network questions" count={3} items={[
           { id: "nq1", n: 3, title: "Cosmos rollback heuristic", source: "network", status: "accepted" },
-          { id: "nq2", n: 4, title: "Vendor XYZ grace period", source: "network", status: activeState === "editing" ? "active" : "edit-pending" },
-          { id: "nq3", n: 5, title: "2am Saturday coverage", source: "network", status: activeState === "send-back" ? "active" : "pending" },
+          { id: "nq2", n: 4, title: "Vendor XYZ grace period", source: "network", status: activeState === "editing" ? "active" : fin("edit-pending") },
+          { id: "nq3", n: 5, title: "2am Saturday coverage", source: "network", status: activeState === "send-back" ? "active" : fin("pending", "send-back-pending") },
         ]} />
 
         <ItemListGroup label="Pre-commit flag fixes" count={1} items={[
-          { id: "fl1", n: 6, title: "Atlas rollback correction", source: "flag", status: activeState === "flag-fix" ? "active" : "flag-review" },
+          { id: "fl1", n: 6, title: "Atlas rollback correction", source: "flag", status: activeState === "flag-fix" ? "active" : fin("flag-review") },
         ]} />
 
         <ItemListGroup label="Own contributions" count={5} items={[
           { id: "ow1", n: 7, title: "Friday-deploy rule", source: "own", status: "accepted" },
           { id: "ow2", n: 8, title: "Khanh Linh escalation", source: "own", status: "accepted" },
-          { id: "ow3", n: 9, title: "Vendor verbal commitments", source: "own", status: "pending" },
-          { id: "ow4", n: 10, title: "Atlas wiki gaps", source: "own", status: "pending" },
-          { id: "ow5", n: 11, title: "On-call quirks", source: "own", status: "pending" },
+          { id: "ow3", n: 9, title: "Vendor verbal commitments", source: "own", status: fin("pending") },
+          { id: "ow4", n: 10, title: "Atlas wiki gaps", source: "own", status: fin("pending") },
+          { id: "ow5", n: 11, title: "On-call quirks", source: "own", status: fin("pending", "send-back-pending") },
         ]} />
 
         <ItemListGroup label="Uploaded files" count={3} items={[
-          { id: "f1", n: 12, title: "Architecture-2024Q3.md", source: "file", status: "pending" },
-          { id: "f2", n: 13, title: "Payment-flow.png", source: "file", status: "pending" },
-          { id: "f3", n: 14, title: "Vendor-call-notes.txt", source: "file", status: "pending" },
+          { id: "f1", n: 12, title: "Architecture-2024Q3.md", source: "file", status: fin("pending") },
+          { id: "f2", n: 13, title: "Payment-flow.png", source: "file", status: fin("pending") },
+          { id: "f3", n: 14, title: "Vendor-call-notes.txt", source: "file", status: fin("pending") },
         ]} />
 
         <ItemListGroup label="Redirected" count={1} items={[
@@ -399,6 +416,8 @@ function DecisionRail({ state }) {
         {state === "editing" && <DecisionPanelEditing />}
         {state === "send-back" && <DecisionPanelSendBack />}
         {state === "flag-fix" && <DecisionPanelFlag />}
+        {state === "bundle-summary" && <DecisionPanelSummary />}
+        {state === "sign-off" && <DecisionPanelSignOff />}
         {!state && <DecisionPanelDefault />}
       </div>
     </aside>
@@ -1462,7 +1481,9 @@ function SendBackImpactStep({ n, title, detail, last }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   S6 · Pre-commit flag fix · wired to the sibling file
+   S6 · Pre-commit flag fix · wired to ./uc-ho-04-s6-flag-fix.jsx
+   S7 · Bundle summary · wired to ./uc-ho-04-s7s8-signoff.jsx
+   S8 · Sign-off · wired to ./uc-ho-04-s7s8-signoff.jsx
    ═══════════════════════════════════════════════════════════════════ */
 
 function S6FlagFix() {
@@ -1473,8 +1494,24 @@ function S6FlagFix() {
   );
 }
 
+function S7BundleSummary() {
+  return (
+    <ReviewShell bundleState="bundle-summary">
+      <S7BundleSummaryView />
+    </ReviewShell>
+  );
+}
+
+function S8SignOff() {
+  return (
+    <ReviewShell bundleState="sign-off">
+      <S8SignOffView />
+    </ReviewShell>
+  );
+}
+
 /* ═══════════════════════════════════════════════════════════════════
-   Shared primitives for S2/S3 (and reused by S4/S5)
+   Shared primitives used by S2/S3/S4/S5
    ═══════════════════════════════════════════════════════════════════ */
 
 function ItemHeader({ n, source, title, subtitle, tagBadge, itemId, status }) {
@@ -1651,86 +1688,5 @@ function NetworkCorroborationCard() {
         </div>
       </div>
     </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════
-   S7-S8 · Placeholder cards · filled in by Step E
-   ═══════════════════════════════════════════════════════════════════ */
-
-function StatePlaceholder({ stateNum, plannedStep, purpose, willShow }) {
-  return (
-    <ReviewShell bundleState={null}>
-      <div className="px-8 py-12 max-w-[640px] mx-auto">
-        <div className="rounded-2xl border-2 border-dashed border-violet-300 bg-violet-50/30 p-8">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-12 h-12 rounded-xl bg-white border border-violet-200 flex items-center justify-center shrink-0">
-              <Hammer className="w-5 h-5 text-violet-700" strokeWidth={1.75} />
-            </div>
-            <div>
-              <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] font-semibold text-violet-700 mb-1">
-                <CircleDot className="w-2.5 h-2.5" strokeWidth={2.5} />
-                Coming in build Step {plannedStep}
-              </span>
-              <h2 className="text-lg font-bold text-gray-900 tracking-tight">State {stateNum} · {purpose}</h2>
-            </div>
-          </div>
-
-          <p className="text-[13px] text-gray-700 leading-relaxed mb-4">
-            This state is scaffolded · the architecture, shell, item list rail, and decision rail are all in place. The state-specific content lands in Step {plannedStep}.
-          </p>
-
-          <div className="rounded-lg bg-white border border-violet-200 px-4 py-3">
-            <div className="text-[10px] uppercase tracking-[0.18em] text-violet-700 font-semibold mb-2">What this state will show</div>
-            <ul className="space-y-1.5">
-              {willShow.map((item, i) => (
-                <li key={i} className="flex items-start gap-2 text-[12px] text-gray-700">
-                  <ArrowRight className="w-3 h-3 text-violet-600 shrink-0 mt-0.5" strokeWidth={2} />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="mt-4 flex items-center gap-2 text-[10px] text-gray-500">
-            <Info className="w-3 h-3" strokeWidth={2} />
-            <span>States 1-6 are now complete. Navigate via the dev chrome step dots to see them.</span>
-          </div>
-        </div>
-      </div>
-    </ReviewShell>
-  );
-}
-
-function S7Placeholder() {
-  return (
-    <StatePlaceholder
-      stateNum={7}
-      plannedStep="E"
-      purpose="Bundle summary · propagation preview"
-      willShow={[
-        "Full breakdown · 9 Canonical, 3 Verified-only, 2 sent back, 0 rejected",
-        "Propagation graph preview showing where each item lands (playbook sections, graph nodes, Slack channels)",
-        "Per-team impact summary · Engineering / Sales / Data Platform",
-        "Ready to sign-off CTA · routes to S8",
-      ]}
-    />
-  );
-}
-
-function S8Placeholder() {
-  return (
-    <StatePlaceholder
-      stateNum={8}
-      plannedStep="E"
-      purpose="Sign-off · QA-INT-01 §1.4 commit gate"
-      willShow={[
-        "Cryptographic anchor preview · SHA-256 of the bundle generated on sign-off",
-        "Signature card with Hà Vy's avatar + role + handle + timestamp",
-        "KG commit progress · live propagation to playbook + graph + downstream consumers",
-        "Audit log entry visible · QA-INT-01 §2.3 immutable trail",
-        "Done state with link back to dashboard + Trần's playbook (now updated)",
-      ]}
-    />
   );
 }
