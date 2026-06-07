@@ -15,6 +15,7 @@ import {
   PenTool, RotateCcw, Flag, ListChecks, Volume2, Quote,
   Zap, ArrowLeftRight
 } from "lucide-react";
+import { S6FlagFixView, DecisionPanelFlag } from "./uc-ho-04-s6-flag-fix.jsx";
 
 /* ═══════════════════════════════════════════════════════════════════
    UC-HO-04 · Manager Review + Sign-off · Sprint 3 · Management plane
@@ -23,12 +24,14 @@ import {
    it commits to the Knowledge Graph. The QA-INT-01 §1.4 commit gate
    in action · nothing reaches the KG without her sign-off.
 
-   BUILD STATUS · Steps A + B + C landed.
+   BUILD STATUS · Steps A + B + C + D landed.
      · Step A · architecture + S1 Arrival full
      · Step B · S2 Reviewing + S3 Accept (side-by-side diff core)
      · Step C · S4 Edit inline (CL-086) + S5 Send back form
-     · Step D (pending) · S6 Pre-commit flag fix (3-way diff)
-     · Step E (pending) · S7 Bundle summary + S8 Sign-off
+     · Step D · S6 Pre-commit flag fix (3-way diff) · S6 content is in
+                ./uc-ho-04-s6-flag-fix.jsx (split for file-size safety)
+     · Step E (pending) · S7 Bundle summary + S8 Sign-off (will also
+                use a sibling file for the same reason)
      · Step F (DONE early) · registered in mockups-registry
 
    Honors:
@@ -40,7 +43,7 @@ import {
      · CL-092 · sanitization pipeline visible (already ran during capture)
      · CL-093 · auto-assigned Tier 1/2 visibility for each item
      · CL-099 · Manager sees text-queue contributions (not transcript)
-     · CL-101 · pre-commit network flag results visible in the review
+     · CL-101 · pre-commit network flag · 3-way visible in S6
    ═══════════════════════════════════════════════════════════════════ */
 
 const FLOW = [
@@ -49,7 +52,7 @@ const FLOW = [
   { id: "s3", uc: "Step 3", label: "Quick accept · all green",         trigger: "All confidence signals positive · sources cited · one-click acceptance · auto-canonical." },
   { id: "s4", uc: "Step 4", label: "Edit inline · CL-086 grammar",     trigger: "Item 4 (Vendor XYZ grace period) needs a small wording fix · Hà Vy edits inline · original AI text shown strikethrough with violet additions." },
   { id: "s5", uc: "Step 5", label: "Send back for clarification",      trigger: "Item 5 (2am Saturday coverage) is incomplete · Hà Vy sends it back to Minh with a specific follow-up question · returns to his queue." },
-  { id: "s6", uc: "Step 6", label: "Pre-commit flag fix · 3-way",      trigger: "The Atlas rollback flag Trần raised · Hà Vy sees the original AI version, Trần's flag, and Minh's correction · approves the chain." },
+  { id: "s6", uc: "Step 6", label: "Pre-commit flag fix · 3-way",      trigger: "Item 6 · Atlas rollback · Trần caught an AI mistake during CL-101 window, Minh corrected it · Hà Vy approves the 3-way chain." },
   { id: "s7", uc: "Step 7", label: "Bundle summary · propagation",     trigger: "All 14 items reviewed · 9 accepted as Canonical, 3 Verified-only, 2 sent back · propagation preview shows downstream impact." },
   { id: "s8", uc: "Step 8", label: "Sign-off · QA-INT-01 commit gate", trigger: "Hà Vy signs off · cryptographic anchor created · KG commit begins · propagation to playbook + graph + downstream consumers." },
 ];
@@ -183,7 +186,7 @@ function StateRenderer({ id }) {
   if (id === "s3") return <S3QuickAccept />;
   if (id === "s4") return <S4EditInline />;
   if (id === "s5") return <S5SendBack />;
-  if (id === "s6") return <S6Placeholder />;
+  if (id === "s6") return <S6FlagFix />;
   if (id === "s7") return <S7Placeholder />;
   if (id === "s8") return <S8Placeholder />;
   return null;
@@ -275,9 +278,9 @@ function BundleProgress() {
   return (
     <div className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 flex items-center gap-2">
       <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Reviewed</div>
-      <div className="text-[13px] font-bold text-violet-700" style={{ fontFamily: MONO_STACK }}>4 / 14</div>
+      <div className="text-[13px] font-bold text-violet-700" style={{ fontFamily: MONO_STACK }}>5 / 14</div>
       <div className="w-20 h-1.5 rounded-full bg-gray-100 overflow-hidden">
-        <div className="h-full bg-gradient-to-r from-violet-500 to-violet-600 rounded-full" style={{ width: "28%" }} />
+        <div className="h-full bg-gradient-to-r from-violet-500 to-violet-600 rounded-full" style={{ width: "36%" }} />
       </div>
     </div>
   );
@@ -395,6 +398,7 @@ function DecisionRail({ state }) {
         {state === "accepting" && <DecisionPanelAccepted />}
         {state === "editing" && <DecisionPanelEditing />}
         {state === "send-back" && <DecisionPanelSendBack />}
+        {state === "flag-fix" && <DecisionPanelFlag />}
         {!state && <DecisionPanelDefault />}
       </div>
     </aside>
@@ -1458,7 +1462,19 @@ function SendBackImpactStep({ n, title, detail, last }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   Shared primitives for S2/S3 (and reused by C/D/E)
+   S6 · Pre-commit flag fix · wired to the sibling file
+   ═══════════════════════════════════════════════════════════════════ */
+
+function S6FlagFix() {
+  return (
+    <ReviewShell bundleState="flag-fix">
+      <S6FlagFixView />
+    </ReviewShell>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Shared primitives for S2/S3 (and reused by S4/S5)
    ═══════════════════════════════════════════════════════════════════ */
 
 function ItemHeader({ n, source, title, subtitle, tagBadge, itemId, status }) {
@@ -1639,7 +1655,7 @@ function NetworkCorroborationCard() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   S6-S8 · Placeholder cards · filled in by Steps D + E
+   S7-S8 · Placeholder cards · filled in by Step E
    ═══════════════════════════════════════════════════════════════════ */
 
 function StatePlaceholder({ stateNum, plannedStep, purpose, willShow }) {
@@ -1678,27 +1694,11 @@ function StatePlaceholder({ stateNum, plannedStep, purpose, willShow }) {
 
           <div className="mt-4 flex items-center gap-2 text-[10px] text-gray-500">
             <Info className="w-3 h-3" strokeWidth={2} />
-            <span>States 1, 2, 3, 4, 5 are now complete. Navigate via the dev chrome step dots to see them.</span>
+            <span>States 1-6 are now complete. Navigate via the dev chrome step dots to see them.</span>
           </div>
         </div>
       </div>
     </ReviewShell>
-  );
-}
-
-function S6Placeholder() {
-  return (
-    <StatePlaceholder
-      stateNum={6}
-      plannedStep="D"
-      purpose="Pre-commit flag fix · 3-way diff"
-      willShow={[
-        "3-way diff · AI original capture + Trần's flagged correction + Minh's accepted fix",
-        "Network corroboration · Duy independently agreed with the staging-first rule",
-        "Approve the chain CTA · promotes Minh's fix to Canonical and resolves the flag",
-        "Audit trail preview showing all 3 versions preserved in history",
-      ]}
-    />
   );
 }
 
