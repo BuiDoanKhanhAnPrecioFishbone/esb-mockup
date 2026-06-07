@@ -19,63 +19,39 @@ import { S6FlagFixView, DecisionPanelFlag } from "./uc-ho-04-s6-flag-fix.jsx";
 import { S7BundleSummaryView, S8SignOffView, DecisionPanelSummary, DecisionPanelSignOff } from "./uc-ho-04-s7s8-signoff.jsx";
 
 /* ═══════════════════════════════════════════════════════════════════
-   UC-HO-04 · Manager Review + Sign-off · Sprint 3 · Management plane
+   UC-HO-04 · Manager Review + Sign-off · Management plane
 
-   Hà Vy's workspace for reviewing Minh Lê's captured bundle before
-   it commits to the Knowledge Graph. The QA-INT-01 §1.4 commit gate
-   in action · nothing reaches the KG without her sign-off.
+   Hà Vy's workspace for reviewing Minh Lê's captured bundle before it
+   commits to the Knowledge Graph. Manager sign-off is the commit gate;
+   nothing reaches the graph without it.
 
-   BUILD STATUS · COMPLETE · all 8 states real.
-     · Step A · architecture + S1 Arrival full
-     · Step B · S2 Reviewing + S3 Accept (side-by-side diff core)
-     · Step C · S4 Edit inline (CL-086) + S5 Send back form
-     · Step D · S6 Pre-commit flag fix (3-way) · ./uc-ho-04-s6-flag-fix.jsx
-     · Step E · S7 Bundle summary + S8 Sign-off · ./uc-ho-04-s7s8-signoff.jsx
-     · Step F (DONE early) · registered in mockups-registry
-     · Step G (2026-06-07 · CL-103) · made embeddable via `embedded` + `state`
-       props · wired into SessionCommandView as the "Manager review" tab
+   CL-108 (2026-06-07) · embedded-surface cleanup. When embedded in the
+   SessionCommandView "Manager review" tab:
+     · the loud S1–S8 state chips become a muted "Preview" stepper
+       (demo navigation kept, but de-emphasized — it's a preview aid,
+       not product chrome);
+     · internal references (CL-###, QA-INT-01 §, "Worker SLM", Tier
+       labels, UC-HO-## ) are removed from user-visible copy — they
+       live in code/comments and the change log, not the UI;
+     · S1 arrival prose (hero headline, intro paragraph, recommended-
+       order card, pre-checks grid, est-time note) collapses to a
+       compact bundle summary + a single "Start review" CTA, matching
+       the CL-107 labels-only rule used across the Management plane.
+   Standalone dev harness (embedded={false}) is unchanged.
 
-   File-size note · S6 and S7+S8 live in sibling files because the
-   single-file write threshold sits around 100KB; with all states
-   inlined, the file would push 130KB+. The pattern is intentional.
-
-   Embedded contract (CL-103):
-     · Default export accepts `embedded` and `state` props.
-     · When `embedded={true}`, DevChrome + DevFooterNav are replaced
-       by an inline EmbeddedStateStrip, and ReviewShell skips the
-       ManagementHeader (the breadcrumb bar) since the host surface
-       (SessionCommandView) already provides Dashboard nav via its
-       AppShell + Hero + TabBar. ReviewSubHeader is preserved because
-       its bundle-specific status (sanitization · flag-loop · progress)
-       is unique to UC-HO-04 and meaningful inside the tab.
-     · `state` accepts any of FLOW[].id ("s1" through "s8"); the
-       component manages its own stepIdx so the inline state strip
-       still navigates between states without parent involvement.
-     · When `embedded={false}` (default), behavior is unchanged from
-       the original standalone mockup.
-
-   Honors:
-     · QA-INT-01 §1.4 · explicit Manager sign-off required for KG commit
-     · QA-INT-01 §1.3 · side-by-side diff (Minh's raw vs AI-structured)
-     · QA-INT-01 §2.2 · Canonical vs Verified status visibly distinct
-     · QA-INT-01 §2.3 · immutable audit trail · cryptographic anchor on sign-off
-     · CL-086 · inline edit diff grammar (strikethrough original + violet additions)
-     · CL-092 · sanitization pipeline visible (already ran during capture)
-     · CL-093 · auto-assigned Tier 1/2 visibility for each item
-     · CL-099 · Manager sees text-queue contributions (not transcript)
-     · CL-101 · pre-commit network flag · 3-way visible in S6
-     · CL-103 · embedded into SessionCommandView's Manager review tab
+   Embedded contract (CL-103): default export accepts `embedded` +
+   `state` ("s1".."s8"); `?tab=review-s4` deep-links still work.
    ═══════════════════════════════════════════════════════════════════ */
 
 const FLOW = [
-  { id: "s1", uc: "Step 1", label: "Arrival · bundle overview",        trigger: "Hà Vy opens Minh's submitted bundle · 14 items + 4 files + 1 redirect · pre-commit network flag loop already cleared." },
+  { id: "s1", uc: "Step 1", label: "Arrival · bundle overview",        trigger: "Hà Vy opens Minh's submitted bundle · 14 items + 4 files + 1 redirect." },
   { id: "s2", uc: "Step 2", label: "Reviewing Manager Priority",       trigger: "First item · Vendor XYZ SLA penalty clause · side-by-side · Minh's raw text + AI-structured version." },
   { id: "s3", uc: "Step 3", label: "Quick accept · all green",         trigger: "All confidence signals positive · sources cited · one-click acceptance · auto-canonical." },
-  { id: "s4", uc: "Step 4", label: "Edit inline · CL-086 grammar",     trigger: "Item 4 (Vendor XYZ grace period) needs a small wording fix · Hà Vy edits inline · original AI text shown strikethrough with violet additions." },
-  { id: "s5", uc: "Step 5", label: "Send back for clarification",      trigger: "Item 5 (2am Saturday coverage) is incomplete · Hà Vy sends it back to Minh with a specific follow-up question · returns to his queue." },
-  { id: "s6", uc: "Step 6", label: "Pre-commit flag fix · 3-way",      trigger: "Item 6 · Atlas rollback · Trần caught an AI mistake during CL-101 window, Minh corrected it · Hà Vy approves the 3-way chain." },
-  { id: "s7", uc: "Step 7", label: "Bundle summary · propagation",     trigger: "All 14 items reviewed · 9 Canonical, 3 Verified, 2 sent back · propagation preview shows downstream impact." },
-  { id: "s8", uc: "Step 8", label: "Sign-off · QA-INT-01 commit gate", trigger: "Hà Vy signs off · cryptographic anchor created · KG commit begins · propagation to playbook + graph + downstream consumers." },
+  { id: "s4", uc: "Step 4", label: "Edit inline",                      trigger: "Item 4 (Vendor XYZ grace period) needs a small wording fix · Hà Vy edits inline." },
+  { id: "s5", uc: "Step 5", label: "Send back for clarification",      trigger: "Item 5 (2am Saturday coverage) is incomplete · Hà Vy sends it back to Minh with a specific follow-up question." },
+  { id: "s6", uc: "Step 6", label: "Pre-commit flag fix · 3-way",      trigger: "Item 6 · Atlas rollback · Trần caught a mistake, Minh corrected it · Hà Vy approves the 3-way chain." },
+  { id: "s7", uc: "Step 7", label: "Bundle summary",                   trigger: "All 14 items reviewed · 9 Canonical, 3 Verified, 2 sent back · propagation preview." },
+  { id: "s8", uc: "Step 8", label: "Sign-off · commit gate",           trigger: "Hà Vy signs off · KG commit begins · propagation to playbook + graph + downstream consumers." },
 ];
 
 const SESSION = {
@@ -104,11 +80,6 @@ const SESSION = {
 
 const MONO_STACK = 'ui-monospace, "Geist Mono", "JetBrains Mono", Menlo, monospace';
 
-/* ─── CL-103 · Embedded mode context ──────────────────────────────────
-   ReviewShell reads this to decide whether to skip ManagementHeader.
-   Provided as `true` only by the default export when `embedded` prop
-   is set. Sibling files don't need to import it — they render inside
-   ReviewShell, which handles the conditional in one place. */
 const EmbeddedContext = React.createContext(false);
 
 export default function UCHO04ManagerReview({ embedded = false, state } = {}) {
@@ -126,7 +97,7 @@ export default function UCHO04ManagerReview({ embedded = false, state } = {}) {
     return (
       <EmbeddedContext.Provider value={true}>
         <div className="bg-white text-gray-900" style={{ fontFamily: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif' }}>
-          <EmbeddedStateStrip step={step} stepIdx={stepIdx} onJump={setStepIdx} />
+          <PreviewStepper step={step} stepIdx={stepIdx} onChange={setStepIdx} />
           <StateRenderer id={step.id} />
         </div>
       </EmbeddedContext.Provider>
@@ -144,7 +115,7 @@ export default function UCHO04ManagerReview({ embedded = false, state } = {}) {
   );
 }
 
-/* ─── Dev chrome (standalone only) ─── */
+/* ─── Dev chrome (standalone only · not the product surface) ─── */
 
 function DevChrome({ step, stepIdx, onJump }) {
   return (
@@ -154,12 +125,9 @@ function DevChrome({ step, stepIdx, onJump }) {
           <div className="w-1.5 h-1.5 bg-violet-500 rounded-full" />
           <span className="text-gray-900 font-semibold tracking-[0.18em] text-xs" style={{ fontFamily: MONO_STACK }}>ART-EEP</span>
           <span className="text-gray-300 text-xs">·</span>
-          <span className="text-gray-500 text-xs">UC-HO-04 · Manager review · Management plane</span>
+          <span className="text-gray-500 text-xs">UC-HO-04 · Manager review · dev harness</span>
         </div>
         <div className="flex items-center gap-2 text-[11px] text-gray-500 shrink-0">
-          <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />
-          <span className="uppercase tracking-wider font-semibold text-violet-700">QA-INT-01 commit gate</span>
-          <span className="text-gray-300">·</span>
           <span className="text-gray-700" style={{ fontFamily: MONO_STACK }}>{step.uc}</span>
         </div>
       </div>
@@ -211,7 +179,7 @@ function DevFooterNav({ stepIdx, step, onChange }) {
         Previous
       </button>
       <div className="hidden sm:block text-[10px] text-gray-500 max-w-md text-center truncate px-3">
-        Dev chrome · this strip is NOT part of the real review workspace.
+        Dev harness · this strip is NOT part of the real review workspace.
       </div>
       <button
         onClick={() => !atLast && onChange(stepIdx + 1)}
@@ -227,39 +195,33 @@ function DevFooterNav({ stepIdx, step, onChange }) {
   );
 }
 
-/* ─── CL-103 · Embedded state strip ──────────────────────────────────
-   Replaces DevChrome + DevFooterNav when rendered inside the
-   SessionCommandView "Manager review" tab. Compact horizontal row of
-   8 state chips · keeps the mockup-y feel of state selection without
-   duplicating the page-level header / breadcrumb / nav. */
-function EmbeddedStateStrip({ step, stepIdx, onJump }) {
+/* ─── CL-108 · Muted preview stepper (embedded) ──────────────────────
+   Replaces the loud S1–S8 violet chip strip. Demo navigation kept,
+   but de-emphasized so it reads as a preview aid, not product chrome. */
+function PreviewStepper({ step, stepIdx, onChange }) {
+  const atFirst = stepIdx === 0;
+  const atLast = stepIdx === FLOW.length - 1;
   return (
-    <div className="px-5 py-2 bg-violet-50/30 border-b border-violet-100 flex items-center gap-2 flex-wrap shrink-0">
-      <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-violet-700 font-semibold shrink-0">
-        <Sparkles className="w-2.5 h-2.5" strokeWidth={2.5} />
-        UC-HO-04 states
-      </span>
-      <span className="text-gray-300 text-xs shrink-0">·</span>
-      <div className="flex items-center gap-1 flex-wrap">
-        {FLOW.map((s, i) => (
-          <button
-            key={s.id}
-            onClick={() => onJump(i)}
-            title={s.label}
-            className={`h-6 px-2 rounded-md border text-[10px] font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20 cursor-pointer ${
-              i === stepIdx
-                ? "bg-violet-600 text-white border-violet-600"
-                : "bg-white text-violet-700 border-violet-200 hover:border-violet-400"
-            }`}
-            style={{ fontFamily: MONO_STACK }}
-          >
-            S{i + 1}
-          </button>
-        ))}
+    <div className="px-5 py-1.5 bg-gray-50 border-b border-gray-100 flex items-center gap-2 shrink-0">
+      <span className="text-[10px] uppercase tracking-[0.18em] text-gray-400 font-medium shrink-0">Preview</span>
+      <span className="text-[11px] text-gray-500 truncate min-w-0 flex-1">{step.label}</span>
+      <div className="flex items-center gap-1 shrink-0">
+        <button
+          onClick={() => !atFirst && onChange(stepIdx - 1)}
+          disabled={atFirst}
+          className={`w-6 h-6 rounded inline-flex items-center justify-center transition-colors ${atFirst ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-200/60 cursor-pointer"}`}
+        >
+          <ChevronLeft className="w-3.5 h-3.5" />
+        </button>
+        <span className="text-[10px] text-gray-400 tabular-nums" style={{ fontFamily: MONO_STACK }}>{stepIdx + 1}/{FLOW.length}</span>
+        <button
+          onClick={() => !atLast && onChange(stepIdx + 1)}
+          disabled={atLast}
+          className={`w-6 h-6 rounded inline-flex items-center justify-center transition-colors ${atLast ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:bg-gray-200/60 cursor-pointer"}`}
+        >
+          <ChevronRight className="w-3.5 h-3.5" />
+        </button>
       </div>
-      <span className="ml-auto text-[10px] text-gray-500 truncate min-w-0 hidden sm:inline" style={{ fontFamily: MONO_STACK }}>
-        {step.label}
-      </span>
     </div>
   );
 }
@@ -277,13 +239,8 @@ function StateRenderer({ id }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   ReviewShell · Management plane chrome
-
-   CL-103 · When EmbeddedContext is true, ManagementHeader is omitted
-   (the breadcrumb bar duplicates SessionCommandView's AppShell + Hero
-   above). ReviewSubHeader stays — its bundle-specific status (sanitization
-   cleared, flag loop closed, BundleProgress) is unique to UC-HO-04 and
-   reads naturally as the tab's own subheader.
+   ReviewShell · ManagementHeader skipped when embedded (host provides
+   nav). ReviewSubHeader kept; its status reads in plain language now.
    ═══════════════════════════════════════════════════════════════════ */
 
 function ReviewShell({ children, bundleState, hideRightRail }) {
@@ -348,9 +305,9 @@ function ReviewSubHeader({ bundleState }) {
           <p className="text-[11px] text-gray-600 mt-0.5 inline-flex items-center gap-2 flex-wrap">
             <span>Submitted 2 hours ago</span>
             <span>·</span>
-            <span className="inline-flex items-center gap-1"><ShieldCheck className="w-3 h-3 text-emerald-600" strokeWidth={2} /> CL-092 sanitization · cleared</span>
+            <span className="inline-flex items-center gap-1"><ShieldCheck className="w-3 h-3 text-emerald-600" strokeWidth={2} /> Sensitive content checked</span>
             <span>·</span>
-            <span className="inline-flex items-center gap-1"><ListChecks className="w-3 h-3 text-emerald-600" strokeWidth={2} /> CL-101 network flag loop · 24h window closed</span>
+            <span className="inline-flex items-center gap-1"><ListChecks className="w-3 h-3 text-emerald-600" strokeWidth={2} /> Colleague review window closed</span>
           </p>
         </div>
       </div>
@@ -514,21 +471,12 @@ function DecisionRail({ state }) {
 
 function DecisionPanelDefault() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="text-[11px] text-gray-600 leading-relaxed">
-        Pick an item from the bundle on the left, or work top-to-bottom. Manager priorities come first by default.
+        Pick an item on the left, or work top-to-bottom. Manager priorities come first.
       </div>
-      <div className="rounded-lg bg-violet-50/40 border border-violet-100 px-3 py-2.5">
-        <div className="text-[10px] uppercase tracking-wider text-violet-700 font-semibold mb-1.5">QA-INT-01 reminder</div>
-        <p className="text-[10px] text-gray-700 leading-relaxed">
-          You're the commit gate · nothing reaches the Knowledge Graph until you sign off. Items can be accepted as-is, edited, or sent back to {SESSION.offboarderShort} for clarification.
-        </p>
-      </div>
-      <div className="rounded-lg bg-emerald-50/40 border border-emerald-100 px-3 py-2.5">
-        <div className="text-[10px] uppercase tracking-wider text-emerald-700 font-semibold mb-1.5">SLA</div>
-        <p className="text-[10px] text-gray-700 leading-relaxed">
-          Target · within 2 business days. {SESSION.offboarderShort} has {SESSION.daysUntilLastDay} days until his last day.
-        </p>
+      <div className="space-y-1.5">
+        <PrimaryDecisionButton icon={ArrowRight} label="Start with item 1" tone="violet" />
       </div>
     </div>
   );
@@ -543,7 +491,7 @@ function DecisionPanelReviewing() {
           { label: "Sources cited", value: "3", positive: true },
           { label: "Verbatim quotes", value: "2", positive: true },
           { label: "Network corroboration", value: "yes · Phương Anh", positive: true },
-          { label: "Worker SLM confidence", value: "92%", positive: true },
+          { label: "AI confidence", value: "92%", positive: true },
         ]}
       />
 
@@ -553,20 +501,6 @@ function DecisionPanelReviewing() {
         <PrimaryDecisionButton icon={Edit3} label="Edit inline before accepting" tone="violet" subtle />
         <PrimaryDecisionButton icon={RotateCcw} label="Send back for clarification" tone="yellow" subtle />
         <PrimaryDecisionButton icon={X} label="Reject · don't commit this" tone="rose" subtle />
-      </div>
-
-      <div className="pt-3 border-t border-gray-100">
-        <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold mb-2">Quick reference</div>
-        <ul className="space-y-1.5 text-[10px] text-gray-600 leading-snug">
-          <li className="flex items-start gap-1.5">
-            <Award className="w-2.5 h-2.5 text-emerald-600 shrink-0 mt-0.5" strokeWidth={2} />
-            <span><strong>Canonical</strong> · authoritative · propagates everywhere · emerald badge</span>
-          </li>
-          <li className="flex items-start gap-1.5">
-            <ShieldCheck className="w-2.5 h-2.5 text-violet-600 shrink-0 mt-0.5" strokeWidth={2} />
-            <span><strong>Verified</strong> · accurate but not canonical · scoped to this session</span>
-          </li>
-        </ul>
       </div>
     </div>
   );
@@ -581,7 +515,7 @@ function DecisionPanelAccepted() {
         </div>
         <div className="text-[12px] font-semibold text-emerald-900">Accepted as Canonical</div>
         <div className="text-[10px] text-emerald-800/80 mt-1 leading-snug">
-          Will commit to KG when you sign off the whole bundle · propagates to {SESSION.successorShort}'s playbook automatically.
+          Commits to the graph when you sign off · propagates to {SESSION.successorShort}'s playbook.
         </div>
       </div>
 
@@ -619,7 +553,7 @@ function DecisionPanelEditing() {
           <div className="flex-1 min-w-0">
             <div className="text-[12px] font-semibold text-violet-900">Editing inline</div>
             <div className="text-[10px] text-violet-800/80 leading-snug">
-              CL-086 · original kept in audit trail
+              Original kept in history
             </div>
           </div>
         </div>
@@ -638,17 +572,12 @@ function DecisionPanelEditing() {
       </div>
 
       <div className="pt-3 border-t border-gray-100">
-        <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold mb-2">Edit lineage</div>
+        <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold mb-2">Edit history</div>
         <ol className="space-y-1.5 text-[10px] text-gray-600 leading-snug">
           <LineageRowSm n={1} label={`${SESSION.offboarder} raw`} detail="Original capture" done />
-          <LineageRowSm n={2} label="AI structured" detail="Worker SLM auto-format" done />
+          <LineageRowSm n={2} label="AI structured" detail="Auto-format" done />
           <LineageRowSm n={3} label={`${SESSION.reviewer} edit`} detail="Your wording fix · live" active />
         </ol>
-      </div>
-
-      <div className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2 text-[10px] text-gray-600 leading-snug">
-        <Info className="w-3 h-3 text-gray-500 inline-block mr-1 -mt-0.5" strokeWidth={2} />
-        {SESSION.offboarderShort} sees your edits in his audit trail · he can flag if your change misrepresents what he meant.
       </div>
     </div>
   );
@@ -665,7 +594,7 @@ function DecisionPanelSendBack() {
           <div className="flex-1 min-w-0">
             <div className="text-[12px] font-semibold text-yellow-900">Sending back to {SESSION.offboarderShort}</div>
             <div className="text-[10px] text-yellow-800/80 leading-snug">
-              Appears in his queue as a follow-up · doesn't block sign-off of other items
+              Goes to his queue · doesn't block the rest of the bundle
             </div>
           </div>
         </div>
@@ -677,27 +606,9 @@ function DecisionPanelSendBack() {
         <PrimaryDecisionButton icon={X} label="Cancel · go back to accept" tone="rose" subtle />
       </div>
 
-      <div className="pt-3 border-t border-gray-100">
-        <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold mb-2">When he answers</div>
-        <ul className="space-y-1.5 text-[10px] text-gray-600 leading-snug">
-          <li className="flex items-start gap-1.5">
-            <ArrowRight className="w-2.5 h-2.5 text-yellow-700 shrink-0 mt-0.5" strokeWidth={2} />
-            <span>Comes back to this bundle as a clarified item</span>
-          </li>
-          <li className="flex items-start gap-1.5">
-            <ArrowRight className="w-2.5 h-2.5 text-yellow-700 shrink-0 mt-0.5" strokeWidth={2} />
-            <span>You can sign off the rest of the bundle without waiting</span>
-          </li>
-          <li className="flex items-start gap-1.5">
-            <ArrowRight className="w-2.5 h-2.5 text-yellow-700 shrink-0 mt-0.5" strokeWidth={2} />
-            <span>If urgent · he gets a notification + email</span>
-          </li>
-        </ul>
-      </div>
-
       <div className="rounded-lg bg-rose-50/30 border border-rose-100 px-3 py-2 text-[10px] text-rose-900/80 leading-snug">
         <AlertTriangle className="w-3 h-3 text-rose-700 inline-block mr-1 -mt-0.5" strokeWidth={2} />
-        {SESSION.offboarderShort} has {SESSION.daysUntilLastDay} days left · consider marking urgent so he sees this on his next login.
+        {SESSION.offboarderShort} has {SESSION.daysUntilLastDay} days left · consider marking urgent.
       </div>
     </div>
   );
@@ -784,7 +695,7 @@ function LineageRowSm({ n, label, detail, done, active }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   S1 · Arrival · bundle overview
+   S1 · Arrival · compact bundle summary + single CTA (CL-108)
    ═══════════════════════════════════════════════════════════════════ */
 
 function S1Arrival() {
@@ -792,15 +703,11 @@ function S1Arrival() {
     <ReviewShell bundleState={null}>
       <div className="px-8 py-8 max-w-[820px] mx-auto">
         <div className="mb-6">
-          <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] font-semibold text-violet-700 mb-3">
-            <Sparkles className="w-3 h-3" strokeWidth={2.5} />
-            Ready for your review
-          </span>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight leading-tight mb-2">
-            {SESSION.offboarderShort} captured <span className="text-violet-700">14 things</span> · let's get them into the graph.
+          <h1 className="text-xl font-semibold text-gray-900 tracking-tight">
+            {SESSION.offboarderShort}'s bundle · 14 items
           </h1>
-          <p className="text-[14px] text-gray-600 leading-relaxed max-w-2xl">
-            His bundle has been sanitized (regex + few-shot + Purview, all clear) and the pre-commit network flag window has closed. {SESSION.daysUntilLastDay} days until his last day · {SESSION.successorShort} can start reading the moment you sign off.
+          <p className="text-[12px] text-gray-500 mt-1">
+            {SESSION.daysUntilLastDay} days until his last day · {SESSION.successorShort} reads it once you sign off
           </p>
         </div>
 
@@ -811,52 +718,15 @@ function S1Arrival() {
           <BundleStatTile icon={Plus} label="Own contributions" count={5} sublabel="3 unwritten rules + 2 other" tone="emerald" />
         </div>
 
-        <div className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50/40 to-yellow-50/20 p-5 mb-6">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-lg bg-white border border-violet-200 flex items-center justify-center shrink-0">
-              <Crosshair className="w-5 h-5 text-violet-700" strokeWidth={2} />
-            </div>
-            <div className="flex-1">
-              <h2 className="text-sm font-semibold text-gray-900 mb-1">Recommended review order</h2>
-              <p className="text-[11px] text-gray-600 leading-relaxed mb-3">
-                Top to bottom · the items you flagged as critical come first. The AI grouped similar topics together so context carries between items.
-              </p>
-              <ol className="space-y-1.5">
-                <ReviewOrderItem n={1} kind="Most critical" detail={`Vendor XYZ SLA · ${SESSION.successorShort}'s renewal call in 9 days`} />
-                <ReviewOrderItem n={2} kind="High confidence" detail="3 items where AI structuring + Minh's raw text agree" />
-                <ReviewOrderItem n={3} kind="Network agreement" detail="Items where colleagues already corroborated" />
-                <ReviewOrderItem n={4} kind="Flag fixes" detail={`The Atlas rollback correction from ${SESSION.successorShort}`} />
-                <ReviewOrderItem n={5} kind="Files" detail="Architecture doc + diagram + meeting notes" />
-              </ol>
-            </div>
-          </div>
+        <div className="rounded-lg border border-gray-200 bg-gray-50/40 px-4 py-2.5 mb-6 flex items-center gap-2 text-[11px] text-gray-600">
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" strokeWidth={2} />
+          <span>Pre-checks cleared · sensitive content checked · sources cited · colleague review window closed</span>
         </div>
 
-        <div className="rounded-xl bg-gray-50 border border-gray-200 p-4 mb-6">
-          <h3 className="text-[11px] font-semibold text-gray-900 uppercase tracking-wider mb-2 inline-flex items-center gap-1.5">
-            <ShieldCheck className="w-3 h-3 text-emerald-600" strokeWidth={2} />
-            Pre-review checks · all cleared
-          </h3>
-          <div className="grid grid-cols-2 gap-2">
-            <PreCheckItem label="CL-092 Regex sanitization" detail="2 emails redacted" done />
-            <PreCheckItem label="CL-092 Few-shot neutralization" detail="0 toxic phrases found" done />
-            <PreCheckItem label="Microsoft Purview PII gate" detail="3 sensitive items auto-tagged Tier 1" done />
-            <PreCheckItem label="CL-101 network flag window" detail="24h closed · 1 flag raised (resolved)" done />
-            <PreCheckItem label="CL-093 Tier auto-assignment" detail="2 Tier 1 stubs · 0 Tier 2 ghosts" done />
-            <PreCheckItem label="Source provenance check" detail="All items have ≥1 cited source" done />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="text-[11px] text-gray-500 inline-flex items-center gap-1.5">
-            <Hourglass className="w-3 h-3" strokeWidth={2} />
-            Estimated review time · ~25 minutes total · save anytime
-          </div>
-          <button className="h-10 px-5 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-[14px] font-semibold inline-flex items-center gap-2 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30">
-            <ArrowRight className="w-4 h-4" strokeWidth={2} />
-            Start with item 1
-          </button>
-        </div>
+        <button className="h-10 px-5 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-[14px] font-semibold inline-flex items-center gap-2 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30">
+          <ArrowRight className="w-4 h-4" strokeWidth={2} />
+          Start with item 1
+        </button>
       </div>
     </ReviewShell>
   );
@@ -877,30 +747,6 @@ function BundleStatTile({ icon: Icon, label, count, sublabel, tone }) {
       <div className={`text-2xl font-bold ${cfg.valueCls} tracking-tight leading-none`} style={{ fontFamily: MONO_STACK }}>{count}</div>
       <div className="text-[11px] font-semibold text-gray-900 mt-1.5">{label}</div>
       <div className="text-[10px] text-gray-500 mt-0.5 leading-snug">{sublabel}</div>
-    </div>
-  );
-}
-
-function ReviewOrderItem({ n, kind, detail }) {
-  return (
-    <li className="flex items-start gap-2 text-[11px]">
-      <span className="w-5 h-5 rounded-md bg-white border border-violet-200 flex items-center justify-center shrink-0 text-[10px] font-bold text-violet-700" style={{ fontFamily: MONO_STACK }}>{n}</span>
-      <div>
-        <span className="font-semibold text-gray-900">{kind}</span>
-        <span className="text-gray-600"> · {detail}</span>
-      </div>
-    </li>
-  );
-}
-
-function PreCheckItem({ label, detail, done }) {
-  return (
-    <div className="flex items-start gap-2 text-[11px]">
-      <Check className={`w-3 h-3 ${done ? "text-emerald-600" : "text-gray-300"} shrink-0 mt-0.5`} strokeWidth={2.5} />
-      <div className="flex-1 min-w-0">
-        <div className="text-[11px] font-medium text-gray-900">{label}</div>
-        <div className="text-[10px] text-gray-500 leading-snug">{detail}</div>
-      </div>
     </div>
   );
 }
@@ -935,7 +781,7 @@ function S2ReviewingPriority() {
             </>
           }
           structuredTitle="AI-structured version"
-          structuredAuthor="Worker SLM · auto-generated · 5 min ago"
+          structuredAuthor="AI-structured · auto-generated · 5 min ago"
           structuredContent={
             <>
               <p><strong className="text-emerald-800">Vendor XYZ SLA penalty clause</strong></p>
@@ -944,7 +790,7 @@ function S2ReviewingPriority() {
                 <li><strong>Verbal grace period (off-contract):</strong> Linh at Vendor XYZ verbally committed in March that any single miss within 5 business days of resolution does not trigger the penalty clock. Sourced from Q3 negotiation following an incident where they were 4h late due to their infrastructure.</li>
                 <li><strong>How to invoke:</strong> Phone call only · do not put in writing.</li>
               </ul>
-              <p className="mt-3 text-[11px] text-emerald-700/80 italic">Auto-tagged: <code style={{ fontFamily: MONO_STACK }} className="text-[11px] bg-emerald-100/60 px-1 rounded">[Vendor]</code> <code style={{ fontFamily: MONO_STACK }} className="text-[11px] bg-emerald-100/60 px-1 rounded">[Off-contract]</code> · Tier 1 lock applied (legal-adjacent)</p>
+              <p className="mt-3 text-[11px] text-emerald-700/80 italic">Tagged: <code style={{ fontFamily: MONO_STACK }} className="text-[11px] bg-emerald-100/60 px-1 rounded">Vendor</code> <code style={{ fontFamily: MONO_STACK }} className="text-[11px] bg-emerald-100/60 px-1 rounded">Off-contract</code> · access-limited (sensitive)</p>
             </>
           }
         />
@@ -997,7 +843,7 @@ function S3QuickAccept() {
             </>
           }
           structuredTitle="AI-structured version · now Canonical"
-          structuredAuthor="Worker SLM · auto-generated · accepted as Canonical by you 3 sec ago"
+          structuredAuthor="AI-structured · accepted as Canonical by you 3 sec ago"
           structuredContent={
             <>
               <p><strong className="text-emerald-800">Vendor XYZ SLA penalty clause</strong></p>
@@ -1026,7 +872,7 @@ function AcceptedToastBar() {
       <div className="flex-1 min-w-0">
         <div className="text-[13px] font-semibold text-emerald-900">Item 1 accepted as Canonical</div>
         <div className="text-[11px] text-emerald-800/80 mt-0.5">
-          Will commit to KG when you sign off the full bundle · 4 downstream targets queued · audit entry created.
+          Commits when you sign off the full bundle · 4 downstream targets queued.
         </div>
       </div>
       <button className="text-[11px] text-emerald-800 hover:text-emerald-900 font-medium inline-flex items-center gap-1">
@@ -1042,7 +888,7 @@ function PostAcceptInlineActions() {
     <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 mt-4 flex items-center justify-between gap-3 flex-wrap">
       <div className="flex items-center gap-2 text-[11px] text-gray-600">
         <Sparkles className="w-3 h-3 text-violet-500" strokeWidth={2} />
-        <span>Next up · <strong className="text-gray-900">item 2 · Payment Gateway timeout fix</strong> · also a Manager priority.</span>
+        <span>Next up · <strong className="text-gray-900">item 2 · Payment Gateway timeout fix</strong></span>
       </div>
       <div className="flex items-center gap-2">
         <button className="h-8 px-3 rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 text-[11px] font-medium inline-flex items-center gap-1.5 transition-colors">
@@ -1059,8 +905,7 @@ function PostAcceptInlineActions() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   S4 · Edit inline · CL-086 grammar
-   Original AI text shown strikethrough + violet additions inline
+   S4 · Edit inline · original strikethrough + violet additions
    ═══════════════════════════════════════════════════════════════════ */
 
 function S4EditInline() {
@@ -1082,7 +927,7 @@ function S4EditInline() {
           askerInitials={SESSION.corroboratorInitials}
           askerTeam={SESSION.corroboratorTeam}
           question={`Minh, I think you and Linh worked out a verbal grace period on the SLA penalty clause — can you confirm the exact terms? My team will need to know when we close out the contract paperwork.`}
-          when="asked 2 days ago · UC-HO-08 network question"
+          when="asked 2 days ago"
         />
 
         <EditableDiffEditor />
@@ -1125,7 +970,7 @@ function EditableDiffEditor() {
     <div className="rounded-xl border-2 border-violet-300 bg-white overflow-hidden mb-4 shadow-sm">
       <div className="px-4 py-2.5 border-b border-violet-200 bg-violet-50/40 flex items-center gap-2 flex-wrap">
         <Edit3 className="w-3.5 h-3.5 text-violet-700" strokeWidth={2} />
-        <span className="text-[12px] font-semibold text-violet-900">You are editing this item · CL-086 inline grammar</span>
+        <span className="text-[12px] font-semibold text-violet-900">You are editing this item</span>
         <span className="ml-auto text-[10px] text-violet-700 inline-flex items-center gap-1">
           <ArrowLeftRight className="w-2.5 h-2.5" strokeWidth={2} />
           <button className="hover:underline cursor-pointer">Show original side-by-side</button>
@@ -1252,7 +1097,7 @@ function EditLineageFooter() {
     <div className="rounded-xl bg-gray-50 border border-gray-200 p-4 mb-4">
       <div className="text-[10px] uppercase tracking-[0.18em] text-gray-500 font-semibold mb-3 inline-flex items-center gap-1.5">
         <History className="w-3 h-3" strokeWidth={2} />
-        Edit lineage · QA-INT-01 §2.3 preserves all versions
+        Edit history · all versions kept
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -1269,7 +1114,7 @@ function EditLineageFooter() {
         <LineageCard
           n={2}
           stage="AI-structured"
-          actor="Worker SLM"
+          actor="AI"
           actorInitials="AI"
           when="5 min ago"
           preview={`The vendor has provided a verbal commitment that any single SLA miss occurring within a 5-business-day grace period following resolution does not trigger the contractual penalty clause...`}
@@ -1290,7 +1135,7 @@ function EditLineageFooter() {
 
       <div className="mt-3 pt-3 border-t border-gray-200 text-[10px] text-gray-500 leading-relaxed inline-flex items-start gap-1.5">
         <Info className="w-3 h-3 text-gray-400 shrink-0 mt-0.5" strokeWidth={2} />
-        <span>{SESSION.offboarderShort} will see your edits in his audit trail. If your change misrepresents what he meant, he can raise a flag in the post-commit review window (CL-101).</span>
+        <span>{SESSION.offboarderShort} sees your edits in his history. If a change misrepresents what he meant, he can flag it.</span>
       </div>
     </div>
   );
@@ -1348,7 +1193,7 @@ function S5SendBack() {
           askerInitials={SESSION.flaggerNetInitials}
           askerTeam={SESSION.flaggerNetTeam}
           question={`Minh — I noticed in your calendar that you cover the 2am Saturday slot pretty often. Who's been doing that when you're not? Want to make sure Trần knows.`}
-          when="asked 3 hours ago · UC-HO-08 network question"
+          when="asked 3 hours ago"
         />
 
         <IncompleteAnswerCard />
@@ -1431,7 +1276,7 @@ Also — is this rotation written down anywhere, or just lived in your head and 
       <div className="px-4 py-3 border-t border-gray-100 bg-gray-50/40 flex items-center justify-between gap-2 flex-wrap">
         <div className="text-[10px] text-gray-500 inline-flex items-center gap-1">
           <ShieldCheck className="w-3 h-3 text-emerald-600" strokeWidth={2} />
-          <span>{SESSION.offboarderShort} will see this in his capture queue · doesn't trigger a new sanitization pass when he answers</span>
+          <span>{SESSION.offboarderShort} sees this in his capture queue</span>
         </div>
         <div className="flex items-center gap-1.5">
           <button className="h-8 px-3 rounded-md text-gray-600 hover:text-gray-900 text-[11px] font-medium inline-flex items-center gap-1.5">
@@ -1549,8 +1394,8 @@ function SendBackImpactNote() {
       <ol className="space-y-2">
         <SendBackImpactStep n={1} title="Item moves to 'Awaiting Minh' group" detail="Stays in your bundle · doesn't block sign-off of the other 13 items" />
         <SendBackImpactStep n={2} title={`${SESSION.offboarderShort} sees the question in his capture queue`} detail="Yellow accent · marked urgent · he gets a push + email notification" />
-        <SendBackImpactStep n={3} title="When he answers · returns here as a fresh review item" detail="You'll see his new answer + your original question + the lineage · ready to accept" />
-        <SendBackImpactStep n={4} title="If he can't or won't · you can sign off the rest" detail={`After sign-off, this item stays open as a UC-HO-06 follow-up for the post-handover review window`} last />
+        <SendBackImpactStep n={3} title="When he answers · returns here as a fresh review item" detail="You'll see his new answer + your original question + the history · ready to accept" />
+        <SendBackImpactStep n={4} title="If he can't or won't · you can sign off the rest" detail="After sign-off, this item stays open as a post-handover follow-up" last />
       </ol>
     </div>
   );
@@ -1569,9 +1414,7 @@ function SendBackImpactStep({ n, title, detail, last }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   S6 · Pre-commit flag fix · wired to ./uc-ho-04-s6-flag-fix.jsx
-   S7 · Bundle summary · wired to ./uc-ho-04-s7s8-signoff.jsx
-   S8 · Sign-off · wired to ./uc-ho-04-s7s8-signoff.jsx
+   S6 · flag fix · S7 · summary · S8 · sign-off (sibling files)
    ═══════════════════════════════════════════════════════════════════ */
 
 function S6FlagFix() {
@@ -1723,8 +1566,7 @@ function SourceProvenanceStrip({ sources }) {
     <div className="rounded-xl bg-gray-50 border border-gray-200 p-3 mb-4">
       <div className="flex items-center gap-2 mb-2">
         <ShieldCheck className="w-3 h-3 text-emerald-600" strokeWidth={2} />
-        <h3 className="text-[11px] font-semibold text-gray-900">Source provenance · {sources.length} cited</h3>
-        <span className="ml-auto text-[9px] text-gray-500" style={{ fontFamily: MONO_STACK }}>QA-INT-01 §1.3</span>
+        <h3 className="text-[11px] font-semibold text-gray-900">Sources · {sources.length} cited</h3>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
         {sources.map((s, i) => {
@@ -1758,7 +1600,7 @@ function NetworkCorroborationCard() {
             <span className="text-[10px] text-gray-500">independently confirmed by {SESSION.corroboratorName}</span>
           </div>
           <h3 className="text-[13px] font-semibold text-gray-900 mb-2">
-            {SESSION.corroboratorName.split(" ")[0]} flagged the same grace period in her UC-HO-08 network question
+            {SESSION.corroboratorName.split(" ")[0]} flagged the same grace period in her network question
           </h3>
           <blockquote className="text-[11px] text-gray-700 leading-relaxed italic border-l-2 border-indigo-300 pl-2.5 mb-2">
             "From my Sales team's view, we have a 5-business-day grace on the penalty clause that I think you negotiated verbally. The contract doesn't show it explicitly · could you confirm and document the back-and-forth?"
