@@ -47,6 +47,11 @@ import { S7BundleSummaryView, S8SignOffView, DecisionPanelSummary, DecisionPanel
    added; Own→gray to match the rail source colors). Uploaded files are
    part of the 14 (3 of them); SESSION.filesTotal aligned to 3.
 
+   CL-111 (2026-06-08) · 30-day offboarding window. Minh's last day is
+   Jul 4, 2026 · 26 days out (SESSION.daysUntilLastDay), matching the
+   timeline now used across the dashboard, command view, prepare stage,
+   and quick-initiate surfaces.
+
    Embedded contract (CL-103): default export accepts `embedded` +
    `state` ("s1".."s8"); `?tab=review-s4` deep-links still work.
    ═══════════════════════════════════════════════════════════════════ */
@@ -83,7 +88,7 @@ const SESSION = {
   itemsTotal: 14,
   filesTotal: 3,
   redirects: 1,
-  daysUntilLastDay: 4,
+  daysUntilLastDay: 26,
 };
 
 const MONO_STACK = 'ui-monospace, "Geist Mono", "JetBrains Mono", Menlo, monospace';
