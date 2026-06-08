@@ -1,6 +1,6 @@
 # ART-EEP · System Overview
 
-*Last updated 2026-06-07 · post 6→2 tab redesign (CL-107), embedded review cleanup + real Phương Anh review (CL-108/109), and the consumer-graph company-wide-default correction (CL-110); builds on the UC-HO-04 live merge (CL-103) and the Consumer-plane persona expansion (CL-104). This document is the single-source narrative of the entire ART-EEP system. For decision history see `ARTEEP-design-change-log.md`. For the seed context after compaction see `ARTEEP-context-snapshot.md`. For the use-case catalogue see `ARTEEP-master-uc-index.md`.*
+*Last updated 2026-06-08 · post the 30-day offboarding-window policy (CL-111); builds on the 6→2 tab redesign (CL-107), embedded review cleanup + real Phương Anh review (CL-108/109), the consumer-graph company-wide-default correction (CL-110), the UC-HO-04 live merge (CL-103), and the Consumer-plane persona expansion (CL-104). This document is the single-source narrative of the entire ART-EEP system. For decision history see `ARTEEP-design-change-log.md`. For the seed context after compaction see `ARTEEP-context-snapshot.md`. For the use-case catalogue see `ARTEEP-master-uc-index.md`.*
 
 ---
 
@@ -30,8 +30,8 @@ ART-EEP is organised into three planes that map to the three actor groups. Each 
 
 Owned by the **Manager** (Hà Vy). Surfaces:
 
-- **Dashboard (`/`)** — Hà Vy's multi-session command center. Three concurrent sessions visible with 3-phase progress and urgency layered signals (rose for critical timelines). In the 3-phase redesign the dashboard renders no source chips and no forms (CL-106).
-- **Quick initiate (`/session/new`)** — one-click session creation. Every field is shown, selectable, and pre-filled to the happy path (CL-105); the Customize panel is open by default. The focus note is an editable, pre-filled checklist. Replaces the old multi-step wizard.
+- **Dashboard (`/`)** — Hà Vy's multi-session command center. Three concurrent sessions visible with 3-phase progress and urgency layered signals (rose for critical timelines). In the 3-phase redesign the dashboard renders no source chips and no forms (CL-106). Sessions follow the 30-day offboarding window (CL-111); the successor is optional and renders "to be assigned" when unset.
+- **Quick initiate (`/session/new`)** — one-click session creation. Every field is shown, selectable, and pre-filled to the happy path (CL-105); the Customize panel is open by default. The review deadline defaults to 3–5 days before the last day per the 30-day policy (CL-111); the successor field is optional (may be left "to be assigned"). The focus note is an editable, pre-filled checklist. Replaces the old multi-step wizard.
 - **Prepare stage (`/prepare/[id]`)** — the automated Prepare cascade the manager oversees: Trello seeded through the 4-Layer Hard-Filter, the auto-derived network + UC-HO-08 knowledge requests, the pre-commit flag → correction loop, and the knowledge map building toward the capture queue. Built & live (`prepare-stage.jsx`).
 - **Session command view (`/session/[id]`)** — per-session full-screen workspace with **two visible tabs (CL-107): Overview + Manager review.** The former six (Overview · Stages · Data · Audit log · Manager review · Settings) were collapsed: Stages folds into the hero's 3-phase progress bar, Data + Settings fold into Overview and the action rail, and Audit log becomes a link rather than a tab. Legacy `?tab=stages|data|audit|settings` deep-links resolve to Overview (no 404). The Manager review tab is UC-HO-04 (Sprint 3) rendered inline; see §6.
 
@@ -81,16 +81,16 @@ Nine personas are locked. Six were established earlier; three were added by CL-1
 | Name | Role | Department | Plane | Notes |
 |---|---|---|---|---|
 | **Hà Vy** | Manager | Engineering | Management | Owns handover sessions; primary actor in UC-HO-01, UC-HO-04, UC-HO-07. Her Entra ID identity signs the SHA-256 commit gate in UC-HO-04 S8. |
-| **Minh Lê** | Offboarder | Engineering | Capture | **Canonical demo persona.** Senior Backend Engineer; 12-day timeline. Wired live at `/session/minh-le`. Sources: Jira · GitHub · Google Drive (POC showcase via Trello). Successor: Trần Hữu Nam. |
+| **Minh Lê** | Offboarder | Engineering | Capture | **Canonical demo persona.** Senior Backend Engineer; 30-day offboarding window (last day Jul 4, 2026 · review deadline Jun 30 · 26 days left at demo time · CL-111). Wired live at `/session/minh-le`. Sources: Jira · GitHub · Google Drive (POC showcase via Trello). Successor: Trần Hữu Nam. |
 | **Trần Hữu Nam** | Successor / Onboarder | Engineering | Consumption (newcomer) | Succeeds Minh Lê. Primary actor for UC-ON-01 / UC-ON-02 / UC-ON-03. Also flags the AI in UC-HO-04 S6 (Atlas rollback chain). |
-| **Khánh Linh Trần** | Offboarder | People & Culture | Capture | Head of People Operations. Urgent 2-day offboard — exercises EX.2 + high PII (Tier-2 ghosting via Purview + ACL trim). Sources: HRIS · Notion · SharePoint. |
-| **Phương Anh Nguyễn** | Offboarder | Sales | Capture | Senior Account Executive. Demonstrates the non-engineering source mix — Salesforce · shared Calendar · SharePoint sales-collateral. Second wired persona at `/session/phuong-anh`, with her own real Manager review surface (CL-109). |
+| **Khánh Linh Trần** | Offboarder | People & Culture | Capture | Head of People Operations. Urgent 2-day offboard — the short-notice **exception** to the 30-day standard (CL-111); exercises EX.2 + high PII (Tier-2 ghosting via Purview + ACL trim). Sources: HRIS · Notion · SharePoint. |
+| **Phương Anh Nguyễn** | Offboarder | Sales | Capture | Senior Account Executive. Demonstrates the non-engineering source mix — Salesforce · shared Calendar · SharePoint sales-collateral. Second wired persona at `/session/phuong-anh`, with her own real Manager review surface (CL-109). Successor optional — currently "to be assigned" (CL-111). |
 | **An Quân Vũ** | Platform Admin / IT | — | Step Zero | Plan v2 (CL-068). Owns Step Zero (Z01–Z04). The 10–15-second pitch opener. Distinct from Manager in RBAC. |
 | **Duy Nguyễn** *(NEW · CL-104 · promoted from supporting)* | Senior Data Engineer | Data Platform | Consumption (project peer) | Already in UC-HO-04 S6 (Atlas rollback 3-way) as the corroborating colleague. Now locked as the **project peer** Consumer archetype. |
 | **Linh Phạm** *(NEW · CL-104)* | Product Manager | Product | Consumption (cross-dept) | Locks the **cross-departmental colleague** archetype. Exercises Tier-1 "Request access" affordances (CL-093) on content scoped to other teams. |
 | **Thảo Vũ** *(NEW · CL-104)* | Engineering Director | Engineering (leadership tier) | Consumption (upper mgmt) | Locks the **upper management** archetype. **Owns the Timeline + Heatmap surface** (CL-094) — the locked actor that was missing from the previous six-persona set. |
 
-*Note · Phương Anh's successor currently renders as "Đặng Khải Hoàn" in the dashboard and session command view — a supporting name not in the locked nine. Pending PO decision: add him as a locked supporting persona, swap for a locked name, or keep as a non-locked supporting reference.*
+*Note · the successor is optional (CL-111): a session may have no successor named at initiation. Phương Anh's slot — previously the non-locked "Đặng Khải Hoàn" — now renders "to be assigned", so no successor persona is invented; one may be assigned later. The locked set therefore stays at nine.*
 
 ### Four Consumer archetypes mapped to read patterns
 
@@ -115,6 +115,8 @@ Email, personal mailboxes, and private direct messages are excluded from automat
 
 Internally the system runs an 8-stage pipeline. At the glance level it always renders as 3 user-facing phases. This is CL-088: the 8-stage taxonomy was cognitively heavy at glance views; grouping into 3 phases (Prepare · Capture · Deliver) reduces load without losing internal tracking precision.
 
+The whole lifecycle runs inside the standard 30-day offboarding window (CL-111); the manager's review/handover deadline is set 3–5 days before the last day so the admin and the offboarder verify the captured bundle together. Khánh Linh's 2-day session is the documented short-notice exception that compresses the same three phases.
+
 ### Phase 1 · Prepare
 
 *Owned by: Manager + System*
@@ -131,7 +133,7 @@ The offboarder contributes content. In the POC: self-serve file upload + the asy
 
 *Owned by: System + Successor + broader Consumers*
 
-Verified knowledge commits atomically to the Knowledge Graph; the personalised onboarding playbook is generated for the successor; the active feedback loop runs in perpetuity. Per CL-104, Deliver now reaches all four Consumer archetypes (newcomer · project peer · cross-departmental colleague · upper management), not only the successor. Sub-stages: Committed to KG → Playbook delivered.
+Verified knowledge commits atomically to the Knowledge Graph; the personalised onboarding playbook is generated for the successor (if one is assigned — the successor is optional per CL-111); the active feedback loop runs in perpetuity. Per CL-104, Deliver now reaches all four Consumer archetypes (newcomer · project peer · cross-departmental colleague · upper management), not only the successor. Sub-stages: Committed to KG → Playbook delivered.
 
 The phase progress bar (3 segments, violet for current with pulse animation, emerald for done) is the canonical glance widget across every Management surface.
 
@@ -145,7 +147,7 @@ Eleven use cases plus Step Zero. The master catalogue with dependency matrix liv
 
 | UC | Title | Status |
 |---|---|---|
-| **UC-HO-01** | Initiate Handover Session | Sprint 1 v2 complete; dashboard + quick-initiate + command-view trio |
+| **UC-HO-01** | Initiate Handover Session | Sprint 1 v2 complete; dashboard + quick-initiate + command-view trio. Review deadline defaults to 3–5 days before last day; successor optional (CL-111) |
 | **UC-HO-02** | Conduct AI-Guided Voice Interview (Dynamic N-Domain Coverage) | Deferred to Phase 2 (CL-098) — out of POC scope |
 | **UC-HO-03** | Review and Sign Transcript | Sprint 2 complete (amber palette — needs migration) |
 | **UC-HO-04** | Submit Handover Record to Knowledge Graph | **Sprint 3 complete (2026-06-07).** Mockup with 8 real states live at `/session/[id]?tab=review` (CL-103); embedded cleanup CL-108; Phương Anh's own review CL-109 |
@@ -360,7 +362,7 @@ Deployment: Next.js on Vercel, auto-deploys from `main` in ~30 seconds.
 |---|---|---|---|
 | **S0 Platform Foundation** | 1 week | Infra + design system | COMPLETE |
 | **SZ Step Zero** | 2 weeks | Z01–Z04 | PENDING (5 blockers — see §13) |
-| **S1 Handover Initiation** | 2 weeks | UC-HO-01, UC-HO-05 | COMPLETE (violet/yellow; redesigned 2026-06-02 into 3-phase + drawer→command-view + one-click initiation; 6→2 tab collapse + minimal copy CL-107) |
+| **S1 Handover Initiation** | 2 weeks | UC-HO-01, UC-HO-05 | COMPLETE (violet/yellow; redesigned 2026-06-02 into 3-phase + drawer→command-view + one-click initiation; 6→2 tab collapse + minimal copy CL-107; 30-day window + optional successor CL-111) |
 | **S2 Capture & Verify** | 2 weeks | UC-HO-02 (deferred), UC-HO-03 | COMPLETE on the old amber palette. POC offboarder capture surfaces (upload + question queue) PENDING; Prepare-stage fan-out (UC-HO-08) built at `/prepare/[id]`. |
 | **S3 KG Commit · UC-HO-04** | 1.5 weeks | UC-HO-04 Manager Review + Sign-off | **COMPLETE 2026-06-07.** Violet/yellow, all 8 states real, live at `/session/[id]?tab=review`; embedded cleanup CL-108; Phương Anh real review CL-109. |
 | **S4 Onboarding Gen & Read** | 2 weeks | UC-ON-01, UC-ON-02 | COMPLETE on the old amber palette — needs migration |
@@ -417,6 +419,7 @@ The following decisions need stakeholder input. Resolved items are struck throug
 - **ON-02 TBD-3** — Mobile parity scope (desktop-first v1 is the default)
 - ~~**HO-05 TBD-2** — Manager prompts visible to Offboarder pre-capture~~ — **RESOLVED 2026-06-05 (CL-099):** yes, the prompts are the queue the Offboarder answers
 - ~~**HO-06 TBD-1** — SLA for Manager correction review~~ — **RESOLVED 2026-06-05 (CL-095):** 2 weekly cycles, then auto-escalate to the Critical path; sign-off still required
+- ~~**Offboarding window + successor model**~~ — **RESOLVED 2026-06-08 (CL-111):** 30-day standard window · review deadline 3–5 days before last day · successor optional (renders "to be assigned"); Khánh Linh is the 2-day short-notice exception
 
 ### New — UC-HO-08 (opened 2026-06-05)
 
@@ -428,8 +431,8 @@ The following decisions need stakeholder input. Resolved items are struck throug
 - **Heatmap content definition** — three candidates proposed by the Microsoft AI prompt review (Knowledge Hotspots / Skill Density / Risk Heatmap). All three map cleanly onto the existing semantic palette. With Thảo Vũ now locked as the Heatmap actor, this needs a separate CL to lock the definition. Owner: BA + Product.
 - **UC-ON-02 scope** — extend UC-ON-02 to cover all four Consumer archetypes, or split into UC-ON-02a (Onboarder reads playbook) + UC-ON-02b (general KG consumer exploration)? Owner: BA.
 - **Consumer graph rebuild (CL-110)** — rebuild `knowledge-graph-explorer.jsx` to default to the company-wide GraphRAG with offboarder/project/team/status filters (currently hardcodes Minh Lê). Documented; build deferred per PO. Owner: PO + BA.
-- **Phương Anh's successor** — "Đặng Khải Hoàn" appears in the dashboard + command view but is not one of the 9 locked personas. Decide: add as a locked supporting persona, swap for a locked name, or keep as a non-locked reference. Owner: PO.
-- **Minh Lê days-left consistency** — dashboard shows 6, Prepare stage shows 12, persona note says "12-day timeline." Standardize. Owner: BA.
+- ~~**Phương Anh's successor**~~ — **RESOLVED 2026-06-08 (CL-111):** the successor is optional; the slot is cleared to "to be assigned" and no successor persona is invented.
+- ~~**Minh Lê days-left consistency**~~ — **RESOLVED 2026-06-08 (CL-111):** standard 30-day window — Minh = last day Jul 4 · review deadline Jun 30 · 26 days left at demo time.
 
 ### Step Zero blockers (Plan v2)
 
@@ -445,16 +448,17 @@ The following decisions need stakeholder input. Resolved items are struck throug
 
 In rough priority order:
 
-1. **POC Capture surfaces** — the **Prepare-stage fan-out (UC-HO-08) is built & live at `/prepare/[id]`**; still pending are the offboarder's self-serve file-upload + question-queue answering surface. This is the POC's replacement for the voice interview; voice (UC-HO-02) is Phase 2 (CL-098–101).
-2. **Knowledge Graph explorer (Consumer plane) · company-wide default + four-archetype scope** — `MASTER.md` shell · route `/knowledge-graph` · Progressive Disclosure, Contextual-AI chips, 0-token hover, Timeline + Heatmap, Tier-1/Tier-2 rendering, feedback triage (CL-094–097). **Must default to the company-wide GraphRAG with offboarder/project/team/status filters (CL-110)** — the current explorer hardcodes Minh Lê and needs reworking. Includes surfaces for all four Consumer reader archetypes per CL-104.
-3. **Heatmap content definition** — lock which of Knowledge Hotspots / Skill Density / Risk Heatmap (or which subset) ships, with semantic-palette mapping. Thảo Vũ is the locked actor.
-4. **UC-ON-02 scope decision** — extend or split for the four Consumer archetypes. BA-owned.
-5. **Stakeholder approval** on the Plan v2 decision points (especially Step Zero blockers) + the two UC-HO-08 TBDs.
-6. **Migration sweep** — S2/S4 artifacts to violet/yellow palette (S3 done as of 2026-06-07).
-7. **S5 build** — UC-ON-03 (Skill Gap), UC-HO-06 (Report Hallucination), UC-HO-07 (Correction Review).
-8. **UC-HO-01 v2 governance spec update** — reflect the 3-phase lifecycle + data-ingestion governance (CL-015 deprecation).
-9. **UC-HO-08 spec** — author the full use case (currently logged via CL-100 / CL-101, surfaced at `/prepare/[id]`, and indexed in the master UC index v1.1).
-10. **Demo script** — write the 3–4-minute narrative tying all the states together with the 3-phase lifecycle, POC capture, Manager review, and the company-wide Consumption beat.
+1. **Propagate CL-111 across the remaining surfaces** — bring the 30-day window + optional successor onto `session-command-view.jsx` (Minh 26d / deadline Jun 30 · Phương Anh 12d / deadline Jun 16 / successor "to be assigned" — clears Đặng Khải Hoàn), `prepare-stage.jsx` (Minh markedOn / departure / daysLeft → 30-day window), and `uc-ho-01-quick-initiate.jsx` (scenario last day + default deadline = last day − 4). The dashboard is already done.
+2. **POC Capture surfaces** — the **Prepare-stage fan-out (UC-HO-08) is built & live at `/prepare/[id]`**; still pending are the offboarder's self-serve file-upload + question-queue answering surface. This is the POC's replacement for the voice interview; voice (UC-HO-02) is Phase 2 (CL-098–101).
+3. **Knowledge Graph explorer (Consumer plane) · company-wide default + four-archetype scope** — `MASTER.md` shell · route `/knowledge-graph` · Progressive Disclosure, Contextual-AI chips, 0-token hover, Timeline + Heatmap, Tier-1/Tier-2 rendering, feedback triage (CL-094–097). **Must default to the company-wide GraphRAG with offboarder/project/team/status filters (CL-110)** — the current explorer hardcodes Minh Lê and needs reworking. Includes surfaces for all four Consumer reader archetypes per CL-104.
+4. **Heatmap content definition** — lock which of Knowledge Hotspots / Skill Density / Risk Heatmap (or which subset) ships, with semantic-palette mapping. Thảo Vũ is the locked actor.
+5. **UC-ON-02 scope decision** — extend or split for the four Consumer archetypes. BA-owned.
+6. **Stakeholder approval** on the Plan v2 decision points (especially Step Zero blockers) + the two UC-HO-08 TBDs.
+7. **Migration sweep** — S2/S4 artifacts to violet/yellow palette (S3 done as of 2026-06-07).
+8. **S5 build** — UC-ON-03 (Skill Gap), UC-HO-06 (Report Hallucination), UC-HO-07 (Correction Review).
+9. **UC-HO-01 v2 governance spec update** — reflect the 3-phase lifecycle + data-ingestion governance (CL-015 deprecation) + the 30-day window / optional successor (CL-111).
+10. **UC-HO-08 spec** — author the full use case (currently logged via CL-100 / CL-101, surfaced at `/prepare/[id]`, and indexed in the master UC index v1.1).
+11. **Demo script** — write the 3–4-minute narrative tying all the states together with the 3-phase lifecycle, POC capture, Manager review, and the company-wide Consumption beat.
 
 ---
 
@@ -462,7 +466,7 @@ In rough priority order:
 
 | File | Purpose |
 |---|---|
-| `docs/arteep/ARTEEP-design-change-log.md` | Living change log · entries CL-001 → CL-110 |
+| `docs/arteep/ARTEEP-design-change-log.md` | Living change log · entries CL-001 → CL-111 |
 | `ARTEEP-context-snapshot.md` | Seed document for any future session · last updated 2026-06-07 |
 | `docs/arteep/ARTEEP-system-overview.md` | **This document** · the full-view system narrative |
 | `ARTEEP-master-uc-index.md` | v1.1 · 11 UCs (UC-HO-08 added), dependency matrix, TBD register |
