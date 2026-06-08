@@ -25,8 +25,12 @@ import UCHO04ManagerReview from "./uc-ho-04-manager-review.jsx";
      · Trello 4-layer source (CL-091) · async question-queue capture
        (CL-098/099) · UC-HO-04 review wired in (CL-103).
      · CL-109 · Phương Anh's Manager review is now a real surface (her
-       7 Sales sections, per-item accept / send-back, sign-off CTA),
+       7 Sales items, per-item accept / send-back, sign-off CTA),
        not a placeholder. Minh Lê still routes to the full UC-HO-04.
+     · CL-112 · the review unit is "items" everywhere (was "sections" on
+       Phương Anh's surface) so both review surfaces and the dashboard
+       use one noun. The post-commit KG count on the dashboard is
+       "entries" — a different unit at a different stage.
    ═══════════════════════════════════════════════════════════════════ */
 
 const FLOW = [
@@ -393,7 +397,7 @@ function OverviewReview({ session }) {
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-sm font-semibold text-gray-900">Answers ready for your review</h3>
-            <p className="text-[12px] text-gray-500 mt-0.5">Signed 38m ago · 7 sections · 2 flagged</p>
+            <p className="text-[12px] text-gray-500 mt-0.5">Signed 38m ago · 7 items · 2 flagged</p>
           </div>
         </div>
       </article>
@@ -401,7 +405,7 @@ function OverviewReview({ session }) {
       <div>
         <SectionLabel>Captured content</SectionLabel>
         <div className="grid grid-cols-4 gap-2 mt-2">
-          <SmallStat icon={MessageSquare} label="Sections" value="7" />
+          <SmallStat icon={MessageSquare} label="Items"    value="7" />
           <SmallStat icon={Network}       label="Verified" value="23" />
           <SmallStat icon={AlertTriangle} label="Flagged"  value="2" tone="warning" />
           <SmallStat icon={Lock}          label="Redacted" value="1" />
@@ -409,7 +413,7 @@ function OverviewReview({ session }) {
       </div>
 
       <div>
-        <SectionLabel>Sections to review</SectionLabel>
+        <SectionLabel>Items to review</SectionLabel>
         <div className="space-y-2 mt-2">
           {PA_SECTIONS.map((s) => (
             <SectionRow key={s.title} title={s.title} status={s.status} meta={s.meta} muted={s.status === "redacted"} />
@@ -543,7 +547,7 @@ function ActionSidebar({ session }) {
         )}
         {isReview && (
           <article className="rounded-lg border border-emerald-200 bg-emerald-50/30 p-3 mt-2">
-            <p className="text-[12px] text-gray-700 mb-3"><strong className="text-gray-900">2 sections</strong> need your decision.</p>
+            <p className="text-[12px] text-gray-700 mb-3"><strong className="text-gray-900">2 items</strong> need your decision.</p>
             <Link href={`/session/${session.urlSlug}?tab=review`} className="w-full h-9 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30 mb-1.5">
               Review answers
               <ArrowRight className="w-3 h-3" />
@@ -619,14 +623,15 @@ function ReviewTab({ session, state }) {
 }
 
 /* ─── CL-109 · Phương Anh's real review surface ───────────────────────
-   Her 7 Sales sections as a working item list. Each item shows the
-   captured answer + source, with per-item accept / send-back.
-   Labels-only style (CL-107); helper text kept on the destructive
-   send-back only. Selecting a section opens it inline. */
+   Her 7 Sales items as a working list. Each item shows the captured
+   answer + source, with per-item accept / send-back. Labels-only style
+   (CL-107); helper text kept on the destructive send-back only.
+   Selecting an item opens it inline. The reviewable unit is an "item"
+   (CL-112) — consistent with UC-HO-04. */
 
 const PA_SECTIONS = [
   { id: 1, title: "Sales pipeline · Q3 outlook",          status: "verified", meta: "1,247 words · 4 facts",
-    answer: "Pipeline is $2.4M weighted across 14 open deals. Three are committed for Q3 close: TXM ($480K), Helios ($210K), and the Vanta renewal ($95K). The rest are best-case. Vanta and TXM are the two Đặng Khải Hoàn should call in week one.",
+    answer: "Pipeline is $2.4M weighted across 14 open deals. Three are committed for Q3 close: TXM ($480K), Helios ($210K), and the Vanta renewal ($95K). The rest are best-case. Vanta and TXM are the two the successor should call in week one.",
     source: "Salesforce · shared pipeline · SharePoint Q3 deck" },
   { id: 2, title: "Vendor XYZ renewal · penalty clause",  status: "flagged",  meta: "864 words · 1 flagged",
     answer: "There's a verbal 5-business-day grace on the SLA penalty that isn't in the signed contract. I worked it out with their account lead last March. It should be confirmed by phone, never email — they'll deny it on record.",
@@ -663,7 +668,7 @@ function PhuongAnhReview({ session }) {
     <div className="grid grid-cols-[1fr_300px] gap-5 p-6 items-start">
       <div className="min-w-0 space-y-2">
         <div className="flex items-center justify-between gap-2 mb-1">
-          <SectionLabel>Sections · {PA_SECTIONS.length}</SectionLabel>
+          <SectionLabel>Items · {PA_SECTIONS.length}</SectionLabel>
           <span className="text-[10px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>
             {decidedCount} / {decidableIds.length} decided
           </span>
@@ -723,7 +728,7 @@ function PhuongAnhReview({ session }) {
             </button>
             {!allDecided && (
               <p className="text-[10px] text-gray-400 text-center mt-1.5 leading-relaxed">
-                Decide every section first. Nothing reaches the graph until you sign off.
+                Decide every item first. Nothing reaches the graph until you sign off.
               </p>
             )}
           </article>
@@ -780,7 +785,7 @@ function PaSectionDetail({ section, decision, onAccept, onSendBack }) {
           <button
             onClick={onSendBack}
             className="h-8 px-3 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-[12px] font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20"
-            title="Returns this section to Phương Anh's queue for a clarification"
+            title="Returns this item to Phương Anh's queue for a clarification"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             Send back
