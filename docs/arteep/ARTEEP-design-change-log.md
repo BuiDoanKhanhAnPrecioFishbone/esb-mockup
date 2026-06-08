@@ -800,6 +800,26 @@
 
 ---
 
+## Offboarding Window Policy (2026-06-08)
+
+*PO direction grounded in company policy: a fixed offboarding window, a review deadline a few days before the last day so admin and offboarder verify together, and an optional successor. Resolves the two open items flagged in the system overview §13.*
+
+### CL-111 — Standard 30-day offboarding window · review deadline 3–5 days before last day · successor optional
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-08 |
+| Sprint | POC build · cross-cutting (session model) |
+| Change | Company policy fixes the **standard offboarding window at 30 days** for every departing employee — from the day their status flips to Offboarding to their last day. The session's **review / handover deadline is set 3–5 days before the last day**, building in a window for the admin (manager) and the offboarder to verify the captured bundle together before departure. The **successor is optional**: a session may have no successor assigned at initiation; the field can be filled later or left blank, rendering as **"to be assigned"** in the UI rather than a name. **Khánh Linh Trần remains the urgent short-notice exception** (2-day departure · EX.2), explicitly outside the 30-day standard. Canonical demo timeline applied across surfaces: **Minh Lê** — last day Jul 4, 2026 · review deadline Jun 30 · 26 days left · successor Trần Hữu Nam; **Phương Anh Nguyễn** — last day Jun 20, 2026 · review deadline Jun 16 · 12 days left · successor "to be assigned" (resolves the non-locked "Đặng Khải Hoàn"); **Khánh Linh Trần** — 2 days · urgent exception · successor "to be assigned". |
+| UC Reference | UC-HO-01 (initiation · review deadline) · cross-cutting session model · resolves the two §13 open items (Phương Anh successor · Minh days-left consistency) |
+| Why | PO direction from company policy. A fixed 30-day window makes session timelines consistent and predictable across surfaces (they had drifted — the dashboard showed 6 days, the Prepare stage 12). Setting the deadline a few days before the last day bakes in a joint admin + offboarder verification buffer. Making the successor optional reflects reality — a replacement is frequently not yet hired when offboarding begins — and removes the need to invent a non-locked successor name. |
+| Decided By | PO (Tram) — company policy |
+| Category | BA Gap (scope · session model) · resolves open items |
+
+*Propagation: applied to `ha-vy-handover-dashboard.jsx` (this batch). Still to bring onto the canonical timeline: `session-command-view.jsx`, `prepare-stage.jsx`, `uc-ho-01-quick-initiate.jsx`, and the system-overview §3 persona note + §13 open items (flip to resolved).*
+
+---
+
 ## Pending Decisions (Need Stakeholder Input)
 
 The defaults in CL-003, CL-004, and CL-005 are working assumptions. The following decisions remain open and should be confirmed before their respective sprints begin:
@@ -814,6 +834,7 @@ The defaults in CL-003, CL-004, and CL-005 are working assumptions. The followin
 | ON-02 mobile parity scope | Desktop-first v1 | S4 | Product / UX |
 | HO-05 prompts visible to Offboarder pre-capture | **RESOLVED 2026-06-05 (CL-099) — yes; prompts are the queue the Offboarder answers** | S1 | Product (resolved) |
 | HO-06 SLA for Manager correction review | **RESOLVED 2026-06-05 (CL-095) — 2 weekly cycles, then auto-escalate** | S5 | Product (resolved) |
+| Offboarding window + successor model | **RESOLVED 2026-06-08 (CL-111) — 30-day window · deadline 3–5 days before last day · successor optional** | S1 | PO (resolved) |
 | **Heatmap content definition (post-CL-104)** | (no default · 3 candidates proposed · awaiting confirmation) | S-KG | BA + Product |
 | **UC-ON-02 single vs split for 4 archetypes (post-CL-104)** | (no default · flagged) | S-KG | BA |
 | **Consumer graph rebuild to company-wide default (CL-110)** | (documented · build deferred per PO) | S-KG | PO + BA |
