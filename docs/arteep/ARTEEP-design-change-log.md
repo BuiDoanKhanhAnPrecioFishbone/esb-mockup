@@ -774,7 +774,7 @@
 |---|---|
 | Date | 2026-06-07 |
 | Sprint | POC build · Management plane |
-| Change | The Phương Anh session's Manager review tab becomes a **real** review surface instead of the yellow "wired for Minh Lê" placeholder from CL-103. UC-HO-04's `SESSION` constant is hardcoded to Minh / Engineering, so reusing that component for Sales would show the wrong content; instead `ReviewTab` in `session-command-view.jsx` dispatches by slug — `minh-le` → `UCHO04ManagerReview` (embedded, CL-108-cleaned); `phuong-anh` → a new `PhuongAnhReview` component built in the same file. `PhuongAnhReview` renders her seven Sales sections (Sales pipeline Q3, Vendor XYZ renewal [flagged], Account TXM escalation, forecast methodology, customer-success churn, internal team dynamics [redacted], reflection [flagged]) as a working item list: selecting a section opens the captured answer + source + any flag warning, with per-item **Accept / Send back** (React state); the right rail tracks accepted / sent-back / remaining and gates a "Sign off & commit" button until every decidable section is decided. The redacted section is read-only. Labels-only style (CL-107); helper text kept only on the disabled sign-off and the destructive send-back. |
+| Change | The Phương Anh session's Manager review tab becomes a **real** review surface instead of the yellow "wired for Minh Lê" placeholder from CL-103. UC-HO-04's `SESSION` constant is hardcoded to Minh / Engineering, so reusing that component for Sales would show the wrong content; instead `ReviewTab` in `session-command-view.jsx` dispatches by slug — `minh-le` → `UCHO04ManagerReview` (embedded, CL-108-cleaned); `phuong-anh` → a new `PhuongAnhReview` component built in the same file. `PhuongAnhReview` renders her seven Sales items (Sales pipeline Q3, Vendor XYZ renewal [flagged], Account TXM escalation, forecast methodology, customer-success churn, internal team dynamics [redacted], reflection [flagged]) as a working item list: selecting an item opens the captured answer + source + any flag warning, with per-item **Accept / Send back** (React state); the right rail tracks accepted / sent-back / remaining and gates a "Sign off & commit" button until every decidable item is decided. The redacted item is read-only. Labels-only style (CL-107); helper text kept only on the disabled sign-off and the destructive send-back. *Note · 2026-06-08: the "sections" noun used here for her reviewable units is renamed to "items" by CL-112; the component name `PhuongAnhReview` and the `PA_SECTIONS` data key are unchanged (internal).* |
 | UC Reference | UC-HO-04 · CL-103 (supersedes its placeholder) · CL-107 (labels-only) · QA-INT-01 §1.4 (sign-off gate) |
 | Why | The placeholder broke the click-through for the second wired persona — clicking "Review answers" on Phương Anh's session led nowhere real. A real, lighter review surface keeps the non-engineering (Sales) flow demonstrable without distorting Minh's engineering-specific UC-HO-04 mockup. It also proves the review model generalizes beyond one persona. |
 | Decided By | PO (Tram) + UX |
@@ -817,6 +817,26 @@
 | Category | BA Gap (scope · session model) · resolves open items |
 
 *Propagation: applied to `ha-vy-handover-dashboard.jsx` (this batch). Still to bring onto the canonical timeline: `session-command-view.jsx`, `prepare-stage.jsx`, `uc-ho-01-quick-initiate.jsx`, and the system-overview §3 persona note + §13 open items (flip to resolved).*
+
+---
+
+## Review Unit Terminology (2026-06-08)
+
+*Follow-up consistency pass prompted by the "items in bundle" review, which surfaced that the same noun meant different things across screens. Standardizes one vocabulary for the reviewable unit and disambiguates the post-commit Knowledge-Graph count.*
+
+### CL-112 — Review unit standardized to "items" across all review surfaces; post-commit KG count renamed to "entries"
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-08 |
+| Sprint | POC build · cross-cutting (terminology) |
+| Change | The reviewable unit a manager decides on during Manager review is an **"item"** everywhere. Previously the two review surfaces behind the single "Manager review" tab used different nouns: Minh Lê's UC-HO-04 bundle called them "items" (14) while Phương Anh's surface called them "sections" (7). **"Items" wins** because it is the umbrella that covers the mixed content of a bundle — captured answers, uploaded files, and flag fixes — whereas "section" does not fit an uploaded file. (1) `session-command-view.jsx` (`PhuongAnhReview` + `OverviewReview`) is reworded "sections" → "items": header "Items · 7", "Items to review", the "Items" stat, the "2 items need your decision" rail, the sign-off helper "Decide every item first"; data + behavior unchanged (component name `PhuongAnhReview` and `PA_SECTIONS` key stay, internal). (2) The dashboard's **post-commit count** said "487 items" — the same word for a different unit (committed Knowledge-Graph nodes) at a different lifecycle stage. Renamed to **"entries"** (`ha-vy-handover-dashboard.jsx` · completion banner "487 entries", the `stats.entries` key, the completed-card "Entries" stat, the activity-feed line, the This-week "Entries committed to KG" stat) so "items" no longer carries two meanings/scales (14 review items vs 487 KG entries). (3) Reconciles UC-HO-04's S1 arrival, whose 4 bundle tiles summed to 11 against a headline of 14: a fifth **"Uploaded files" (3)** tile is added and "Own contributions" recolored gray to match the left-rail source colors, so the tiles now sum to 14; `SESSION.filesTotal` corrected 4 → 3 to match the three rendered file rows, and the S1 step trigger reworded to state files are part of the 14 (not separate). The "Redirected" item (1) stays excluded from the 14 by design. |
+| UC Reference | UC-HO-04 · CL-109 (Phương Anh surface) · CL-108 (S1 collapse) · cross-cutting terminology |
+| Why | The "items in bundle" review found the noun was overloaded: two review surfaces named the same concept differently ("items" vs "sections"), and "items" also meant committed KG nodes on the dashboard (487) — so a manager moving dashboard → review saw the same word at wildly different scale. One noun for the review unit ("items") and a distinct noun for the committed count ("entries") removes the collision. Reconciling the S1 tiles to the headline 14 (and fixing the 4-vs-3 file count) closes the internal arithmetic gap on the arrival screen itself. |
+| Decided By | PO (Tram) + UX |
+| Category | UX Refinement (terminology · consistency) |
+
+*Applied this batch to `uc-ho-04-manager-review.jsx`, `session-command-view.jsx`, and `ha-vy-handover-dashboard.jsx`.*
 
 ---
 
