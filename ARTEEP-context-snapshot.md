@@ -14,7 +14,9 @@
 
 *Updated 2026-06-08 · **playbook eliminated** as a separate artifact (CL-113). The Consumption plane is unified on the Knowledge Graph; role-customization happens at the **initial-state layer**, not as a separately-generated document. The newcomer (Trần Hữu Nam) enters the KG with **role-customized initial exploration prompts**; the other three archetypes (project peer · cross-dept · upper management) enter the same KG with their archetype-appropriate default lens. **UC-ON-01** reframed as "Generate Newcomer Initial Exploration Prompts"; **UC-ON-02** reframed as "Explore Knowledge Graph (role-customized)" — one UC for all four archetypes. **Resolves the UC-ON-02 single-vs-split** that was a CL-104 follow-up. `arteep-s4-onboarding-gen-read.jsx` superseded.*
 
-*Updated 2026-06-08 (later) · **review-unit terminology standardized (CL-112).** The reviewable unit a manager decides on during Manager review is an **"item"** everywhere — the umbrella that covers captured answers, uploaded files, and flag fixes (where "section" doesn't fit an uploaded file). Phương Anh's review surface reworded "sections" → "items". The dashboard's **post-commit Knowledge-Graph node count** is renamed **"entries"** (was "items") so "items" no longer carries two meanings at two scales (14 review items vs 487 KG entries). UC-HO-04 S1 arrival tiles reconciled to sum to 14: a fifth **"Uploaded files (3)"** tile added, `SESSION.filesTotal` corrected 4 → 3 to match the three rendered file rows. CL-105 / CL-107 / CL-110 / CL-111 propagations still to come.*
+*Updated 2026-06-08 (later) · **review-unit terminology standardized (CL-112).** The reviewable unit a manager decides on during Manager review is an **"item"** everywhere — the umbrella that covers captured answers, uploaded files, and flag fixes (where "section" doesn't fit an uploaded file). Phương Anh's review surface reworded "sections" → "items". The dashboard's **post-commit Knowledge-Graph node count** is renamed **"entries"** (was "items") so "items" no longer carries two meanings at two scales (14 review items vs 487 KG entries). UC-HO-04 S1 arrival tiles reconciled to sum to 14: a fifth **"Uploaded files (3)"** tile added, `SESSION.filesTotal` corrected 4 → 3 to match the three rendered file rows.*
+
+*Updated 2026-06-08 (later still) · **offboarding policy locked (CL-111).** Company policy fixes the **standard offboarding window at 30 days**, with the **review / handover deadline 3–5 days before the last day** so the admin (manager) and the offboarder verify the captured bundle together. **Successor is optional** — sessions render "to be assigned" when none is named. **Khánh Linh Trần** is the explicit short-notice exception (2-day departure · EX.2). Canonical demo timeline locked: Minh Lê — Jul 4 last day · review Jun 30 · 26 days left · successor Trần Hữu Nam; Phương Anh — Jun 20 last day · review Jun 16 · 12 days left · successor "to be assigned"; Khánh Linh — 2 days · successor "to be assigned". CL-105 / CL-107 / CL-110 propagations still to come.*
 
 ---
 
@@ -56,20 +58,21 @@
 | **Sibling-file pattern for mockup state extraction (CL-102 · 2026-06-07)** | When a mockup JSX file exceeds ~100KB (the safe-write threshold), extract self-contained state views into sibling files. Main file owns shared scaffolding; siblings own one or more state views + their decision-panel content. First applied to UC-HO-04 (`uc-ho-04-s6-flag-fix.jsx`, `uc-ho-04-s7s8-signoff.jsx`). |
 | **Mockups merged into 1 live control (CL-103 · 2026-06-07)** | Standalone mockups under `components/mockups/` are wired into existing live control surfaces (e.g. `SessionCommandView`) as tabs via the `embedded` + `state` props contract — not exposed as separate `/m/<slug>` routes (retired) or new top-level routes. The session command view is the system for per-session work, including Manager review (UC-HO-04). |
 | **Consumer-plane four-archetype persona model (CL-104 · 2026-06-07)** | The Consumer class spans **four archetypes** — newcomer (Trần Hữu Nam) · project peer (Duy Nguyễn) · cross-departmental colleague (Linh Phạm) · upper management (Thảo Vũ). Locked persona set expanded 6 → 9 to make the Consumption plane demonstrate how the KG is used internally across the organization, not only by the canonical Onboarder. |
+| **Standard offboarding window (CL-111 · 2026-06-08)** | Company policy fixes the **offboarding window at 30 days** from the day an employee's status flips to Offboarding to their last day. The session's **review / handover deadline is 3–5 days before the last day**, baking in a joint admin + offboarder verification buffer before departure. **Successor is optional** — a session may have no successor named at initiation; the field renders **"to be assigned"** in the UI rather than a name. **Khánh Linh Trần (2-day urgent departure · EX.2) is the explicit short-notice exception**, outside the 30-day standard. Canonical demo timeline: Minh Lê (Jul 4 / review Jun 30 / 26 days left / successor Trần Hữu Nam) · Phương Anh Nguyễn (Jun 20 / review Jun 16 / 12 days left / successor "to be assigned") · Khánh Linh Trần (2 days · successor "to be assigned"). |
 | **Playbook eliminated · Consumption plane unified on the KG (CL-113 · 2026-06-08)** | The separate "playbook" artifact is removed. The Consumption plane has exactly **one** surface — the Knowledge Graph — and role-customization happens at the **initial-state layer**, not as a separately-generated document. Newcomer (Trần) enters with **role-customized initial exploration prompts**; project peer (Duy), cross-dept (Linh), and upper management (Thảo) each enter with their archetype-appropriate default lens (filter / starting prompts / Timeline+Heatmap). **UC-ON-01** reframed as "Generate Newcomer Initial Exploration Prompts" (working name); **UC-ON-02** reframed as "Explore Knowledge Graph (role-customized)" — one UC for all four archetypes. Resolves the UC-ON-02 single-vs-split that was a CL-104 follow-up. `arteep-s4-onboarding-gen-read.jsx` is superseded entirely (no migration). |
 | **Review-unit terminology standardized (CL-112 · 2026-06-08)** | The reviewable unit a manager decides on during Manager review is an **"item"** everywhere — the umbrella that covers captured answers, uploaded files, and flag fixes (where "section" doesn't fit an uploaded file). Phương Anh's review surface reworded "sections" → "items" (data + behavior unchanged · component name `PhuongAnhReview` and `PA_SECTIONS` key kept internal). The dashboard's **post-commit Knowledge-Graph node count** is renamed **"entries"** (was "items" · `stats.entries` key) so "items" no longer carries two meanings at two scales — **14 review items** vs **487 KG entries**. UC-HO-04 S1 arrival tiles reconciled to sum to 14 by adding a fifth **"Uploaded files (3)"** tile (own-contributions recoloured gray to match left-rail source colors); `SESSION.filesTotal` corrected 4 → 3 to match the three rendered file rows. The "Redirected" item (1) stays excluded from the 14 by design. |
 
 ---
 
-## 3. Personas (9 total — locked · four-archetype Consumer model per CL-104)
+## 3. Personas (9 total — locked · four-archetype Consumer model per CL-104 · timelines per CL-111)
 
 | Name | Role | Department | Plane | Notes |
 |---|---|---|---|---|
 | **Hà Vy** | Manager | Engineering | Management | Owns handover sessions; primary actor in UC-HO-01, HO-04, HO-07 |
-| **Minh Lê** | Offboarder | Engineering | Capture | Canonical demo persona; Senior Backend Engineer |
+| **Minh Lê** | Offboarder | Engineering | Capture | Canonical demo persona; Senior Backend Engineer. **Last day Jul 4 · review deadline Jun 30 · 26 days left · successor Trần Hữu Nam (CL-111)** |
 | **Trần Hữu Nam** | Successor / Onboarder | Engineering | Consumption (newcomer) | Succeeds Minh Lê. **Per CL-113, his Consumption-plane entry is the Knowledge Graph with newcomer-customized initial exploration prompts** — no separate playbook artifact. Also flags the AI in UC-HO-04 S6 (Atlas rollback chain) |
-| **Khánh Linh Trần** | Offboarder | People & Culture | Capture | Head of People Operations; urgent offboard (2 days) — exercises EX.2 + high PII |
-| **Phương Anh Nguyễn** | Offboarder | Sales | Capture | Senior Account Executive; demonstrates non-engineering source mix |
+| **Khánh Linh Trần** | Offboarder | People & Culture | Capture | Head of People Operations. **Short-notice 2-day departure · EX.2 · the explicit exception to the standard 30-day offboarding window (CL-111)**. Exercises EX.2 + high PII. **Successor "to be assigned"** |
+| **Phương Anh Nguyễn** | Offboarder | Sales | Capture | Senior Account Executive; demonstrates non-engineering source mix. **Last day Jun 20 · review deadline Jun 16 · 12 days left · successor "to be assigned" (CL-111)** |
 | **An Quân Vũ** | Platform Admin / IT | — | Step Zero | Plan v2 CL-068; owns Step Zero |
 | **Duy Nguyễn** *(NEW · CL-104 · promoted from supporting)* | Senior Data Engineer | Data Platform | Consumption (project peer) | Already in UC-HO-04 S6 (Atlas rollback 3-way) as corroborating colleague; now locked as the **project peer** Consumer archetype |
 | **Linh Phạm** *(NEW · CL-104)* | Product Manager | Product | Consumption (cross-dept) | **Cross-departmental colleague** archetype; exercises Tier-1 "Request access" (CL-093) on content scoped to other teams |
@@ -124,6 +127,7 @@ Email, personal mailboxes, and private direct messages are excluded from automat
 - "Sensitive content" not "PII" · "Microsoft Purview" not in user copy
 - Vietnamese system terms preserved in tooltips: "Canonical · Sự thật gốc" *(overridden in the POC showcase — see below)*
 - **Terminology (CL-112):** the review unit is an **"item"** (covers answers, uploads, flag fixes); the post-commit KG node count is **"entries"** — never reuse "items" at the KG-count scale.
+- **Unassigned successor (CL-111):** when no successor is named, render the field as **"To be assigned"** — never invent a placeholder name.
 
 ### Consumer-plane design system (CL-096 · scoped deviation)
 The **Knowledge Graph Consumer plane / POC showcase** uses the `MASTER.md` "AI-Native Minimal" shell as its **presentation layer only** — indigo `#6366F1` primary, glassmorphism cards, light/dark toggle, `rounded-xl`/`2xl`, soft shadows, floating navbar. This does **NOT** apply to the Management / Capture surfaces (dashboard, quick-initiate, command-view), which stay on the locked light-mode system above. The ART-EEP **semantic palette is preserved as the meaning layer everywhere** — rose = critical / locked, yellow = low-confidence / contested, emerald = verified / canonical, violet = AI signal.
@@ -170,7 +174,7 @@ The Consumption plane is the **single artifact** for all four reader archetypes 
 |---|---|---|---|
 | **S0 Platform Foundation** | 1 week | Infra + design system | COMPLETED |
 | **SZ Step Zero (NEW)** | 2 weeks | Z01–Z04 | PENDING (5 blockers) |
-| **S1 Handover Initiation** | 2 weeks | UC-HO-01, UC-HO-05 | COMPLETED (v2 with violet/yellow; redesigned 2026-06-02 to 3-phase + drawer→command-view + one-click initiation) |
+| **S1 Handover Initiation** | 2 weeks | UC-HO-01, UC-HO-05 | COMPLETED (v2 with violet/yellow; redesigned 2026-06-02 to 3-phase + drawer→command-view + one-click initiation). **Session model per CL-111** — 30-day standard window, review deadline 3–5 days before last day, successor optional ("to be assigned"); Khánh Linh remains the 2-day urgent exception. Dashboard timeline applied; `session-command-view.jsx`, `prepare-stage.jsx`, `uc-ho-01-quick-initiate.jsx` propagation pending. |
 | **S2 Capture & Verify** | 2 weeks | UC-HO-02, UC-HO-03 | COMPLETED (old amber palette — needs migration). **POC: voice interview deferred to Phase 2 (CL-098); capture = self-serve upload + question queue (CL-099). New surfaces pending.** |
 | **S3 KG Commit · UC-HO-04** | 1.5 weeks | UC-HO-04 Manager Review + Sign-off | **COMPLETED 2026-06-07 with violet/yellow palette.** Mockup at `components/mockups/uc-ho-04-manager-review.jsx` + siblings `uc-ho-04-s6-flag-fix.jsx` + `uc-ho-04-s7s8-signoff.jsx`. All 8 states real. Wired into live `/session/[id]` as the **Manager review** tab via CL-103. **Terminology refreshed per CL-112** — "items" everywhere; S1 tiles reconciled to 14 (added Uploaded files tile · `SESSION.filesTotal` corrected 4 → 3). |
 | **S4 Onboarding Gen & Read** | 2 weeks | UC-ON-01, UC-ON-02 | **SUPERSEDED 2026-06-08 by CL-113** — no separate playbook artifact. UC-ON-01 / UC-ON-02 reframed; their build is now part of S-KG. `arteep-s4-onboarding-gen-read.jsx` removed from migration scope. |
@@ -253,13 +257,14 @@ The Consumption plane is the **single artifact** for all four reader archetypes 
 | `arteep-s0-component-library.jsx` | CANONICAL | 7 shared components |
 | `arteep-s1-handover-initiation.jsx` | SUPERSEDED | V1 with old amber palette |
 | `arteep-s1-handover-initiation-v2.jsx` | SUPERSEDED | V2; replaced by dashboard + quick-initiate + command-view trio (2026-06-02) |
-| `ha-vy-handover-dashboard.jsx` | CURRENT | Multi-session command center · 3-phase progress · **post-commit KG count uses "entries" (CL-112)** — completion banner "487 entries", `stats.entries` key, completed-card "Entries" stat, activity-feed line, This-week "Entries committed to KG" stat |
-| `uc-ho-01-quick-initiate.jsx` | CURRENT | One-click session creation · progressive-disclosure customize |
-| `session-command-view.jsx` | CURRENT | Per-session tabbed workspace · **6 tabs now: Overview · Stages · Data · Audit log · Settings · Manager review (CL-103)** |
+| `ha-vy-handover-dashboard.jsx` | CURRENT | Multi-session command center · 3-phase progress · **post-commit KG count uses "entries" (CL-112)** — completion banner "487 entries", `stats.entries` key, completed-card "Entries" stat, activity-feed line, This-week "Entries committed to KG" stat. **30-day session model + canonical timelines applied (CL-111)** — Minh / Phương Anh / Khánh Linh days-left + successor fields. |
+| `uc-ho-01-quick-initiate.jsx` | CURRENT | One-click session creation · progressive-disclosure customize. **CL-111 30-day window + "to be assigned" successor wording propagation pending.** |
+| `session-command-view.jsx` | CURRENT | Per-session tabbed workspace · **6 tabs now: Overview · Stages · Data · Audit log · Settings · Manager review (CL-103)**. **CL-111 30-day window propagation pending** — review-deadline strip + successor field. |
 | `uc-ho-04-manager-review.jsx` | **CURRENT (NEW 2026-06-07)** | Sprint 3 Manager Review + Sign-off · 8 states · violet/yellow · `embedded` + `state` props (CL-103). **Review-unit terminology "items" (CL-112)** — 14 items total; S1 arrival tiles reconciled to sum to 14 (5 tiles: 4 source tiles + Uploaded files tile); `SESSION.filesTotal` corrected 4 → 3 |
 | `uc-ho-04-s6-flag-fix.jsx` | **CURRENT (NEW 2026-06-07)** | UC-HO-04 sibling · S6 3-way diff for Atlas rollback flag chain (CL-102) |
 | `uc-ho-04-s7s8-signoff.jsx` | **CURRENT (NEW 2026-06-07)** | UC-HO-04 sibling · S7 bundle summary + S8 SHA-256 sign-off (CL-102) |
 | `uc-ho-02-interview-canvas` | DEFERRED TO PHASE 2 | Voice interview focus-mode surface · retained for Phase 2, not in the POC (CL-098) |
+| `prepare-stage.jsx` | CURRENT | **CL-111 timeline propagation pending** — 30-day window + 3–5-day review-deadline buffer |
 | `arteep-s2-capture-verify.jsx` | NEEDS MIGRATION | 5 Offboarder screens · old amber palette |
 | `arteep-s3-kg-commit.jsx` | **SUPERSEDED 2026-06-07** | Old amber-palette Manager Completion Report 4 states; replaced by `uc-ho-04-manager-review.jsx` trio above |
 | `arteep-s4-onboarding-gen-read.jsx` | **SUPERSEDED 2026-06-08 (CL-113)** | Amber UC-ON-01 / UC-ON-02 "playbook" artifact. No longer needs migration — the surface it portrays no longer exists. Playbook eliminated; Consumption plane unified on the KG. |
@@ -271,7 +276,7 @@ The Consumption plane is the **single artifact** for all four reader archetypes 
 ### Documentation
 | File | Purpose |
 |---|---|
-| `UC-HO-01_initiate-handover-session_v2.md` | UC-HO-01 v2.0 governance spec |
+| `UC-HO-01_initiate-handover-session_v2.md` | UC-HO-01 v2.0 governance spec. **CL-111 30-day window + successor optional pending in v2 spec refresh.** |
 | `UC-HO-02_conduct-ai-guided-voice-interview_v2.md` | UC-HO-02 v2.0 spec (Phase 2) |
 | `ARTEEP-master-uc-index.md` | v1.1 · 11 UCs (UC-HO-08 added). UC-ON-01 / UC-ON-02 names need refresh per CL-113 (working names locked; final names pending). |
 | `ARTEEP-implementation-plan-v2.md` | V2 with Step Zero, 12-week timeline |
@@ -303,10 +308,17 @@ The Consumption plane is the **single artifact** for all four reader archetypes 
 - CL-108 — UC-HO-04 embedded surface cleanup (preview stepper · jargon strip · S1 collapse)
 - CL-109 — real Manager review surface for Phương Anh (Sales bundle); supersedes the CL-103 placeholder
 
-### Consumer KG model correction + offboarding policy (CL-110 to CL-111, 2026-06-07 / 06-08)
+### Consumer KG model correction (CL-110, 2026-06-07)
 - *Propagation to this snapshot pending in a follow-up commit.*
 - CL-110 — Consumer KG default = company-wide GraphRAG; an offboarder is a filter, not the center; existing `knowledge-graph-explorer.jsx` diverges, rebuild deferred
-- CL-111 — standard 30-day offboarding window; review deadline 3–5 days before last day; successor optional ("to be assigned")
+
+### Offboarding window policy (CL-111, 2026-06-08)
+- Standard **30-day offboarding window** locked from policy
+- **Review / handover deadline 3–5 days before last day** — admin + offboarder verify the captured bundle together before departure
+- **Successor optional** — sessions render **"to be assigned"** when none is named
+- **Khánh Linh Trần (2-day urgent · EX.2)** is the explicit short-notice exception
+- Canonical demo timeline: Minh — Jul 4 / review Jun 30 / 26 days · successor Trần · Phương Anh — Jun 20 / review Jun 16 / 12 days · successor "to be assigned" · Khánh Linh — 2 days · successor "to be assigned"
+- Applied to `ha-vy-handover-dashboard.jsx` · `session-command-view.jsx` / `prepare-stage.jsx` / `uc-ho-01-quick-initiate.jsx` propagation pending
 
 ### Review-unit terminology (CL-112, 2026-06-08)
 - Review unit standardized to **"items"** everywhere (was "sections" on Phương Anh's surface) — the umbrella that covers captured answers, uploads, and flag fixes
@@ -337,6 +349,7 @@ The Consumption plane is the **single artifact** for all four reader archetypes 
 - ON-02 TBD-3 — Mobile parity scope (desktop-first v1 default)
 - ~~HO-05 TBD-2 — Manager prompts visible to Offboarder pre-capture~~ → **RESOLVED 2026-06-05 (CL-099): yes — the prompts are the queue the Offboarder answers.**
 - ~~HO-06 TBD-1 — SLA for Manager correction review~~ → **RESOLVED 2026-06-05 (CL-095): 2 weekly cycles, then auto-escalate to the Critical path; sign-off still required.**
+- ~~Offboarding window + successor model~~ → **RESOLVED 2026-06-08 (CL-111): 30-day standard window · review deadline 3–5 days before last day · successor optional ("to be assigned"). Khánh Linh is the 2-day urgent exception.**
 
 ### New — UC-HO-08 (opened 2026-06-05)
 - HO-08 TBD-1 — How far the auto-derived connection set reaches (1-hop collaborators only vs N-hop) + manager edit window before send
@@ -381,7 +394,7 @@ The system reads/writes to:
 
 The hackathon pitch opens with a 10–15 second Step Zero moment ("Before any handover can happen, our Platform Admin configures the integrations once"), demonstrating Z01 → Z02 → Z03. Then transitions to "Now Hà Vy can run a handover session…" and proceeds through the canonical flow:
 
-1. Hà Vy's Dashboard (3 pending sessions, 3-phase progress visible · post-commit KG count rendered as "**entries**" per CL-112)
+1. Hà Vy's Dashboard (3 pending sessions on the **30-day offboarding model with deadlines 3–5 days before each last day per CL-111** — Minh (26 days · Jul 4 last day), Phương Anh (12 days · Jun 20 · "to be assigned" successor), Khánh Linh (2 days · urgent exception); 3-phase progress visible · post-commit KG count rendered as "**entries**" per CL-112)
 2. One-click initiate session for Minh Lê (quick-initiate page)
 3. Command-view Overview tab · Phase 1 Prepare · live seeding from Trello (POC source) — 4-Layer Hard-Filter visibly dropping noise; the system fans out **network knowledge requests** (UC-HO-08) to Minh Lê's auto-derived connections (Duy, Linh, and others)
 4. **POC capture** — Minh Lê uploads his files and works through the **question queue** (manager prompts + questions from his network); colleagues' flags on wrong/insufficient AI-collected data arrive as his correction tasks. *(The voice interview is Phase 2.)*
@@ -411,15 +424,16 @@ If picking up where this left off, the next actionable items are:
 3. **Lock the Heatmap content definition** — three candidates proposed (Knowledge Hotspots / Skill Density / Risk Heatmap); decide which one(s) to ship and how they map onto the semantic palette. Thảo Vũ is the locked actor (CL-104).
 4. **Lock the newcomer initial-prompt seeding strategy (post-CL-113)** — how many prompts (4–6 working default), static templates vs LLM-generated at commit time, token-budget implications.
 5. **Finalize UC-ON-01 / UC-ON-02 names (post-CL-113)** — working names locked; finalize when the UC spec is rewritten.
-6. **Stakeholder approval needed** on the Plan v2 decision points (especially Step Zero blockers) + the two UC-HO-08 TBDs.
-7. **Migration sweep** — S2 artifact needs violet/yellow palette migration (S3 done 2026-06-07 · S4 superseded by CL-113 · no migration needed).
-8. **S5 build** — UC-ON-03 (Skill Gap), UC-HO-06 (Report Hallucination), UC-HO-07 (Correction Review).
-9. **UC-HO-01 v2 governance spec update** — reflect 3-phase lifecycle + data-ingestion governance (CL-015 deprecation).
-10. **UC-HO-08 spec** — author the full use case.
-11. **UC-HO-04 spec** — author the full v2 use case to reflect the new mockup.
-12. **Master UC index refresh** — UC-ON-01 / UC-ON-02 names per CL-113; UC-HO-04 / UC-HO-08 added per their live builds.
-13. **Demo script** — write the 3–4 minute narrative tying all the states together with the 3-phase lifecycle, POC capture, Manager review, and the four-archetype Consumption beat on the single KG surface.
-14. **CL-105 / CL-107 / CL-110 / CL-111 propagation** — this snapshot has propagated CL-112 and CL-113; the remaining 2026-06-07 / 06-08 changes (form-fields-shown rule, 2-tab session view + labels-only style, UC-HO-04 jargon strip, real Phương Anh review surface, Trello live migration, company-wide KG default, 30-day offboarding window) are logged in the design change log but not yet woven into the snapshot sections above. Follow-up commits.
+6. **Apply CL-111 timeline propagation to remaining mockups** — `session-command-view.jsx`, `prepare-stage.jsx`, `uc-ho-01-quick-initiate.jsx` need the canonical 30-day window + "to be assigned" successor wording applied (dashboard is already done).
+7. **Stakeholder approval needed** on the Plan v2 decision points (especially Step Zero blockers) + the two UC-HO-08 TBDs.
+8. **Migration sweep** — S2 artifact needs violet/yellow palette migration (S3 done 2026-06-07 · S4 superseded by CL-113 · no migration needed).
+9. **S5 build** — UC-ON-03 (Skill Gap), UC-HO-06 (Report Hallucination), UC-HO-07 (Correction Review).
+10. **UC-HO-01 v2 governance spec update** — reflect 3-phase lifecycle + data-ingestion governance (CL-015 deprecation) + 30-day window + successor-optional model (CL-111).
+11. **UC-HO-08 spec** — author the full use case.
+12. **UC-HO-04 spec** — author the full v2 use case to reflect the new mockup.
+13. **Master UC index refresh** — UC-ON-01 / UC-ON-02 names per CL-113; UC-HO-04 / UC-HO-08 added per their live builds.
+14. **Demo script** — write the 3–4 minute narrative tying all the states together with the 3-phase lifecycle, POC capture, Manager review, and the four-archetype Consumption beat on the single KG surface.
+15. **CL-105 / CL-107 / CL-110 propagation** — this snapshot has propagated CL-111 + CL-112 + CL-113; the remaining 2026-06-07 changes (form-fields-shown rule, 2-tab session view + labels-only style, UC-HO-04 jargon strip, real Phương Anh review surface, Trello live migration, company-wide KG default) are logged in the design change log but not yet woven into the snapshot sections above. Follow-up commits.
 
 **Canonical artifact for current state:** `uc-ho-04-manager-review.jsx` (+ siblings) for the Manager review surface; `arteep-system-ui-tour.jsx` for the broader QA-INT-01 demo tour; the dashboard + quick-initiate + command-view trio for everything Sprint 1 since 2026-06-02. The POC Capture surfaces and the four-archetype Knowledge Graph (Consumer plane · single surface per CL-113) are the next builds.
 
