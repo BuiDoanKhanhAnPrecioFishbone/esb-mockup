@@ -905,6 +905,26 @@
 
 ---
 
+## Playbook Reference Cleanup (2026-06-08)
+
+*Code-sweep follow-up to CL-113 (playbook eliminated). CL-113 settled the architecture; this entry catalogs the leftover "playbook" wording still present in shipped Management-plane mockups and locks the wording each leftover should become in follow-up surface commits. Not a new decision — CL-113 already decided. Logged separately so the surface-edit work has a single referenceable entry rather than living only inside CL-113's already-large propagation note.*
+
+### CL-116 — Dashboard cleanup of leftover playbook refs · CL-113 implementation cleanup (no new decision)
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-08 |
+| Sprint | POC build · Management plane |
+| Change | Catalogs the leftover "playbook" wording still present in shipped Management-plane mockups after CL-113 eliminated the artifact, and locks the replacement wording. **No new decision** — purely an implementation cleanup of CL-113 + an alignment with CL-114 (successor field removed). Three concrete leftover refs in `ha-vy-handover-dashboard.jsx` to purge in follow-up surface commits: **(1) `LIFECYCLE_PHASES` Deliver phase sub-stage 8 label** — currently `"Playbook delivered"`; becomes `"KG access ready"` per CL-113's CL-088 annotation. This is the only line in the dashboard that still names the artifact in the lifecycle definition itself; once changed, the phase-progress bar legend and any tooltip surfaced from `LIFECYCLE_PHASES` are also clean. **(2) Completion celebration banner CTA** — currently a button reading `"View Nam's playbook"` (or equivalent successor-name + playbook wording); the **button is removed entirely**. The banner already states the bundle is committed to the KG; routing the manager to a "playbook" CTA contradicts both CL-113 (no playbook artifact) and CL-114 (no named successor). If a forward CTA is wanted, it becomes a neutral `"Open Knowledge Graph"` link to `/knowledge-graph` — but the default is to drop the CTA; the completion banner is informational, not navigational. **(3) Activity feed entry** — currently `"Minh Lê's playbook generated for Trần Hữu Nam"` (or equivalent); rewords to `"Minh Lê's bundle committed to Knowledge Graph"`. Two changes in one: drop "playbook" (CL-113) and drop the named successor "for Trần Hữu Nam" (CL-114). The activity feed describes what the system did, not who the result was addressed to. Other Management-plane mockups (`uc-ho-01-quick-initiate.jsx`, `prepare-stage.jsx`, `session-command-view.jsx`, `uc-ho-04-manager-review.jsx`) are not believed to contain playbook refs at this snapshot, but the same purge rule applies if any are found during the surface sweep: replace user-facing "playbook" with "bundle" (pre-commit) or "Knowledge Graph entries" (post-commit), per the CL-113 vocabulary; drop named successors per CL-114; remove "Playbook delivered" wherever it appears in lifecycle copy. The system-overview §13 demo flow and §11 artifact inventory likewise need the same purge (logged separately as part of the doc-cleanup sweep tracked in CL-113 follow-up #4). |
+| UC Reference | Implementation cleanup of CL-113 (playbook artifact eliminated) · aligns with CL-114 (named successor removed) · UC-HO-01 (dashboard lifecycle) · UC-ON-01 / UC-ON-02 (Consumption plane vocabulary) |
+| Why | CL-113 settled the architecture (no playbook) and CL-114 settled the session model (no named successor at session time), but the dashboard JSX still ships pre-CL-113 / pre-CL-114 wording in three concrete places. A demo reviewer clicking through today would see "Playbook delivered" in the lifecycle bar and "View Nam's playbook" in the completion banner — both contradicting the architecture the rest of the build now enacts. Cataloging the leftover refs and their replacements in a single CL gives the surface-edit work one referenceable entry, prevents the cleanup from being misread as a new decision, and keeps the change log's append-only discipline (rather than editing CL-113 in place). The activity-feed rewording carries both concerns (CL-113 + CL-114) at once, which is why both are credited in the UC Reference. |
+| Decided By | PO (Tram) — implementation cleanup of CL-113 |
+| Category | UX Refinement (cleanup) · implementation of CL-113 |
+
+*Propagation pending in follow-up commits: **primary** — `ha-vy-handover-dashboard.jsx` (`LIFECYCLE_PHASES` Deliver sub-stage 8 label · completion-banner CTA · activity-feed playbook entry). **Verification sweep** — `uc-ho-01-quick-initiate.jsx`, `prepare-stage.jsx`, `session-command-view.jsx`, `uc-ho-04-manager-review.jsx` (and any sibling files of UC-HO-04) for "playbook" / "Playbook" string occurrences; treat per the replacement rules above if found. **Docs** — system overview §11 (artifact inventory) and §13 (demo flow) per CL-113 follow-up #4; context-snapshot §5 (KG model) and §13 (open items) per the same follow-up.*
+
+---
+
 ## Pending Decisions (Need Stakeholder Input)
 
 The defaults in CL-003, CL-004, and CL-005 are working assumptions. The following decisions remain open and should be confirmed before their respective sprints begin:
