@@ -12,7 +12,9 @@
 
 *Updated 2026-06-07 (later) · Consumer-plane personas expanded to four archetypes for the PO's "show how the KG is used internally" requirement. Locked persona set grows 6 → 9 with three additions — Duy Nguyễn (promoted from supporting · project peer), Linh Phạm (new · cross-departmental colleague), Thảo Vũ (new · upper management, owns Timeline + Heatmap surface). See CL-104. Open follow-up: Heatmap content definition.*
 
-*Updated 2026-06-08 · **playbook eliminated** as a separate artifact (CL-113). The Consumption plane is unified on the Knowledge Graph; role-customization happens at the **initial-state layer**, not as a separately-generated document. The newcomer (Trần Hữu Nam) enters the KG with **role-customized initial exploration prompts**; the other three archetypes (project peer · cross-dept · upper management) enter the same KG with their archetype-appropriate default lens. **UC-ON-01** reframed as "Generate Newcomer Initial Exploration Prompts"; **UC-ON-02** reframed as "Explore Knowledge Graph (role-customized)" — one UC for all four archetypes. **Resolves the UC-ON-02 single-vs-split** that was a CL-104 follow-up. `arteep-s4-onboarding-gen-read.jsx` superseded. CL-105–112 propagations still to come — this update propagates only CL-113.*
+*Updated 2026-06-08 · **playbook eliminated** as a separate artifact (CL-113). The Consumption plane is unified on the Knowledge Graph; role-customization happens at the **initial-state layer**, not as a separately-generated document. The newcomer (Trần Hữu Nam) enters the KG with **role-customized initial exploration prompts**; the other three archetypes (project peer · cross-dept · upper management) enter the same KG with their archetype-appropriate default lens. **UC-ON-01** reframed as "Generate Newcomer Initial Exploration Prompts"; **UC-ON-02** reframed as "Explore Knowledge Graph (role-customized)" — one UC for all four archetypes. **Resolves the UC-ON-02 single-vs-split** that was a CL-104 follow-up. `arteep-s4-onboarding-gen-read.jsx` superseded.*
+
+*Updated 2026-06-08 (later) · **review-unit terminology standardized (CL-112).** The reviewable unit a manager decides on during Manager review is an **"item"** everywhere — the umbrella that covers captured answers, uploaded files, and flag fixes (where "section" doesn't fit an uploaded file). Phương Anh's review surface reworded "sections" → "items". The dashboard's **post-commit Knowledge-Graph node count** is renamed **"entries"** (was "items") so "items" no longer carries two meanings at two scales (14 review items vs 487 KG entries). UC-HO-04 S1 arrival tiles reconciled to sum to 14: a fifth **"Uploaded files (3)"** tile added, `SESSION.filesTotal` corrected 4 → 3 to match the three rendered file rows. CL-105 / CL-107 / CL-110 / CL-111 propagations still to come.*
 
 ---
 
@@ -55,6 +57,7 @@
 | **Mockups merged into 1 live control (CL-103 · 2026-06-07)** | Standalone mockups under `components/mockups/` are wired into existing live control surfaces (e.g. `SessionCommandView`) as tabs via the `embedded` + `state` props contract — not exposed as separate `/m/<slug>` routes (retired) or new top-level routes. The session command view is the system for per-session work, including Manager review (UC-HO-04). |
 | **Consumer-plane four-archetype persona model (CL-104 · 2026-06-07)** | The Consumer class spans **four archetypes** — newcomer (Trần Hữu Nam) · project peer (Duy Nguyễn) · cross-departmental colleague (Linh Phạm) · upper management (Thảo Vũ). Locked persona set expanded 6 → 9 to make the Consumption plane demonstrate how the KG is used internally across the organization, not only by the canonical Onboarder. |
 | **Playbook eliminated · Consumption plane unified on the KG (CL-113 · 2026-06-08)** | The separate "playbook" artifact is removed. The Consumption plane has exactly **one** surface — the Knowledge Graph — and role-customization happens at the **initial-state layer**, not as a separately-generated document. Newcomer (Trần) enters with **role-customized initial exploration prompts**; project peer (Duy), cross-dept (Linh), and upper management (Thảo) each enter with their archetype-appropriate default lens (filter / starting prompts / Timeline+Heatmap). **UC-ON-01** reframed as "Generate Newcomer Initial Exploration Prompts" (working name); **UC-ON-02** reframed as "Explore Knowledge Graph (role-customized)" — one UC for all four archetypes. Resolves the UC-ON-02 single-vs-split that was a CL-104 follow-up. `arteep-s4-onboarding-gen-read.jsx` is superseded entirely (no migration). |
+| **Review-unit terminology standardized (CL-112 · 2026-06-08)** | The reviewable unit a manager decides on during Manager review is an **"item"** everywhere — the umbrella that covers captured answers, uploaded files, and flag fixes (where "section" doesn't fit an uploaded file). Phương Anh's review surface reworded "sections" → "items" (data + behavior unchanged · component name `PhuongAnhReview` and `PA_SECTIONS` key kept internal). The dashboard's **post-commit Knowledge-Graph node count** is renamed **"entries"** (was "items" · `stats.entries` key) so "items" no longer carries two meanings at two scales — **14 review items** vs **487 KG entries**. UC-HO-04 S1 arrival tiles reconciled to sum to 14 by adding a fifth **"Uploaded files (3)"** tile (own-contributions recoloured gray to match left-rail source colors); `SESSION.filesTotal` corrected 4 → 3 to match the three rendered file rows. The "Redirected" item (1) stays excluded from the 14 by design. |
 
 ---
 
@@ -120,6 +123,7 @@ Email, personal mailboxes, and private direct messages are excluded from automat
 - Named humans not roles ("Hà Vy will review" not "your manager will review")
 - "Sensitive content" not "PII" · "Microsoft Purview" not in user copy
 - Vietnamese system terms preserved in tooltips: "Canonical · Sự thật gốc" *(overridden in the POC showcase — see below)*
+- **Terminology (CL-112):** the review unit is an **"item"** (covers answers, uploads, flag fixes); the post-commit KG node count is **"entries"** — never reuse "items" at the KG-count scale.
 
 ### Consumer-plane design system (CL-096 · scoped deviation)
 The **Knowledge Graph Consumer plane / POC showcase** uses the `MASTER.md` "AI-Native Minimal" shell as its **presentation layer only** — indigo `#6366F1` primary, glassmorphism cards, light/dark toggle, `rounded-xl`/`2xl`, soft shadows, floating navbar. This does **NOT** apply to the Management / Capture surfaces (dashboard, quick-initiate, command-view), which stay on the locked light-mode system above. The ART-EEP **semantic palette is preserved as the meaning layer everywhere** — rose = critical / locked, yellow = low-confidence / contested, emerald = verified / canonical, violet = AI signal.
@@ -168,7 +172,7 @@ The Consumption plane is the **single artifact** for all four reader archetypes 
 | **SZ Step Zero (NEW)** | 2 weeks | Z01–Z04 | PENDING (5 blockers) |
 | **S1 Handover Initiation** | 2 weeks | UC-HO-01, UC-HO-05 | COMPLETED (v2 with violet/yellow; redesigned 2026-06-02 to 3-phase + drawer→command-view + one-click initiation) |
 | **S2 Capture & Verify** | 2 weeks | UC-HO-02, UC-HO-03 | COMPLETED (old amber palette — needs migration). **POC: voice interview deferred to Phase 2 (CL-098); capture = self-serve upload + question queue (CL-099). New surfaces pending.** |
-| **S3 KG Commit · UC-HO-04** | 1.5 weeks | UC-HO-04 Manager Review + Sign-off | **COMPLETED 2026-06-07 with violet/yellow palette.** Mockup at `components/mockups/uc-ho-04-manager-review.jsx` + siblings `uc-ho-04-s6-flag-fix.jsx` + `uc-ho-04-s7s8-signoff.jsx`. All 8 states real. Wired into live `/session/[id]` as the **Manager review** tab via CL-103. |
+| **S3 KG Commit · UC-HO-04** | 1.5 weeks | UC-HO-04 Manager Review + Sign-off | **COMPLETED 2026-06-07 with violet/yellow palette.** Mockup at `components/mockups/uc-ho-04-manager-review.jsx` + siblings `uc-ho-04-s6-flag-fix.jsx` + `uc-ho-04-s7s8-signoff.jsx`. All 8 states real. Wired into live `/session/[id]` as the **Manager review** tab via CL-103. **Terminology refreshed per CL-112** — "items" everywhere; S1 tiles reconciled to 14 (added Uploaded files tile · `SESSION.filesTotal` corrected 4 → 3). |
 | **S4 Onboarding Gen & Read** | 2 weeks | UC-ON-01, UC-ON-02 | **SUPERSEDED 2026-06-08 by CL-113** — no separate playbook artifact. UC-ON-01 / UC-ON-02 reframed; their build is now part of S-KG. `arteep-s4-onboarding-gen-read.jsx` removed from migration scope. |
 | **S-KG Consumption plane (NEW)** | TBD · highest-priority next | Knowledge Graph (CL-094) · feedback triage (CL-095) · **four-archetype reader model with role-customized lenses (CL-104 + CL-113)** | PENDING — **single** Consumer-plane surface for all four archetypes. Target route `/knowledge-graph` · `MASTER.md` shell. Scope: newcomer KG with starter prompts (Trần), cross-team query (Duy), cross-dept research with Tier-1 stub (Linh), Timeline + Heatmap (Thảo). |
 | **S5 Skill Gap & Feedback** | 1.5 weeks | UC-ON-03, HO-06, HO-07 | PENDING (also home for QA-INT-01 gap fixes) |
@@ -249,10 +253,10 @@ The Consumption plane is the **single artifact** for all four reader archetypes 
 | `arteep-s0-component-library.jsx` | CANONICAL | 7 shared components |
 | `arteep-s1-handover-initiation.jsx` | SUPERSEDED | V1 with old amber palette |
 | `arteep-s1-handover-initiation-v2.jsx` | SUPERSEDED | V2; replaced by dashboard + quick-initiate + command-view trio (2026-06-02) |
-| `ha-vy-handover-dashboard.jsx` | CURRENT | Multi-session command center · 3-phase progress |
+| `ha-vy-handover-dashboard.jsx` | CURRENT | Multi-session command center · 3-phase progress · **post-commit KG count uses "entries" (CL-112)** — completion banner "487 entries", `stats.entries` key, completed-card "Entries" stat, activity-feed line, This-week "Entries committed to KG" stat |
 | `uc-ho-01-quick-initiate.jsx` | CURRENT | One-click session creation · progressive-disclosure customize |
 | `session-command-view.jsx` | CURRENT | Per-session tabbed workspace · **6 tabs now: Overview · Stages · Data · Audit log · Settings · Manager review (CL-103)** |
-| `uc-ho-04-manager-review.jsx` | **CURRENT (NEW 2026-06-07)** | Sprint 3 Manager Review + Sign-off · 8 states · violet/yellow · `embedded` + `state` props (CL-103) |
+| `uc-ho-04-manager-review.jsx` | **CURRENT (NEW 2026-06-07)** | Sprint 3 Manager Review + Sign-off · 8 states · violet/yellow · `embedded` + `state` props (CL-103). **Review-unit terminology "items" (CL-112)** — 14 items total; S1 arrival tiles reconciled to sum to 14 (5 tiles: 4 source tiles + Uploaded files tile); `SESSION.filesTotal` corrected 4 → 3 |
 | `uc-ho-04-s6-flag-fix.jsx` | **CURRENT (NEW 2026-06-07)** | UC-HO-04 sibling · S6 3-way diff for Atlas rollback flag chain (CL-102) |
 | `uc-ho-04-s7s8-signoff.jsx` | **CURRENT (NEW 2026-06-07)** | UC-HO-04 sibling · S7 bundle summary + S8 SHA-256 sign-off (CL-102) |
 | `uc-ho-02-interview-canvas` | DEFERRED TO PHASE 2 | Voice interview focus-mode surface · retained for Phase 2, not in the POC (CL-098) |
@@ -299,11 +303,15 @@ The Consumption plane is the **single artifact** for all four reader archetypes 
 - CL-108 — UC-HO-04 embedded surface cleanup (preview stepper · jargon strip · S1 collapse)
 - CL-109 — real Manager review surface for Phương Anh (Sales bundle); supersedes the CL-103 placeholder
 
-### Consumer KG model correction + offboarding policy + terminology (CL-110 to CL-112, 2026-06-07 / 06-08)
+### Consumer KG model correction + offboarding policy (CL-110 to CL-111, 2026-06-07 / 06-08)
 - *Propagation to this snapshot pending in a follow-up commit.*
 - CL-110 — Consumer KG default = company-wide GraphRAG; an offboarder is a filter, not the center; existing `knowledge-graph-explorer.jsx` diverges, rebuild deferred
 - CL-111 — standard 30-day offboarding window; review deadline 3–5 days before last day; successor optional ("to be assigned")
-- CL-112 — review unit standardized to "items"; post-commit KG count renamed to "entries"; UC-HO-04 S1 tile arithmetic reconciled
+
+### Review-unit terminology (CL-112, 2026-06-08)
+- Review unit standardized to **"items"** everywhere (was "sections" on Phương Anh's surface) — the umbrella that covers captured answers, uploads, and flag fixes
+- Post-commit KG node count renamed **"entries"** on the dashboard so "items" no longer carries two meanings at two scales (14 review items vs 487 KG entries)
+- UC-HO-04 S1 arrival tiles reconciled to sum to 14 — added a fifth "Uploaded files (3)" tile; `SESSION.filesTotal` corrected 4 → 3 to match the three rendered file rows; "Redirected" item (1) stays excluded from the 14 by design
 
 ### Playbook elimination · Consumption plane unification (CL-113, 2026-06-08)
 - Playbook artifact eliminated; Consumption plane has one surface (the KG); role-customization at the initial-state layer
@@ -373,13 +381,13 @@ The system reads/writes to:
 
 The hackathon pitch opens with a 10–15 second Step Zero moment ("Before any handover can happen, our Platform Admin configures the integrations once"), demonstrating Z01 → Z02 → Z03. Then transitions to "Now Hà Vy can run a handover session…" and proceeds through the canonical flow:
 
-1. Hà Vy's Dashboard (3 pending sessions, 3-phase progress visible)
+1. Hà Vy's Dashboard (3 pending sessions, 3-phase progress visible · post-commit KG count rendered as "**entries**" per CL-112)
 2. One-click initiate session for Minh Lê (quick-initiate page)
 3. Command-view Overview tab · Phase 1 Prepare · live seeding from Trello (POC source) — 4-Layer Hard-Filter visibly dropping noise; the system fans out **network knowledge requests** (UC-HO-08) to Minh Lê's auto-derived connections (Duy, Linh, and others)
 4. **POC capture** — Minh Lê uploads his files and works through the **question queue** (manager prompts + questions from his network); colleagues' flags on wrong/insufficient AI-collected data arrive as his correction tasks. *(The voice interview is Phase 2.)*
 5. Phase 2 transcript/content review with QA-INT-01 inline diff
-6. **Manager review tab** (UC-HO-04 · CL-103) — Hà Vy works the bundle item-by-item across the 8 states · side-by-side raw vs AI-structured, inline edit, send-back composer, the 3-way pre-commit flag chain (Trần catches AI · Minh corrects · Duy corroborates), bundle summary, **SHA-256 cryptographic sign-off** binding Entra ID identity + immutable audit trail
-7. Phase 3 KG Commit propagation (animated commit progress in S8) with Canonical Facts surfaced (Regex + Few-Shot sanitization shown, Purview behind). **Sub-stage 8 "KG access ready"** (renamed per CL-113) — newcomer's initial exploration prompts seeded into the KG view alongside ACL provisioning.
+6. **Manager review tab** (UC-HO-04 · CL-103) — Hà Vy works the **14 items** (CL-112) item-by-item across the 8 states · side-by-side raw vs AI-structured, inline edit, send-back composer, the 3-way pre-commit flag chain (Trần catches AI · Minh corrects · Duy corroborates), bundle summary, **SHA-256 cryptographic sign-off** binding Entra ID identity + immutable audit trail
+7. Phase 3 KG Commit propagation (animated commit progress in S8) with Canonical Facts surfaced (Regex + Few-Shot sanitization shown, Purview behind). **Sub-stage 8 "KG access ready"** (renamed per CL-113) — newcomer's initial exploration prompts seeded into the KG view alongside ACL provisioning. The dashboard "This week" panel now reads **487 entries committed** (CL-112).
 8. **Consumption plane · four reader archetypes on one surface** (CL-104 + CL-113) — the PO's "how the KG is used internally" beat. Same KG, four default lenses:
    - **Trần Hữu Nam** (newcomer) — opens the KG with his **role-customized initial exploration prompts** seeded by UC-ON-01 ("Where do I start with the auth flow?" · "Who owns the data platform?" · "What's the rollback runbook for billing?"). Canonical badge + lineage drawer visible. Tier-1 locked stub with "Request access" on adjacent restricted nodes.
    - **Duy Nguyễn** (project peer · Data Platform) opens the KG filtered to cross-team handover context relevant to his query · Progressive Disclosure + Contextual-AI chips
@@ -411,7 +419,7 @@ If picking up where this left off, the next actionable items are:
 11. **UC-HO-04 spec** — author the full v2 use case to reflect the new mockup.
 12. **Master UC index refresh** — UC-ON-01 / UC-ON-02 names per CL-113; UC-HO-04 / UC-HO-08 added per their live builds.
 13. **Demo script** — write the 3–4 minute narrative tying all the states together with the 3-phase lifecycle, POC capture, Manager review, and the four-archetype Consumption beat on the single KG surface.
-14. **CL-105 through CL-112 propagation** — this snapshot has propagated CL-113 only; the CL-105–112 changes (2-tab session view, Trello live migration, jargon strip, real Phương Anh review surface, company-wide KG default, 30-day window, items/entries terminology) are logged in the design change log but not yet woven into the snapshot sections above. Follow-up commits.
+14. **CL-105 / CL-107 / CL-110 / CL-111 propagation** — this snapshot has propagated CL-112 and CL-113; the remaining 2026-06-07 / 06-08 changes (form-fields-shown rule, 2-tab session view + labels-only style, UC-HO-04 jargon strip, real Phương Anh review surface, Trello live migration, company-wide KG default, 30-day offboarding window) are logged in the design change log but not yet woven into the snapshot sections above. Follow-up commits.
 
 **Canonical artifact for current state:** `uc-ho-04-manager-review.jsx` (+ siblings) for the Manager review surface; `arteep-system-ui-tour.jsx` for the broader QA-INT-01 demo tour; the dashboard + quick-initiate + command-view trio for everything Sprint 1 since 2026-06-02. The POC Capture surfaces and the four-archetype Knowledge Graph (Consumer plane · single surface per CL-113) are the next builds.
 
@@ -422,7 +430,7 @@ If picking up where this left off, the next actionable items are:
 This section captures the *full* delta from the 2026-06-07 update lines at the top, kept here as a single block for clean grep-and-recovery. Earlier sections above are updated in place for the most-visited fields (§3 personas, §5 UC list, §6 sprint roadmap, §8 §1.4 commentary, §9 artifact inventory, §10 CL summary, §11 pending decisions, §13 demo flow, §14 next steps). For full per-entry tables of CL-102 / CL-103 / CL-104 see `docs/arteep/ARTEEP-design-change-log.md`.
 
 **UC-HO-04 build completed.** UC-HO-04 Manager Review + Sign-off mockup is fully real across 8 states using the violet/yellow palette. State map:
-- S1 · **Arrival** — bundle overview · 14 items · 4 source tiles · pre-review checks panel · recommended review order
+- S1 · **Arrival** — bundle overview · **14 items · 5 tiles summing to 14** (4 source tiles + Uploaded files (3) tile per CL-112) · pre-review checks panel · recommended review order. `SESSION.filesTotal` corrected 4 → 3 to match three rendered file rows.
 - S2 · **Reviewing Manager Priority** — side-by-side raw text vs AI-structured · source provenance strip · network corroboration card
 - S3 · **Quick accept** — accepted toast bar · structured pane upgrades to Canonical · post-accept inline actions
 - S4 · **Edit inline (CL-086)** — `DelSpan` rose strikethrough + `InsSpan` violet underline · edit-lineage 3-card footer · live audit-trail note
