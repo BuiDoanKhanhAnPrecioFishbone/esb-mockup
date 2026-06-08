@@ -19,6 +19,11 @@ import {
    Focus areas · editable checklist pre-filled with suggested items
    (replaces the free-text focus note · PO direction 2026-06-07). Each
    item joins the question queue the Offboarder answers (UC-HO-05).
+
+   CL-111 · 30-day offboarding window. Minh's last day is Jul 4, 2026
+   (26 days out); the review deadline defaults to Jun 30 — a few days
+   before the last day. "Assign later" stays a successor option since
+   a successor is optional.
    ═══════════════════════════════════════════════════════════════════ */
 
 const FLOW = [
@@ -33,9 +38,9 @@ const SCENARIO = {
   role: "Senior Backend Engineer",
   dept: "Engineering",
   initials: "ML",
-  lastDay: "June 4, 2026",
-  daysLeft: 12,
-  defaultDeadline: "June 8, 2026 · 17:00",
+  lastDay: "July 4, 2026",
+  daysLeft: 26,
+  defaultDeadline: "June 30, 2026 · 17:00",
   successor: "Trần Hữu Nam",
   successorOptions: ["Trần Hữu Nam", "Duy Nguyễn", "Assign later"],
   sources: [
