@@ -478,7 +478,7 @@
 |---|---|
 | Date | 2026-06-02 |
 | Sprint | S1 post-redesign |
-| Change | The 8-stage handover lifecycle is reorganized into 3 user-facing phases at every glance-level UI view · **Prepare** (Manager + System · 3 sub-stages · setup confirmed → context seeding → knowledge map ready), **Capture** (Offboarder + Manager · 3 sub-stages · interview scheduled → voice interview → transcript reviewed), **Deliver** (System + Successor · 2 sub-stages · committed to KG → playbook delivered). The 8 sub-stages still exist for system tracking and audit-log granularity, but the dashboard cards show 3 phase segments and the command-view hero shows a 3-phase progress bar. The command-view Stages tab shows 3 expandable phase blocks instead of 8 sequential rows. Progress visualization · 3 horizontal segments side by side, completed phases fully emerald, current phase showing within-phase fill in violet (proportional to sub-stage position), future phases gray-empty. Sub-stage detail surfaces inside the current phase block when that phase is active. |
+| Change | The 8-stage handover lifecycle is reorganized into 3 user-facing phases at every glance-level UI view · **Prepare** (Manager + System · 3 sub-stages · setup confirmed → context seeding → knowledge map ready), **Capture** (Offboarder + Manager · 3 sub-stages · interview scheduled → voice interview → transcript reviewed), **Deliver** (System + Successor · 2 sub-stages · committed to KG → playbook delivered). The 8 sub-stages still exist for system tracking and audit-log granularity, but the dashboard cards show 3 phase segments and the command-view hero shows a 3-phase progress bar. The command-view Stages tab shows 3 expandable phase blocks instead of 8 sequential rows. Progress visualization · 3 horizontal segments side by side, completed phases fully emerald, current phase showing within-phase fill in violet (proportional to sub-stage position), future phases gray-empty. Sub-stage detail surfaces inside the current phase block when that phase is active. *Note · 2026-06-08 (CL-113): the "Playbook delivered" sub-stage is renamed "KG access ready" — there is no playbook artifact; the newcomer's KG opens with role-customized initial exploration prompts.* |
 | UC Reference | UC-HO-01 lifecycle reference (dev-spec §4 · v2.1 reference table) |
 | Why | 8 stages exhausted users on first glance. The Manager opens the dashboard wanting to know "where is this session?" — 8 options is too many to hold in working memory, 3 is comfortable. Phase names map cleanly to actor handoffs (Manager + System prepares → Offboarder + Manager captures → System + Successor delivers), so the 3 phases also surface ownership at a glance. The 8 sub-stages remain available via drill-down for moments when the Manager needs the detail (e.g., diagnosing why Phase 1 is stuck). |
 | Decided By | Stakeholder direction + UX |
@@ -704,7 +704,7 @@
 
 1. **Heatmap content definition still unlocked.** CL-094 introduced "Timeline + Heatmap split-screen" as part of the consumer interaction model but never specified what the Heatmap shows. The Microsoft AI prompt review proposed three candidate definitions that all map cleanly onto the existing semantic palette — **Knowledge Hotspots** (most-queried nodes · yellow scale), **Skill Density** (team strengths/gaps when viewing by Team/Department · emerald-to-yellow scale), and **Risk Heatmap** (most-flagged project/process nodes · rose scale). With Thảo Vũ now locked as the Heatmap actor, this needs a separate CL to lock the definition. *(To be opened on confirmation.)*
 
-2. **UC-ON-02 scope may need to split or extend.** The use case is currently scoped to the Onboarder reading the personalized playbook. With four Consumer archetypes, the read patterns differ: Trần Hữu Nam reads a curated playbook · Duy reads handover context for cross-team work · Linh researches another team's work · Thảo views Timeline + Heatmap surfaces. Open question: extend UC-ON-02 to cover all four, or split into UC-ON-02a (Onboarder reads playbook) + UC-ON-02b (general KG consumer exploration)? Flagged for next BA review.
+2. **UC-ON-02 scope may need to split or extend.** The use case is currently scoped to the Onboarder reading the personalized playbook. With four Consumer archetypes, the read patterns differ: Trần Hữu Nam reads a curated playbook · Duy reads handover context for cross-team work · Linh researches another team's work · Thảo views Timeline + Heatmap surfaces. Open question: extend UC-ON-02 to cover all four, or split into UC-ON-02a (Onboarder reads playbook) + UC-ON-02b (general KG consumer exploration)? Flagged for next BA review. *(Resolved 2026-06-08 by CL-113: with the playbook eliminated, all four archetypes use one UC — UC-ON-02 reframed as "Explore Knowledge Graph (role-customized)" — and the question is moot.)*
 
 3. **Demo flow narrative expansion.** §12 of the system overview lists an 11-step demo flow that currently shows only Trần Hữu Nam in the Consumption plane (step 8). The flow should add beats for Duy (project peer querying for handover context), Linh (cross-team research), and Thảo (Timeline + Heatmap oversight) to deliver the PO's "show how the KG is used internally" requirement. Not blocking CL-104 but flagged for the demo-script work item in §14 next-builds.
 
@@ -840,6 +840,31 @@
 
 ---
 
+## Consumption Plane Unification (2026-06-08)
+
+*PO direction: there is no "playbook" anymore — everyone uses the Knowledge Graph, customized for their role, with the newcomer in particular getting initial exploration prompts to get moving. Resolves the UC-ON-02 single-vs-split follow-up from CL-104 by removing the artifact the split would have been about, and compounds with CL-110 (company-wide KG default) to leave the Consumption plane with exactly one artifact instead of two.*
+
+### CL-113 — Playbook artifact eliminated; Consumption plane unified on the Knowledge Graph; newcomer gets role-customized initial exploration prompts
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-08 |
+| Sprint | Consumption plane (S-KG) · cross-cutting |
+| Change | The **personalized onboarding playbook is eliminated as a separate artifact**. The Consumption plane has exactly one artifact going forward — the **company-wide Knowledge Graph** (per CL-110) — and role-customization happens at the **initial-state layer**, not as a separately-generated document. **Per archetype default lens (CL-104):** **newcomer** (Trần Hữu Nam) — the KG opens with a curated set of **initial exploration prompts** seeded for the successor's role (e.g. "Where do I start with the auth flow?" · "Who owns the data platform?" · "What's the rollback runbook for billing?"), surfaced as Contextual-AI chips above the canvas; **project peer** (Duy) — KG opens filtered to cross-team handover context relevant to the current query; **cross-departmental colleague** (Linh) — KG opens with the adjacent-team filter applied and Tier-1 stub + "Request access" affordances available; **upper management** (Thảo) — KG opens to the Timeline + Heatmap surfaces. All four use the **same `/knowledge-graph` surface** with different default lenses, ACL-bounded, over the same company-wide graph. **UC consequences:** (a) **UC-ON-01** ("Generate Personalized Onboarding Playbook") is **reframed as "Generate Newcomer Initial Exploration Prompts"** — the generative step at commit-time still happens (the system reads section blueprints + the successor's role and synthesizes prompts), but the artifact is a small prompt set, not a multi-page document. (b) **UC-ON-02** ("Read Playbook with Inline Knowledge Tools") is **reframed as "Explore Knowledge Graph (role-customized)"** and covers all four Consumer archetypes — this also **resolves the UC-ON-02 single-vs-split open item from CL-104 follow-up #2**: there is no playbook for the split to be about. (c) **Phase 3 Deliver sub-stage "Playbook delivered"** is renamed **"KG access ready"** (newcomer's role-customized prompts seeded + ACL provisioned) — annotated inline on CL-088. **Artifact consequences:** (i) `arteep-s4-onboarding-gen-read.jsx` (the amber UC-ON-01/UC-ON-02 mockup that was marked "needs migration") is **superseded** — it does not need violet/yellow migration; the surface it portrays no longer exists. (ii) `knowledge-graph-explorer.jsx` (CL-110 already flagged for rebuild) becomes the **single** Consumption-plane surface; its rebuild scope expands to cover all four archetype initial states. (iii) **Dashboard wording** — every "Playbook" mention on `ha-vy-handover-dashboard.jsx` (activity feed line, the post-commit completion beat, any per-session card text) needs purge in the doc-cleanup propagation pass. **Pitch impact:** the PO narrative becomes cleaner — "the Knowledge Graph is the company's shared knowledge layer; here is how each role enters it" — one surface, four lenses, instead of two surfaces (graph + playbook). |
+| UC Reference | Reframes UC-ON-01 + UC-ON-02 · cross-cutting Consumption plane · compounds with CL-110 (company-wide default) · resolves CL-104 follow-up #2 (UC-ON-02 single-vs-split) · annotates CL-088 sub-stage name |
+| Why | PO direction: the Knowledge Graph is the company's shared knowledge layer for all internal users, so the per-role customization should be a lens onto the same graph rather than a parallel document. A separate playbook duplicates effort, fragments the demo narrative (two artifacts to explain instead of one), and isn't how newcomers actually onboard at the company (they explore real systems with starter questions, not a generated PDF). Eliminating the playbook simplifies the Consumption plane to one surface and removes the UC-ON-02 split question that CL-104 left open — because there is no playbook to split around. The newcomer's onboarding still gets personalized — just as starter prompts that route them into the right corner of the graph, not as a separate artifact they read. |
+| Decided By | PO (Tram) + BA |
+| Category | BA Gap (scope · simplification) · supersedes the playbook artifact across UC-ON-01 / UC-ON-02 · resolves CL-104 follow-up #2 |
+
+**Pending follow-ups noted at decision time (not blocking CL-113):**
+
+1. **Final UC-ON-01 name in the master UC index.** "Generate Newcomer Initial Exploration Prompts" is the working name; the BA may prefer a tighter name (e.g. "Seed Newcomer Exploration") when authoring the v2 UC spec.
+2. **Final UC-ON-02 name in the master UC index.** "Explore Knowledge Graph (role-customized)" is the working name.
+3. **Newcomer initial-prompt seeding strategy.** Open: how many prompts (suggest 4–6), static templates vs LLM-generated at commit time, token-budget implications. The synthesis step at commit time is where this lives.
+4. **Doc cleanup sweep** — `ARTEEP-context-snapshot.md` and `docs/arteep/ARTEEP-system-overview.md` both reference "playbook" in §5, §13 (demo flow), §3 persona notes, §11 artifact inventory, §14 next-builds. Sweep is the next commit immediately after this one.
+
+---
+
 ## Pending Decisions (Need Stakeholder Input)
 
 The defaults in CL-003, CL-004, and CL-005 are working assumptions. The following decisions remain open and should be confirmed before their respective sprints begin:
@@ -850,13 +875,15 @@ The defaults in CL-003, CL-004, and CL-005 are working assumptions. The followin
 | HO-01 legal scanning basis | Vietnam PDPA | S1 | Legal |
 | HO-01 Offboarder Knowledge Map view rights | Deferred to v2 | S1 | Legal / HR |
 | HO-03 e-signature standard | Vietnam local | S2 | Legal |
-| ON-01 Playbook delivery model | Static + Copilot overlay | S4 | Product / UX |
+| ~~ON-01 Playbook delivery model~~ | **OBSOLETE 2026-06-08 (CL-113) — no playbook artifact; UC-ON-01 reframed as "Generate Newcomer Initial Exploration Prompts"** | S4 | Product (resolved) |
 | ON-02 mobile parity scope | Desktop-first v1 | S4 | Product / UX |
 | HO-05 prompts visible to Offboarder pre-capture | **RESOLVED 2026-06-05 (CL-099) — yes; prompts are the queue the Offboarder answers** | S1 | Product (resolved) |
 | HO-06 SLA for Manager correction review | **RESOLVED 2026-06-05 (CL-095) — 2 weekly cycles, then auto-escalate** | S5 | Product (resolved) |
 | Offboarding window + successor model | **RESOLVED 2026-06-08 (CL-111) — 30-day window · deadline 3–5 days before last day · successor optional** | S1 | PO (resolved) |
+| ~~UC-ON-02 single vs split for 4 archetypes (post-CL-104)~~ | **RESOLVED 2026-06-08 (CL-113) — no playbook to split around; UC-ON-02 unified as "Explore Knowledge Graph (role-customized)" for all four archetypes** | S-KG | BA (resolved) |
 | **Heatmap content definition (post-CL-104)** | (no default · 3 candidates proposed · awaiting confirmation) | S-KG | BA + Product |
-| **UC-ON-02 single vs split for 4 archetypes (post-CL-104)** | (no default · flagged) | S-KG | BA |
+| **Newcomer initial-prompt seeding strategy (post-CL-113)** | (no default · 4–6 prompts · static templates vs LLM-generated at commit time) | S-KG | BA + Product |
+| **UC-ON-01 / UC-ON-02 final naming in master UC index (post-CL-113)** | (working names locked · final names pending) | S-KG | BA |
 | **Consumer graph rebuild to company-wide default (CL-110)** | (documented · build deferred per PO) | S-KG | PO + BA |
 | **TBD-Z1 OAuth scope minimums per connector** | (no default — hard block) | SZ | IT Security |
 | **TBD-Z2 Connector approval workflow + SLA** | (no default — hard block) | SZ | IT + Legal |
