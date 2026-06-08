@@ -31,6 +31,11 @@ import {
    verify together. Successor is optional — may be assigned later or
    left blank ("to be assigned"). Khánh Linh is the urgent short-notice
    exception (2 days) that exercises the EX.2 edge case.
+   CL-112 · terminology. The pre-commit review unit is an "item"
+   (across UC-HO-04 and the session review surfaces). The post-commit
+   Knowledge-Graph count on the completed card is "entries" — a
+   different unit at a different lifecycle stage — so "items" no longer
+   means two things across screens.
    ═══════════════════════════════════════════════════════════════════ */
 
 const FLOW = [
@@ -133,12 +138,12 @@ const SESSION_COMPLETED_ML = {
   completedAt: "Just now",
   durationLabel: "3 days, 4 hours total",
   successor: "Trần Hữu Nam",
-  stats: { items: 487, canonicalFacts: 12, gapsResolved: 9 },
+  stats: { entries: 487, canonicalFacts: 12, gapsResolved: 9 },
 };
 
 const ACTIVITY = [
   { ts: "2 min ago",   actor: "System",            text: "Minh Lê's playbook generated for Trần Hữu Nam",   severity: "low" },
-  { ts: "7 min ago",   actor: "System",            text: "Minh Lê's session committed to knowledge graph · 487 items", severity: "low" },
+  { ts: "7 min ago",   actor: "System",            text: "Minh Lê's session committed to knowledge graph · 487 entries", severity: "low" },
   { ts: "38 min ago",  actor: "Phương Anh Nguyễn", text: "Signed handover answers · awaiting Hà Vy's review", severity: "medium" },
   { ts: "1 hour ago",  actor: "System",            text: "Khánh Linh Trần's departure record synced from HR · urgent (2 days)", severity: "high" },
   { ts: "4 hours ago", actor: "Hà Vy",             text: "Added 3 priority prompts to Minh Lê's session",  severity: "low" },
@@ -307,7 +312,7 @@ function ActiveDashboard() {
             <div className="space-y-1.5 text-[12px]">
               <MiniStat label="Sessions completed" value="2" />
               <MiniStat label="Avg. session time" value="3.1 days" />
-              <MiniStat label="Items committed to KG" value="892" />
+              <MiniStat label="Entries committed to KG" value="892" />
               <MiniStat label="Hallucinations reported" value="0" tone="emerald" />
             </div>
           </div>
@@ -366,7 +371,7 @@ function CompletionCelebration() {
       </div>
       <div className="flex-1 min-w-0">
         <h3 className="text-sm font-semibold text-gray-900">Minh Lê's handover is complete</h3>
-        <p className="text-[12px] text-gray-500 mt-0.5">487 items · 12 canonical facts · 9 gaps resolved</p>
+        <p className="text-[12px] text-gray-500 mt-0.5">487 entries · 12 canonical facts · 9 gaps resolved</p>
       </div>
       <button className="h-8 px-3 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center gap-1.5 transition-colors shrink-0 focus:outline-none focus:ring-2 focus:ring-violet-500/30">
         View Nam's playbook
@@ -390,7 +395,7 @@ function CompletedSessionCard({ session }) {
             </span>
             <span className="text-[10px] text-gray-500">{session.completedAt}</span>
           </div>
-          <p className="text-[12px] text-gray-500 mb-3">{session.role} · {session.dept} · successor {session.successor}</p>
+          <p className="text-[12px] text-gray-500 mb-3">{session.role} · {session.dept} · successor {session.successor ? session.successor : "to be assigned"}</p>
 
           <PhaseProgress subStageId={session.subStageId} done />
           <div className="text-[10px] text-gray-500 mt-1.5" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>
@@ -398,7 +403,7 @@ function CompletedSessionCard({ session }) {
           </div>
 
           <div className="grid grid-cols-3 gap-2 mt-3">
-            <SmallStat icon={Database}    label="Items"          value={String(session.stats.items)} />
+            <SmallStat icon={Database}    label="Entries"         value={String(session.stats.entries)} />
             <SmallStat icon={Network}     label="Canonical facts" value={String(session.stats.canonicalFacts)} />
             <SmallStat icon={Sparkles}    label="Gaps resolved"  value={String(session.stats.gapsResolved)} />
           </div>
