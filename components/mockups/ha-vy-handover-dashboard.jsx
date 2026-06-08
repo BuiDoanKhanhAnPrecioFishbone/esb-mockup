@@ -26,6 +26,11 @@ import {
    voice interview. Dashboard renders no source chips or forms.
 
    CL-107 · labels + values only; explainer subtitles/paragraphs removed.
+   Policy (CL-111) · standard offboarding window is 30 days; the review
+   deadline is set 3–5 days before the last day so admin + offboarder
+   verify together. Successor is optional — may be assigned later or
+   left blank ("to be assigned"). Khánh Linh is the urgent short-notice
+   exception (2 days) that exercises the EX.2 edge case.
    ═══════════════════════════════════════════════════════════════════ */
 
 const FLOW = [
@@ -87,7 +92,7 @@ const SESSIONS_ACTIVE = [
     daysLeft: 2,
     urgency: "critical",
     statusText: "Awaiting your initiation",
-    activeDetail: "HR sync detected · 38 minutes ago",
+    activeDetail: "Short-notice departure · HR sync 38 minutes ago",
     action: { label: "Start setup", primary: true, route: "/session/new" },
     successor: null,
   },
@@ -97,7 +102,7 @@ const SESSIONS_ACTIVE = [
     role: "Senior Backend Engineer",
     dept: "Engineering",
     subStageId: 2,
-    daysLeft: 6,
+    daysLeft: 26,
     urgency: "in-progress",
     statusText: "Context seeding in progress",
     activeDetail: "4m 12s elapsed · ~4m remaining",
@@ -110,12 +115,12 @@ const SESSIONS_ACTIVE = [
     role: "Senior Account Executive",
     dept: "Sales",
     subStageId: 6,
-    daysLeft: 4,
+    daysLeft: 12,
     urgency: "needs-action",
     statusText: "Awaiting your review",
     activeDetail: "Signed by Phương Anh · 38 minutes ago",
     action: { label: "Review answers", primary: true, route: "/session/phuong-anh" },
-    successor: "Đặng Khải Hoàn",
+    successor: null,
   },
 ];
 
@@ -472,7 +477,9 @@ function SessionCard({ session }) {
 
           <p className="text-[12px] text-gray-500 mb-3">
             {session.role} · {session.dept}
-            {session.successor && <> · successor {session.successor}</>}
+            {session.successor
+              ? <> · successor {session.successor}</>
+              : <> · successor to be assigned</>}
             {!isUrgent && <> · {session.daysLeft} days remaining</>}
           </p>
 
