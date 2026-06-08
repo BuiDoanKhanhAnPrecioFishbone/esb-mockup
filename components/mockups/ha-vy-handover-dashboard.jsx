@@ -28,9 +28,23 @@ import {
    CL-107 · labels + values only; explainer subtitles/paragraphs removed.
    Policy (CL-111) · standard offboarding window is 30 days; the review
    deadline is set 3–5 days before the last day so admin + offboarder
-   verify together. Successor is optional — may be assigned later or
-   left blank ("to be assigned"). Khánh Linh is the urgent short-notice
-   exception (2 days) that exercises the EX.2 edge case.
+   verify together. Khánh Linh is the urgent short-notice exception
+   (2 days) that exercises the EX.2 edge case.
+   Session model (CL-114) · sessions have NO successor field — no name,
+   no "to be assigned" placeholder, no field at all. Newcomer identity
+   is RBAC-flagged at Knowledge Graph access time (Entra ID Newcomer
+   role), not at session-time. Activity feed + completion banner +
+   session-card subtitles reflect this — no named successor anywhere
+   in user copy.
+   Chrome (CL-115) · the topbar is "ART-EEP" only; no "Manager
+   dashboard" suffix or any other role qualifier. The persona pill
+   (HV · Hà Vy · Manager · Engineering) is preserved as a user-
+   identity affordance, not chrome — it shows who the user is, not
+   what the surface is called.
+   Vocabulary (CL-113 / CL-116) · no "playbook" in user copy. Phase 3
+   sub-stage 8 is "KG access ready" (role-customized starter prompts
+   seeded + ACL provisioned for the Newcomer role). Any leftover
+   "playbook" wording is a bug to purge.
    CL-112 · terminology. The pre-commit review unit is an "item"
    (across UC-HO-04 and the session review surfaces). The post-commit
    Knowledge-Graph count on the completed card is "entries" — a
@@ -67,11 +81,11 @@ const LIFECYCLE_PHASES = [
   },
   {
     id: 3, key: "deliver", label: "Deliver",
-    description: "Commit knowledge and deliver playbook",
-    actor: "System + Successor",
+    description: "Commit knowledge and ready newcomer access",
+    actor: "System",
     subStages: [
-      { id: 7, label: "Committed to KG",      actor: "System"     },
-      { id: 8, label: "Playbook delivered",   actor: "Successor"  },
+      { id: 7, label: "Committed to KG",  actor: "System" },
+      { id: 8, label: "KG access ready",  actor: "System" },
     ],
   },
 ];
@@ -99,7 +113,6 @@ const SESSIONS_ACTIVE = [
     statusText: "Awaiting your initiation",
     activeDetail: "Short-notice departure · HR sync 38 minutes ago",
     action: { label: "Start setup", primary: true, route: "/session/new" },
-    successor: null,
   },
   {
     id: "sess-minhle",
@@ -112,7 +125,6 @@ const SESSIONS_ACTIVE = [
     statusText: "Context seeding in progress",
     activeDetail: "4m 12s elapsed · ~4m remaining",
     action: { label: "Open session", primary: false, route: "/session/minh-le" },
-    successor: "Trần Hữu Nam",
   },
   {
     id: "sess-pha",
@@ -125,7 +137,6 @@ const SESSIONS_ACTIVE = [
     statusText: "Awaiting your review",
     activeDetail: "Signed by Phương Anh · 38 minutes ago",
     action: { label: "Review answers", primary: true, route: "/session/phuong-anh" },
-    successor: null,
   },
 ];
 
@@ -137,12 +148,11 @@ const SESSION_COMPLETED_ML = {
   subStageId: 8,
   completedAt: "Just now",
   durationLabel: "3 days, 4 hours total",
-  successor: "Trần Hữu Nam",
   stats: { entries: 487, canonicalFacts: 12, gapsResolved: 9 },
 };
 
 const ACTIVITY = [
-  { ts: "2 min ago",   actor: "System",            text: "Minh Lê's playbook generated for Trần Hữu Nam",   severity: "low" },
+  { ts: "2 min ago",   actor: "System",            text: "Knowledge Graph access ready · starter prompts seeded for the Senior Backend Engineer role", severity: "low" },
   { ts: "7 min ago",   actor: "System",            text: "Minh Lê's session committed to knowledge graph · 487 entries", severity: "low" },
   { ts: "38 min ago",  actor: "Phương Anh Nguyễn", text: "Signed handover answers · awaiting Hà Vy's review", severity: "medium" },
   { ts: "1 hour ago",  actor: "System",            text: "Khánh Linh Trần's departure record synced from HR · urgent (2 days)", severity: "high" },
@@ -175,13 +185,14 @@ export default function HaVyHandoverDashboard({ embedded = false, view = "active
 /* ─── Chrome ────────────────────────────────────────────────── */
 
 function TopBar() {
+  // CL-115 · topbar is "ART-EEP" only · no "Manager dashboard" suffix
+  // or other role qualifier. The persona pill (right side) is a user-
+  // identity affordance, not chrome, and is preserved.
   return (
     <header className="bg-white border-b border-gray-200 px-5 py-2.5 flex items-center justify-between gap-4">
       <div className="flex items-center gap-2 shrink-0">
         <div className="w-1.5 h-1.5 bg-violet-500 rounded-full" />
         <span className="text-gray-900 font-semibold tracking-[0.18em] text-xs" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>ART-EEP</span>
-        <span className="text-gray-300 text-xs">·</span>
-        <span className="text-gray-500 text-xs">Manager dashboard</span>
       </div>
 
       <div className="flex items-center gap-3">
@@ -364,6 +375,10 @@ function JustCompletedDashboard() {
 }
 
 function CompletionCelebration() {
+  // CL-113 / CL-116 · the previous "View Nam's playbook" CTA is removed.
+  // Banner is informational (the bundle is committed; Newcomer access is
+  // ready per sub-stage 8) — not navigational. CL-114 · no named
+  // successor in the copy.
   return (
     <article className="rounded-lg border border-emerald-200 bg-emerald-50/40 p-4 mb-6 flex items-start gap-3">
       <div className="w-10 h-10 rounded-full bg-white border border-emerald-200 flex items-center justify-center shrink-0">
@@ -371,12 +386,8 @@ function CompletionCelebration() {
       </div>
       <div className="flex-1 min-w-0">
         <h3 className="text-sm font-semibold text-gray-900">Minh Lê's handover is complete</h3>
-        <p className="text-[12px] text-gray-500 mt-0.5">487 entries · 12 canonical facts · 9 gaps resolved</p>
+        <p className="text-[12px] text-gray-500 mt-0.5">487 entries · 12 canonical facts · 9 gaps resolved · Knowledge Graph access ready for the Senior Backend Engineer role</p>
       </div>
-      <button className="h-8 px-3 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center gap-1.5 transition-colors shrink-0 focus:outline-none focus:ring-2 focus:ring-violet-500/30">
-        View Nam's playbook
-        <ArrowUpRight className="w-3.5 h-3.5" />
-      </button>
     </article>
   );
 }
@@ -395,7 +406,8 @@ function CompletedSessionCard({ session }) {
             </span>
             <span className="text-[10px] text-gray-500">{session.completedAt}</span>
           </div>
-          <p className="text-[12px] text-gray-500 mb-3">{session.role} · {session.dept} · successor {session.successor ? session.successor : "to be assigned"}</p>
+          {/* CL-114 · successor reference removed from subtitle */}
+          <p className="text-[12px] text-gray-500 mb-3">{session.role} · {session.dept}</p>
 
           <PhaseProgress subStageId={session.subStageId} done />
           <div className="text-[10px] text-gray-500 mt-1.5" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>
@@ -480,11 +492,9 @@ function SessionCard({ session }) {
             )}
           </div>
 
+          {/* CL-114 · successor reference removed from subtitle */}
           <p className="text-[12px] text-gray-500 mb-3">
             {session.role} · {session.dept}
-            {session.successor
-              ? <> · successor {session.successor}</>
-              : <> · successor to be assigned</>}
             {!isUrgent && <> · {session.daysLeft} days remaining</>}
           </p>
 
