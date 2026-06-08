@@ -31,6 +31,11 @@ import UCHO04ManagerReview from "./uc-ho-04-manager-review.jsx";
        Phương Anh's surface) so both review surfaces and the dashboard
        use one noun. The post-commit KG count on the dashboard is
        "entries" — a different unit at a different stage.
+     · CL-111 · 30-day offboarding-window timeline. Minh — last day
+       Jul 4, review deadline Jun 30, 26 days left. Phương Anh — last
+       day Jun 20, review deadline Jun 16, 12 days left, successor
+       optional ("to be assigned"). Successor renders with a
+       "to be assigned" fallback wherever it shows.
    ═══════════════════════════════════════════════════════════════════ */
 
 const FLOW = [
@@ -71,13 +76,13 @@ function getSubStage(subStageId) {
 const SESSIONS = {
   ml: {
     urlSlug: "minh-le", offboarder: "Minh Lê", role: "Senior Backend Engineer",
-    dept: "Engineering", initials: "ML", subStageId: 2, daysLeft: 6,
-    successor: "Trần Hữu Nam", deadline: "June 8, 2026 · 17:00",
+    dept: "Engineering", initials: "ML", subStageId: 2, daysLeft: 26,
+    successor: "Trần Hữu Nam", deadline: "June 30, 2026 · 17:00",
   },
   pa: {
     urlSlug: "phuong-anh", offboarder: "Phương Anh Nguyễn", role: "Senior Account Executive",
-    dept: "Sales", initials: "PA", subStageId: 6, daysLeft: 4,
-    successor: "Đặng Khải Hoàn", deadline: "June 5, 2026 · 17:00",
+    dept: "Sales", initials: "PA", subStageId: 6, daysLeft: 12,
+    successor: null, deadline: "June 16, 2026 · 17:00",
   },
 };
 
@@ -236,7 +241,7 @@ function Hero({ session }) {
             )}
           </div>
           <p className="text-sm text-gray-500 mb-3">
-            {session.role} · successor <span className="text-gray-700">{session.successor}</span> · deadline <span className="text-gray-700" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{session.deadline}</span>
+            {session.role} · successor <span className="text-gray-700">{session.successor || "to be assigned"}</span> · deadline <span className="text-gray-700" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{session.deadline}</span>
           </p>
 
           <PhaseProgress subStageId={session.subStageId} />
@@ -563,7 +568,7 @@ function ActionSidebar({ session }) {
       <div>
         <SectionLabel>Session</SectionLabel>
         <div className="rounded-md border border-gray-200 bg-white p-3 mt-2 space-y-2 text-[11px]">
-          <InfoRow label="Successor" value={session.successor} />
+          <InfoRow label="Successor" value={session.successor || "to be assigned"} />
           <InfoRow label="Deadline"  value={session.deadline} mono />
           <InfoRow label="Source"    value="Trello" />
         </div>
@@ -737,7 +742,7 @@ function PhuongAnhReview({ session }) {
         <div>
           <SectionLabel>Session</SectionLabel>
           <div className="rounded-md border border-gray-200 bg-white p-3 mt-2 space-y-2 text-[11px]">
-            <InfoRow label="Successor" value={session.successor} />
+            <InfoRow label="Successor" value={session.successor || "to be assigned"} />
             <InfoRow label="Deadline"  value={session.deadline} mono />
           </div>
         </div>
