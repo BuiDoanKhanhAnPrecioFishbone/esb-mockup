@@ -49,7 +49,7 @@ The full ART-EEP context — design system (violet/yellow/rose/emerald palette),
 Deeper reference docs are in `docs/arteep/`:
 - `ARTEEP-master-uc-index.md` — all 10 use cases with dependencies
 - `ARTEEP-implementation-plan-v2.md` — 12-week sprint roadmap with Step Zero
-- `ARTEEP-design-change-log.md` — 86 entries (CL-001 through CL-086)
+- `ARTEEP-design-change-log.md` — 116 entries (CL-001 through CL-116). The change log is the source of truth for locked decisions; the rule bullets in §"Design system" below are a quick-reference subset, not a replacement.
 - `QA-INT-01-Dual-Verification-Rule.md` — foundational governance rule + compliance matrix
 - `UC-HO-01_initiate-handover-session_v2.md`, `UC-HO-02_conduct-ai-guided-voice-interview_v2.md` — detailed UC specs
 
@@ -163,10 +163,16 @@ From `ARTEEP-context-snapshot.md` §4. Keep visual fidelity high:
 - 32px button heights. Explicit focus rings: `focus:ring-2 focus:ring-violet-500/20`.
 - Sentence-case English UX writing. Named humans, not roles ("Hà Vy will review" not "your manager").
 - "Sensitive content" not "PII". Don't name "Microsoft Purview" in user copy.
+- **Chrome does not announce the user's role (CL-115).** Management-plane topbars / breadcrumbs / page titles / sidebar headers never carry a role qualifier — no "Manager dashboard", no "Admin X". Topbar reads `ART-EEP` or a neutral route hint like `ART-EEP · Sessions`. Per-page greetings ("Good afternoon, Hà Vy") are personal and stay. The "Manager review" tab label (CL-103 / CL-107) is content describing the work mode, not chrome — it is unaffected. RBAC gates access invisibly; the UI does not narrate it.
+- **No "playbook" in user copy (CL-113 / CL-116).** The personalized onboarding playbook was eliminated as an artifact; the Consumption plane has one artifact, the company-wide Knowledge Graph. Pre-commit content is **"bundle"** (e.g. "Review the bundle", "14 items in bundle"); post-commit content is **"Knowledge Graph entries"** (e.g. "487 entries committed to KG"). The Phase 3 sub-stage "Playbook delivered" is renamed **"KG access ready"**. Any leftover "playbook" wording in JSX or copy is a bug to purge, not a style choice.
+- **No named successor at session time (CL-114).** Sessions do not carry a successor field — no name, no "to be assigned" placeholder, no field at all. Newcomer identity is established by **RBAC at KG access time** (Entra ID Newcomer role gates the role-customized initial exploration prompts per CL-113), not by a session-time assignment. The 30-day offboarding window, the 3–5-day review deadline, and the Khánh Linh 2-day urgent exception (CL-111) are unaffected.
+- **Labels + values only on POC surfaces (CL-107).** Descriptive / explanatory prose is removed from Management-plane surfaces; UI is labels and values. Helper / explanatory text is kept only on risky or destructive actions (e.g. Cancel session, Send back, Request more detail). Governance constraints (data-ingestion scope, QA-INT-01 §s, Purview, sanitization tiers) hold in the architecture and the change log — they are not narrated in the glance-level UI.
 
 ## Personas (locked)
 
 Hà Vy (Manager · Engineering) · Minh Lê (Offboarder · Engineering) · Trần Hữu Nam (Onboarder · Engineering) · Khánh Linh Trần (Offboarder · People & Culture, urgent) · Phương Anh Nguyễn (Offboarder · Sales) · An Quân Vũ (Platform Admin)
+
+*Note · 2026-06-08 (CL-114):* "Onboarder" / "successor" is no longer a session-time relationship. Trần Hữu Nam remains a canonical demo persona, but his access to the Knowledge Graph is granted via the **Newcomer role** in Entra ID at KG access time — not via a named link from Minh Lê's session record. The session model has no successor field. The persona list above is the locked-six demo cast; the four Consumer-plane archetypes (newcomer · project peer · cross-departmental colleague · upper management) and their additional locked personas (Duy Nguyễn, Linh Phạm, Thảo Vũ per CL-104) are described in `ARTEEP-context-snapshot.md` §3.
 
 ## Local dev
 
