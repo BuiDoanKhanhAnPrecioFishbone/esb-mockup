@@ -885,6 +885,26 @@
 
 ---
 
+## Chrome Labeling Rule (2026-06-08)
+
+*PO direction: in a real SaaS product, chrome does not announce the user's role — RBAC governs access invisibly. The dashboard topbar currently reads "ART-EEP · Manager dashboard"; the role suffix should go, and the rule generalizes to all Management-plane chrome. Distinct from "Manager review" as a tab label (CL-103 / CL-107), which describes the mode of work being done, not the chrome of the surface.*
+
+### CL-115 — Topbar role labels removed from Management-plane chrome; RBAC gates access, chrome does not announce it
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-08 |
+| Sprint | POC build · cross-cutting (chrome) |
+| Change | The chrome on the Management-plane surfaces **no longer announces the user's role**. The dashboard topbar currently reads `ART-EEP · Manager dashboard`; the **"Manager dashboard" suffix is removed**. The topbar becomes either a plain product identifier — `ART-EEP` — or, when a route-level hint is useful, a **neutral route name** such as `ART-EEP · Sessions` (route descriptor, not role descriptor). The same rule applies to every Management-plane chrome surface — dashboard topbar (`ha-vy-handover-dashboard.jsx`), quick-initiate topbar (`uc-ho-01-quick-initiate.jsx`), session-command-view topbar (`session-command-view.jsx`), prepare-stage topbar (`prepare-stage.jsx`), and any future Management-plane chrome. None of them should label the route with a role qualifier ("Manager X", "Admin Y") in topbars, breadcrumbs, page meta titles, or sidebar headers. **Per-page greetings** ("Good afternoon, Hà Vy") are **personal**, not role-announcing, and remain unaffected. **Scope clarification — what this rule does NOT change.** The "Manager review" **tab label** introduced by CL-103 and reaffirmed by CL-107 describes the *mode of work* — the review-and-sign-off workflow that a manager-permitted user performs — and is therefore **content, not chrome**. It is **not affected by CL-115**. Similarly, the **persona pill** in the topbar's user area ("HV · Hà Vy · Manager · Engineering") shows *who the user is* (their identity and role tier), not what the surface is called, and is also **not affected** — that's a user-identity affordance, not a chrome route label. If a future decision wants to rename "Manager review" to just "Review" or rename the persona-pill role line, those are separate CLs. |
+| UC Reference | Cross-cutting chrome rule · applies to UC-HO-01 (dashboard + quick-initiate chrome) · UC-HO-04 (session command view chrome — note: the "Manager review" *tab* label per CL-103 / CL-107 is content and is NOT changed by this CL) · UC-HO-08 (prepare-stage chrome) |
+| Why | PO direction: real SaaS products gate access via RBAC; chrome doesn't advertise the role. Labeling the dashboard "Manager dashboard" implies an alternative dashboard exists for non-managers — which it doesn't; there is one sessions dashboard, and access to it is governed by whether the user's RBAC role includes session-management permissions. The user already knows what role they are from their persona pill (and from being logged in); restating it in the chrome adds noise without information. Removing the role suffix tightens the chrome and aligns the UI with the actual access model (invisible RBAC, not narrated role). Generalizing the rule cross-surface prevents the same wording from sneaking back in on quick-initiate or the command view. |
+| Decided By | PO (Tram) |
+| Category | UX Refinement (chrome · cross-cutting) |
+
+*Propagation pending in follow-up commits: `ha-vy-handover-dashboard.jsx` (TopBar — drop the "Manager dashboard" `<span>` after the ART-EEP wordmark; pick either no suffix or a neutral route suffix like "Sessions"), `uc-ho-01-quick-initiate.jsx` (topbar — verify no "Manager X" label; if present, drop), `session-command-view.jsx` (topbar / sidebar / any breadcrumb — verify no "Manager X" label; if present, drop), `prepare-stage.jsx` (topbar — same verification). Snapshot §2 to receive a new locked-decisions row for CL-115; §4 Design System to receive a chrome-labeling rule bullet alongside the existing UX Writing bullets.*
+
+---
+
 ## Pending Decisions (Need Stakeholder Input)
 
 The defaults in CL-003, CL-004, and CL-005 are working assumptions. The following decisions remain open and should be confirmed before their respective sprints begin:
