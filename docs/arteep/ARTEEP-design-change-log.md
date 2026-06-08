@@ -676,7 +676,7 @@
 |---|---|
 | Date | 2026-06-07 |
 | Sprint | S3 → live |
-| Change | The UC-HO-04 Manager Review + Sign-off mockup is wired into the live app as a **6th tab "Manager review"** on `SessionCommandView` at `/session/[id]?tab=review`. Three coordinated changes: (1) `UCHO04ManagerReview` accepts `embedded` and `state` props on its default export — when `embedded={true}`, the outer dev chrome (top step-dot bar + footer prev/next) is replaced by a single inline `EmbeddedStateStrip`, and its `ReviewShell` is told via React context to skip the redundant `ManagementHeader` + `ReviewSubHeader` (which would duplicate the SessionCommandView Hero + TabBar above). (2) `SessionCommandView` imports `UCHO04ManagerReview`, adds `{ id: "review", label: "Manager review" }` to the `TABS` array, and gates the tab to Minh Lê's session (since UC-HO-04's SESSION constant is built for that persona); other sessions get a friendly placeholder. (3) `app/session/[id]/page.tsx` adds `"review"` to `VALID_TABS`. All 8 states (`s1` through `s8`) remain accessible via the embedded state strip. Standalone behavior preserved when `embedded={false}` — UC-HO-04 still renders with its full dev chrome on a hypothetical direct route. Removes the "orphan mockup" state where a built component existed at a file path but had no live entry point. *Note · 2026-06-07: superseded in layout by CL-107 — "Manager review" is now one of only 2 visible tabs (Overview + Manager review); the wiring and `?tab=review` deep-link are unchanged.* |
+| Change | The UC-HO-04 Manager Review + Sign-off mockup is wired into the live app as a **6th tab "Manager review"** on `SessionCommandView` at `/session/[id]?tab=review`. Three coordinated changes: (1) `UCHO04ManagerReview` accepts `embedded` and `state` props on its default export — when `embedded={true}`, the outer dev chrome (top step-dot bar + footer prev/next) is replaced by a single inline `EmbeddedStateStrip`, and its `ReviewShell` is told via React context to skip the redundant `ManagementHeader` + `ReviewSubHeader` (which would duplicate the SessionCommandView Hero + TabBar above). (2) `SessionCommandView` imports `UCHO04ManagerReview`, adds `{ id: "review", label: "Manager review" }` to the `TABS` array, and gates the tab to Minh Lê's session (since UC-HO-04's SESSION constant is built for that persona); other sessions get a friendly placeholder. (3) `app/session/[id]/page.tsx` adds `"review"` to `VALID_TABS`. All 8 states (`s1` through `s8`) remain accessible via the embedded state strip. Standalone behavior preserved when `embedded={false}` — UC-HO-04 still renders with its full dev chrome on a hypothetical direct route. Removes the "orphan mockup" state where a built component existed at a file path but had no live entry point. *Note · 2026-06-07: superseded in layout by CL-107 — "Manager review" is now one of only 2 visible tabs (Overview + Manager review); the wiring and `?tab=review` deep-link are unchanged. The Phương Anh placeholder noted here is superseded by CL-109 (real review surface).* |
 | UC Reference | UC-HO-04 · architectural · pairs with CL-089 (command-view tab system) |
 | Why | The standalone mockup at `components/mockups/uc-ho-04-manager-review.jsx` was an orphan — built but unreachable from the live app. Tram's directive "merge mockup live into 1 control only, likely a system" calls for absorbing the mockup into the existing single control surface (the session command view) rather than spawning new top-level routes or a separate `/m/<slug>` registry (which CLAUDE.md explicitly retired). Mirrors the existing `embedded` + `view` prop contract that `SessionCommandView` already uses for the management feature surfaces, so the team's mental model of "embedded mockups" is consistent. |
 | Decided By | Stakeholder + UX |
@@ -756,6 +756,48 @@
 | Decided By | PO (Tram) + UX |
 | Category | UX Refinement (significant) · supersedes CL-089 / CL-103 tab layout |
 
+### CL-108 — UC-HO-04 embedded-surface cleanup (preview stepper · jargon strip · S1 collapse)
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-07 |
+| Sprint | POC build · Management plane |
+| Change | The UC-HO-04 Manager Review surface is brought onto the CL-107 rules for the case where it renders **embedded** in the command view's Manager review tab. Three changes, embedded-only (the standalone dev harness is unchanged): **(1) Preview stepper.** The loud violet S1–S8 state-chip strip (mockup scaffolding that was showing inside the product) is replaced by a muted "Preview · {state name} · ‹ N/8 ›" stepper — demo navigation is kept but de-emphasized so it reads as a preview aid, not product chrome. **(2) Jargon strip.** Internal references are removed from user-visible copy and kept only in code comments + this log: "CL-092 sanitization · cleared" → "Sensitive content checked"; "CL-101 network flag loop" → "Colleague review window closed"; "Worker SLM" → "AI"; "QA-INT-01 §1.3 / §2.3" → "Sources" / "Edit history · all versions kept"; "Tier 1 lock (legal-adjacent)" → "access-limited (sensitive)"; "UC-HO-08 network question" → "network question"; the "CL-086 inline grammar" label dropped. **(3) S1 collapse.** The arrival screen's prose (3xl hero headline, intro paragraph, "Recommended review order" card, the 6-item "Pre-review checks" grid that named Purview/CL refs, and the est-time note) collapses to a compact bundle summary — 4 stat tiles + one plain "pre-checks cleared" line + a single "Start with item 1" CTA — per the CL-107 labels-only rule. File 94KB → 84KB. |
+| UC Reference | UC-HO-04 · applies CL-107 · CL-103 (embedded contract) · CL-013 (no backend leakage in UX copy) |
+| Why | The Manager review tab predated CL-107 and was rendering the full pre-redesign surface: dense explainer prose, internal jargon (CL-###, QA-INT-01 §, Worker SLM, Tier labels) leaking into user copy, and demo scaffolding (the S1–S8 strip) showing in what is supposed to be the product. The cleanup makes the most-important decision surface match the minimal language used everywhere else in the Management plane. The 3-pane decision core (item list → diff → decision rail) is intentionally kept — it is the actual job of reviewing. |
+| Decided By | PO (Tram) + UX |
+| Category | UX Refinement |
+
+### CL-109 — Real Manager review surface for Phương Anh (Sales bundle); supersedes the CL-103 placeholder
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-07 |
+| Sprint | POC build · Management plane |
+| Change | The Phương Anh session's Manager review tab becomes a **real** review surface instead of the yellow "wired for Minh Lê" placeholder from CL-103. UC-HO-04's `SESSION` constant is hardcoded to Minh / Engineering, so reusing that component for Sales would show the wrong content; instead `ReviewTab` in `session-command-view.jsx` dispatches by slug — `minh-le` → `UCHO04ManagerReview` (embedded, CL-108-cleaned); `phuong-anh` → a new `PhuongAnhReview` component built in the same file. `PhuongAnhReview` renders her seven Sales sections (Sales pipeline Q3, Vendor XYZ renewal [flagged], Account TXM escalation, forecast methodology, customer-success churn, internal team dynamics [redacted], reflection [flagged]) as a working item list: selecting a section opens the captured answer + source + any flag warning, with per-item **Accept / Send back** (React state); the right rail tracks accepted / sent-back / remaining and gates a "Sign off & commit" button until every decidable section is decided. The redacted section is read-only. Labels-only style (CL-107); helper text kept only on the disabled sign-off and the destructive send-back. |
+| UC Reference | UC-HO-04 · CL-103 (supersedes its placeholder) · CL-107 (labels-only) · QA-INT-01 §1.4 (sign-off gate) |
+| Why | The placeholder broke the click-through for the second wired persona — clicking "Review answers" on Phương Anh's session led nowhere real. A real, lighter review surface keeps the non-engineering (Sales) flow demonstrable without distorting Minh's engineering-specific UC-HO-04 mockup. It also proves the review model generalizes beyond one persona. |
+| Decided By | PO (Tram) + UX |
+| Category | BA Gap (resolves placeholder) · UX Refinement |
+
+---
+
+## Consumer Graph Model Correction (2026-06-07)
+
+*PO direction during the consumer-flow write-up: the Knowledge Graph is the company's shared knowledge layer for all internal users, so defaulting it to a single offboarder frames a shared org asset as a one-person handover viewer. Documented now; the explorer rebuild is deferred.*
+
+### CL-110 — Consumer Knowledge Graph default = company-wide GraphRAG; an offboarder is a filter, not the center
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-07 |
+| Sprint | Consumption plane (S-KG) |
+| Change | Corrects the Consumer-plane graph model. The Consumption plane is the **organization's shared knowledge layer** for internal users (newcomers, project peers, cross-departmental colleagues, upper management), so its **default view must be a company-wide GraphRAG** over everything the system holds — **not** a single offboarder's handover subgraph. The graph's knowledge spans three streams: (1) what the system extracted from departing employees' sources during their handovers; (2) what current employees uploaded themselves; and (3) what current employees permitted the system to collect from their own data. The default canvas is a multi-cluster company map (organized by domain / project / team) with **no single human at the center**. A single offboarder centered (e.g. Minh Lê) is **one filtered lens** — filter: `offboarder = …` — alongside filters by project, team / department, and status (canonical / contested / critical). All CL-094 interaction primitives (progressive disclosure, contextual-AI chips, 0-token hover, Tier-1 stub / Tier-2 ghosting per CL-093, prompt disambiguation, Timeline + Heatmap) operate over the whole graph and respect both the active filter and the viewer's ACL. **Build status:** the current explorer (`knowledge-graph-explorer.jsx` · `/knowledge-graph`) hardcodes Minh Lê as the central hub (`SUBJECT = minh-le`) and every node is from his handover, so it **diverges from this model**. Per PO direction the correction is documented now and the rebuild is deferred ("we will build it later"). |
+| UC Reference | UC-ON-02 · Consumption plane · refines CL-094 · CL-093 · CL-096 · relates to the four-archetype reader model (CL-104) |
+| Why | PO direction: the graph is for internal users across the whole company. Defaulting to one offboarder frames a shared organizational asset as a single handover's viewer, which understates what the Knowledge Graph is and misrepresents how the four Consumer archetypes (CL-104) actually use it — none of them starts from "show me one person's handover." The offboarder-centered view remains valuable, but as a filter state reached from the company-wide default, not as the home screen. |
+| Decided By | PO (Tram) + BA |
+| Category | BA Gap (scope · corrects consumer-plane default) |
+
 ---
 
 ## Pending Decisions (Need Stakeholder Input)
@@ -774,6 +816,7 @@ The defaults in CL-003, CL-004, and CL-005 are working assumptions. The followin
 | HO-06 SLA for Manager correction review | **RESOLVED 2026-06-05 (CL-095) — 2 weekly cycles, then auto-escalate** | S5 | Product (resolved) |
 | **Heatmap content definition (post-CL-104)** | (no default · 3 candidates proposed · awaiting confirmation) | S-KG | BA + Product |
 | **UC-ON-02 single vs split for 4 archetypes (post-CL-104)** | (no default · flagged) | S-KG | BA |
+| **Consumer graph rebuild to company-wide default (CL-110)** | (documented · build deferred per PO) | S-KG | PO + BA |
 | **TBD-Z1 OAuth scope minimums per connector** | (no default — hard block) | SZ | IT Security |
 | **TBD-Z2 Connector approval workflow + SLA** | (no default — hard block) | SZ | IT + Legal |
 | **TBD-Z3 Default sync frequency vs. rate limits** | (no default — hard block) | SZ | Product + IT |
