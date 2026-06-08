@@ -7,6 +7,9 @@
 // requests (CL-100), the pre-commit flag → correction task (CL-101), and the
 // knowledge map building toward the capture queue (CL-099). Voice interview is
 // Phase 2 (CL-098). Tailwind + lucide-react only. Static mock data.
+//
+// CL-111 · 30-day offboarding window. Minh's status flipped Jun 4, last day
+// Jul 4, 2026 · 26 days left (review deadline would be Jun 30, set elsewhere).
 
 import Link from "next/link";
 import {
@@ -17,8 +20,8 @@ import {
 
 const SUBJECT = {
   id: "minh-le", name: "Minh Lê", role: "Senior Backend Engineer", dept: "Engineering",
-  initials: "ML", markedOn: "Jun 3, 2026", trigger: "HR system · Workday",
-  departure: "Jun 17, 2026", daysLeft: 12, manager: "Hà Vy", successor: "Trần Hữu Nam",
+  initials: "ML", markedOn: "Jun 4, 2026", trigger: "HR system · Workday",
+  departure: "Jul 4, 2026", daysLeft: 26, manager: "Hà Vy", successor: "Trần Hữu Nam",
   source: "Trello",
 };
 
