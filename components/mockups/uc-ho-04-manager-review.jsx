@@ -39,12 +39,20 @@ import { S7BundleSummaryView, S8SignOffView, DecisionPanelSummary, DecisionPanel
        the CL-107 labels-only rule used across the Management plane.
    Standalone dev harness (embedded={false}) is unchanged.
 
+   CL-112 (2026-06-08) · terminology + count consistency. The review
+   unit is an "item" everywhere (umbrella for answers + uploaded files
+   + flag fixes); the post-commit KG count on the dashboard is "entries"
+   (a different unit at a different stage). S1's bundle tiles now mirror
+   the left-rail groups and sum to the headline 14 (Uploaded files tile
+   added; Own→gray to match the rail source colors). Uploaded files are
+   part of the 14 (3 of them); SESSION.filesTotal aligned to 3.
+
    Embedded contract (CL-103): default export accepts `embedded` +
    `state` ("s1".."s8"); `?tab=review-s4` deep-links still work.
    ═══════════════════════════════════════════════════════════════════ */
 
 const FLOW = [
-  { id: "s1", uc: "Step 1", label: "Arrival · bundle overview",        trigger: "Hà Vy opens Minh's submitted bundle · 14 items + 4 files + 1 redirect." },
+  { id: "s1", uc: "Step 1", label: "Arrival · bundle overview",        trigger: "Hà Vy opens Minh's submitted bundle · 14 items (3 are uploaded files) · 1 redirected." },
   { id: "s2", uc: "Step 2", label: "Reviewing Manager Priority",       trigger: "First item · Vendor XYZ SLA penalty clause · side-by-side · Minh's raw text + AI-structured version." },
   { id: "s3", uc: "Step 3", label: "Quick accept · all green",         trigger: "All confidence signals positive · sources cited · one-click acceptance · auto-canonical." },
   { id: "s4", uc: "Step 4", label: "Edit inline",                      trigger: "Item 4 (Vendor XYZ grace period) needs a small wording fix · Hà Vy edits inline." },
@@ -73,7 +81,7 @@ const SESSION = {
   corroboratorInitials: "PA",
   corroboratorTeam: "Sales",
   itemsTotal: 14,
-  filesTotal: 4,
+  filesTotal: 3,
   redirects: 1,
   daysUntilLastDay: 4,
 };
@@ -696,6 +704,9 @@ function LineageRowSm({ n, label, detail, done, active }) {
 
 /* ═══════════════════════════════════════════════════════════════════
    S1 · Arrival · compact bundle summary + single CTA (CL-108)
+   Tiles mirror the left-rail groups and sum to 14 (CL-112): priorities
+   2 + network 3 + flag 1 + own 5 + files 3 = 14. The redirected item
+   is excluded (it left the bundle).
    ═══════════════════════════════════════════════════════════════════ */
 
 function S1Arrival() {
@@ -711,11 +722,12 @@ function S1Arrival() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
           <BundleStatTile icon={Sparkles} label="Manager priorities" count={2} sublabel="High-confidence" tone="violet" />
           <BundleStatTile icon={Users} label="Network questions" count={3} sublabel="From Duy + Phương Anh" tone="indigo" />
           <BundleStatTile icon={AlertTriangle} label="Flag fixes" count={1} sublabel={`${SESSION.successorShort} raised, ${SESSION.offboarderShort} corrected`} tone="yellow" />
-          <BundleStatTile icon={Plus} label="Own contributions" count={5} sublabel="3 unwritten rules + 2 other" tone="emerald" />
+          <BundleStatTile icon={Plus} label="Own contributions" count={5} sublabel="3 unwritten rules + 2 other" tone="gray" />
+          <BundleStatTile icon={FileText} label="Uploaded files" count={3} sublabel="Architecture, payment flow, notes" tone="emerald" />
         </div>
 
         <div className="rounded-lg border border-gray-200 bg-gray-50/40 px-4 py-2.5 mb-6 flex items-center gap-2 text-[11px] text-gray-600">
@@ -738,6 +750,7 @@ function BundleStatTile({ icon: Icon, label, count, sublabel, tone }) {
     indigo: { ring: "border-indigo-200", bg: "bg-indigo-50/30", iconBg: "bg-indigo-50 border-indigo-200 text-indigo-700", valueCls: "text-indigo-700" },
     yellow: { ring: "border-yellow-200", bg: "bg-yellow-50/30", iconBg: "bg-yellow-50 border-yellow-200 text-yellow-700", valueCls: "text-yellow-700" },
     emerald: { ring: "border-emerald-200", bg: "bg-emerald-50/30", iconBg: "bg-emerald-50 border-emerald-200 text-emerald-700", valueCls: "text-emerald-700" },
+    gray: { ring: "border-gray-200", bg: "bg-gray-50/50", iconBg: "bg-gray-100 border-gray-200 text-gray-700", valueCls: "text-gray-700" },
   }[tone];
   return (
     <div className={`rounded-xl border ${cfg.ring} ${cfg.bg} p-3`}>
