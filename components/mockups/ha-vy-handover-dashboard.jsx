@@ -5,11 +5,11 @@ import Link from "next/link";
 import {
   ChevronLeft, ChevronRight, ChevronDown, X,
   Search, Filter, MoreHorizontal, Bell, Plus, Settings,
-  AlertTriangle, AlertOctagon, Clock, CheckCircle2, Loader2,
+  AlertTriangle, AlertOctagon, CheckCircle2, Loader2,
   Calendar, ArrowRight, ArrowUpRight, ExternalLink,
   Users, FileText, MessageSquare, Network, Tag,
   GitBranch, Folder, Sparkles, Database, Eye,
-  Briefcase, Hash, Inbox
+  Briefcase, Hash
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -50,6 +50,18 @@ import {
    Knowledge-Graph count on the completed card is "entries" — a
    different unit at a different lifecycle stage — so "items" no longer
    means two things across screens.
+   Action-orientation (CL-117) · dashboards for infrequent high-stakes
+   activities show actions and event-driven signals, not time-
+   aggregated metrics. Offboarding is infrequent · weekly-rollup KPIs
+   ("this week" counts, all-time averages, throughput totals) are
+   measurement chrome, not action prompts, and don't earn dashboard
+   space. The top KPI row and the right-rail "This week" panel are
+   removed. Urgency is carried by card-level affordances (rose left-
+   border + Urgent pill per CL-065 · "Action needed" badge · days-
+   remaining inline · status text) and segmentation is handled by the
+   FilterChips row. Aggregate / throughput metrics belong on a future
+   /reports surface or in the Heatmap (CL-094 · Thảo Vũ's upper-
+   management surface per CL-104), not here.
    ═══════════════════════════════════════════════════════════════════ */
 
 const FLOW = [
@@ -290,11 +302,14 @@ function StepRenderer({ id }) {
    ═══════════════════════════════════════════════════════════════════ */
 
 function ActiveDashboard() {
+  // CL-117 · no KPI row above; no "This week" mini-stats panel in the
+  // right rail. Aggregate / time-rollup metrics are removed from the
+  // operational dashboard. Urgency lives at the card level (rose
+  // border + Urgent pill per CL-065 · "Action needed" badge · days-
+  // remaining · status text). Segmentation lives in FilterChips below.
   return (
     <div className="max-w-7xl mx-auto p-6">
       <PageHeader title="Good afternoon, Hà Vy" />
-
-      <KpiRow active={3} needsAction={1} completedThisWeek={2} />
 
       <FilterChips />
 
@@ -317,16 +332,6 @@ function ActiveDashboard() {
           <div className="space-y-1.5">
             {ACTIVITY.map((a, i) => <ActivityItem key={i} {...a} />)}
           </div>
-
-          <div className="pt-3 mt-3 border-t border-gray-200">
-            <h4 className="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-medium mb-2">This week</h4>
-            <div className="space-y-1.5 text-[12px]">
-              <MiniStat label="Sessions completed" value="2" />
-              <MiniStat label="Avg. session time" value="3.1 days" />
-              <MiniStat label="Entries committed to KG" value="892" />
-              <MiniStat label="Hallucinations reported" value="0" tone="emerald" />
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -338,6 +343,9 @@ function ActiveDashboard() {
    ═══════════════════════════════════════════════════════════════════ */
 
 function JustCompletedDashboard() {
+  // CL-117 · KPI row removed; completion celebration banner carries
+  // the moment, FilterChips segments by status, and the completed
+  // card carries the totals at the card level.
   const stillActive = SESSIONS_ACTIVE.filter((s) => s.id !== "sess-minhle");
 
   return (
@@ -345,8 +353,6 @@ function JustCompletedDashboard() {
       <PageHeader title="Good afternoon, Hà Vy" />
 
       <CompletionCelebration />
-
-      <KpiRow active={2} needsAction={1} completedThisWeek={3} />
 
       <FilterChips />
 
@@ -599,33 +605,9 @@ function PageHeader({ title, subtitle }) {
   );
 }
 
-function KpiRow({ active, needsAction, completedThisWeek }) {
-  return (
-    <div className="grid grid-cols-4 gap-3 mb-6">
-      <KpiTile icon={Inbox}        label="Active sessions"        value={String(active)} />
-      <KpiTile icon={AlertOctagon} label="Need your action"       value={String(needsAction)} tone={needsAction > 0 ? "warning" : "default"} />
-      <KpiTile icon={CheckCircle2} label="Completed this week"    value={String(completedThisWeek)} tone="emerald" />
-      <KpiTile icon={Clock}        label="Avg. session time"      value="3.1d" />
-    </div>
-  );
-}
-
-function KpiTile({ icon: Icon, label, value, tone }) {
-  const cfg = {
-    default: { border: "border-gray-200",   bg: "bg-white",        iconCls: "text-gray-500",   valueCls: "text-gray-900",   labelCls: "text-gray-500" },
-    warning: { border: "border-yellow-200", bg: "bg-yellow-50/40", iconCls: "text-yellow-700", valueCls: "text-yellow-800", labelCls: "text-yellow-700" },
-    emerald: { border: "border-emerald-200", bg: "bg-emerald-50/30", iconCls: "text-emerald-700", valueCls: "text-emerald-700", labelCls: "text-emerald-700" },
-  }[tone || "default"];
-  return (
-    <div className={`rounded-lg border ${cfg.border} ${cfg.bg} px-3 py-3`}>
-      <div className="flex items-center gap-1.5 mb-1">
-        <Icon className={`w-3 h-3 ${cfg.iconCls}`} strokeWidth={1.75} />
-        <span className={`text-[10px] uppercase tracking-[0.18em] ${cfg.labelCls} font-medium`}>{label}</span>
-      </div>
-      <div className={`text-2xl font-semibold ${cfg.valueCls} tracking-tight`} style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{value}</div>
-    </div>
-  );
-}
+/* CL-117 · KpiRow / KpiTile / MiniStat removed entirely. Aggregate /
+   time-rollup metrics don't render on the operational dashboard.
+   See the file header for the rule and the change log for CL-117. */
 
 function FilterChips() {
   const chips = [
@@ -689,19 +671,6 @@ function ActivityItem({ ts, actor, text, severity }) {
         <span className="text-[10px] text-gray-700 font-medium shrink-0">{actor}</span>
       </div>
       <div className="text-[11px] text-gray-900 leading-relaxed">{text}</div>
-    </div>
-  );
-}
-
-function MiniStat({ label, value, tone }) {
-  const valueCls = {
-    default: "text-gray-900",
-    emerald: "text-emerald-700",
-  }[tone || "default"];
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-gray-500">{label}</span>
-      <span className={`font-semibold ${valueCls}`} style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{value}</span>
     </div>
   );
 }
