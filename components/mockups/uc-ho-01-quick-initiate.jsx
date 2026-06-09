@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import {
   ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Check,
-  Calendar, Trello, User, Sparkles, ArrowRight,
+  Calendar, Trello, Sparkles, ArrowRight,
   Settings, Clock, ShieldCheck, Plus, X
 } from "lucide-react";
 
@@ -20,10 +20,26 @@ import {
    (replaces the free-text focus note · PO direction 2026-06-07). Each
    item joins the question queue the Offboarder answers (UC-HO-05).
 
-   CL-111 · 30-day offboarding window. Minh's last day is Jul 4, 2026
-   (26 days out); the review deadline defaults to Jun 30 — a few days
-   before the last day. "Assign later" stays a successor option since
-   a successor is optional.
+   CL-111 · 30-day offboarding window · review deadline 3–5 days before
+   the last day so admin + offboarder verify together. Minh's last day
+   is Jul 4, 2026 (26 days out); the review deadline defaults to Jun 30.
+
+   CL-114 · session model has NO successor field — no name, no "Assign
+   later" placeholder, no field at all. Newcomer identity is RBAC-
+   flagged at Knowledge Graph access time (Entra ID Newcomer role), not
+   at session-time. Supersedes the "successor optional · Assign later"
+   portion of CL-111: where CL-111 left the field optional, CL-114
+   removes it outright. The 30-day window + deadline-before-last-day
+   rule from CL-111 are unaffected. Refines CL-105 (the successor
+   field is removed, not just shown). Identity card meta line shows
+   only the last day; Customize panel exposes Review deadline · Data
+   source · Focus areas — no successor select.
+
+   CL-115 · chrome doesn't announce the user's role. The topbar
+   breadcrumb is product wordmark · Dashboard / route-specific title
+   ("Initiate {offboarder}'s handover") — no "Manager" qualifier on
+   any surface label. Already compliant; documented here so future
+   edits don't reintroduce a role suffix.
    ═══════════════════════════════════════════════════════════════════ */
 
 const FLOW = [
@@ -31,6 +47,7 @@ const FLOW = [
   { id: "customize", label: "Customize before starting", trigger: "Every field is shown and adjustable." },
 ];
 
+// CL-114 · no successor / successorOptions in the session model.
 const SCENARIO = {
   manager: "Hà Vy",
   managerDept: "Engineering",
@@ -41,8 +58,6 @@ const SCENARIO = {
   lastDay: "July 4, 2026",
   daysLeft: 26,
   defaultDeadline: "June 30, 2026 · 17:00",
-  successor: "Trần Hữu Nam",
-  successorOptions: ["Trần Hữu Nam", "Duy Nguyễn", "Assign later"],
   sources: [
     { icon: Trello, name: "Trello", detail: "In Progress / Review / Done · 4-layer hard-filter", selected: true },
   ],
@@ -80,6 +95,10 @@ export default function UCHO01QuickInitiate({ embedded = false, view = "ready" }
 /* ─── Chrome ────────────────────────────────────────────────── */
 
 function TopBar({ step, stepIdx, onJump }) {
+  // CL-115 · breadcrumb only · no "Manager dashboard" or other role
+  // qualifier. The route descriptor "Initiate {offboarder}'s handover"
+  // is content, not chrome — it tells the user what they're doing on
+  // this surface, not what role they have.
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-20">
       <div className="px-5 py-2.5 flex items-center justify-between gap-4">
@@ -162,7 +181,7 @@ function QuickInitiateScreen() {
         </h1>
       </div>
 
-      {/* Identity card */}
+      {/* Identity card · CL-114 · meta line shows last day only · no successor */}
       <article className="rounded-lg border border-gray-200 bg-white p-5 mb-4">
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 rounded-full bg-gray-100 border border-gray-200 text-gray-700 text-sm font-semibold inline-flex items-center justify-center shrink-0">
@@ -175,11 +194,6 @@ function QuickInitiateScreen() {
               <span className="text-[10px] uppercase tracking-wider font-medium text-gray-500 inline-flex items-center gap-1">
                 <Calendar className="w-2.5 h-2.5" />
                 Last day · <span className="text-gray-900" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{SCENARIO.lastDay}</span>
-              </span>
-              <span className="text-gray-300">·</span>
-              <span className="text-[10px] uppercase tracking-wider font-medium text-gray-500 inline-flex items-center gap-1">
-                <User className="w-2.5 h-2.5" />
-                Successor · <span className="text-gray-900">{SCENARIO.successor}</span>
               </span>
             </div>
           </div>
@@ -244,8 +258,9 @@ function DefaultTile({ icon: Icon, label, value }) {
 }
 
 function CustomizeBody() {
+  // CL-114 · no successor state · no Successor field. Customize exposes
+  // Review deadline · Data source · Focus areas.
   const [sources, setSources] = useState(SCENARIO.sources.map((s) => ({ ...s })));
-  const [successor, setSuccessor] = useState(SCENARIO.successor);
 
   const toggle = (name) =>
     setSources((prev) => prev.map((s) => (s.name === name ? { ...s, selected: !s.selected } : s)));
@@ -293,20 +308,9 @@ function CustomizeBody() {
       {/* Focus areas · editable checklist, pre-filled */}
       <FocusAreas />
 
-      {/* Successor (selectable) */}
-      <div>
-        <label className="text-[10px] uppercase tracking-[0.18em] text-gray-500 font-medium block mb-1.5">Successor</label>
-        <div className="rounded-md border border-gray-200 bg-white p-2.5 flex items-center gap-2 focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-500/15 transition-colors">
-          <User className="w-3.5 h-3.5 text-gray-400 shrink-0" strokeWidth={1.75} />
-          <select
-            value={successor}
-            onChange={(e) => setSuccessor(e.target.value)}
-            className="flex-1 text-sm text-gray-900 bg-transparent outline-none"
-          >
-            {SCENARIO.successorOptions.map((o) => <option key={o} value={o}>{o}</option>)}
-          </select>
-        </div>
-      </div>
+      {/* CL-114 · Successor field removed entirely. Newcomer identity
+         is established via RBAC at KG access time (Entra ID Newcomer
+         role), not at session creation. */}
     </div>
   );
 }
