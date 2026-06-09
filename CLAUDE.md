@@ -18,8 +18,8 @@ REAL APP — shared sidebar + topbar via components/app/AppShell.tsx
 
 /session/[id]             → Session command view (tabbed full-screen)
                             components/mockups/session-command-view.jsx
-                            Valid ids · minh-le · phuong-anh
-                            ?tab=stages opens the Stages tab (minh-le only)
+                            Valid ids · minh-le (POC narrowed to one wired session per CL-118)
+                            ?tab=stages opens the Stages tab
 
 SPEC TRACES — standalone walkthroughs (no AppShell, Prev/Next chrome)
 ─────────────────────────────────────────────────────────────────
@@ -44,12 +44,12 @@ middleware.ts             → Sitewide password redirect
 
 ## Read this first
 
-The full ART-EEP context — design system (violet/yellow/rose/emerald palette), 6 locked personas, 10 use cases + Step Zero, QA-INT-01 governance rule — lives in **`ARTEEP-context-snapshot.md`** at the repo root. Always read it before working on any ART-EEP mockup.
+The full ART-EEP context — design system (violet/yellow/rose/emerald palette), the locked persona set, 10 use cases + Step Zero, QA-INT-01 governance rule — lives in **`ARTEEP-context-snapshot.md`** at the repo root. Always read it before working on any ART-EEP mockup.
 
 Deeper reference docs are in `docs/arteep/`:
 - `ARTEEP-master-uc-index.md` — all 10 use cases with dependencies
 - `ARTEEP-implementation-plan-v2.md` — 12-week sprint roadmap with Step Zero
-- `ARTEEP-design-change-log.md` — 116 entries (CL-001 through CL-116). The change log is the source of truth for locked decisions; the rule bullets in §"Design system" below are a quick-reference subset, not a replacement.
+- `ARTEEP-design-change-log.md` — 118 entries (CL-001 through CL-118). The change log is the source of truth for locked decisions; the rule bullets in §"Design system" below are a quick-reference subset, not a replacement.
 - `QA-INT-01-Dual-Verification-Rule.md` — foundational governance rule + compliance matrix
 - `UC-HO-01_initiate-handover-session_v2.md`, `UC-HO-02_conduct-ai-guided-voice-interview_v2.md` — detailed UC specs
 
@@ -167,12 +167,15 @@ From `ARTEEP-context-snapshot.md` §4. Keep visual fidelity high:
 - **No "playbook" in user copy (CL-113 / CL-116).** The personalized onboarding playbook was eliminated as an artifact; the Consumption plane has one artifact, the company-wide Knowledge Graph. Pre-commit content is **"bundle"** (e.g. "Review the bundle", "14 items in bundle"); post-commit content is **"Knowledge Graph entries"** (e.g. "487 entries committed to KG"). The Phase 3 sub-stage "Playbook delivered" is renamed **"KG access ready"**. Any leftover "playbook" wording in JSX or copy is a bug to purge, not a style choice.
 - **No named successor at session time (CL-114).** Sessions do not carry a successor field — no name, no "to be assigned" placeholder, no field at all. Newcomer identity is established by **RBAC at KG access time** (Entra ID Newcomer role gates the role-customized initial exploration prompts per CL-113), not by a session-time assignment. The 30-day offboarding window, the 3–5-day review deadline, and the Khánh Linh 2-day urgent exception (CL-111) are unaffected.
 - **Labels + values only on POC surfaces (CL-107).** Descriptive / explanatory prose is removed from Management-plane surfaces; UI is labels and values. Helper / explanatory text is kept only on risky or destructive actions (e.g. Cancel session, Send back, Request more detail). Governance constraints (data-ingestion scope, QA-INT-01 §s, Purview, sanitization tiers) hold in the architecture and the change log — they are not narrated in the glance-level UI.
+- **POC persona scope narrowed 9 → 8 (CL-118 · 2026-06-09).** Phương Anh Nguyễn (Sales · Senior Account Executive) is removed from POC scope. The dashboard renders 2 concurrent active sessions (Minh Lê + Khánh Linh) instead of 3; the `phuong-anh` slug branch, `PhuongAnhReview` component, `PA_SECTIONS` data, and route allow-list entry are removed. CL-109's Phương Anh real Manager review surface is **superseded** — the persona-agnosticism of UC-HO-04 + UC-HO-03 is preserved at the spec level. The four-archetype Consumer-plane model (CL-104) is intact. Sales as a documented source mix per CL-091 remains, but is no longer demoed end-to-end.
 
 ## Personas (locked)
 
-Hà Vy (Manager · Engineering) · Minh Lê (Offboarder · Engineering) · Trần Hữu Nam (Onboarder · Engineering) · Khánh Linh Trần (Offboarder · People & Culture, urgent) · Phương Anh Nguyễn (Offboarder · Sales) · An Quân Vũ (Platform Admin)
+Hà Vy (Manager · Engineering) · Minh Lê (Offboarder · Engineering) · Trần Hữu Nam (Onboarder · Engineering) · Khánh Linh Trần (Offboarder · People & Culture, urgent) · An Quân Vũ (Platform Admin)
 
-*Note · 2026-06-08 (CL-114):* "Onboarder" / "successor" is no longer a session-time relationship. Trần Hữu Nam remains a canonical demo persona, but his access to the Knowledge Graph is granted via the **Newcomer role** in Entra ID at KG access time — not via a named link from Minh Lê's session record. The session model has no successor field. The persona list above is the locked-six demo cast; the four Consumer-plane archetypes (newcomer · project peer · cross-departmental colleague · upper management) and their additional locked personas (Duy Nguyễn, Linh Phạm, Thảo Vũ per CL-104) are described in `ARTEEP-context-snapshot.md` §3.
+*Note · 2026-06-09 (CL-118):* The POC persona scope is narrowed 9 → 8 — Phương Anh Nguyễn (Sales) is removed from POC scope. This supersedes CL-109 (her real review surface) and partially supersedes CL-063 (3 → 2 concurrent sessions). The five locked-here personas plus the three Consumer-plane archetype personas (Duy Nguyễn, Linh Phạm, Thảo Vũ per CL-104) make the full POC set of eight. Sales as a documented source mix (CL-091) is preserved; only the demo persona is removed.
+
+*Note · 2026-06-08 (CL-114):* "Onboarder" / "successor" is no longer a session-time relationship. Trần Hữu Nam remains a canonical demo persona, but his access to the Knowledge Graph is granted via the **Newcomer role** in Entra ID at KG access time — not via a named link from Minh Lê's session record. The session model has no successor field. The persona list above is the locked-five demo cast (narrowed from six by CL-118); the four Consumer-plane archetypes (newcomer · project peer · cross-departmental colleague · upper management) and their additional locked personas (Duy Nguyễn, Linh Phạm, Thảo Vũ per CL-104) are described in `ARTEEP-context-snapshot.md` §3.
 
 ## Local dev
 
