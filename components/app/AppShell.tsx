@@ -16,7 +16,6 @@ import {
   AlertOctagon,
   Sparkles,
   CheckCircle2,
-  MessageSquare,
 } from "lucide-react";
 
 type NavItem = {
@@ -222,6 +221,22 @@ type Notification = {
   href?: string;
 };
 
+// CL-118 · the `n-pha-review` Phương Anh notification is removed
+// (Phương Anh / Sales is out of POC scope; the `/session/phuong-anh`
+// route 404s).
+// CL-112 · `n-minhle-committed` uses the post-commit vocabulary
+// "entries", not "items".
+// CL-113 / CL-116 · `n-minhle-committed` no longer says "playbook";
+// the post-commit beat is Knowledge Graph access readiness for the
+// Newcomer role.
+// CL-114 · `n-minhle-committed` no longer names the successor
+// ("Trần Hữu Nam"). Newcomer identity is RBAC-flagged at KG access
+// time, not session-time; the role string ("Senior Backend Engineer")
+// is what role-customized prompts key off.
+// CL-098 · `n-minhle-seeding` no longer says "interview ready to
+// schedule" — the live voice interview (UC-HO-02) is deferred to
+// Phase 2. POC capture is the async question queue (CL-098/099),
+// so the seeding-complete beat ends with the queue being ready.
 const NOTIFICATIONS: Notification[] = [
   {
     id: "n-kltran-urgent",
@@ -233,20 +248,11 @@ const NOTIFICATIONS: Notification[] = [
     href: "/session/new",
   },
   {
-    id: "n-pha-review",
-    icon: MessageSquare,
-    tone: "yellow",
-    title: "Phương Anh signed transcript",
-    detail: "Awaiting your review · 4 days to deadline",
-    time: "1h",
-    href: "/session/phuong-anh",
-  },
-  {
     id: "n-minhle-committed",
     icon: CheckCircle2,
     tone: "emerald",
     title: "Minh Lê committed to knowledge graph",
-    detail: "487 items committed · playbook generated for Trần Hữu Nam",
+    detail: "487 entries committed · Knowledge Graph access ready for the Senior Backend Engineer role",
     time: "2h",
     href: "/session/minh-le",
   },
@@ -255,7 +261,7 @@ const NOTIFICATIONS: Notification[] = [
     icon: Sparkles,
     tone: "violet",
     title: "Minh Lê seeding finished",
-    detail: "Knowledge map ready · interview ready to schedule",
+    detail: "Knowledge map ready · question queue ready",
     time: "4h",
     href: "/session/minh-le",
   },
