@@ -1,12 +1,12 @@
 # ART-EEP · System Overview
 
-*Last updated 2026-06-08 · post the 30-day offboarding-window policy (CL-111); builds on the 6→2 tab redesign (CL-107), embedded review cleanup + real Phương Anh review (CL-108/109), the consumer-graph company-wide-default correction (CL-110), the UC-HO-04 live merge (CL-103), and the Consumer-plane persona expansion (CL-104). This document is the single-source narrative of the entire ART-EEP system. For decision history see `ARTEEP-design-change-log.md`. For the seed context after compaction see `ARTEEP-context-snapshot.md`. For the use-case catalogue see `ARTEEP-master-uc-index.md`.*
+*Last updated 2026-06-09 · post CL-112 → CL-117 sweep (review-unit terminology unified on "items" / KG count renamed to "entries"; playbook artifact eliminated and Consumption plane unified on the Knowledge Graph; successor field removed from the POC session model; Management-plane chrome rule; playbook reference cleanup; dashboards for infrequent high-stakes activities show actions not aggregates). Builds on the 30-day offboarding-window policy (CL-111), the 6→2 tab redesign (CL-107), embedded review cleanup + real Phương Anh review (CL-108/109), the consumer-graph company-wide-default correction (CL-110), the UC-HO-04 live merge (CL-103), and the Consumer-plane persona expansion (CL-104). This document is the single-source narrative of the entire ART-EEP system. For decision history see `ARTEEP-design-change-log.md`. For the seed context after compaction see `ARTEEP-context-snapshot.md`. For the use-case catalogue see `ARTEEP-master-uc-index.md`.*
 
 ---
 
 ## 1. What ART-EEP is
 
-ART-EEP is an enterprise Knowledge Graph platform for employee handover and onboarding, built on Microsoft Azure. It captures a departing employee's tacit knowledge from approved shared workspaces, lets the manager review and sign off on it, commits the verified content to an organisation-wide Knowledge Graph, and delivers personalised onboarding playbooks to the successor with an active feedback loop.
+ART-EEP is an enterprise Knowledge Graph platform for employee handover and onboarding, built on Microsoft Azure. It captures a departing employee's tacit knowledge from approved shared workspaces, lets the manager review and sign off on it, commits the verified content to an organisation-wide Knowledge Graph, and grants role-customized access to newcomers (and the rest of the organization) via RBAC — with an active feedback loop. The personalised onboarding playbook as a separate artifact has been eliminated (CL-113); the Consumption plane has exactly one artifact going forward — the company-wide Knowledge Graph — and role-customization happens at the initial-state layer (newcomer initial exploration prompts seeded for the successor's role at commit time).
 
 Three things make it different from a generic knowledge-base or wiki:
 
@@ -30,12 +30,12 @@ ART-EEP is organised into three planes that map to the three actor groups. Each 
 
 Owned by the **Manager** (Hà Vy). Surfaces:
 
-- **Dashboard (`/`)** — Hà Vy's multi-session command center. Three concurrent sessions visible with 3-phase progress and urgency layered signals (rose for critical timelines). In the 3-phase redesign the dashboard renders no source chips and no forms (CL-106). Sessions follow the 30-day offboarding window (CL-111); the successor is optional and renders "to be assigned" when unset.
-- **Quick initiate (`/session/new`)** — one-click session creation. Every field is shown, selectable, and pre-filled to the happy path (CL-105); the Customize panel is open by default. The review deadline defaults to 3–5 days before the last day per the 30-day policy (CL-111); the successor field is optional (may be left "to be assigned"). The focus note is an editable, pre-filled checklist. Replaces the old multi-step wizard.
+- **Dashboard (`/`)** — Hà Vy's multi-session command center. Three concurrent sessions visible with 3-phase progress and urgency layered signals (rose for critical timelines). In the 3-phase redesign the dashboard renders no source chips and no forms (CL-106). **Per CL-117, dashboards for infrequent high-stakes activities show actions, not aggregates** — the previous KPI row and "This week" mini-stats panel are removed; urgency lives at the card level (rose left-border + Urgent pill, "Action needed" badge, days-remaining inline, status text) and segmentation lives in the FilterChips row. Aggregate / throughput metrics belong on a future `/reports` surface or in Thảo Vũ's Heatmap (CL-094), not here. Sessions follow the 30-day offboarding window (CL-111). **The successor field is removed from the session model entirely (CL-114)** — no name, no "to be assigned" placeholder, no field at all; newcomer identity is RBAC-flagged at Knowledge Graph access time (Entra ID Newcomer role), not at session creation. **No "playbook" wording anywhere (CL-113 / CL-116)** — the Deliver phase sub-stage 8 reads "KG access ready"; the completion banner is informational only ("Knowledge Graph access ready for the {role}"), no playbook CTA; the activity feed says "committed to Knowledge Graph", not "playbook generated for X".
+- **Quick initiate (`/session/new`)** — one-click session creation. Every field is shown, selectable, and pre-filled to the happy path (CL-105); the Customize panel is open by default. The review deadline defaults to 3–5 days before the last day per the 30-day policy (CL-111). **No successor field appears (CL-114)** — newcomer identity is RBAC-gated at KG access time, not at session creation. The Customize panel exposes three fields in order: Review deadline · Data source · Focus areas. The focus-areas checklist is editable and pre-filled; each item feeds the offboarder's question queue (UC-HO-05). Replaces the old multi-step wizard.
 - **Prepare stage (`/prepare/[id]`)** — the automated Prepare cascade the manager oversees: Trello seeded through the 4-Layer Hard-Filter, the auto-derived network + UC-HO-08 knowledge requests, the pre-commit flag → correction loop, and the knowledge map building toward the capture queue. Built & live (`prepare-stage.jsx`).
 - **Session command view (`/session/[id]`)** — per-session full-screen workspace with **two visible tabs (CL-107): Overview + Manager review.** The former six (Overview · Stages · Data · Audit log · Manager review · Settings) were collapsed: Stages folds into the hero's 3-phase progress bar, Data + Settings fold into Overview and the action rail, and Audit log becomes a link rather than a tab. Legacy `?tab=stages|data|audit|settings` deep-links resolve to Overview (no 404). The Manager review tab is UC-HO-04 (Sprint 3) rendered inline; see §6.
 
-Design language: locked light-mode system. Violet (`violet-50/100/200/500/600/700`) for brand, AI signal, primary CTAs, active states. Pastel yellow (`yellow-50/100/200/700/800`) for warnings, knowledge gaps, low confidence. Rose reserved for critical severity; emerald for verified / canonical. 1px hairlines, 32px button heights, two-animation budget (recording mic rings + completion glow). Per CL-107, glance-level UI is labels + values only; helper / explainer text is kept only on risky or destructive actions.
+Design language: locked light-mode system. Violet (`violet-50/100/200/500/600/700`) for brand, AI signal, primary CTAs, active states. Pastel yellow (`yellow-50/100/200/700/800`) for warnings, knowledge gaps, low confidence. Rose reserved for critical severity; emerald for verified / canonical. 1px hairlines, 32px button heights, two-animation budget (recording mic rings + completion glow). Per CL-107, glance-level UI is labels + values only; helper / explainer text is kept only on risky or destructive actions. **Per CL-115, Management-plane chrome doesn't announce the user's role** — topbars use the product wordmark "ART-EEP" alone (dashboard) or a neutral breadcrumb-style route descriptor (quick-initiate · "ART-EEP · Dashboard / Initiate Minh Lê's handover"), never a role qualifier ("Manager dashboard", "Admin X"). RBAC governs access invisibly; the persona pill in the topbar's user area identifies *who* the user is, the chrome doesn't restate it.
 
 ### 2.2 Capture plane
 
@@ -55,16 +55,18 @@ Design language: same as Management. The Prepare-stage fan-out (UC-HO-08) is bui
 
 **Default view · company-wide GraphRAG (CL-110).** The Consumption plane is the organisation's shared knowledge layer, so its default is a **company-wide graph** over everything the system holds: knowledge extracted from departing employees' sources during their handovers, material current employees upload themselves, and data current employees permit the system to collect. The default canvas is a multi-cluster company map (organised by domain / project / team) with **no single person at the center**. A single offboarder centered (e.g. Minh Lê) is **one filtered lens** — filter `offboarder = …` — alongside filters by project, team / department, and status (canonical / contested / critical). *Build status:* the current explorer (`knowledge-graph-explorer.jsx` · `/knowledge-graph`) still hardcodes Minh Lê as the central hub and shows only his handover subgraph, so it diverges from this model; per PO direction the correction is documented (CL-110) and the rebuild is deferred.
 
-Per CL-104, the Consumption plane serves **four locked Consumer archetypes** (who reads the graph), not just the successor:
+**Consumption-plane unification (CL-113).** The plane has exactly one artifact — the company-wide Knowledge Graph above. The earlier separate "personalised onboarding playbook" is eliminated; role-customization happens at the **initial-state layer**, not as a separately-generated document. Each archetype enters the same surface with a different default lens, ACL-bounded.
 
-| Archetype | Persona | What they do here |
+Per CL-104 / CL-113, the Consumption plane serves **four locked Consumer archetypes** with the following initial-state lenses:
+
+| Archetype | Persona | Initial lens into the Knowledge Graph |
 |---|---|---|
-| **Newcomer** | Trần Hữu Nam | Reads the personalised playbook generated for their role; primary actor for UC-ON-02 |
-| **Project peer** | Duy Nguyễn (Senior Data Engineer · Data Platform) | Queries the KG for context on a handover item or cross-team work; corroborates flags (already appeared in UC-HO-04 S6) |
-| **Cross-departmental colleague** | Linh Phạm (Product Manager · Product) | Researches an adjacent team's work; hits Tier-1 stubs and uses the "Request access" affordance (CL-093) |
-| **Upper management** | Thảo Vũ (Engineering Director) | Views Timeline + Heatmap surfaces (CL-094) for project evolution and risk tracking at her org level |
+| **Newcomer** | Trần Hữu Nam | KG opens with **role-customized initial exploration prompts** seeded for the successor's role (CL-113) — surfaced as Contextual-AI chips above the canvas (e.g. "Where do I start with the auth flow?" · "Who owns the data platform?" · "What's the rollback runbook for billing?"); the **Newcomer RBAC role (Entra ID, CL-114)** gates Consumer-plane access; primary actor for UC-ON-02 (reframed as "Explore Knowledge Graph (role-customized)") |
+| **Project peer** | Duy Nguyễn (Senior Data Engineer · Data Platform) | KG opens filtered to cross-team handover context relevant to the current query; corroborates flags (already appeared in UC-HO-04 S6) |
+| **Cross-departmental colleague** | Linh Phạm (Product Manager · Product) | KG opens with the adjacent-team filter applied; hits Tier-1 stubs and uses the "Request access" affordance (CL-093) |
+| **Upper management** | Thảo Vũ (Engineering Director) | KG opens to the Timeline + Heatmap surfaces (CL-094) for project evolution and risk tracking at her org level |
 
-Interaction model (CL-094): Progressive Disclosure (central node + 1-hop neighbourhood, double-click to expand or collapse), Contextual-AI quick-start chips (center / zoom / dim), 0-token hover via stored `short_summary` (15 words per node), Timeline + Heatmap split-screen for temporal exploration (Thảo's primary surface), Prompt Disambiguation when the user's query is too broad. Per CL-110 these primitives operate over the **company-wide graph**, respecting both the active filter and the viewer's ACL.
+Interaction model (CL-094): Progressive Disclosure (central node + 1-hop neighbourhood, double-click to expand or collapse), Contextual-AI quick-start chips (center / zoom / dim · also the carrier for the newcomer's initial prompts), 0-token hover via stored `short_summary` (15 words per node), Timeline + Heatmap split-screen for temporal exploration (Thảo's primary surface), Prompt Disambiguation when the user's query is too broad. Per CL-110 these primitives operate over the **company-wide graph**, respecting both the active filter and the viewer's ACL.
 
 Design language deviation (CL-096): the Consumption plane uses the `MASTER.md` "AI-Native Minimal" presentation shell — indigo `#6366F1` primary, glassmorphism cards, light/dark toggle, `rounded-xl`/`2xl`, soft shadows, floating navbar. This is presentation only; the semantic palette is preserved as the meaning layer (rose = critical/locked, yellow = low-confidence/contested, emerald = verified/canonical, violet = AI signal).
 
@@ -76,27 +78,27 @@ The Consumption plane POC showcase is English-only (CL-097); usernames render as
 
 ## 3. Personas (9 locked · four-archetype Consumer model per CL-104)
 
-Nine personas are locked. Six were established earlier; three were added by CL-104 (2026-06-07) to make the Consumption plane demonstrate how the KG is used internally across the organisation, not only by the canonical Onboarder. Each persona has a different handover material mix, scoped to approved shared workspaces only.
+Nine personas are locked. Six were established earlier; three were added by CL-104 (2026-06-07) to make the Consumption plane demonstrate how the KG is used internally across the organisation, not only by the canonical Newcomer. Each persona has a different handover material mix, scoped to approved shared workspaces only.
 
 | Name | Role | Department | Plane | Notes |
 |---|---|---|---|---|
 | **Hà Vy** | Manager | Engineering | Management | Owns handover sessions; primary actor in UC-HO-01, UC-HO-04, UC-HO-07. Her Entra ID identity signs the SHA-256 commit gate in UC-HO-04 S8. |
-| **Minh Lê** | Offboarder | Engineering | Capture | **Canonical demo persona.** Senior Backend Engineer; 30-day offboarding window (last day Jul 4, 2026 · review deadline Jun 30 · 26 days left at demo time · CL-111). Wired live at `/session/minh-le`. Sources: Jira · GitHub · Google Drive (POC showcase via Trello). Successor: Trần Hữu Nam. |
-| **Trần Hữu Nam** | Successor / Onboarder | Engineering | Consumption (newcomer) | Succeeds Minh Lê. Primary actor for UC-ON-01 / UC-ON-02 / UC-ON-03. Also flags the AI in UC-HO-04 S6 (Atlas rollback chain). |
+| **Minh Lê** | Offboarder | Engineering | Capture | **Canonical demo persona.** Senior Backend Engineer; 30-day offboarding window (last day Jul 4, 2026 · review deadline Jun 30 · 26 days left at demo time · CL-111). Wired live at `/session/minh-le`. Sources: Jira · GitHub · Google Drive (POC showcase via Trello). **No successor field at session time (CL-114)** — role-customized starter prompts at KG access time are seeded from the "Senior Backend Engineer" role string. |
+| **Trần Hữu Nam** | Newcomer / Successor | Engineering | Consumption (newcomer) | Inherits the Senior Backend Engineer role and lands in the company-wide KG with role-customized starter prompts (CL-113). Identified by the Entra ID Newcomer role at KG access time (CL-114), not by session-time assignment. Primary actor for UC-ON-02 / UC-ON-03. Also flags the AI in UC-HO-04 S6 (Atlas rollback chain). |
 | **Khánh Linh Trần** | Offboarder | People & Culture | Capture | Head of People Operations. Urgent 2-day offboard — the short-notice **exception** to the 30-day standard (CL-111); exercises EX.2 + high PII (Tier-2 ghosting via Purview + ACL trim). Sources: HRIS · Notion · SharePoint. |
-| **Phương Anh Nguyễn** | Offboarder | Sales | Capture | Senior Account Executive. Demonstrates the non-engineering source mix — Salesforce · shared Calendar · SharePoint sales-collateral. Second wired persona at `/session/phuong-anh`, with her own real Manager review surface (CL-109). Successor optional — currently "to be assigned" (CL-111). |
+| **Phương Anh Nguyễn** | Offboarder | Sales | Capture | Senior Account Executive. Demonstrates the non-engineering source mix — Salesforce · shared Calendar · SharePoint sales-collateral. Second wired persona at `/session/phuong-anh`, with her own real Manager review surface (CL-109). **No successor at session time (CL-114).** |
 | **An Quân Vũ** | Platform Admin / IT | — | Step Zero | Plan v2 (CL-068). Owns Step Zero (Z01–Z04). The 10–15-second pitch opener. Distinct from Manager in RBAC. |
 | **Duy Nguyễn** *(NEW · CL-104 · promoted from supporting)* | Senior Data Engineer | Data Platform | Consumption (project peer) | Already in UC-HO-04 S6 (Atlas rollback 3-way) as the corroborating colleague. Now locked as the **project peer** Consumer archetype. |
 | **Linh Phạm** *(NEW · CL-104)* | Product Manager | Product | Consumption (cross-dept) | Locks the **cross-departmental colleague** archetype. Exercises Tier-1 "Request access" affordances (CL-093) on content scoped to other teams. |
 | **Thảo Vũ** *(NEW · CL-104)* | Engineering Director | Engineering (leadership tier) | Consumption (upper mgmt) | Locks the **upper management** archetype. **Owns the Timeline + Heatmap surface** (CL-094) — the locked actor that was missing from the previous six-persona set. |
 
-*Note · the successor is optional (CL-111): a session may have no successor named at initiation. Phương Anh's slot — previously the non-locked "Đặng Khải Hoàn" — now renders "to be assigned", so no successor persona is invented; one may be assigned later. The locked set therefore stays at nine.*
+*Note · CL-114 removes the successor field from the POC session model entirely, superseding the "successor optional · to be assigned" portion of CL-111. The 30-day window, the review-deadline-3-5-days-before-last-day rule, and the Khánh Linh 2-day exception from CL-111 are unaffected and remain authoritative. Newcomer identity is established by RBAC (Entra ID Newcomer role) at Knowledge Graph access time, not by session-time assignment. The locked persona set stays at nine. Trần Hữu Nam is locked as the Newcomer archetype not because he is named in any session record, but because he carries the Entra ID Newcomer role at the moment he enters the system as Minh Lê's successor.*
 
 ### Four Consumer archetypes mapped to read patterns
 
 | Archetype | Persona | Primary read pattern |
 |---|---|---|
-| Newcomer | Trần Hữu Nam | Personalised playbook · curated narrative · Canonical badge + lineage drawer |
+| Newcomer | Trần Hữu Nam | Role-customized starter prompts (CL-113) · Newcomer RBAC role gates access (CL-114) · Canonical badge + lineage drawer |
 | Project peer | Duy Nguyễn | Cross-team handover context · Progressive Disclosure + Contextual-AI chips |
 | Cross-departmental colleague | Linh Phạm | Researching adjacent team work · hits Tier-1 stubs + Request access |
 | Upper management | Thảo Vũ | Timeline + Heatmap surfaces · project evolution + risk distribution |
@@ -131,9 +133,9 @@ The offboarder contributes content. In the POC: self-serve file upload + the asy
 
 ### Phase 3 · Deliver
 
-*Owned by: System + Successor + broader Consumers*
+*Owned by: System + (RBAC-gated) Newcomer + broader Consumers*
 
-Verified knowledge commits atomically to the Knowledge Graph; the personalised onboarding playbook is generated for the successor (if one is assigned — the successor is optional per CL-111); the active feedback loop runs in perpetuity. Per CL-104, Deliver now reaches all four Consumer archetypes (newcomer · project peer · cross-departmental colleague · upper management), not only the successor. Sub-stages: Committed to KG → Playbook delivered.
+Verified knowledge commits atomically to the Knowledge Graph; role-customized initial exploration prompts are synthesised at commit time from the offboarder's role (e.g. "Senior Backend Engineer") and seeded into the Consumer plane (CL-113); the newcomer's RBAC role (Entra ID Newcomer) gates their Consumer-plane view of the graph (CL-114); the active feedback loop runs in perpetuity. Per CL-104, Deliver reaches all four Consumer archetypes (newcomer · project peer · cross-departmental colleague · upper management), not only the newcomer. Sub-stages: Committed to KG → **KG access ready** (CL-113 / CL-116 · supersedes the prior "Playbook delivered" sub-stage label; there is no playbook artifact).
 
 The phase progress bar (3 segments, violet for current with pulse animation, emerald for done) is the canonical glance widget across every Management surface.
 
@@ -141,16 +143,16 @@ The phase progress bar (3 segments, violet for current with pulse animation, eme
 
 ## 5. Use case map
 
-Eleven use cases plus Step Zero. The master catalogue with dependency matrix lives in `ARTEEP-master-uc-index.md` (v1.1).
+Eleven use cases plus Step Zero. The master catalogue with dependency matrix lives in `ARTEEP-master-uc-index.md` (v1.1). Two of the eleven were reframed by CL-113 — UC-ON-01 and UC-ON-02 — as the playbook artifact is eliminated.
 
 ### Handover (HO)
 
 | UC | Title | Status |
 |---|---|---|
-| **UC-HO-01** | Initiate Handover Session | Sprint 1 v2 complete; dashboard + quick-initiate + command-view trio. Review deadline defaults to 3–5 days before last day; successor optional (CL-111) |
+| **UC-HO-01** | Initiate Handover Session | Sprint 1 v2 complete; dashboard + quick-initiate + command-view trio. Review deadline defaults to 3–5 days before last day (CL-111); **no successor field in the session model (CL-114)**. Dashboard + quick-initiate CL-114/115/116/117-applied as of 2026-06-08/09. |
 | **UC-HO-02** | Conduct AI-Guided Voice Interview (Dynamic N-Domain Coverage) | Deferred to Phase 2 (CL-098) — out of POC scope |
 | **UC-HO-03** | Review and Sign Transcript | Sprint 2 complete (amber palette — needs migration) |
-| **UC-HO-04** | Submit Handover Record to Knowledge Graph | **Sprint 3 complete (2026-06-07).** Mockup with 8 real states live at `/session/[id]?tab=review` (CL-103); embedded cleanup CL-108; Phương Anh's own review CL-109 |
+| **UC-HO-04** | Submit Handover Record to Knowledge Graph | **Sprint 3 complete (2026-06-07).** Mockup with 8 real states live at `/session/[id]?tab=review` (CL-103); embedded cleanup CL-108; Phương Anh's own review CL-109; terminology unified on "items" (CL-112). |
 | **UC-HO-05** | Configure Custom Prompts and Section Blueprints | Sprint 1 complete; in POC, prompts feed the capture queue |
 | **UC-HO-06** | Report Hallucination or Error | Sprint 5 pending; feedback triage rules set (CL-095) |
 | **UC-HO-07** | Approve Knowledge Graph Correction | Sprint 5 pending |
@@ -158,10 +160,10 @@ Eleven use cases plus Step Zero. The master catalogue with dependency matrix liv
 
 ### Onboarding (ON)
 
-| UC | Title | Status |
+| UC | Title (CL-113 reframed) | Status |
 |---|---|---|
-| **UC-ON-01** | Generate Personalized Onboarding Playbook | Sprint 4 complete (amber palette — needs migration) |
-| **UC-ON-02** | Read Playbook with Inline Knowledge Tools | Sprint 4 complete (amber palette). *Open question per CL-104: extend to all four Consumer archetypes, or split into UC-ON-02a (Onboarder playbook) + UC-ON-02b (general consumer exploration)?* |
+| **UC-ON-01** | **Generate Newcomer Initial Exploration Prompts** *(reframed CL-113 — was "Generate Personalized Onboarding Playbook")* | Synthesis of role-customized starter prompts at commit time (read from the offboarder's role + section blueprints). Sprint 4's old amber surface (`arteep-s4-onboarding-gen-read.jsx`) is **superseded by CL-113** — no migration needed; the surface it portrays (multi-page personalised playbook) no longer exists. Implementation lives in the Consumer-plane explorer rebuild (CL-110). Final naming + prompt-seeding strategy pending (see §13). |
+| **UC-ON-02** | **Explore Knowledge Graph (role-customized)** *(reframed CL-113 — was "Read Playbook with Inline Knowledge Tools")* | One unified UC covering all four Consumer archetypes — **CL-113 resolves the CL-104 split question** (no playbook to split around). Pairs with CL-110 (company-wide default) and CL-094 (interaction primitives). Sprint 4's old surface is superseded. |
 | **UC-ON-03** | Skill Gap Analysis and Growth Plan | Sprint 5 pending |
 
 ### Step Zero (Z)
@@ -183,22 +185,22 @@ Email components in the connector list above are listed for platform-integration
 
 ## 6. UC-HO-04 Manager Review — the centerpiece of S3
 
-UC-HO-04 is the use case where the QA-INT-01 commit gate becomes visible to the manager. The eight-state mockup completed on 2026-06-07 surfaces every clause of QA-INT-01 in one continuous flow, and lives inside the Session command view as the "Manager review" tab.
+UC-HO-04 is the use case where the QA-INT-01 commit gate becomes visible to the manager. The eight-state mockup completed on 2026-06-07 surfaces every clause of QA-INT-01 in one continuous flow, and lives inside the Session command view as the "Manager review" tab. The pre-commit review unit a manager decides on is an **"item"** (CL-112 · unified vocabulary); the post-commit Knowledge-Graph count on the completed card is **"entries"** — two distinct nouns at two different lifecycle stages, so the same word never names two scales (14 review items vs 487 KG entries).
 
 | State | Name | What it shows |
 |---|---|---|
-| **S1** | Arrival | Bundle overview · 14 items · 4 source-category tiles · one compact "pre-checks cleared" line · single "Start with item 1" CTA. *Collapsed per CL-108 — the earlier "recommended review order" card and the 6-item "pre-review checks" grid were removed.* |
+| **S1** | Arrival | Bundle overview · 14 items · **5 source-category tiles** (CL-112 added the "Uploaded files · 3" tile so tiles sum to 14) · one compact "pre-checks cleared" line · single "Start with item 1" CTA. *Collapsed per CL-108 — the earlier "recommended review order" card and the 6-item "pre-review checks" grid were removed.* |
 | **S2** | Reviewing priority | Side-by-side raw source vs AI-structured rendering · Source Provenance Strip · Network Corroboration Card |
 | **S3** | Quick accept | Accepted Toast Bar · Canonical upgrade · Post-accept inline actions |
 | **S4** | Edit inline | Rose strikethrough for deletions + violet underline for insertions · "Edit history · all versions kept" footer (3-card lineage trail). *Internal labels (e.g. "CL-086 grammar", "Worker SLM") stripped from visible copy per CL-108.* |
 | **S5** | Send back | Incomplete Answer Card · AI-drafted Send-Back Composer · Urgency Selector · Source Context Panel · Send-Back Impact Note |
 | **S6** | Pre-commit flag fix | The Atlas rollback 3-way: AI got it wrong → Trần flagged 4h ago → Minh corrected 30m ago (snapshot → staging → verify → promote 94%) → Duy corroborated in #data-platform. Three-way diff in grid-cols-3 (rose / yellow / emerald). Flag Network Agreement Card. Audit Chain Preview (5-row immutable trail) |
 | **S7** | Bundle summary | Outcome stats (9 accept / 3 edit / 2 send-back / 0 reject) · Category Breakdown Table · Propagation Preview (5-node graph) · Team Impact Row (Engineering 8 · Sales 1 · Data Platform 2) · Ready-to-Sign-Off Strip |
-| **S8** | Sign-off | The QA-INT-01 §1.4 commit gate rendered as a **SHA-256 cryptographic anchor** (`8f3a2b9c…d7a5f` preview) bound to Hà Vy's Entra ID identity. 8-step Commit Progress Log (hash validation → ACL trim → Purview gate → Cosmos writes → Verified edges → playbook propagation → Slack notifications → audit log entry). 15-minute undo grace before the trail becomes immutable. |
+| **S8** | Sign-off | The QA-INT-01 §1.4 commit gate rendered as a **SHA-256 cryptographic anchor** (`8f3a2b9c…d7a5f` preview) bound to Hà Vy's Entra ID identity. 8-step Commit Progress Log (hash validation → ACL trim → Purview gate → Cosmos writes → Verified edges → KG propagation → Slack notifications → audit log entry). 15-minute undo grace before the trail becomes immutable. *(CL-113 / CL-116: the prior "playbook propagation" step is now "KG propagation" — there is no playbook artifact.)* |
 
 The mockup is architected per CL-102 as a sibling-file pattern: main file owns shared scaffolding (ReviewShell, ItemListRail, DecisionRail, DiffPanes, LineageCard, ContextStrip, BundleProgress), with two siblings owning the heavier states (`uc-ho-04-s6-flag-fix.jsx`, `uc-ho-04-s7s8-signoff.jsx`).
 
-CL-103 wires it live: `embedded` + `state` props let SessionCommandView render UC-HO-04 inline as the **Manager review tab — now one of only two visible tabs (CL-107)**. URL routing — `/session/minh-le?tab=review` lands on S1; `/session/minh-le?tab=review&state=s4` deep-links to S4. In the embedded view the loud S1–S8 state strip is replaced by a muted "Preview · {state} · ‹N/8›" stepper and internal jargon is stripped from the copy (CL-108). The **Phương Anh session now has its own real review surface (CL-109)** — her seven Sales sections with per-item accept / send-back and a sign-off gated until every decidable section is decided — built in `session-command-view.jsx`, replacing the earlier placeholder. *(Sibling files for S6–S8 may still carry some internal jargon; a follow-up cleanup is flagged.)*
+CL-103 wires it live: `embedded` + `state` props let SessionCommandView render UC-HO-04 inline as the **Manager review tab — now one of only two visible tabs (CL-107)**. URL routing — `/session/minh-le?tab=review` lands on S1; `/session/minh-le?tab=review&state=s4` deep-links to S4. In the embedded view the loud S1–S8 state strip is replaced by a muted "Preview · {state} · ‹N/8›" stepper and internal jargon is stripped from the copy (CL-108). The **Phương Anh session now has its own real review surface (CL-109 · terminology unified on "items" per CL-112)** — her seven Sales items with per-item accept / send-back and a sign-off gated until every decidable item is decided — built in `session-command-view.jsx`, replacing the earlier placeholder. *(Sibling files for S6–S8 may still carry some internal jargon and successor-name framing — a follow-up CL-114 / CL-108 cleanup is flagged.)*
 
 ---
 
@@ -230,12 +232,12 @@ The two pre-passes sit in front of Purview to reduce its load; they do not repla
 
 Tier is auto-assigned from Purview sensitivity + source labels.
 
-- **Tier 2** (sensitive / legal) — ghosted via strict ACL trim. The successor never sees the existence of these nodes.
-- **Tier 1** (operational, access-controlled) — returns a **metadata-only stub** for the Lock + "Request access" affordance. A narrow exception to pre-retrieval ACL trimming: the successor sees that the node exists and can request access, but does not see content until access is granted. **Linh Phạm (CL-104) is the canonical actor for this affordance.**
+- **Tier 2** (sensitive / legal) — ghosted via strict ACL trim. The newcomer never sees the existence of these nodes.
+- **Tier 1** (operational, access-controlled) — returns a **metadata-only stub** for the Lock + "Request access" affordance. A narrow exception to pre-retrieval ACL trimming: the viewer sees that the node exists and can request access, but does not see content until access is granted. **Linh Phạm (CL-104) is the canonical actor for this affordance.**
 
 ### 7.5 Knowledge Graph consumer-plane interaction model (CL-094)
 
-Progressive Disclosure (central node + 1-hop · double-click expand/collapse) · Contextual-AI quick-start chips (center/zoom/dim) · 0-token hover via stored 15-word `short_summary` · Timeline + Heatmap split-screen (**Thảo Vũ's surface per CL-104**) · Prompt Disambiguation on broad queries. Operates over the company-wide default graph (CL-110), respecting the active filter + the viewer's ACL. Optimises for token efficiency (the 20% scoring weight).
+Progressive Disclosure (central node + 1-hop · double-click expand/collapse) · Contextual-AI quick-start chips (center/zoom/dim · also the carrier for the newcomer's initial exploration prompts per CL-113) · 0-token hover via stored 15-word `short_summary` · Timeline + Heatmap split-screen (**Thảo Vũ's surface per CL-104**) · Prompt Disambiguation on broad queries. Operates over the company-wide default graph (CL-110), respecting the active filter + the viewer's ACL. Optimises for token efficiency (the 20% scoring weight).
 
 ### 7.6 Feedback triage · commit gate preserved (CL-095)
 
@@ -266,6 +268,9 @@ The pre-commit network-flag loop (CL-101) is the sibling rule for the Capture ph
 - 32px button heights · 7px ghost-button vertical padding
 - Explicit focus rings: `focus:ring-2 focus:ring-violet-500/20`
 - Glance-level UI is labels + values only (CL-107); helper / explainer text only on risky or destructive actions
+- **Management-plane dashboards show actions, not aggregates (CL-117)** — for an infrequent high-stakes activity (offboarding), weekly counts, all-time averages, and throughput totals are measurement chrome rather than action prompts; they belong on a future `/reports` surface or in Thảo Vũ's Heatmap (CL-094), not on the operational dashboard. The Hà Vy dashboard exposes only a greeting → FilterChips (segmentation by status with counts) → session list + Recent activity. Card-level affordances carry urgency.
+- **Management-plane chrome doesn't announce the user's role (CL-115)** — topbars use the product wordmark "ART-EEP" alone or a neutral route descriptor (e.g. breadcrumb-style "ART-EEP · Dashboard / Initiate Minh Lê's handover"); no "Manager dashboard" or "Admin X" qualifier. The persona pill in the user area shows *who* the user is, not what the surface is called. The "Manager review" tab label inside the session command view is *content* (a mode of work), not chrome, and is unaffected.
+- **Session model has no successor field (CL-114)** — newcomer identity is RBAC-flagged at KG access time via Entra ID's Newcomer role, not at session-time. Surfaces show no "Successor: X" line, no "to be assigned" placeholder, and no field in the Customize panel.
 
 ### 8.3 UX writing
 
@@ -273,7 +278,9 @@ The pre-commit network-flag loop (CL-101) is the sibling rule for the Capture ph
 - Sentence case · active voice · Linear/Notion/Stripe register
 - Named humans, not roles: "Hà Vy will review" not "your manager will review"
 - "Sensitive content" — not "PII". "Microsoft Purview" never appears in user copy. Internal references (CL-###, QA-INT-01 §, agent-tier names) never appear in user copy (CL-108).
-- Vietnamese system terms preserved in tooltips: "Canonical · Sự thật gốc" (overridden in the POC Consumer-plane showcase per CL-097, where Canonical renders in English only)
+- Vietnamese system terms preserved in tooltips: "Canonical · Sự thật gốc" (overridden in the POC Consumer-plane showcase per CL-097, where Canonical renders in English only).
+- **No "playbook" in user copy (CL-113 / CL-116)** — the Consumption plane has one artifact (the company-wide Knowledge Graph per CL-110); newcomers enter via role-customized initial exploration prompts gated by their Entra ID Newcomer role (CL-114). Phase 3 Deliver sub-stage 8 is "KG access ready", not "Playbook delivered". Activity-feed and completion-banner wording reflects this throughout.
+- **Two distinct nouns for two units (CL-112)** — pre-commit review units the manager decides on are "items" everywhere (UC-HO-04 bundle items, Phương Anh's Sales items, etc.); the post-commit Knowledge-Graph count is "entries". One review = one item; one committed node = one entry. The two never collide on screen.
 
 ### 8.4 Plane-scoped deviations
 
@@ -324,7 +331,7 @@ Azure-native stack. The architectural decisions are listed in §2 of the context
 - **Cosmos DB Gremlin** — the Knowledge Graph itself; partition-keyed by organisation; stores per-node `short_summary` for 0-token hover (CL-094)
 - **Cosmos DB Integrated Cache** — Redis was rejected for architectural simplicity
 - **Microsoft Purview** — mandatory PII gate (no fallback path); fronted by the Regex + Few-Shot pre-passes (CL-092)
-- **Entra ID** — RBAC; the Platform Admin role is distinct from the Manager role. Entra ID identity is the commit-gate signer in UC-HO-04 sign-off (visible in S8).
+- **Entra ID** — RBAC. Three relevant roles in the POC: **Manager** (owns sessions; signs the SHA-256 commit gate in UC-HO-04 S8 via Entra ID identity); **Platform Admin** (Step Zero, distinct from Manager); **Newcomer** (CL-114 — gates Consumer-plane access at KG access time; carries the role-customized initial exploration prompts per CL-113). Newcomer identity is RBAC-flagged at Entra ID level, not at session-time.
 - **Azure OpenAI** — GPT-4o-mini as the Worker tier, GPT-4o as the Expert tier. ComplexityScore-based dynamic routing; confidence-gate escalation from Worker to Expert.
 - **Semantic Kernel** — the orchestrator + Planner Agent
 
@@ -362,24 +369,21 @@ Deployment: Next.js on Vercel, auto-deploys from `main` in ~30 seconds.
 |---|---|---|---|
 | **S0 Platform Foundation** | 1 week | Infra + design system | COMPLETE |
 | **SZ Step Zero** | 2 weeks | Z01–Z04 | PENDING (5 blockers — see §13) |
-| **S1 Handover Initiation** | 2 weeks | UC-HO-01, UC-HO-05 | COMPLETE (violet/yellow; redesigned 2026-06-02 into 3-phase + drawer→command-view + one-click initiation; 6→2 tab collapse + minimal copy CL-107; 30-day window + optional successor CL-111) |
+| **S1 Handover Initiation** | 2 weeks | UC-HO-01, UC-HO-05 | COMPLETE (violet/yellow; redesigned 2026-06-02 into 3-phase + drawer→command-view + one-click initiation; 6→2 tab collapse + minimal copy CL-107; 30-day window CL-111; **no-successor-field session model CL-114; chrome rule CL-115; playbook-ref cleanup CL-116; dashboard action-orientation CL-117** — applied to dashboard + quick-initiate as of 2026-06-08/09). |
 | **S2 Capture & Verify** | 2 weeks | UC-HO-02 (deferred), UC-HO-03 | COMPLETE on the old amber palette. POC offboarder capture surfaces (upload + question queue) PENDING; Prepare-stage fan-out (UC-HO-08) built at `/prepare/[id]`. |
-| **S3 KG Commit · UC-HO-04** | 1.5 weeks | UC-HO-04 Manager Review + Sign-off | **COMPLETE 2026-06-07.** Violet/yellow, all 8 states real, live at `/session/[id]?tab=review`; embedded cleanup CL-108; Phương Anh real review CL-109. |
-| **S4 Onboarding Gen & Read** | 2 weeks | UC-ON-01, UC-ON-02 | COMPLETE on the old amber palette — needs migration |
-| **S-KG Consumption plane** | TBD | Knowledge Graph explorer (CL-094) · **company-wide default (CL-110)** · feedback triage (CL-095) · **four-archetype reader model (CL-104)** | PENDING · next build · target route `/knowledge-graph` · `MASTER.md` shell. Must default to the company-wide GraphRAG (offboarder/project/team/status filters), and include surfaces for Trần (playbook) · Duy (cross-team query) · Linh (cross-dept research + Request access) · Thảo (Timeline + Heatmap). |
+| **S3 KG Commit · UC-HO-04** | 1.5 weeks | UC-HO-04 Manager Review + Sign-off | **COMPLETE 2026-06-07.** Violet/yellow, all 8 states real, live at `/session/[id]?tab=review`; embedded cleanup CL-108; Phương Anh real review CL-109; terminology unified on "items" CL-112. |
+| **S4 Onboarding Gen & Read** | 2 weeks | UC-ON-01, UC-ON-02 | **SUPERSEDED 2026-06-08 by CL-113** — the playbook artifact no longer exists; UC-ON-01 is reframed as "Generate Newcomer Initial Exploration Prompts" and UC-ON-02 as "Explore Knowledge Graph (role-customized)". Implementation lives in the Consumer-plane explorer rebuild (S-KG). No migration needed for the old `arteep-s4-onboarding-gen-read.jsx`. |
+| **S-KG Consumption plane** | TBD | Knowledge Graph explorer (CL-094) · **company-wide default (CL-110)** · **role-customized newcomer entry per CL-113** · feedback triage (CL-095) · **four-archetype reader model (CL-104)** | PENDING · next build · target route `/knowledge-graph` · `MASTER.md` shell. Must default to the company-wide GraphRAG (offboarder/project/team/status filters), gate Consumer-plane access by RBAC (Newcomer role per CL-114), and surface initial-state lenses for Trần (role-customized prompts) · Duy (cross-team query) · Linh (cross-dept research + Request access) · Thảo (Timeline + Heatmap). |
 | **S5 Skill Gap & Feedback** | 1.5 weeks | UC-ON-03, UC-HO-06, UC-HO-07 | PENDING |
 | **S6 Polish & Demo** | 1 week | Cross-cutting | PENDING |
 
 Total: ~12 weeks at full scope. The hackathon-compressed mode cuts Step Zero to 1 week with 2 connectors instead of 8, bringing total to ~11 weeks.
 
-### 11.3 Artifacts marked for migration
+### 11.3 Artifacts marked for migration or superseded
 
-The following artifacts use the old amber palette from before the CL-054 violet/yellow switch and need a migration sweep:
-
-- `arteep-s2-capture-verify.jsx` — 5 Offboarder screens
-- `arteep-s4-onboarding-gen-read.jsx` — 5 Onboarder screens
-
-`arteep-s3-kg-commit.jsx` (the old Manager Completion Report 4 states on amber) is now **superseded** by the UC-HO-04 trio shipped 2026-06-07.
+- `arteep-s2-capture-verify.jsx` — 5 Offboarder screens on old amber palette. **Migration pending.**
+- `arteep-s4-onboarding-gen-read.jsx` — 5 Onboarder screens on old amber palette. **SUPERSEDED 2026-06-08 (CL-113)** — no migration needed; the surface it portrays (multi-page personalised playbook) no longer exists in the system. The Consumer-plane explorer rebuild (CL-110) is the new home for the Newcomer experience.
+- `arteep-s3-kg-commit.jsx` — the old Manager Completion Report 4 states on amber. **SUPERSEDED 2026-06-07** by the UC-HO-04 trio.
 
 ---
 
@@ -387,22 +391,22 @@ The following artifacts use the old amber palette from before the CL-054 violet/
 
 ~3–4 minute pitch. Opens with a 10–15-second Step Zero moment ("Before any handover can happen, our Platform Admin configures the integrations once") demonstrating Z01 → Z02 → Z03. Then transitions to the canonical flow:
 
-1. Hà Vy's Dashboard — 3 pending sessions, 3-phase progress visible
-2. One-click initiate session for Minh Lê (quick-initiate page)
+1. Hà Vy's Dashboard — 3 pending sessions, 3-phase progress visible. No KPI row above; the FilterChips row carries segmentation; urgency lives at the card level (CL-117). Topbar reads "ART-EEP" only, no role qualifier (CL-115).
+2. One-click initiate session for Minh Lê (quick-initiate page) — Customize panel open by default with Review deadline · Data source · Focus areas; no Successor field anywhere (CL-114).
 3. Prepare stage (`/prepare/[id]`) · Phase 1 · live seeding from Trello (POC source) — the 4-Layer Hard-Filter visibly dropping noise; the system fans out network knowledge requests (UC-HO-08) to Minh Lê's auto-derived collaborators (Duy, Linh, and others)
 4. **POC capture** — Minh Lê uploads files and works through the question queue (manager prompts + network questions); colleagues' flags on wrong/insufficient AI-collected data arrive as his correction tasks. *(Voice interview is Phase 2.)*
 5. Phase 2 transcript/content review with the QA-INT-01 inline diff
-6. **Manager review tab** (UC-HO-04 · CL-103) — Hà Vy works the bundle item-by-item across the 8 states. Side-by-side raw vs AI-structured, inline edit, send-back composer, the 3-way pre-commit flag chain (Trần catches AI · Minh corrects · Duy corroborates), bundle summary, then **SHA-256 cryptographic sign-off** binding Entra ID identity to an immutable audit trail. (Phương Anh's session shows the same review model on a Sales bundle · CL-109.)
-7. Phase 3 KG Commit propagation (animated commit progress in S8) with Canonical Facts surfaced (Regex + Few-Shot sanitization shown, Purview behind)
-8. **Consumption plane · company-wide graph, four reader archetypes** (CL-104 / CL-110) — the PO's "show how the KG is used internally" beat. The graph opens company-wide; archetypes filter into it:
-   - **Trần Hữu Nam** (newcomer) opens his personalised Day 1 playbook · Canonical badge + lineage drawer · Tier-1 locked stub with "Request access"
+6. **Manager review tab** (UC-HO-04 · CL-103) — Hà Vy works the bundle item-by-item across the 8 states. Side-by-side raw vs AI-structured, inline edit, send-back composer, the 3-way pre-commit flag chain (Trần catches AI · Minh corrects · Duy corroborates), bundle summary, then **SHA-256 cryptographic sign-off** binding Entra ID identity to an immutable audit trail. (Phương Anh's session shows the same review model on a Sales bundle — same "items" vocabulary per CL-112 · CL-109.)
+7. Phase 3 KG Commit propagation (animated commit progress in S8) with Canonical Facts surfaced (Regex + Few-Shot sanitization shown, Purview behind). 487 **entries** committed (CL-112 vocabulary).
+8. **Consumption plane · company-wide graph, four reader archetypes** (CL-104 / CL-110 / CL-113 / CL-114) — the PO's "show how the KG is used internally" beat. The graph opens company-wide; archetypes filter into it via their Entra ID role:
+   - **Trần Hữu Nam** (newcomer · Entra ID Newcomer role · CL-114) lands in the KG with **role-customized initial exploration prompts** seeded for the Senior Backend Engineer role (CL-113) — Contextual-AI chips like "Where do I start with the auth flow?" · "What's the rollback runbook for billing?". Canonical badge + lineage drawer; Tier-1 locked stub with "Request access".
    - **Duy Nguyễn** (project peer · Data Platform) queries the KG for context on a Minh handover item · Progressive Disclosure + Contextual-AI chips
    - **Linh Phạm** (cross-departmental colleague · Product) researches an adjacent team's work · hits a Tier-1 stub on a Finance node and requests access
    - **Thảo Vũ** (upper management · Engineering Director) opens the Timeline + Heatmap surfaces · sees project evolution + risk distribution at her org level
-9. Skill Gap analysis (Trần Hữu Nam's growth plan, surfaced from the playbook)
+9. Skill Gap analysis (Trần Hữu Nam's growth plan, surfaced from the graph)
 10. Feedback loop · hallucination reported → node flagged "under review" → token-free triage → Manager reviews → Canonical promotion → propagation
 
-The Manager review beat (step 6) showcases the QA-INT-01 §1.4 commit gate end-to-end. The Consumption beat (step 8) is the PO's internal-KG demonstration; it runs on Trello-sourced data in the English-only Consumer-plane shell, opening on the company-wide graph before any archetype filters in.
+The Manager review beat (step 6) showcases the QA-INT-01 §1.4 commit gate end-to-end. The Consumption beat (step 8) is the PO's internal-KG demonstration; it runs on Trello-sourced data in the English-only Consumer-plane shell, opening on the company-wide graph before any archetype filters in. Importantly the demo no longer says the word "playbook" — there is no playbook artifact; each role enters the same Knowledge Graph with a different lens (CL-113).
 
 ---
 
@@ -410,29 +414,35 @@ The Manager review beat (step 6) showcases the QA-INT-01 §1.4 commit gate end-t
 
 The following decisions need stakeholder input. Resolved items are struck through with the resolution recorded.
 
-### Original V1 blockers (still open)
+### Original V1 blockers (mostly resolved)
 
 - **CL-003** — Hackathon-compressed vs production mode (SZ in 1 week with 2 connectors vs full SZ)
 - **CL-005** — Vietnam PDPA compliance basis for automated scanning
 - **HO-03 TBD-1** — E-signature standard (Vietnam-specific)
-- **ON-01 TBD-2** — Static vs interactive Playbook
-- **ON-02 TBD-3** — Mobile parity scope (desktop-first v1 is the default)
+- ~~**ON-01 TBD-2** — Static vs interactive Playbook~~ — **OBSOLETE 2026-06-08 (CL-113):** no playbook artifact; UC-ON-01 reframed as "Generate Newcomer Initial Exploration Prompts" — the question is moot
+- **ON-02 TBD-3** — Mobile parity scope (desktop-first v1 is the default). Note: UC-ON-02 is reframed by CL-113 as "Explore Knowledge Graph (role-customized)" — the mobile-parity question now applies to the Consumer-plane explorer rather than to a playbook reader.
 - ~~**HO-05 TBD-2** — Manager prompts visible to Offboarder pre-capture~~ — **RESOLVED 2026-06-05 (CL-099):** yes, the prompts are the queue the Offboarder answers
 - ~~**HO-06 TBD-1** — SLA for Manager correction review~~ — **RESOLVED 2026-06-05 (CL-095):** 2 weekly cycles, then auto-escalate to the Critical path; sign-off still required
-- ~~**Offboarding window + successor model**~~ — **RESOLVED 2026-06-08 (CL-111):** 30-day standard window · review deadline 3–5 days before last day · successor optional (renders "to be assigned"); Khánh Linh is the 2-day short-notice exception
+- ~~**Offboarding window + successor model**~~ — **RESOLVED 2026-06-08 (CL-111 · further refined CL-114):** 30-day window · review deadline 3–5 days before last day · **successor field removed from POC scope entirely (CL-114)** · newcomer identified by RBAC at KG access time, not by session-time assignment · Khánh Linh is the 2-day short-notice exception
 
 ### New — UC-HO-08 (opened 2026-06-05)
 
 - **HO-08 TBD-1** — How far the auto-derived connection set reaches (1-hop collaborators only vs N-hop) + manager edit window before send
 - **HO-08 TBD-2** — Notification channel + reminder cadence for network requests
 
-### New — Consumer-plane (opened 2026-06-07 · post-CL-104 / CL-110)
+### New — Consumer-plane (opened 2026-06-07 / 06-08 · post-CL-104 / CL-110 / CL-113)
 
 - **Heatmap content definition** — three candidates proposed by the Microsoft AI prompt review (Knowledge Hotspots / Skill Density / Risk Heatmap). All three map cleanly onto the existing semantic palette. With Thảo Vũ now locked as the Heatmap actor, this needs a separate CL to lock the definition. Owner: BA + Product.
-- **UC-ON-02 scope** — extend UC-ON-02 to cover all four Consumer archetypes, or split into UC-ON-02a (Onboarder reads playbook) + UC-ON-02b (general KG consumer exploration)? Owner: BA.
-- **Consumer graph rebuild (CL-110)** — rebuild `knowledge-graph-explorer.jsx` to default to the company-wide GraphRAG with offboarder/project/team/status filters (currently hardcodes Minh Lê). Documented; build deferred per PO. Owner: PO + BA.
-- ~~**Phương Anh's successor**~~ — **RESOLVED 2026-06-08 (CL-111):** the successor is optional; the slot is cleared to "to be assigned" and no successor persona is invented.
+- ~~**UC-ON-02 scope** — extend or split for the four Consumer archetypes~~ — **RESOLVED 2026-06-08 (CL-113):** no playbook to split around; UC-ON-02 unified as "Explore Knowledge Graph (role-customized)" for all four archetypes
+- **Newcomer initial-prompt seeding strategy (post-CL-113)** — open: how many prompts (suggest 4–6) · static templates vs LLM-generated at commit time · token-budget implications. The synthesis step at commit time is where this lives. Owner: BA + Product.
+- **UC-ON-01 / UC-ON-02 final naming in the master UC index (post-CL-113)** — working names locked; final BA-authored names pending. Owner: BA.
+- **Consumer graph rebuild (CL-110)** — rebuild `knowledge-graph-explorer.jsx` to default to the company-wide GraphRAG with offboarder/project/team/status filters (currently hardcodes Minh Lê) and to surface the four-archetype initial-state lenses per CL-113. Documented; build deferred per PO. Owner: PO + BA.
+- ~~**Phương Anh's successor**~~ — **OBSOLETE 2026-06-08 (CL-114):** the successor field is removed entirely; the question of who replaces her is post-hoc and resolved by RBAC at KG access time, not at session creation.
 - ~~**Minh Lê days-left consistency**~~ — **RESOLVED 2026-06-08 (CL-111):** standard 30-day window — Minh = last day Jul 4 · review deadline Jun 30 · 26 days left at demo time.
+
+### Cross-cutting watch items (CL-117 era)
+
+- **Dashboard action-orientation rule generalization (CL-117)** — the cross-cutting principle that Management-plane dashboards show actions not aggregates is logged. Watch for re-introduction of weekly/period KPI tiles on future surfaces; any operational dashboard for an infrequent high-stakes activity must follow the same rule. Aggregate / throughput metrics belong on a future `/reports` view or in the Heatmap surface.
 
 ### Step Zero blockers (Plan v2)
 
@@ -448,17 +458,21 @@ The following decisions need stakeholder input. Resolved items are struck throug
 
 In rough priority order:
 
-1. **Propagate CL-111 across the remaining surfaces** — bring the 30-day window + optional successor onto `session-command-view.jsx` (Minh 26d / deadline Jun 30 · Phương Anh 12d / deadline Jun 16 / successor "to be assigned" — clears Đặng Khải Hoàn), `prepare-stage.jsx` (Minh markedOn / departure / daysLeft → 30-day window), and `uc-ho-01-quick-initiate.jsx` (scenario last day + default deadline = last day − 4). The dashboard is already done.
-2. **POC Capture surfaces** — the **Prepare-stage fan-out (UC-HO-08) is built & live at `/prepare/[id]`**; still pending are the offboarder's self-serve file-upload + question-queue answering surface. This is the POC's replacement for the voice interview; voice (UC-HO-02) is Phase 2 (CL-098–101).
-3. **Knowledge Graph explorer (Consumer plane) · company-wide default + four-archetype scope** — `MASTER.md` shell · route `/knowledge-graph` · Progressive Disclosure, Contextual-AI chips, 0-token hover, Timeline + Heatmap, Tier-1/Tier-2 rendering, feedback triage (CL-094–097). **Must default to the company-wide GraphRAG with offboarder/project/team/status filters (CL-110)** — the current explorer hardcodes Minh Lê and needs reworking. Includes surfaces for all four Consumer reader archetypes per CL-104.
+1. **Continue the CL-114 / CL-115 / CL-116 surface sweep across the remaining Management-plane mockups.** Dashboard (`ha-vy-handover-dashboard.jsx`) and quick-initiate (`uc-ho-01-quick-initiate.jsx`) are **done as of 2026-06-08/09**. Still pending:
+   - `session-command-view.jsx` — any "Successor:" line in Overview / hero / sidebar (CL-114); verify topbar has no role qualifier (CL-115); verify no playbook refs (CL-116)
+   - `prepare-stage.jsx` — any successor display (CL-114); verify topbar (CL-115)
+   - `uc-ho-04-manager-review.jsx` and its siblings (`uc-ho-04-s6-flag-fix.jsx`, `uc-ho-04-s7s8-signoff.jsx`) — any "for successor X" framing in S7 bundle summary or S8 sign-off copy (CL-114); the sibling-file jargon cleanup from CL-108 also flagged here
+2. **POC Capture surfaces** — the **Prepare-stage fan-out (UC-HO-08) is built & live at `/prepare/[id]`**; still pending are the offboarder's self-serve file-upload + question-queue answering surfaces. This is the POC's replacement for the voice interview; voice (UC-HO-02) is Phase 2 (CL-098–101).
+3. **Knowledge Graph explorer (Consumer plane) · company-wide default + four-archetype scope + role-customized newcomer entry** — `MASTER.md` shell · route `/knowledge-graph` · Progressive Disclosure, Contextual-AI chips (carrier for the newcomer's initial prompts per CL-113), 0-token hover, Timeline + Heatmap, Tier-1/Tier-2 rendering, feedback triage (CL-094–097). Must default to the company-wide GraphRAG with offboarder/project/team/status filters (CL-110); gate access by RBAC (Newcomer role per CL-114); surface the four archetype initial-state lenses per CL-113.
 4. **Heatmap content definition** — lock which of Knowledge Hotspots / Skill Density / Risk Heatmap (or which subset) ships, with semantic-palette mapping. Thảo Vũ is the locked actor.
-5. **UC-ON-02 scope decision** — extend or split for the four Consumer archetypes. BA-owned.
-6. **Stakeholder approval** on the Plan v2 decision points (especially Step Zero blockers) + the two UC-HO-08 TBDs.
-7. **Migration sweep** — S2/S4 artifacts to violet/yellow palette (S3 done as of 2026-06-07).
-8. **S5 build** — UC-ON-03 (Skill Gap), UC-HO-06 (Report Hallucination), UC-HO-07 (Correction Review).
-9. **UC-HO-01 v2 governance spec update** — reflect the 3-phase lifecycle + data-ingestion governance (CL-015 deprecation) + the 30-day window / optional successor (CL-111).
-10. **UC-HO-08 spec** — author the full use case (currently logged via CL-100 / CL-101, surfaced at `/prepare/[id]`, and indexed in the master UC index v1.1).
-11. **Demo script** — write the 3–4-minute narrative tying all the states together with the 3-phase lifecycle, POC capture, Manager review, and the company-wide Consumption beat.
+5. **Newcomer initial-prompt seeding strategy (CL-113 follow-up #3)** — number of prompts, static vs LLM-generated at commit time, token budget.
+6. **UC-ON-01 / UC-ON-02 final naming in the master UC index (CL-113 follow-ups #1 + #2)** — BA-owned.
+7. **Stakeholder approval** on the Plan v2 decision points (especially Step Zero blockers) + the two UC-HO-08 TBDs.
+8. **Migration sweep** — S2 artifacts to violet/yellow palette. S3 already done (2026-06-07); **S4 no longer needs migration (CL-113 superseded it)**.
+9. **S5 build** — UC-ON-03 (Skill Gap), UC-HO-06 (Report Hallucination), UC-HO-07 (Correction Review).
+10. **UC-HO-01 v2 governance spec update** — reflect the 3-phase lifecycle + data-ingestion governance (CL-015 deprecation) + the 30-day window (CL-111) + **no-successor-field session model (CL-114) + chrome labeling rule (CL-115) + action-orientation rule (CL-117)**.
+11. **UC-HO-08 spec** — author the full use case (currently logged via CL-100 / CL-101, surfaced at `/prepare/[id]`, and indexed in the master UC index v1.1).
+12. **Demo script** — write the 3–4-minute narrative tying all the states together with the 3-phase lifecycle, POC capture, Manager review, and the company-wide Consumption beat with role-customized newcomer entry. No "playbook" anywhere in the script.
 
 ---
 
@@ -466,11 +480,11 @@ In rough priority order:
 
 | File | Purpose |
 |---|---|
-| `docs/arteep/ARTEEP-design-change-log.md` | Living change log · entries CL-001 → CL-111 |
-| `ARTEEP-context-snapshot.md` | Seed document for any future session · last updated 2026-06-07 |
+| `docs/arteep/ARTEEP-design-change-log.md` | Living change log · entries CL-001 → CL-117 |
+| `ARTEEP-context-snapshot.md` | Seed document for any future session |
 | `docs/arteep/ARTEEP-system-overview.md` | **This document** · the full-view system narrative |
-| `ARTEEP-master-uc-index.md` | v1.1 · 11 UCs (UC-HO-08 added), dependency matrix, TBD register |
-| `UC-HO-01_initiate-handover-session_v2.md` | UC-HO-01 v2.0 governance spec |
+| `ARTEEP-master-uc-index.md` | v1.1 · 11 UCs (UC-HO-08 added; UC-ON-01 / UC-ON-02 reframed by CL-113 · final names pending), dependency matrix, TBD register |
+| `UC-HO-01_initiate-handover-session_v2.md` | UC-HO-01 v2.0 governance spec — pending update to include CL-111/114/115/117 |
 | `UC-HO-02_conduct-ai-guided-voice-interview_v2.md` | UC-HO-02 v2.0 spec (Phase 2) |
 | `ARTEEP-implementation-plan-v2.md` | V2 plan with Step Zero, 12-week timeline |
 | `QA-INT-01-Dual-Verification-Rule.md` | Foundational governance rule |
