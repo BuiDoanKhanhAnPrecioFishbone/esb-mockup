@@ -4,9 +4,12 @@ import SessionCommandView from "@/components/mockups/session-command-view.jsx";
 
 type TabId = "overview" | "stages" | "data" | "audit" | "settings" | "review";
 
-const SESSIONS: Record<string, { initials: "ml" | "pa"; title: string }> = {
+// CL-118 · POC persona scope narrowed 9 → 8. The "phuong-anh" entry is
+// removed from the allow-list; the initials type union narrows to "ml"
+// only. /session/phuong-anh now 404s (notFound), matching the upstream
+// supersession of CL-109 in session-command-view.jsx.
+const SESSIONS: Record<string, { initials: "ml"; title: string }> = {
   "minh-le": { initials: "ml", title: "Minh Lê · session command view" },
-  "phuong-anh": { initials: "pa", title: "Phương Anh Nguyễn · session command view" },
 };
 
 // "review" is the Manager review tab (UC-HO-04) merged into SessionCommandView per CL-103.
@@ -34,7 +37,7 @@ export default async function SessionPage({
     ? (tab as TabId)
     : "overview";
 
-  // Compose the embedded view id: "<sessionKey>-<tabId>". Both sessions support
+  // Compose the embedded view id: "<sessionKey>-<tabId>". The session supports
   // every tab; the component renders the matching tab content. For the review tab,
   // the optional ?state= param picks which of UC-HO-04's 8 states to land on
   // (default s1). Passed through via the view string and parsed inside SessionCommandView.
