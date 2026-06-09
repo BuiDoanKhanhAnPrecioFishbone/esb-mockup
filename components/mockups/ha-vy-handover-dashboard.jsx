@@ -62,10 +62,18 @@ import {
    FilterChips row. Aggregate / throughput metrics belong on a future
    /reports surface or in the Heatmap (CL-094 · Thảo Vũ's upper-
    management surface per CL-104), not here.
+   POC persona scope (CL-118) · narrowed 9 → 8; Phương Anh Nguyễn
+   (Sales) removed from POC scope. The dashboard now renders 2
+   concurrent active sessions (Minh Lê + Khánh Linh) instead of 3.
+   The Phương Anh activity-feed entry and the `sess-pha` SESSIONS_ACTIVE
+   card are removed. Khánh Linh remains the urgent short-notice
+   exception (CL-111 / EX.2); Minh Lê remains the canonical 30-day
+   path. The four-archetype Consumer-plane model (CL-104) is intact
+   on its own surface (`/knowledge-graph`); CL-118 doesn't touch it.
    ═══════════════════════════════════════════════════════════════════ */
 
 const FLOW = [
-  { id: "active",    label: "Active dashboard", trigger: "3 sessions in flight at different lifecycle phases." },
+  { id: "active",    label: "Active dashboard", trigger: "2 sessions in flight at different lifecycle phases." },
   { id: "completed", label: "Just completed",   trigger: "Minh Lê's session finished · moves to Completed section." },
 ];
 
@@ -113,6 +121,10 @@ function getSubStage(subStageId) {
   return null;
 }
 
+// CL-118 · `sess-pha` (Phương Anh Nguyễn · Sales) removed; POC persona
+// scope narrowed 9 → 8. The remaining 2 active sessions cover the
+// canonical 30-day path (Minh Lê · CL-111) and the urgent 2-day
+// short-notice exception (Khánh Linh · CL-111 / EX.2).
 const SESSIONS_ACTIVE = [
   {
     id: "sess-kltran",
@@ -138,18 +150,6 @@ const SESSIONS_ACTIVE = [
     activeDetail: "4m 12s elapsed · ~4m remaining",
     action: { label: "Open session", primary: false, route: "/session/minh-le" },
   },
-  {
-    id: "sess-pha",
-    offboarder: "Phương Anh Nguyễn",
-    role: "Senior Account Executive",
-    dept: "Sales",
-    subStageId: 6,
-    daysLeft: 12,
-    urgency: "needs-action",
-    statusText: "Awaiting your review",
-    activeDetail: "Signed by Phương Anh · 38 minutes ago",
-    action: { label: "Review answers", primary: true, route: "/session/phuong-anh" },
-  },
 ];
 
 const SESSION_COMPLETED_ML = {
@@ -163,10 +163,14 @@ const SESSION_COMPLETED_ML = {
   stats: { entries: 487, canonicalFacts: 12, gapsResolved: 9 },
 };
 
+// CL-118 · the Phương Anh "Signed handover answers · awaiting Hà Vy's
+// review" entry is removed. The remaining 4 entries cover the post-
+// commit KG access ready beat (per CL-113 / CL-116), the Minh Lê
+// commit beat (per CL-112 vocabulary), Khánh Linh's urgent HR sync
+// (per CL-111 EX.2), and Hà Vy's prompt-add action.
 const ACTIVITY = [
   { ts: "2 min ago",   actor: "System",            text: "Knowledge Graph access ready · starter prompts seeded for the Senior Backend Engineer role", severity: "low" },
   { ts: "7 min ago",   actor: "System",            text: "Minh Lê's session committed to knowledge graph · 487 entries", severity: "low" },
-  { ts: "38 min ago",  actor: "Phương Anh Nguyễn", text: "Signed handover answers · awaiting Hà Vy's review", severity: "medium" },
   { ts: "1 hour ago",  actor: "System",            text: "Khánh Linh Trần's departure record synced from HR · urgent (2 days)", severity: "high" },
   { ts: "4 hours ago", actor: "Hà Vy",             text: "Added 3 priority prompts to Minh Lê's session",  severity: "low" },
 ];
@@ -307,6 +311,7 @@ function ActiveDashboard() {
   // operational dashboard. Urgency lives at the card level (rose
   // border + Urgent pill per CL-065 · "Action needed" badge · days-
   // remaining · status text). Segmentation lives in FilterChips below.
+  // CL-118 · 2 concurrent sessions (Minh Lê + Khánh Linh), not 3.
   return (
     <div className="max-w-7xl mx-auto p-6">
       <PageHeader title="Good afternoon, Hà Vy" />
@@ -346,6 +351,8 @@ function JustCompletedDashboard() {
   // CL-117 · KPI row removed; completion celebration banner carries
   // the moment, FilterChips segments by status, and the completed
   // card carries the totals at the card level.
+  // CL-118 · with Phương Anh removed and Minh Lê moving to completed,
+  // the active list has only Khánh Linh remaining.
   const stillActive = SESSIONS_ACTIVE.filter((s) => s.id !== "sess-minhle");
 
   return (
@@ -610,8 +617,13 @@ function PageHeader({ title, subtitle }) {
    See the file header for the rule and the change log for CL-117. */
 
 function FilterChips() {
+  // CL-118 · counts updated for the 2-session POC scope. "All · 2"
+  // (Minh + Khánh Linh), "Awaiting you · 1" (Khánh Linh's "Awaiting
+  // your initiation"), "In progress · 1" (Minh's context seeding),
+  // "Urgent · 1" (Khánh Linh's 2-day exception). "Completed · 2"
+  // remains a placeholder for the historical completed surface.
   const chips = [
-    { label: "All",            count: 3, active: true  },
+    { label: "All",            count: 2, active: true  },
     { label: "Awaiting you",   count: 1, active: false },
     { label: "In progress",    count: 1, active: false },
     { label: "Urgent",         count: 1, active: false, urgent: true },
