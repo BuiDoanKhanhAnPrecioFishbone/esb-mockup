@@ -22,6 +22,8 @@
 
 *Updated 2026-06-08 (later still) · **offboarding policy locked (CL-111).** Company policy fixes the **standard offboarding window at 30 days**, with the **review / handover deadline 3–5 days before the last day** so the admin (manager) and the offboarder verify the captured bundle together. **Successor is optional** — sessions render "to be assigned" when none is named. **Khánh Linh Trần** is the explicit short-notice exception (2-day departure · EX.2). Canonical demo timeline locked: Minh Lê — Jul 4 last day · review Jun 30 · 26 days left · successor Trần Hữu Nam; Phương Anh — Jun 20 last day · review Jun 16 · 12 days left · successor "to be assigned"; Khánh Linh — 2 days · successor "to be assigned". CL-105 / CL-106 / CL-108 / CL-109 propagations still to come.*
 
+*Updated 2026-06-09 · **POC persona scope narrowed 9 → 8 (CL-118).** Phương Anh Nguyễn (Sales · Senior Account Executive) is removed from POC scope. All other personas retained: Hà Vy, Minh Lê, Trần Hữu Nam, Khánh Linh Trần (2-day urgent exception), An Quân Vũ (Step Zero), Duy Nguyễn (project peer), Linh Phạm (cross-departmental Consumer archetype), Thảo Vũ (upper-management archetype). The four-archetype Consumer-plane model is fully intact — all four archetype actors retained. CL-109 (the Phương Anh Manager review surface) is superseded; CL-063 (3 concurrent sessions) is partially superseded (now 2). The Sales source mix (CL-087: Salesforce + shared Calendar + SharePoint) remains a documented supported mix per the flexible multi-source model but is no longer demoed end-to-end. Surface application to the dashboard (`SESSIONS_ACTIVE` 3 → 2 + activity-feed entry), the session command view (`PhuongAnhReview` + `PA_SECTIONS` + `phuong-anh` slug branch removal), and the slug allow-list pending in follow-up commits. **Note:** CL-114, CL-115, CL-116, CL-117 from the prior batch are logged in the change log but their full propagation into this snapshot's §2 / §3 / §4 / §13 / §14 is still pending — see their inline notes in `docs/arteep/ARTEEP-design-change-log.md` for the change content; the most-visible deltas are noted in §6 and §9 below.*
+
 ---
 
 ## 1. Project Overview
@@ -61,7 +63,7 @@
 | **3-phase user-facing lifecycle** | Internal 8-stage pipeline grouped as **Prepare · Capture · Deliver** at every glance-level UI view. Reduces cognitive load. *Phase 3 sub-stage 8 renamed "KG access ready" per CL-113 (was "Playbook delivered").* |
 | **Sibling-file pattern for mockup state extraction (CL-102 · 2026-06-07)** | When a mockup JSX file exceeds ~100KB (the safe-write threshold), extract self-contained state views into sibling files. Main file owns shared scaffolding; siblings own one or more state views + their decision-panel content. First applied to UC-HO-04 (`uc-ho-04-s6-flag-fix.jsx`, `uc-ho-04-s7s8-signoff.jsx`). |
 | **Mockups merged into 1 live control (CL-103 · 2026-06-07 · superseded in part by CL-107)** | Standalone mockups under `components/mockups/` are wired into existing live control surfaces (e.g. `SessionCommandView`) via the `embedded` + `state` props contract — not exposed as separate `/m/<slug>` routes (retired) or new top-level routes. **The "6th tab" framing from this CL is superseded by CL-107 — there is no 6th tab; UC-HO-04 lives as the Manager review tab in the 2-tab session view.** The session command view remains the system for per-session work. |
-| **Consumer-plane four-archetype persona model (CL-104 · 2026-06-07)** | The Consumer class spans **four archetypes** — newcomer (Trần Hữu Nam) · project peer (Duy Nguyễn) · cross-departmental colleague (Linh Phạm) · upper management (Thảo Vũ). Locked persona set expanded 6 → 9 to make the Consumption plane demonstrate how the KG is used internally across the organization, not only by the canonical Onboarder. |
+| **Consumer-plane four-archetype persona model (CL-104 · 2026-06-07 · narrowed 9 → 8 per CL-118 · four-archetype model intact)** | The Consumer class spans **four archetypes** — newcomer (Trần Hữu Nam) · project peer (Duy Nguyễn) · cross-departmental colleague (Linh Phạm) · upper management (Thảo Vũ). Locked persona set expanded 6 → 9 (CL-104), then **narrowed 9 → 8 per CL-118 (2026-06-09)** — Phương Anh Nguyễn (Sales) removed from POC scope. The **four-archetype Consumer-plane model is unaffected** — all four archetype actors retained; only the Sales offboarder is dropped. |
 | **Session command view collapsed to 2 tabs · labels-only style (CL-107 · 2026-06-07)** | The session command surface now exposes only **Overview** and **Manager review** tabs. Stages folds into the hero phase bar; Data folds into Overview + the action rail; Audit is demoted to a link; Settings folds into the action rail. Legacy `?tab=stages|data|audit|settings` URLs resolve to Overview so existing deep links keep working. Across POC surfaces, **explainer text is stripped** — **labels-only** style; helper text is reserved for **destructive actions only**. Reduces `session-command-view.jsx` from ~55KB to ~30KB and tightens the demo narrative to the two surfaces that actually carry the story (Overview + Manager review). |
 | **Consumer KG default = company-wide GraphRAG (CL-110 · 2026-06-07)** | The Consumption plane is the **organization's shared knowledge layer** for internal users (newcomers, project peers, cross-departmental colleagues, upper management), so its **default view is a company-wide GraphRAG** over everything the system holds — **not** a single offboarder's handover subgraph. Knowledge spans three streams: (1) what the system extracted from departing employees' sources during their handovers; (2) what current employees uploaded themselves; (3) what current employees permitted the system to collect from their own data. Default canvas is a multi-cluster company map (organized by domain / project / team) with **no single human at the center**. A single offboarder centered (e.g. Minh) is **one filtered lens** alongside filters by project, team / department, and status (canonical / contested / critical). All CL-094 primitives operate over the whole graph, respecting both the active filter and the viewer's ACL. The current `knowledge-graph-explorer.jsx` hardcodes Minh as the central hub (`SUBJECT = minh-le`) and **diverges from this model** — rebuild deferred per PO direction. |
 | **Standard offboarding window (CL-111 · 2026-06-08)** | Company policy fixes the **offboarding window at 30 days** from the day an employee's status flips to Offboarding to their last day. The session's **review / handover deadline is 3–5 days before the last day**, baking in a joint admin + offboarder verification buffer before departure. **Successor is optional** — a session may have no successor named at initiation; the field renders **"to be assigned"** in the UI rather than a name. **Khánh Linh Trần (2-day urgent departure · EX.2) is the explicit short-notice exception**, outside the 30-day standard. Canonical demo timeline: Minh Lê (Jul 4 / review Jun 30 / 26 days left / successor Trần Hữu Nam) · Phương Anh Nguyễn (Jun 20 / review Jun 16 / 12 days left / successor "to be assigned") · Khánh Linh Trần (2 days · successor "to be assigned"). |
@@ -70,7 +72,7 @@
 
 ---
 
-## 3. Personas (9 total — locked · four-archetype Consumer model per CL-104 · timelines per CL-111)
+## 3. Personas (8 total — locked · four-archetype Consumer model per CL-104 · narrowed 9 → 8 per CL-118 · timelines per CL-111)
 
 | Name | Role | Department | Plane | Notes |
 |---|---|---|---|---|
@@ -78,7 +80,6 @@
 | **Minh Lê** | Offboarder | Engineering | Capture | Canonical demo persona; Senior Backend Engineer. **Last day Jul 4 · review deadline Jun 30 · 26 days left · successor Trần Hữu Nam (CL-111)** |
 | **Trần Hữu Nam** | Successor / Onboarder | Engineering | Consumption (newcomer) | Succeeds Minh Lê. **Per CL-113, his Consumption-plane entry is the Knowledge Graph with newcomer-customized initial exploration prompts** — no separate playbook artifact. Also flags the AI in UC-HO-04 S6 (Atlas rollback chain) |
 | **Khánh Linh Trần** | Offboarder | People & Culture | Capture | Head of People Operations. **Short-notice 2-day departure · EX.2 · the explicit exception to the standard 30-day offboarding window (CL-111)**. Exercises EX.2 + high PII. **Successor "to be assigned"** |
-| **Phương Anh Nguyễn** | Offboarder | Sales | Capture | Senior Account Executive; demonstrates non-engineering source mix. **Last day Jun 20 · review deadline Jun 16 · 12 days left · successor "to be assigned" (CL-111)** |
 | **An Quân Vũ** | Platform Admin / IT | — | Step Zero | Plan v2 CL-068; owns Step Zero |
 | **Duy Nguyễn** *(NEW · CL-104 · promoted from supporting)* | Senior Data Engineer | Data Platform | Consumption (project peer) | Already in UC-HO-04 S6 (Atlas rollback 3-way) as corroborating colleague; now locked as the **project peer** Consumer archetype |
 | **Linh Phạm** *(NEW · CL-104)* | Product Manager | Product | Consumption (cross-dept) | **Cross-departmental colleague** archetype; exercises Tier-1 "Request access" (CL-093) on content scoped to other teams |
@@ -97,7 +98,7 @@ All four archetypes enter the **same company-wide Knowledge Graph** (CL-110 · m
 
 Each persona has different handover material types · scoped to approved shared workspaces only:
 - **Engineering (Minh Lê)**: Jira tickets, GitHub repos (PR descriptions, commit messages, wiki pages), Google Drive (shared) files. *POC showcase source: Trello (CL-091).*
-- **Sales (Phương Anh)**: Salesforce deals, shared Calendar, SharePoint sales-collateral documents
+- **Sales** *(no demo persona post-CL-118)*: Salesforce deals, shared Calendar, SharePoint sales-collateral documents. Remains a documented supported mix per CL-091 / CL-087; no longer demoed end-to-end since Phương Anh Nguyễn was removed from POC scope.
 - **People Ops (Khánh Linh)**: HRIS records, Notion policy pages, SharePoint policy archive
 
 Email, personal mailboxes, and private direct messages are excluded from automated collection per the data-ingestion governance rule. Where role-specific context lives in email threads, it surfaces through the POC question queue or manual file upload, not automated scanning.
@@ -181,7 +182,7 @@ The Consumption plane is the **single artifact** for all four reader archetypes 
 |---|---|---|---|
 | **S0 Platform Foundation** | 1 week | Infra + design system | COMPLETED |
 | **SZ Step Zero (NEW)** | 2 weeks | Z01–Z04 | PENDING (5 blockers) |
-| **S1 Handover Initiation** | 2 weeks | UC-HO-01, UC-HO-05 | COMPLETED (v2 with violet/yellow; redesigned 2026-06-02 to 3-phase + drawer→command-view + one-click initiation). **Session model per CL-111** — 30-day standard window, review deadline 3–5 days before last day, successor optional ("to be assigned"); Khánh Linh remains the 2-day urgent exception. Dashboard timeline applied; `session-command-view.jsx`, `prepare-stage.jsx`, `uc-ho-01-quick-initiate.jsx` propagation pending. **Session view collapsed to 2 tabs per CL-107.** |
+| **S1 Handover Initiation** | 2 weeks | UC-HO-01, UC-HO-05 | COMPLETED (v2 with violet/yellow; redesigned 2026-06-02 to 3-phase + drawer→command-view + one-click initiation). **Session model per CL-111** — 30-day standard window, review deadline 3–5 days before last day, **successor field removed per CL-114** (was "to be assigned"; now no field at all — newcomer identified by RBAC at KG access time). Khánh Linh remains the 2-day urgent exception. **POC persona scope narrowed 9 → 8 per CL-118** — Phương Anh Nguyễn removed; dashboard now shows 2 concurrent sessions (Minh + Khánh Linh) instead of 3. Dashboard + quick-initiate CL-114 / CL-115 / CL-116 / CL-117 applied (2026-06-08/09); CL-118 surface application to dashboard `SESSIONS_ACTIVE` + activity feed, session-command-view `phuong-anh` slug branch removal, and slug allow-list pending. `session-command-view.jsx`, `prepare-stage.jsx`, `uc-ho-01-quick-initiate.jsx` CL-111 / CL-114 / CL-115 / CL-117 propagation still pending. **Session view collapsed to 2 tabs per CL-107.** |
 | **S2 Capture & Verify** | 2 weeks | UC-HO-02, UC-HO-03 | COMPLETED (old amber palette — needs migration). **POC: voice interview deferred to Phase 2 (CL-098); capture = self-serve upload + question queue (CL-099). New surfaces pending.** |
 | **S3 KG Commit · UC-HO-04** | 1.5 weeks | UC-HO-04 Manager Review + Sign-off | **COMPLETED 2026-06-07 with violet/yellow palette.** Mockup at `components/mockups/uc-ho-04-manager-review.jsx` + siblings `uc-ho-04-s6-flag-fix.jsx` + `uc-ho-04-s7s8-signoff.jsx`. All 8 states real. Wired into live `/session/[id]` as the **Manager review** tab via CL-103 (now one of only two tabs in the session view per CL-107; the other is Overview). **Terminology refreshed per CL-112** — "items" everywhere; S1 tiles reconciled to 14 (added Uploaded files tile · `SESSION.filesTotal` corrected 4 → 3). |
 | **S4 Onboarding Gen & Read** | 2 weeks | UC-ON-01, UC-ON-02 | **SUPERSEDED 2026-06-08 by CL-113** — no separate playbook artifact. UC-ON-01 / UC-ON-02 reframed; their build is now part of S-KG. `arteep-s4-onboarding-gen-read.jsx` removed from migration scope. |
@@ -264,9 +265,9 @@ The Consumption plane is the **single artifact** for all four reader archetypes 
 | `arteep-s0-component-library.jsx` | CANONICAL | 7 shared components |
 | `arteep-s1-handover-initiation.jsx` | SUPERSEDED | V1 with old amber palette |
 | `arteep-s1-handover-initiation-v2.jsx` | SUPERSEDED | V2; replaced by dashboard + quick-initiate + command-view trio (2026-06-02) |
-| `ha-vy-handover-dashboard.jsx` | CURRENT | Multi-session command center · 3-phase progress · **post-commit KG count uses "entries" (CL-112)** — completion banner "487 entries", `stats.entries` key, completed-card "Entries" stat, activity-feed line, This-week "Entries committed to KG" stat. **30-day session model + canonical timelines applied (CL-111)** — Minh / Phương Anh / Khánh Linh days-left + successor fields. |
-| `uc-ho-01-quick-initiate.jsx` | CURRENT | One-click session creation · progressive-disclosure customize. **CL-111 30-day window + "to be assigned" successor wording propagation pending.** |
-| `session-command-view.jsx` | CURRENT | Per-session tabbed workspace · **2 tabs now: Overview · Manager review (CL-107)** — Stages folded into hero phase bar, Data folded into Overview + action rail, Audit demoted to link, Settings folded into action rail. Legacy `?tab=stages|data|audit|settings` URLs resolve to Overview so old links don't 404. **Labels-only style applied (CL-107)** — explainer text stripped, helper text only on destructive actions. File ~30KB (down from ~55KB). **CL-111 30-day window propagation pending** — review-deadline strip + successor field. |
+| `ha-vy-handover-dashboard.jsx` | CURRENT | Multi-session command center · 3-phase progress · **post-commit KG count uses "entries" (CL-112)** — completion banner "487 entries", `stats.entries` key, completed-card "Entries" stat, activity-feed line, This-week "Entries committed to KG" stat. **30-day session model + canonical timelines applied (CL-111)** — Minh / Khánh Linh days-left + successor fields. **CL-114 / CL-115 / CL-116 / CL-117 applied (2026-06-08)** — no successor field; "Manager dashboard" chrome label removed; no playbook refs; KPI row + "This week" panel removed. **CL-118 surface application pending** — drop `sess-pha` from `SESSIONS_ACTIVE` (3 → 2 cards); rewrite or drop the Phương Anh activity-feed entry; update FLOW trigger copy "3 sessions" → "2 sessions". |
+| `uc-ho-01-quick-initiate.jsx` | CURRENT | One-click session creation · progressive-disclosure customize. **CL-111 30-day window applied via review deadline default.** **CL-114 applied (2026-06-09)** — Successor select removed from Customize panel; field eliminated from session model entirely. Customize panel now exposes Review deadline · Data source · Focus areas. **CL-115 verified clean.** |
+| `session-command-view.jsx` | CURRENT | Per-session tabbed workspace · **2 tabs now: Overview · Manager review (CL-107)** — Stages folded into hero phase bar, Data folded into Overview + action rail, Audit demoted to link, Settings folded into action rail. Legacy `?tab=stages|data|audit|settings` URLs resolve to Overview so old links don't 404. **Labels-only style applied (CL-107)** — explainer text stripped, helper text only on destructive actions. File ~30KB (down from ~55KB). **CL-111 30-day window propagation pending** — review-deadline strip + successor field. **CL-114 propagation pending** — remove "Successor: X" lines if present in Overview / hero / sidebar. **CL-115 propagation pending** — verify topbar has no role qualifier. **CL-118 propagation pending** — remove `phuong-anh` slug branch from `SESSIONS_BY_SLUG`; remove `PhuongAnhReview` component + `PA_SECTIONS` data + per-item Accept/Send-back state + sign-off gate (built per CL-109, now superseded); simplify `ReviewTab` dispatch to only `minh-le` → `UCHO04ManagerReview`. |
 | `uc-ho-04-manager-review.jsx` | **CURRENT (NEW 2026-06-07)** | Sprint 3 Manager Review + Sign-off · 8 states · violet/yellow · `embedded` + `state` props (CL-103). **Review-unit terminology "items" (CL-112)** — 14 items total; S1 arrival tiles reconciled to sum to 14 (5 tiles: 4 source tiles + Uploaded files tile); `SESSION.filesTotal` corrected 4 → 3 |
 | `uc-ho-04-s6-flag-fix.jsx` | **CURRENT (NEW 2026-06-07)** | UC-HO-04 sibling · S6 3-way diff for Atlas rollback flag chain (CL-102) |
 | `uc-ho-04-s7s8-signoff.jsx` | **CURRENT (NEW 2026-06-07)** | UC-HO-04 sibling · S7 bundle summary + S8 SHA-256 sign-off (CL-102) |
@@ -288,16 +289,16 @@ The Consumption plane is the **single artifact** for all four reader archetypes 
 | `ARTEEP-master-uc-index.md` | v1.1 · 11 UCs (UC-HO-08 added). UC-ON-01 / UC-ON-02 names need refresh per CL-113 (working names locked; final names pending). |
 | `ARTEEP-implementation-plan-v2.md` | V2 with Step Zero, 12-week timeline |
 | `QA-INT-01-Dual-Verification-Rule.md` | Foundational governance rule |
-| `ARTEEP-design-change-log.md` | Living document — **113 entries** (latest: CL-113) |
+| `ARTEEP-design-change-log.md` | Living document — **118 entries** (latest: CL-118) |
 | `docs/arteep/ARTEEP-system-overview.md` | Single-document full-view system narrative |
 | `Sprint-1-compact.md` | Sprint 1 snapshot (3-phase lifecycle, post-redesign) |
 | `ART_EEP_Architecture_Summary_EN.md` | Grill-me session record — Knowledge Lake architecture (source of CL-090–101) |
 
 ---
 
-## 10. Design Change Log Summary (CL-001 through CL-113)
+## 10. Design Change Log Summary (CL-001 through CL-118)
 
-113 entries across these major themes. Sections CL-001 through CL-101 are unchanged — see prior commits of this file or the change-log itself for theme summaries.
+118 entries across these major themes. Sections CL-001 through CL-101 are unchanged — see prior commits of this file or the change-log itself for theme summaries.
 
 ### UC-HO-04 Manager Review build (CL-102 to CL-103, 2026-06-07)
 - Sibling-file pattern for mockup state extraction — main file under ~100KB safe-write threshold, sibling files own state views + decision-panel content (CL-102)
@@ -312,7 +313,7 @@ The Consumption plane is the **single artifact** for all four reader archetypes 
 - CL-105 — form fields shown + selectable across POC surfaces, no hidden / disabled fields
 - CL-106 — Management-plane surfaces migrated to Trello (implements CL-091 on surfaces that predated it)
 - CL-108 — UC-HO-04 embedded surface cleanup (preview stepper · jargon strip · S1 collapse)
-- CL-109 — real Manager review surface for Phương Anh (Sales bundle); supersedes the CL-103 placeholder
+- CL-109 — real Manager review surface for Phương Anh (Sales bundle); supersedes the CL-103 placeholder *(later superseded by CL-118 — see below)*
 
 ### Session command view simplification (CL-107, 2026-06-07)
 - **Session command view collapsed from 6 tabs to 2** — **Overview** + **Manager review** only
@@ -336,9 +337,9 @@ The Consumption plane is the **single artifact** for all four reader archetypes 
 ### Offboarding window policy (CL-111, 2026-06-08)
 - Standard **30-day offboarding window** locked from policy
 - **Review / handover deadline 3–5 days before last day** — admin + offboarder verify the captured bundle together before departure
-- **Successor optional** — sessions render **"to be assigned"** when none is named
+- **Successor optional** — sessions render **"to be assigned"** when none is named *(later superseded by CL-114 — successor field removed entirely)*
 - **Khánh Linh Trần (2-day urgent · EX.2)** is the explicit short-notice exception
-- Canonical demo timeline: Minh — Jul 4 / review Jun 30 / 26 days · successor Trần · Phương Anh — Jun 20 / review Jun 16 / 12 days · successor "to be assigned" · Khánh Linh — 2 days · successor "to be assigned"
+- Canonical demo timeline: Minh — Jul 4 / review Jun 30 / 26 days · Phương Anh — Jun 20 / review Jun 16 / 12 days *(obsolete per CL-118)* · Khánh Linh — 2 days
 - Applied to `ha-vy-handover-dashboard.jsx` · `session-command-view.jsx` / `prepare-stage.jsx` / `uc-ho-01-quick-initiate.jsx` propagation pending
 
 ### Review-unit terminology (CL-112, 2026-06-08)
@@ -353,6 +354,39 @@ The Consumption plane is the **single artifact** for all four reader archetypes 
 - Resolves CL-104 follow-up #2 (UC-ON-02 single-vs-split) — no playbook to split around
 - Phase 3 sub-stage 8 "Playbook delivered" renamed "KG access ready"
 - `arteep-s4-onboarding-gen-read.jsx` SUPERSEDED entirely · `knowledge-graph-explorer.jsx` becomes the single Consumer-plane surface
+
+### Session model · successor field removed (CL-114, 2026-06-08)
+- Successor field removed from POC session model entirely; supersedes the "successor optional · to be assigned" portion of CL-111
+- Newcomer identity established via RBAC (Entra ID Newcomer role) at Knowledge Graph access time, not by session-time assignment
+- 30-day window, review-deadline-3-5-days-before-last-day rule, and Khánh Linh 2-day exception from CL-111 preserved
+- Surface application: dashboard + quick-initiate applied 2026-06-08/09; session-command-view + prepare-stage + UC-HO-04 sign-off copy pending
+
+### Chrome labeling rule (CL-115, 2026-06-08)
+- Management-plane chrome doesn't announce the user's role — topbars use product wordmark "ART-EEP" alone or a neutral route descriptor; no "Manager dashboard" / "Admin X" qualifier
+- RBAC governs access invisibly; persona pill identifies the user; chrome describes the surface, not the role
+- "Manager review" tab label is content (a mode of work), not chrome — unaffected
+- Applied to dashboard 2026-06-08; quick-initiate + session-command-view + prepare-stage verification pending
+
+### Playbook reference cleanup (CL-116, 2026-06-08)
+- Catalogs leftover "playbook" wording in shipped Management-plane mockups after CL-113 eliminated the artifact
+- Three concrete dashboard refs locked for purge: `LIFECYCLE_PHASES` Deliver sub-stage 8 label ("Playbook delivered" → "KG access ready"); completion celebration banner CTA (removed); activity feed entry rewords to "bundle committed to Knowledge Graph" (drops named successor per CL-114)
+- Other Management-plane mockups verified; same purge rule applies prospectively
+- Applied to dashboard 2026-06-08
+
+### Dashboard action-orientation rule (CL-117, 2026-06-08)
+- Dashboards for infrequent high-stakes activities show actions and event-driven signals, not time-aggregated KPIs
+- Period metrics (weekly counts, all-time averages, throughput totals, hallucination tallies) removed from the operational surface — belong on a future `/reports` view or in Thảo Vũ's Heatmap (CL-094)
+- Concrete removals from dashboard: top KPI row (four `KpiTile`s + `KpiRow` / `KpiTile` components); "This week" right-rail panel (four `MiniStat`s + container)
+- Cross-cutting: any Management-plane surface for an infrequent high-stakes activity follows the same principle; refines CL-058 ("empty sections don't render")
+- Path B chosen from a 3-path proposal ("keep it simple with B. also log."); applied to dashboard immediately after the CL log
+
+### POC persona scope refinement (CL-118, 2026-06-09)
+- Locked persona set narrowed 9 → 8; Phương Anh Nguyễn (Sales · Senior Account Executive) removed from POC scope
+- All other personas retained: Hà Vy, Minh Lê, Trần Hữu Nam, Khánh Linh Trần (2-day urgent exception), An Quân Vũ (Step Zero), Duy Nguyễn (project peer), Linh Phạm (cross-departmental Consumer archetype), Thảo Vũ (upper-management archetype)
+- Four-archetype Consumer-plane model unaffected — all four archetype actors retained
+- CL-109 (Phương Anh Manager review surface) superseded; CL-063 (3 concurrent sessions) partially superseded (now 2)
+- CL-087 Sales source mix (Salesforce + shared Calendar + SharePoint) remains documented per CL-091; no longer demoed end-to-end
+- Surface application pending: dashboard `SESSIONS_ACTIVE` 3 → 2 + activity-feed entry; session-command-view `phuong-anh` slug branch + `PhuongAnhReview` + `PA_SECTIONS` removal; `app/session/[id]/page.tsx` slug allow-list
 
 ---
 
@@ -370,7 +404,8 @@ The Consumption plane is the **single artifact** for all four reader archetypes 
 - ON-02 TBD-3 — Mobile parity scope (desktop-first v1 default)
 - ~~HO-05 TBD-2 — Manager prompts visible to Offboarder pre-capture~~ → **RESOLVED 2026-06-05 (CL-099): yes — the prompts are the queue the Offboarder answers.**
 - ~~HO-06 TBD-1 — SLA for Manager correction review~~ → **RESOLVED 2026-06-05 (CL-095): 2 weekly cycles, then auto-escalate to the Critical path; sign-off still required.**
-- ~~Offboarding window + successor model~~ → **RESOLVED 2026-06-08 (CL-111): 30-day standard window · review deadline 3–5 days before last day · successor optional ("to be assigned"). Khánh Linh is the 2-day urgent exception.**
+- ~~Offboarding window + successor model~~ → **RESOLVED 2026-06-08 (CL-111 · further refined CL-114): 30-day standard window · review deadline 3–5 days before last day · successor field removed from POC scope entirely (CL-114 supersedes "to be assigned"); newcomer identified by RBAC at KG access time. Khánh Linh is the 2-day urgent exception.**
+- ~~POC persona scope~~ → **RESOLVED 2026-06-09 (CL-118): locked set narrowed 9 → 8; Phương Anh Nguyễn removed from POC scope; four-archetype Consumer-plane model intact (all four archetype actors retained); urgent short-notice exception preserved (Khánh Linh); Step Zero preserved (An Quân Vũ); CL-109 (Phương Anh review surface) superseded; CL-063 (3 concurrent sessions) partially superseded.**
 
 ### New — UC-HO-08 (opened 2026-06-05)
 - HO-08 TBD-1 — How far the auto-derived connection set reaches (1-hop collaborators only vs N-hop) + manager edit window before send
@@ -418,7 +453,7 @@ The system reads/writes to:
 
 The hackathon pitch opens with a 10–15 second Step Zero moment ("Before any handover can happen, our Platform Admin configures the integrations once"), demonstrating Z01 → Z02 → Z03. Then transitions to "Now Hà Vy can run a handover session…" and proceeds through the canonical flow:
 
-1. Hà Vy's Dashboard (3 pending sessions on the **30-day offboarding model with deadlines 3–5 days before each last day per CL-111** — Minh (26 days · Jul 4 last day), Phương Anh (12 days · Jun 20 · "to be assigned" successor), Khánh Linh (2 days · urgent exception); 3-phase progress visible · post-commit KG count rendered as "**entries**" per CL-112)
+1. Hà Vy's Dashboard (**2 pending sessions** post CL-118 narrowing — Minh (26 days · Jul 4 last day · per CL-111) and Khánh Linh (2 days · urgent exception per CL-111); successor field removed entirely per CL-114; 3-phase progress visible · post-commit KG count rendered as "**entries**" per CL-112; topbar reads "ART-EEP" only per CL-115; no KPI row above per CL-117)
 2. One-click initiate session for Minh Lê (quick-initiate page)
 3. Command-view **Overview tab** (one of two tabs in the session view per CL-107 · the other is Manager review) · Phase 1 Prepare · live seeding from Trello (POC source) — 4-Layer Hard-Filter visibly dropping noise; the system fans out **network knowledge requests** (UC-HO-08) to Minh Lê's auto-derived connections (Duy, Linh, and others)
 4. **POC capture** — Minh Lê uploads his files and works through the **question queue** (manager prompts + questions from his network); colleagues' flags on wrong/insufficient AI-collected data arrive as his correction tasks. *(The voice interview is Phase 2.)*
@@ -448,7 +483,7 @@ If picking up where this left off, the next actionable items are:
 3. **Lock the Heatmap content definition** — three candidates proposed (Knowledge Hotspots / Skill Density / Risk Heatmap); decide which one(s) to ship and how they map onto the semantic palette. Thảo Vũ is the locked actor (CL-104).
 4. **Lock the newcomer initial-prompt seeding strategy (post-CL-113)** — how many prompts (4–6 working default), static templates vs LLM-generated at commit time, token-budget implications.
 5. **Finalize UC-ON-01 / UC-ON-02 names (post-CL-113)** — working names locked; finalize when the UC spec is rewritten.
-6. **Apply CL-111 timeline propagation to remaining mockups** — `session-command-view.jsx`, `prepare-stage.jsx`, `uc-ho-01-quick-initiate.jsx` need the canonical 30-day window + "to be assigned" successor wording applied (dashboard is already done).
+6. **Apply CL-111 / CL-114 timeline + session-model propagation to remaining mockups** — `session-command-view.jsx`, `prepare-stage.jsx` need the canonical 30-day window applied; CL-114 removes the successor field entirely (no "to be assigned" wording — that phrasing is superseded). Dashboard + quick-initiate are already done. **Also apply CL-118 surface changes** — drop `phuong-anh` slug + remove `PhuongAnhReview` component + `PA_SECTIONS` data + simplify `ReviewTab` in `session-command-view.jsx`; remove `phuong-anh` from `VALID_SLUGS` in `app/session/[id]/page.tsx`; drop `sess-pha` from dashboard `SESSIONS_ACTIVE` (3 → 2) + rewrite or drop the Phương Anh activity-feed entry + update FLOW trigger copy "3 sessions" → "2 sessions".
 7. **Stakeholder approval needed** on the Plan v2 decision points (especially Step Zero blockers) + the two UC-HO-08 TBDs.
 8. **Migration sweep** — S2 artifact needs violet/yellow palette migration (S3 done 2026-06-07 · S4 superseded by CL-113 · no migration needed).
 9. **S5 build** — UC-ON-03 (Skill Gap), UC-HO-06 (Report Hallucination), UC-HO-07 (Correction Review).
@@ -457,7 +492,7 @@ If picking up where this left off, the next actionable items are:
 12. **UC-HO-04 spec** — author the full v2 use case to reflect the new mockup.
 13. **Master UC index refresh** — UC-ON-01 / UC-ON-02 names per CL-113; UC-HO-04 / UC-HO-08 added per their live builds.
 14. **Demo script** — write the 3–4 minute narrative tying all the states together with the 3-phase lifecycle, POC capture, Manager review, and the four-archetype Consumption beat on the single company-wide KG surface.
-15. **CL-105 / CL-106 / CL-108 / CL-109 propagation** — this snapshot has propagated CL-107 + CL-110 + CL-111 + CL-112 + CL-113; the remaining 2026-06-07 changes (form-fields-shown rule, Trello live migration of Management surfaces, UC-HO-04 jargon strip, real Phương Anh review surface) are logged in the design change log but not yet woven into the snapshot sections above. Follow-up commits.
+15. **CL-105 / CL-106 / CL-108 / CL-109 propagation** — this snapshot has propagated CL-107 + CL-110 + CL-111 + CL-112 + CL-113 + CL-118; the remaining 2026-06-07 changes (form-fields-shown rule, Trello live migration of Management surfaces, UC-HO-04 jargon strip, real Phương Anh review surface — the last of which is now superseded by CL-118) are logged in the design change log but not yet woven into the snapshot sections above. Follow-up commits.
 
 **Canonical artifact for current state:** `uc-ho-04-manager-review.jsx` (+ siblings) for the Manager review surface; `arteep-system-ui-tour.jsx` for the broader QA-INT-01 demo tour; the dashboard + quick-initiate + command-view trio for everything Sprint 1 since 2026-06-02 (command-view now a 2-tab surface per CL-107). The POC Capture surfaces and the four-archetype Knowledge Graph (Consumer plane · single surface per CL-113 · company-wide GraphRAG per CL-110) are the next builds.
 
