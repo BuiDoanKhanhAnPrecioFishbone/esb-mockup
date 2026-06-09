@@ -7,8 +7,7 @@ import {
   FileText, MessageSquare, Network, Eye,
   AlertTriangle, AlertOctagon, Clock, CheckCircle2, Loader2,
   ArrowRight, MoreHorizontal, Tag, Trello, Lock,
-  RefreshCw, UploadCloud, History, ShieldAlert,
-  Check, Award, Send, ShieldCheck
+  RefreshCw, UploadCloud, History, ShieldAlert
 } from "lucide-react";
 import UCHO04ManagerReview from "./uc-ho-04-manager-review.jsx";
 
@@ -24,24 +23,30 @@ import UCHO04ManagerReview from "./uc-ho-04-manager-review.jsx";
        ONLY on the two destructive actions (cancel, request more detail).
      · Trello 4-layer source (CL-091) · async question-queue capture
        (CL-098/099) · UC-HO-04 review wired in (CL-103).
-     · CL-109 · Phương Anh's Manager review is now a real surface (her
-       7 Sales items, per-item accept / send-back, sign-off CTA),
-       not a placeholder. Minh Lê still routes to the full UC-HO-04.
-     · CL-112 · the review unit is "items" everywhere (was "sections" on
-       Phương Anh's surface) so both review surfaces and the dashboard
-       use one noun. The post-commit KG count on the dashboard is
-       "entries" — a different unit at a different stage.
+     · CL-118 (2026-06-09) · POC persona scope narrowed 9 → 8 —
+       Phương Anh Nguyễn (Sales · Senior Account Executive) removed
+       from POC scope. This supersedes CL-109 (the Phương Anh real
+       Manager review surface). Concrete removals: the `pa` entry
+       from SESSIONS, the `phuong-anh` slug branch in ReviewTab, the
+       PhuongAnhReview + PaSectionDetail components, the PA_SECTIONS
+       data, and the dead OverviewReview + ActionSidebar.isReview
+       paths (PA was the only session at subStage 6). The persona-
+       agnosticism of the UC-HO-04 + UC-HO-03 review model is
+       preserved at the architecture level — a future second offboarder
+       persona at subStage 6 would route through the same generic
+       review surface.
+     · CL-112 · the review unit is "items" everywhere so all review
+       surfaces and the dashboard use one noun. The post-commit KG
+       count on the dashboard is "entries" — a different unit at a
+       different stage.
      · CL-111 · 30-day offboarding-window timeline. Minh — last day
-       Jul 4, review deadline Jun 30, 26 days left. Phương Anh — last
-       day Jun 20, review deadline Jun 16, 12 days left, successor
-       optional ("to be assigned"). Successor renders with a
-       "to be assigned" fallback wherever it shows.
+       Jul 4, review deadline Jun 30, 26 days left. Khánh Linh's
+       2-day urgent path lives on the dashboard, not here.
    ═══════════════════════════════════════════════════════════════════ */
 
 const FLOW = [
   { id: "ml-overview", label: "Minh Lê · Overview",    trigger: "Phase 1 · Prepare · seeding from Trello." },
   { id: "ml-review",   label: "Minh Lê · Review",      trigger: "Manager review · UC-HO-04 decision workspace." },
-  { id: "pa-overview", label: "Phương Anh · Overview", trigger: "Phase 2 · Capture · answers ready for review." },
 ];
 
 // 3 user-facing phases · 8 internal sub-stages kept for tracking
@@ -73,16 +78,16 @@ function getSubStage(subStageId) {
   return null;
 }
 
+// CL-118 · the `pa` (Phương Anh Nguyễn · Sales) session entry is removed
+// from this map. Minh Lê remains the only wired session in the
+// session-command-view; Khánh Linh's urgent path lives on the
+// dashboard. Future offboarder personas would add their own entry here
+// using the same shape.
 const SESSIONS = {
   ml: {
     urlSlug: "minh-le", offboarder: "Minh Lê", role: "Senior Backend Engineer",
     dept: "Engineering", initials: "ML", subStageId: 2, daysLeft: 26,
     successor: "Trần Hữu Nam", deadline: "June 30, 2026 · 17:00",
-  },
-  pa: {
-    urlSlug: "phuong-anh", offboarder: "Phương Anh Nguyễn", role: "Senior Account Executive",
-    dept: "Sales", initials: "PA", subStageId: 6, daysLeft: 12,
-    successor: null, deadline: "June 16, 2026 · 17:00",
   },
 };
 
@@ -186,7 +191,6 @@ function FooterNav({ stepIdx, step, onChange }) {
 function StepRenderer({ id }) {
   if (id === "ml-overview") return <CommandView session={SESSIONS.ml} activeTab="overview" />;
   if (id === "ml-review")   return <CommandView session={SESSIONS.ml} activeTab="review" />;
-  if (id === "pa-overview") return <CommandView session={SESSIONS.pa} activeTab="overview" />;
   return null;
 }
 
@@ -336,11 +340,16 @@ function TabBar({ session, activeTab }) {
   );
 }
 
-/* ─── Overview · varies by phase ────────────────────────────────────── */
+/* ─── Overview · varies by phase ─────────────────────────────────────
+   CL-118 · the subStage === 6 ("Answers reviewed") branch + the
+   matching OverviewReview component are removed because Phương Anh
+   was the only wired session in that state. A future session at
+   subStage 6 would re-introduce a generic items-preview surface,
+   keyed off its own bundle items rather than the deleted PA_SECTIONS
+   mockup data. */
 
 function OverviewTab({ session }) {
   if (session.subStageId === 2) return <OverviewSeeding session={session} />;
-  if (session.subStageId === 6) return <OverviewReview session={session} />;
   return null;
 }
 
@@ -385,44 +394,6 @@ function OverviewSeeding({ session }) {
           <ActivityEntry ts="14:36:24" actor="Worker Agent"  text="Trello scan complete · 24 kept · 11 skipped · 0 redacted" />
           <ActivityEntry ts="14:35:00" actor="Planner Agent" text="Applied 4-layer hard-filter to Trello" />
           <ActivityEntry ts="14:32:08" actor="Hà Vy"         text="Started session" last />
-        </div>
-        <AuditLink session={session} />
-      </div>
-    </div>
-  );
-}
-
-function OverviewReview({ session }) {
-  return (
-    <div className="space-y-5">
-      <article className="rounded-lg border border-emerald-200 bg-emerald-50/30 p-4">
-        <div className="flex items-start gap-3">
-          <div className="w-9 h-9 rounded-md bg-white border border-emerald-200 flex items-center justify-center shrink-0">
-            <FileText className="w-4 h-4 text-emerald-700" strokeWidth={1.75} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold text-gray-900">Answers ready for your review</h3>
-            <p className="text-[12px] text-gray-500 mt-0.5">Signed 38m ago · 7 items · 2 flagged</p>
-          </div>
-        </div>
-      </article>
-
-      <div>
-        <SectionLabel>Captured content</SectionLabel>
-        <div className="grid grid-cols-4 gap-2 mt-2">
-          <SmallStat icon={MessageSquare} label="Items"    value="7" />
-          <SmallStat icon={Network}       label="Verified" value="23" />
-          <SmallStat icon={AlertTriangle} label="Flagged"  value="2" tone="warning" />
-          <SmallStat icon={Lock}          label="Redacted" value="1" />
-        </div>
-      </div>
-
-      <div>
-        <SectionLabel>Items to review</SectionLabel>
-        <div className="space-y-2 mt-2">
-          {PA_SECTIONS.map((s) => (
-            <SectionRow key={s.title} title={s.title} status={s.status} meta={s.meta} muted={s.status === "redacted"} />
-          ))}
         </div>
         <AuditLink session={session} />
       </div>
@@ -488,54 +459,13 @@ function ActivityEntry({ ts, actor, text, last }) {
   );
 }
 
-function SectionRow({ title, status, meta, muted, onClick }) {
-  const cfg = {
-    verified: { icon: CheckCircle2, iconCls: "text-emerald-600", badge: "bg-emerald-50 border-emerald-200 text-emerald-700", label: "Verified" },
-    flagged:  { icon: AlertTriangle, iconCls: "text-yellow-600", badge: "bg-yellow-50 border-yellow-200 text-yellow-800",   label: "Flagged" },
-    redacted: { icon: Lock,         iconCls: "text-gray-400",   badge: "bg-gray-50 border-gray-200 text-gray-500",         label: "Redacted" },
-    accepted: { icon: CheckCircle2, iconCls: "text-violet-600", badge: "bg-violet-50 border-violet-200 text-violet-700",   label: "Accepted" },
-    "sent-back": { icon: RefreshCw, iconCls: "text-yellow-700", badge: "bg-yellow-50 border-yellow-200 text-yellow-800",   label: "Sent back" },
-  }[status];
-  const Icon = cfg.icon;
-  return (
-    <article
-      onClick={onClick}
-      className={`rounded-md border border-gray-200 bg-white px-3 py-2.5 flex items-center gap-3 hover:border-gray-300 transition-colors cursor-pointer ${muted ? "opacity-60" : ""}`}
-    >
-      <Icon className={`w-3.5 h-3.5 shrink-0 ${cfg.iconCls}`} strokeWidth={1.75} />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-medium text-gray-900">{title}</span>
-          <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold border ${cfg.badge}`}>{cfg.label}</span>
-        </div>
-        <div className="text-[11px] text-gray-500 leading-relaxed">{meta}</div>
-      </div>
-      <ChevronRight className="w-3.5 h-3.5 text-gray-300 shrink-0" />
-    </article>
-  );
-}
-
-function SmallStat({ icon: Icon, label, value, tone }) {
-  const cfg = {
-    default: { border: "border-gray-200",   bg: "bg-gray-50/40",   iconCls: "text-gray-500",   valueCls: "text-gray-900" },
-    warning: { border: "border-yellow-200", bg: "bg-yellow-50/40", iconCls: "text-yellow-700", valueCls: "text-yellow-800" },
-  }[tone || "default"];
-  return (
-    <div className={`rounded-md border ${cfg.border} ${cfg.bg} px-2 py-1.5`}>
-      <div className="flex items-center gap-1 text-[10px] text-gray-500 uppercase tracking-wider font-medium">
-        <Icon className={`w-2.5 h-2.5 ${cfg.iconCls}`} strokeWidth={1.75} />
-        {label}
-      </div>
-      <div className={`text-sm font-semibold ${cfg.valueCls} mt-0.5`} style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{value}</div>
-    </div>
-  );
-}
-
-/* ─── Action rail · next action + info + cancel (Settings folds here) ── */
+/* ─── Action rail · next action + info + cancel (Settings folds here) ──
+   CL-118 · the isReview branch (subStage === 6) is removed alongside
+   OverviewReview — Phương Anh was the only session that triggered it.
+   A future subStage-6 session would add its own action card here. */
 
 function ActionSidebar({ session }) {
   const isSeeding = session.subStageId === 2;
-  const isReview  = session.subStageId === 6;
 
   return (
     <aside className="space-y-4">
@@ -547,19 +477,6 @@ function ActionSidebar({ session }) {
             <button className="w-full h-8 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20">
               <Eye className="w-3 h-3" />
               Watch progress
-            </button>
-          </article>
-        )}
-        {isReview && (
-          <article className="rounded-lg border border-emerald-200 bg-emerald-50/30 p-3 mt-2">
-            <p className="text-[12px] text-gray-700 mb-3"><strong className="text-gray-900">2 items</strong> need your decision.</p>
-            <Link href={`/session/${session.urlSlug}?tab=review`} className="w-full h-9 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30 mb-1.5">
-              Review answers
-              <ArrowRight className="w-3 h-3" />
-            </Link>
-            <button className="w-full h-8 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20" title="Send the queue back to the offboarder for more detail">
-              <RefreshCw className="w-3 h-3" />
-              Request more detail
             </button>
           </article>
         )}
@@ -615,188 +532,16 @@ function SectionLabel({ children }) {
   return <h2 className="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-medium">{children}</h2>;
 }
 
-/* ─── Manager review (CL-103 · Minh Lê) / (CL-109 · Phương Anh) ─────── */
+/* ─── Manager review (CL-103 · Minh Lê) ──────────────────────────────
+   CL-118 · the `phuong-anh` slug branch is removed; CL-109's Phương Anh
+   real-review surface (PhuongAnhReview + PaSectionDetail + PA_SECTIONS)
+   is superseded. Minh Lê routes to UCHO04ManagerReview; any other
+   slug renders empty (the slug allow-list lives in
+   app/session/[id]/page.tsx, which CL-118 updates separately). */
 
 function ReviewTab({ session, state }) {
   if (session.urlSlug === "minh-le") {
     return <UCHO04ManagerReview embedded state={state || "s1"} />;
   }
-  if (session.urlSlug === "phuong-anh") {
-    return <PhuongAnhReview session={session} />;
-  }
   return null;
-}
-
-/* ─── CL-109 · Phương Anh's real review surface ───────────────────────
-   Her 7 Sales items as a working list. Each item shows the captured
-   answer + source, with per-item accept / send-back. Labels-only style
-   (CL-107); helper text kept on the destructive send-back only.
-   Selecting an item opens it inline. The reviewable unit is an "item"
-   (CL-112) — consistent with UC-HO-04. */
-
-const PA_SECTIONS = [
-  { id: 1, title: "Sales pipeline · Q3 outlook",          status: "verified", meta: "1,247 words · 4 facts",
-    answer: "Pipeline is $2.4M weighted across 14 open deals. Three are committed for Q3 close: TXM ($480K), Helios ($210K), and the Vanta renewal ($95K). The rest are best-case. Vanta and TXM are the two the successor should call in week one.",
-    source: "Salesforce · shared pipeline · SharePoint Q3 deck" },
-  { id: 2, title: "Vendor XYZ renewal · penalty clause",  status: "flagged",  meta: "864 words · 1 flagged",
-    answer: "There's a verbal 5-business-day grace on the SLA penalty that isn't in the signed contract. I worked it out with their account lead last March. It should be confirmed by phone, never email — they'll deny it on record.",
-    source: "SharePoint · Vendor-Contracts · call notes",
-    flag: "Verbal-only commitment with no written record. Confirm before relying on it in the renewal." },
-  { id: 3, title: "Account TXM · escalation paths",        status: "verified", meta: "932 words · 5 facts",
-    answer: "TXM escalates through their VP of Ops, not procurement. Procurement stalls everything. Direct line and the two-touch cadence that's worked are in the notes.",
-    source: "Salesforce · account history · shared Calendar" },
-  { id: 4, title: "Forecast methodology",                 status: "verified", meta: "513 words · 3 facts",
-    answer: "I weight commit at 90%, best-case at 40%, pipeline at 15%. It's conservative on purpose — leadership prefers a beat to a miss. The spreadsheet logic is documented.",
-    source: "SharePoint · forecast model" },
-  { id: 5, title: "Customer success · churn signals",     status: "verified", meta: "678 words · 4 facts",
-    answer: "Two early churn signals matter most: a drop in weekly active seats and a quiet renewal quarter with no exec touch. Both are leading indicators I track monthly.",
-    source: "Salesforce · usage exports" },
-  { id: 6, title: "Internal team dynamics",               status: "redacted", meta: "Redacted by sensitivity",
-    answer: null, source: null },
-  { id: 7, title: "Reflection · what worked",             status: "flagged",  meta: "442 words · 1 flagged",
-    answer: "The single thing that moved deals was getting to the economic buyer early. One specific claim about a competitor's pricing should be verified before it goes in the playbook.",
-    source: "Own contribution",
-    flag: "Contains a competitor-pricing claim — verify before it reaches the graph." },
-];
-
-function PhuongAnhReview({ session }) {
-  const [openId, setOpenId] = React.useState(null);
-  const [decisions, setDecisions] = React.useState({});
-
-  const setDecision = (id, d) => setDecisions((prev) => ({ ...prev, [id]: d }));
-
-  const decidableIds = PA_SECTIONS.filter((s) => s.status !== "redacted").map((s) => s.id);
-  const decidedCount = decidableIds.filter((id) => decisions[id]).length;
-  const allDecided = decidedCount === decidableIds.length;
-
-  return (
-    <div className="grid grid-cols-[1fr_300px] gap-5 p-6 items-start">
-      <div className="min-w-0 space-y-2">
-        <div className="flex items-center justify-between gap-2 mb-1">
-          <SectionLabel>Items · {PA_SECTIONS.length}</SectionLabel>
-          <span className="text-[10px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>
-            {decidedCount} / {decidableIds.length} decided
-          </span>
-        </div>
-
-        {PA_SECTIONS.map((s) => {
-          const decided = decisions[s.id];
-          const effectiveStatus = decided || s.status;
-          const isOpen = openId === s.id;
-          if (s.status === "redacted") {
-            return <SectionRow key={s.id} title={s.title} status="redacted" meta={s.meta} muted />;
-          }
-          return (
-            <div key={s.id}>
-              <SectionRow
-                title={s.title}
-                status={effectiveStatus}
-                meta={s.meta}
-                onClick={() => setOpenId(isOpen ? null : s.id)}
-              />
-              {isOpen && (
-                <PaSectionDetail
-                  section={s}
-                  decision={decided}
-                  onAccept={() => { setDecision(s.id, "accepted"); setOpenId(null); }}
-                  onSendBack={() => { setDecision(s.id, "sent-back"); setOpenId(null); }}
-                />
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      <aside className="space-y-4">
-        <div>
-          <SectionLabel>Your decision</SectionLabel>
-          <article className="rounded-lg border border-gray-200 bg-white p-3 mt-2 space-y-2 text-[11px]">
-            <InfoRow label="Accepted" value={String(Object.values(decisions).filter((d) => d === "accepted").length)} />
-            <InfoRow label="Sent back" value={String(Object.values(decisions).filter((d) => d === "sent-back").length)} />
-            <InfoRow label="Remaining" value={String(decidableIds.length - decidedCount)} />
-          </article>
-        </div>
-
-        <div>
-          <SectionLabel>Sign off</SectionLabel>
-          <article className={`rounded-lg border p-3 mt-2 ${allDecided ? "border-emerald-200 bg-emerald-50/30" : "border-gray-200 bg-white"}`}>
-            <button
-              disabled={!allDecided}
-              className={`w-full h-9 rounded-md text-sm font-semibold inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 ${
-                allDecided
-                  ? "bg-violet-600 hover:bg-violet-700 text-white focus:ring-violet-500/30"
-                  : "bg-gray-100 text-gray-400 cursor-not-allowed"
-              }`}
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              Sign off &amp; commit
-            </button>
-            {!allDecided && (
-              <p className="text-[10px] text-gray-400 text-center mt-1.5 leading-relaxed">
-                Decide every item first. Nothing reaches the graph until you sign off.
-              </p>
-            )}
-          </article>
-        </div>
-
-        <div>
-          <SectionLabel>Session</SectionLabel>
-          <div className="rounded-md border border-gray-200 bg-white p-3 mt-2 space-y-2 text-[11px]">
-            <InfoRow label="Successor" value={session.successor || "to be assigned"} />
-            <InfoRow label="Deadline"  value={session.deadline} mono />
-          </div>
-        </div>
-      </aside>
-    </div>
-  );
-}
-
-function PaSectionDetail({ section, decision, onAccept, onSendBack }) {
-  return (
-    <div className="rounded-md border border-gray-200 border-t-0 rounded-t-none bg-gray-50/40 p-4 -mt-px mb-2 space-y-3">
-      {section.flag && (
-        <div className="rounded-md border border-yellow-200 bg-yellow-50/60 px-3 py-2 flex items-start gap-2">
-          <AlertTriangle className="w-3.5 h-3.5 text-yellow-700 shrink-0 mt-0.5" strokeWidth={2} />
-          <p className="text-[11px] text-yellow-900 leading-relaxed">{section.flag}</p>
-        </div>
-      )}
-
-      <div>
-        <div className="text-[10px] uppercase tracking-[0.18em] text-gray-500 font-medium mb-1">Captured answer</div>
-        <p className="text-[13px] text-gray-800 leading-relaxed">{section.answer}</p>
-      </div>
-
-      <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
-        <FileText className="w-3 h-3" strokeWidth={1.75} />
-        <span>{section.source}</span>
-      </div>
-
-      {decision ? (
-        <div className={`rounded-md border px-3 py-2 text-[12px] font-medium inline-flex items-center gap-1.5 ${
-          decision === "accepted" ? "border-violet-200 bg-violet-50/50 text-violet-700" : "border-yellow-200 bg-yellow-50/50 text-yellow-800"
-        }`}>
-          {decision === "accepted" ? <Check className="w-3.5 h-3.5" /> : <RefreshCw className="w-3.5 h-3.5" />}
-          {decision === "accepted" ? "Accepted · commits on sign-off" : "Sent back to Phương Anh"}
-        </div>
-      ) : (
-        <div className="flex items-center gap-2 pt-1">
-          <button
-            onClick={onAccept}
-            className="h-8 px-3 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-[12px] font-semibold inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30"
-          >
-            <Check className="w-3.5 h-3.5" />
-            Accept
-          </button>
-          <button
-            onClick={onSendBack}
-            className="h-8 px-3 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-[12px] font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20"
-            title="Returns this item to Phương Anh's queue for a clarification"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            Send back
-          </button>
-        </div>
-      )}
-    </div>
-  );
 }
