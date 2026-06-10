@@ -16,10 +16,13 @@ REAL APP — shared sidebar + topbar via components/app/AppShell.tsx
                             components/mockups/uc-ho-01-quick-initiate.jsx
                             ?customize=1 opens the customize expander
 
-/session/[id]             → Session command view (tabbed full-screen)
+/session/[id]             → Session command view (3-view × 3-tab, RBAC-scoped per CL-119)
                             components/mockups/session-command-view.jsx
                             Valid ids · minh-le (POC narrowed to one wired session per CL-118)
-                            ?tab=stages opens the Stages tab
+                            Tabs · Overview · Data · Logs (Logs hidden from Stakeholder view)
+                            ?role=manager|stakeholder|offboarder selects role view (default manager · demo-only)
+                            ?tab=overview|data|logs selects tab
+                            Surface restructure pending — see CL-119 propagation note in change log
 
 SPEC TRACES — standalone walkthroughs (no AppShell, Prev/Next chrome)
 ─────────────────────────────────────────────────────────────────
@@ -49,7 +52,7 @@ The full ART-EEP context — design system (violet/yellow/rose/emerald palette),
 Deeper reference docs are in `docs/arteep/`:
 - `ARTEEP-master-uc-index.md` — all 10 use cases with dependencies
 - `ARTEEP-implementation-plan-v2.md` — 12-week sprint roadmap with Step Zero
-- `ARTEEP-design-change-log.md` — 118 entries (CL-001 through CL-118). The change log is the source of truth for locked decisions; the rule bullets in §"Design system" below are a quick-reference subset, not a replacement.
+- `ARTEEP-design-change-log.md` — 119 entries (CL-001 through CL-119). The change log is the source of truth for locked decisions; the rule bullets in §"Design system" below are a quick-reference subset, not a replacement.
 - `QA-INT-01-Dual-Verification-Rule.md` — foundational governance rule + compliance matrix
 - `UC-HO-01_initiate-handover-session_v2.md`, `UC-HO-02_conduct-ai-guided-voice-interview_v2.md` — detailed UC specs
 
@@ -83,7 +86,7 @@ For tweaks to the dashboard, quick-initiate, or session command view — by far 
 |---|---|
 | The dashboard, pending session cards, completed row, activity feed | `components/mockups/ha-vy-handover-dashboard.jsx` |
 | The quick-initiate page, default tiles, customize expander | `components/mockups/uc-ho-01-quick-initiate.jsx` |
-| Any session-detail tab (Overview, Stages, Data, Audit log, Settings), the 3-phase hero | `components/mockups/session-command-view.jsx` |
+| Any session-detail tab (Overview · Data · Logs per CL-119), the 3-phase hero, role-scoped views (Manager · Stakeholder · Offboarder) | `components/mockups/session-command-view.jsx` |
 | The sidebar, top bar, search, notifications, user pill | `components/app/AppShell.tsx` |
 | The team guide content | `TEAM-GUIDE.md` (rendered at `/guide`) |
 | A spec-trace state | `components/mockups/uc-ho-01-normal-flow.jsx` or `uc-ho-01-edge-cases.jsx` |
@@ -168,6 +171,7 @@ From `ARTEEP-context-snapshot.md` §4. Keep visual fidelity high:
 - **No named successor at session time (CL-114).** Sessions do not carry a successor field — no name, no "to be assigned" placeholder, no field at all. Newcomer identity is established by **RBAC at KG access time** (Entra ID Newcomer role gates the role-customized initial exploration prompts per CL-113), not by a session-time assignment. The 30-day offboarding window, the 3–5-day review deadline, and the Khánh Linh 2-day urgent exception (CL-111) are unaffected.
 - **Labels + values only on POC surfaces (CL-107).** Descriptive / explanatory prose is removed from Management-plane surfaces; UI is labels and values. Helper / explanatory text is kept only on risky or destructive actions (e.g. Cancel session, Send back, Request more detail). Governance constraints (data-ingestion scope, QA-INT-01 §s, Purview, sanitization tiers) hold in the architecture and the change log — they are not narrated in the glance-level UI.
 - **POC persona scope narrowed 9 → 8 (CL-118 · 2026-06-09).** Phương Anh Nguyễn (Sales · Senior Account Executive) is removed from POC scope. The dashboard renders 2 concurrent active sessions (Minh Lê + Khánh Linh) instead of 3; the `phuong-anh` slug branch, `PhuongAnhReview` component, `PA_SECTIONS` data, and route allow-list entry are removed. CL-109's Phương Anh real Manager review surface is **superseded** — the persona-agnosticism of UC-HO-04 + UC-HO-03 is preserved at the spec level. The four-archetype Consumer-plane model (CL-104) is intact. Sales as a documented source mix per CL-091 remains, but is no longer demoed end-to-end.
+- **Session Detail Page · 3-view RBAC × 3-tab shell + Side-Panel UX (CL-119 · 2026-06-09).** `/session/[id]` is restructured around three role-based views (**Manager** · **Stakeholder** · **Offboarder**) × a uniform three-tab shell (**Overview** · **Data** · **Logs**). Role-scoped content per view; the Stakeholder view **hides** the Logs tab entirely (not rendered, not locked-shown). Role selected via Entra ID RBAC in production; via `?role=manager|stakeholder|offboarder` query param in the demo (default `manager`). **Side-Panel / Contextual Drawer** is the canonical Data-tab interaction primitive — right-side slide-in (~480px wide, body scrollable, closes on backdrop / Escape / close button) used for every Data-tab card action so the main-board scroll position is preserved (no split-screen, no overlay). **Azure Integration Hub data pipeline:** Trello is **not real-time-queried** — data is ingested via Power Automate / Logic Apps into a Staging Graph in Azure AI Search, then surfaced to the UI; pre-retrieval ACL trimming at the Cosmos DB partition + Azure AI Search index level gates each role's visibility before rows reach the UI. **New design-system primitives:** Side-Panel · Force Close justification modal (required text-area, submit disabled until ≥20 chars · justification logged to Audit Log) · Approve / Reject / Ignore action set (emerald primary · rose secondary with reason-for-rewrite sub-prompt · gray ghost) on the Manager Side-Panel · Mark as Satisfied (emerald primary) on the Stakeholder Side-Panel · AI To-Do List aggregator (pinned banner at top of Offboarder's Data tab, lists pending AI + Stakeholder questions) · ⚠️ Action Required badge (yellow per CL-054) on Offboarder card rows · Pending Approval state (new draft-item state for Offboarder submissions awaiting Manager judgment). **Supersession:** CL-107 (2-tab) is **partially superseded** — tab structure goes 2 → 3 to honor the RBAC matrix; CL-107's labels-only / explainer-stripped rule is unaffected. CL-105 (Audit Log as link) is **superseded for the Manager view** — Audit Log is promoted to a first-class Logs tab. `uc-ho-04-manager-review.jsx` (CL-103) becomes **reference-only** — kept in the repo as instructional reference, but `session-command-view.jsx` no longer imports it; the new Data-tab Side-Panel is built **fresh**, not adapted from UC-HO-04. **Surface application is deferred to a follow-up session per PO direction** — this CL is the spec; the JSX restructure ships in the next chat.
 
 ## Personas (locked)
 
@@ -176,6 +180,8 @@ Hà Vy (Manager · Engineering) · Minh Lê (Offboarder · Engineering) · Trầ
 *Note · 2026-06-09 (CL-118):* The POC persona scope is narrowed 9 → 8 — Phương Anh Nguyễn (Sales) is removed from POC scope. This supersedes CL-109 (her real review surface) and partially supersedes CL-063 (3 → 2 concurrent sessions). The five locked-here personas plus the three Consumer-plane archetype personas (Duy Nguyễn, Linh Phạm, Thảo Vũ per CL-104) make the full POC set of eight. Sales as a documented source mix (CL-091) is preserved; only the demo persona is removed.
 
 *Note · 2026-06-08 (CL-114):* "Onboarder" / "successor" is no longer a session-time relationship. Trần Hữu Nam remains a canonical demo persona, but his access to the Knowledge Graph is granted via the **Newcomer role** in Entra ID at KG access time — not via a named link from Minh Lê's session record. The session model has no successor field. The persona list above is the locked-five demo cast (narrowed from six by CL-118); the four Consumer-plane archetypes (newcomer · project peer · cross-departmental colleague · upper management) and their additional locked personas (Duy Nguyễn, Linh Phạm, Thảo Vũ per CL-104) are described in `ARTEEP-context-snapshot.md` §3.
+
+*Note · 2026-06-09 (CL-119):* The new **Stakeholder** role introduced by the session-detail-page restructure is **relationship-based, not persona-archetype-based**. A Stakeholder is anyone with a working relationship to the offboarder — same Trello card · same Trello board · same department · or higher role managing the offboarder. **Hà Vy is a Manager on sessions she creates and a Stakeholder on sessions she manages-into.** This is explicitly **orthogonal** to the four-archetype Consumer-plane personas (CL-104): those archetypes describe *post-commit* KG access patterns, whereas Stakeholder is a *pre-commit* handover-session role. The same person can be both (e.g. Duy is a project-peer Consumer archetype AND a Stakeholder on Minh's session), but the categorizations live on different axes — do not conflate.
 
 ## Local dev
 
