@@ -48,12 +48,10 @@ function getSubStage(subStageId) {
 const SESSIONS = {
   ml: {
     urlSlug: "minh-le", offboarder: "Minh Lê", role: "Senior Backend Engineer",
-    dept: "Engineering", initials: "ML", subStageId: 5, daysLeft: 26,
+    dept: "Engineering", initials: "ML", subStageId: 3, daysLeft: 26,
     deadline: "June 30, 2026 · 17:00",
   },
 };
-
-/* ─── Mock data · Prepare ──────────────────────────────────────── */
 
 const CRAWL_SUMMARY = { totalKept: 38, thinSkipped: 14, redacted: 2, gaps: 8 };
 
@@ -87,8 +85,6 @@ const STAKEHOLDERS = [
   { id: "tung",  name: "Tùng Đặng",    role: "Product Manager",        cards: 4,  detail: "2 Core Feature · 1 Architecture — prioritized inventory sync + export",  defaultChecked: false },
 ];
 
-/* ─── Mock data · Capture ──────────────────────────────────────── */
-
 const CAPTURE_RESPONDENTS = [
   { name: "Minh Lê",     role: "Offboarder",   answers: 5, files: 1, status: "active" },
   { name: "Duy Nguyễn",  role: "Stakeholder",  answers: 2, files: 0, status: "responded" },
@@ -106,8 +102,6 @@ const CAPTURE_GAPS = [
   { text: "Rationale for the tech debt items deferred from Q1", status: "open" },
   { text: "On-call war stories — recurring false-positive alerts and their workarounds", status: "open" },
 ];
-
-/* ─── Mock data · Logs ─────────────────────────────────────────── */
 
 const LOGS_SEEDING = [
   { ts: "14:36:24", actor: "Worker Agent",  text: "Trello board 'Backend Platform' scan complete · 24 cards kept · 11 thin skipped · 0 redacted" },
@@ -228,17 +222,20 @@ function StepRenderer({ id }) {
 }
 
 function CommandView({ session, activeTab }) {
+  const [subStageId, setSubStageId] = React.useState(session.subStageId);
+  const currentSession = { ...session, subStageId };
+  const moveToCapture = () => setSubStageId(5);
   return (
     <div className="max-w-7xl mx-auto">
-      <Hero session={session} />
-      <TabBar session={session} activeTab={activeTab} />
+      <Hero session={currentSession} />
+      <TabBar session={currentSession} activeTab={activeTab} />
       <div className="grid grid-cols-[1fr_280px] gap-5 p-6">
         <div className="min-w-0">
-          {activeTab === "overview" && <OverviewTab session={session} />}
-          {activeTab === "data" && <DataTab session={session} />}
-          {activeTab === "logs" && <LogsTab session={session} />}
+          {activeTab === "overview" && <OverviewTab session={currentSession} />}
+          {activeTab === "data" && <DataTab session={currentSession} />}
+          {activeTab === "logs" && <LogsTab session={currentSession} />}
         </div>
-        <ActionSidebar session={session} />
+        <ActionSidebar session={currentSession} onMoveToCapture={moveToCapture} />
       </div>
     </div>
   );
@@ -522,7 +519,7 @@ function LogsTab({ session }) {
   );
 }
 
-function ActionSidebar({ session }) {
+function ActionSidebar({ session, onMoveToCapture }) {
   const isSeeding = session.subStageId === 2;
   const isScope = session.subStageId === 3;
   const isCapture = session.subStageId >= 4 && session.subStageId <= 5;
@@ -531,7 +528,7 @@ function ActionSidebar({ session }) {
     <aside className="space-y-4">
       <div><SectionLabel>Next action</SectionLabel>
         {isSeeding && (<article className="rounded-lg border border-gray-200 bg-white p-3 mt-2"><p className="text-[12px] text-gray-700 mb-3">Scanning — nothing needed from you yet.</p><button className="w-full h-8 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20"><Eye className="w-3 h-3" /> Watch progress</button></article>)}
-        {isScope && (<article className="rounded-lg border border-violet-200 bg-white p-3 mt-2"><button className="w-full h-8 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30"><ArrowRight className="w-3 h-3" /> Move to Capture</button><p className="text-[10px] text-gray-500 text-center mt-1.5 leading-relaxed">Notifies {session.offboarder} and {confirmedCount} stakeholder{confirmedCount !== 1 ? "s" : ""} to begin.</p></article>)}
+        {isScope && (<article className="rounded-lg border border-violet-200 bg-white p-3 mt-2"><button onClick={onMoveToCapture} className="w-full h-8 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30"><ArrowRight className="w-3 h-3" /> Move to Capture</button><p className="text-[10px] text-gray-500 text-center mt-1.5 leading-relaxed">Notifies {session.offboarder} and {confirmedCount} stakeholder{confirmedCount !== 1 ? "s" : ""} to begin.</p></article>)}
         {isCapture && (<article className="rounded-lg border border-gray-200 bg-white p-3 mt-2"><p className="text-[12px] text-gray-700 mb-3">Waiting for {session.offboarder} and stakeholders to respond.</p><button className="w-full h-8 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20"><Eye className="w-3 h-3" /> Watch progress</button></article>)}
       </div>
       <div><SectionLabel>Session</SectionLabel>
