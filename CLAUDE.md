@@ -16,13 +16,14 @@ REAL APP — shared sidebar + topbar via components/app/AppShell.tsx
                             components/mockups/uc-ho-01-quick-initiate.jsx
                             ?customize=1 opens the customize expander
 
-/session/[id]             → Session command view (3-view × 3-tab, RBAC-scoped per CL-119)
+/session/[id]             → Session command view (2 tabs · Overview + Review)
                             components/mockups/session-command-view.jsx
-                            Valid ids · minh-le (POC narrowed to one wired session per CL-118)
-                            Tabs · Overview · Data · Logs (Logs hidden from Stakeholder view)
-                            ?role=manager|stakeholder|offboarder selects role view (default manager · demo-only)
-                            ?tab=overview|data|logs selects tab
-                            Surface restructure pending — see CL-119 propagation note in change log
+                            Valid ids · minh-le
+                            ?tab=scope   → Prepare subStage 3 (review scope / duyệt)
+                            ?tab=review  → Review tab (UC-HO-04, renamed from "Manager review")
+                            Legacy ?tab=stages|data|audit|settings → resolves to Overview
+                            Standalone demo: 3-step flow (Seeding → Review scope → Review)
+                            CL-119 spec (3-view × 3-tab RBAC restructure) is deferred
 
 SPEC TRACES — standalone walkthroughs (no AppShell, Prev/Next chrome)
 ─────────────────────────────────────────────────────────────────
@@ -86,7 +87,7 @@ For tweaks to the dashboard, quick-initiate, or session command view — by far 
 |---|---|
 | The dashboard, pending session cards, completed row, activity feed | `components/mockups/ha-vy-handover-dashboard.jsx` |
 | The quick-initiate page, default tiles, customize expander | `components/mockups/uc-ho-01-quick-initiate.jsx` |
-| Any session-detail tab (Overview · Data · Logs per CL-119), the 3-phase hero, role-scoped views (Manager · Stakeholder · Offboarder) | `components/mockups/session-command-view.jsx` |
+| Any session-detail tab (Overview, Review), the 3-phase hero, Prepare subStage views | `components/mockups/session-command-view.jsx` |
 | The sidebar, top bar, search, notifications, user pill | `components/app/AppShell.tsx` |
 | The team guide content | `TEAM-GUIDE.md` (rendered at `/guide`) |
 | A spec-trace state | `components/mockups/uc-ho-01-normal-flow.jsx` or `uc-ho-01-edge-cases.jsx` |
@@ -166,12 +167,13 @@ From `ARTEEP-context-snapshot.md` §4. Keep visual fidelity high:
 - 32px button heights. Explicit focus rings: `focus:ring-2 focus:ring-violet-500/20`.
 - Sentence-case English UX writing. Named humans, not roles ("Hà Vy will review" not "your manager").
 - "Sensitive content" not "PII". Don't name "Microsoft Purview" in user copy.
-- **Chrome does not announce the user's role (CL-115).** Management-plane topbars / breadcrumbs / page titles / sidebar headers never carry a role qualifier — no "Manager dashboard", no "Admin X". Topbar reads `ART-EEP` or a neutral route hint like `ART-EEP · Sessions`. Per-page greetings ("Good afternoon, Hà Vy") are personal and stay. The "Manager review" tab label (CL-103 / CL-107) is content describing the work mode, not chrome — it is unaffected. RBAC gates access invisibly; the UI does not narrate it.
+- **Chrome does not announce the user's role (CL-115).** Management-plane topbars / breadcrumbs / page titles / sidebar headers never carry a role qualifier — no "Manager dashboard", no "Admin X". Topbar reads `ART-EEP` or a neutral route hint like `ART-EEP · Sessions`. Per-page greetings ("Good afternoon, Hà Vy") are personal and stay. RBAC gates access invisibly; the UI does not narrate it.
+- **Tab renamed "Manager review" → "Review" (CL-119 session).** The session creator may be HR or Admin, not only Manager. The UC-HO-04 badge next to the tab label signals the review type.
 - **No "playbook" in user copy (CL-113 / CL-116).** The personalized onboarding playbook was eliminated as an artifact; the Consumption plane has one artifact, the company-wide Knowledge Graph. Pre-commit content is **"bundle"** (e.g. "Review the bundle", "14 items in bundle"); post-commit content is **"Knowledge Graph entries"** (e.g. "487 entries committed to KG"). The Phase 3 sub-stage "Playbook delivered" is renamed **"KG access ready"**. Any leftover "playbook" wording in JSX or copy is a bug to purge, not a style choice.
 - **No named successor at session time (CL-114).** Sessions do not carry a successor field — no name, no "to be assigned" placeholder, no field at all. Newcomer identity is established by **RBAC at KG access time** (Entra ID Newcomer role gates the role-customized initial exploration prompts per CL-113), not by a session-time assignment. The 30-day offboarding window, the 3–5-day review deadline, and the Khánh Linh 2-day urgent exception (CL-111) are unaffected.
 - **Labels + values only on POC surfaces (CL-107).** Descriptive / explanatory prose is removed from Management-plane surfaces; UI is labels and values. Helper / explanatory text is kept only on risky or destructive actions (e.g. Cancel session, Send back, Request more detail). Governance constraints (data-ingestion scope, QA-INT-01 §s, Purview, sanitization tiers) hold in the architecture and the change log — they are not narrated in the glance-level UI.
 - **POC persona scope narrowed 9 → 8 (CL-118 · 2026-06-09).** Phương Anh Nguyễn (Sales · Senior Account Executive) is removed from POC scope. The dashboard renders 2 concurrent active sessions (Minh Lê + Khánh Linh) instead of 3; the `phuong-anh` slug branch, `PhuongAnhReview` component, `PA_SECTIONS` data, and route allow-list entry are removed. CL-109's Phương Anh real Manager review surface is **superseded** — the persona-agnosticism of UC-HO-04 + UC-HO-03 is preserved at the spec level. The four-archetype Consumer-plane model (CL-104) is intact. Sales as a documented source mix per CL-091 remains, but is no longer demoed end-to-end.
-- **Session Detail Page · 3-view RBAC × 3-tab shell + Side-Panel UX (CL-119 · 2026-06-09).** `/session/[id]` is restructured around three role-based views (**Manager** · **Stakeholder** · **Offboarder**) × a uniform three-tab shell (**Overview** · **Data** · **Logs**). Role-scoped content per view; the Stakeholder view **hides** the Logs tab entirely (not rendered, not locked-shown). Role selected via Entra ID RBAC in production; via `?role=manager|stakeholder|offboarder` query param in the demo (default `manager`). **Side-Panel / Contextual Drawer** is the canonical Data-tab interaction primitive — right-side slide-in (~480px wide, body scrollable, closes on backdrop / Escape / close button) used for every Data-tab card action so the main-board scroll position is preserved (no split-screen, no overlay). **Azure Integration Hub data pipeline:** Trello is **not real-time-queried** — data is ingested via Power Automate / Logic Apps into a Staging Graph in Azure AI Search, then surfaced to the UI; pre-retrieval ACL trimming at the Cosmos DB partition + Azure AI Search index level gates each role's visibility before rows reach the UI. **New design-system primitives:** Side-Panel · Force Close justification modal (required text-area, submit disabled until ≥20 chars · justification logged to Audit Log) · Approve / Reject / Ignore action set (emerald primary · rose secondary with reason-for-rewrite sub-prompt · gray ghost) on the Manager Side-Panel · Mark as Satisfied (emerald primary) on the Stakeholder Side-Panel · AI To-Do List aggregator (pinned banner at top of Offboarder's Data tab, lists pending AI + Stakeholder questions) · ⚠️ Action Required badge (yellow per CL-054) on Offboarder card rows · Pending Approval state (new draft-item state for Offboarder submissions awaiting Manager judgment). **Supersession:** CL-107 (2-tab) is **partially superseded** — tab structure goes 2 → 3 to honor the RBAC matrix; CL-107's labels-only / explainer-stripped rule is unaffected. CL-105 (Audit Log as link) is **superseded for the Manager view** — Audit Log is promoted to a first-class Logs tab. `uc-ho-04-manager-review.jsx` (CL-103) becomes **reference-only** — kept in the repo as instructional reference, but `session-command-view.jsx` no longer imports it; the new Data-tab Side-Panel is built **fresh**, not adapted from UC-HO-04. **Surface application is deferred to a follow-up session per PO direction** — this CL is the spec; the JSX restructure ships in the next chat.
+- **Session Detail Page · CL-119 spec (3-view RBAC × 3-tab restructure) is deferred.** The full restructure — Manager/Stakeholder/Offboarder views × Overview/Data/Logs tabs, Side-Panel interaction primitive, Force Close modal, AI To-Do List — is specced in CL-119 in the change log but **not yet applied to the JSX**. Current deployed state: 2 tabs (Overview + Review), Prepare subStages 2–3 built, no role-switching param. The spec will be applied in a follow-up session.
 
 ## Personas (locked)
 
