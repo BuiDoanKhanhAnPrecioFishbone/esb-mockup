@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import {
   ChevronLeft, ChevronRight, X,
-  FileText, Database, Eye,
+  FileText, Database, Eye, Users,
   AlertTriangle, AlertOctagon, Clock, CheckCircle2, Loader2,
   ArrowRight, MoreHorizontal, Trello,
   UploadCloud, History,
@@ -13,7 +13,8 @@ import {
 
 const FLOW = [
   { id: "ml-seeding",  label: "Minh Lê · Seeding",      trigger: "Phase 1 · Prepare · seeding from Trello (loading state)." },
-  { id: "ml-scope",    label: "Minh Lê · Review scope",  trigger: "Phase 1 · Prepare · review crawl results and confirm stakeholders." },
+  { id: "ml-scope",    label: "Minh Lê · Review scope",  trigger: "Phase 1 · Prepare · crawl complete — review results and confirm stakeholders." },
+  { id: "ml-capture",  label: "Minh Lê · Capture",       trigger: "Phase 2 · Capture · waiting for Minh Lê and stakeholders." },
 ];
 
 const LIFECYCLE_PHASES = [
@@ -47,10 +48,12 @@ function getSubStage(subStageId) {
 const SESSIONS = {
   ml: {
     urlSlug: "minh-le", offboarder: "Minh Lê", role: "Senior Backend Engineer",
-    dept: "Engineering", initials: "ML", subStageId: 3, daysLeft: 26,
+    dept: "Engineering", initials: "ML", subStageId: 5, daysLeft: 26,
     deadline: "June 30, 2026 · 17:00",
   },
 };
+
+/* ─── Mock data · Prepare ──────────────────────────────────────── */
 
 const CRAWL_SUMMARY = { totalKept: 38, thinSkipped: 14, redacted: 2, gaps: 8 };
 
@@ -84,6 +87,28 @@ const STAKEHOLDERS = [
   { id: "tung",  name: "Tùng Đặng",    role: "Product Manager",        cards: 4,  detail: "2 Core Feature · 1 Architecture — prioritized inventory sync + export",  defaultChecked: false },
 ];
 
+/* ─── Mock data · Capture ──────────────────────────────────────── */
+
+const CAPTURE_RESPONDENTS = [
+  { name: "Minh Lê",     role: "Offboarder",   answers: 5, files: 1, status: "active" },
+  { name: "Duy Nguyễn",  role: "Stakeholder",  answers: 2, files: 0, status: "responded" },
+  { name: "Linh Phạm",   role: "Stakeholder",  answers: 1, files: 0, status: "responded" },
+  { name: "Hương Trần",  role: "Stakeholder",  answers: 0, files: 0, status: "pending" },
+];
+
+const CAPTURE_GAPS = [
+  { text: "Verbal agreements with Stripe on custom retry policy", status: "resolved" },
+  { text: "Why the order service bypasses the cache layer on weekends", status: "resolved" },
+  { text: "Undocumented manual step in the SAP reconciliation flow", status: "resolved" },
+  { text: "Performance tuning tricks for the Kafka consumer group", status: "partial" },
+  { text: "Context behind the inventory service's 3-second timeout", status: "partial" },
+  { text: "Cross-team API contract with the Data Platform team", status: "open" },
+  { text: "Rationale for the tech debt items deferred from Q1", status: "open" },
+  { text: "On-call war stories — recurring false-positive alerts and their workarounds", status: "open" },
+];
+
+/* ─── Mock data · Logs ─────────────────────────────────────────── */
+
 const LOGS_SEEDING = [
   { ts: "14:36:24", actor: "Worker Agent",  text: "Trello board 'Backend Platform' scan complete · 24 cards kept · 11 thin skipped · 0 redacted" },
   { ts: "14:35:00", actor: "Planner Agent", text: "Applied 4-layer hard-filter to Minh Lê's Trello board" },
@@ -104,6 +129,24 @@ const LOGS_SCOPE = [
   { ts: "14:32:08", actor: "Hà Vy",         text: "Started handover session for Minh Lê · Senior Backend Engineer · last day Jul 4" },
 ];
 
+const LOGS_CAPTURE = [
+  { ts: "16:22:10", actor: "Minh Lê",       text: "Answered 'Undocumented manual step in the SAP reconciliation flow'" },
+  { ts: "16:15:45", actor: "Linh Phạm",     text: "Accepted Minh Lê's answer on 'Webhook delivery guarantee system'" },
+  { ts: "16:04:33", actor: "Duy Nguyễn",    text: "Answered 'Performance tuning tricks for the Kafka consumer group'" },
+  { ts: "15:51:20", actor: "Minh Lê",       text: "Uploaded architecture-decisions-2026.pdf" },
+  { ts: "15:42:08", actor: "Duy Nguyễn",    text: "Answered 'Cross-team API contract with the Data Platform team'" },
+  { ts: "15:30:15", actor: "Minh Lê",       text: "Answered 'Why the order service bypasses the cache layer on weekends'" },
+  { ts: "15:18:40", actor: "Minh Lê",       text: "Answered 'Verbal agreements with Stripe on custom retry policy'" },
+  { ts: "15:05:22", actor: "System",        text: "Minh Lê started answering · 14 questions in queue" },
+  { ts: "14:55:00", actor: "System",        text: "Notified Minh Lê and 4 stakeholders · Capture phase started" },
+  { ts: "14:50:30", actor: "System",        text: "Question queue seeded · 14 questions across 8 knowledge gaps" },
+  { ts: "14:48:12", actor: "Hà Vy",         text: "Confirmed 4 stakeholders · moved session to Capture" },
+  { ts: "14:41:03", actor: "System",        text: "Knowledge map ready · 8 gaps identified — topics with no Trello coverage" },
+  { ts: "14:40:18", actor: "Worker Agent",  text: "Sensitive-content check passed · 2 cards redacted (contained API keys in comments)" },
+  { ts: "14:38:44", actor: "Worker Agent",  text: "Trello scan complete · 38 kept · 14 skipped" },
+  { ts: "14:32:08", actor: "Hà Vy",         text: "Started handover session for Minh Lê · Senior Backend Engineer · last day Jul 4" },
+];
+
 const TABS = [
   { id: "overview", label: "Overview" },
   { id: "data",     label: "Data" },
@@ -119,11 +162,12 @@ export default function SessionCommandView({ embedded = false, view = "ml-overvi
     const parts = view.split("-");
     const sessKey = parts[0] || "ml";
     const rawTab = parts[1] || "overview";
-    const isScope = rawTab === "scope";
     const activeTab = ["data", "logs"].includes(rawTab) ? rawTab : "overview";
     const session = SESSIONS[sessKey];
     if (!session) return null;
-    const sessionForView = isScope ? { ...session, subStageId: 3 } : session;
+    let sessionForView = session;
+    if (rawTab === "scope") sessionForView = { ...session, subStageId: 3 };
+    if (rawTab === "capture") sessionForView = { ...session, subStageId: 5 };
     return <CommandView session={sessionForView} activeTab={activeTab} />;
   }
   const step = FLOW[stepIdx];
@@ -164,14 +208,12 @@ function FooterNav({ stepIdx, step, onChange }) {
   return (
     <footer className="bg-white border-t border-gray-200 px-5 py-2.5 flex items-center justify-between sticky bottom-0 z-20">
       <button onClick={() => !atFirst && onChange(stepIdx - 1)} disabled={atFirst}
-        className={`h-8 px-3 rounded-md text-sm font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20 ${
-          atFirst ? "text-gray-300 cursor-not-allowed" : "text-gray-700 hover:bg-gray-100"}`}>
+        className={`h-8 px-3 rounded-md text-sm font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20 ${atFirst ? "text-gray-300 cursor-not-allowed" : "text-gray-700 hover:bg-gray-100"}`}>
         <ChevronLeft className="w-3.5 h-3.5" /> Previous
       </button>
       <div className="hidden sm:block text-[11px] text-gray-500 max-w-md text-center truncate px-3">{step.trigger}</div>
       <button onClick={() => !atLast && onChange(stepIdx + 1)} disabled={atLast}
-        className={`h-8 px-3 rounded-md text-sm font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30 ${
-          atLast ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-violet-600 hover:bg-violet-700 text-white"}`}>
+        className={`h-8 px-3 rounded-md text-sm font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30 ${atLast ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-violet-600 hover:bg-violet-700 text-white"}`}>
         Next <ChevronRight className="w-3.5 h-3.5" />
       </button>
     </footer>
@@ -180,7 +222,8 @@ function FooterNav({ stepIdx, step, onChange }) {
 
 function StepRenderer({ id }) {
   if (id === "ml-seeding") return <CommandView session={{ ...SESSIONS.ml, subStageId: 2 }} activeTab="overview" />;
-  if (id === "ml-scope")   return <CommandView session={SESSIONS.ml} activeTab="overview" />;
+  if (id === "ml-scope")   return <CommandView session={{ ...SESSIONS.ml, subStageId: 3 }} activeTab="overview" />;
+  if (id === "ml-capture") return <CommandView session={{ ...SESSIONS.ml, subStageId: 5 }} activeTab="overview" />;
   return null;
 }
 
@@ -192,8 +235,8 @@ function CommandView({ session, activeTab }) {
       <div className="grid grid-cols-[1fr_280px] gap-5 p-6">
         <div className="min-w-0">
           {activeTab === "overview" && <OverviewTab session={session} />}
-          {activeTab === "data"     && <DataTab session={session} />}
-          {activeTab === "logs"     && <LogsTab session={session} />}
+          {activeTab === "data" && <DataTab session={session} />}
+          {activeTab === "logs" && <LogsTab session={session} />}
         </div>
         <ActionSidebar session={session} />
       </div>
@@ -269,6 +312,7 @@ function TabBar({ session, activeTab }) {
 function OverviewTab({ session }) {
   if (session.subStageId === 2) return <OverviewSeeding session={session} />;
   if (session.subStageId === 3) return <OverviewScope session={session} />;
+  if (session.subStageId >= 4 && session.subStageId <= 5) return <OverviewCapture session={session} />;
   return null;
 }
 
@@ -334,6 +378,77 @@ function OverviewScope({ session }) {
   );
 }
 
+function OverviewCapture({ session }) {
+  const totalAnswers = CAPTURE_RESPONDENTS.reduce((s, r) => s + r.answers, 0);
+  const totalFiles = CAPTURE_RESPONDENTS.reduce((s, r) => s + r.files, 0);
+  const gapsResolved = CAPTURE_GAPS.filter((g) => g.status === "resolved").length;
+  const gapsPartial = CAPTURE_GAPS.filter((g) => g.status === "partial").length;
+  const gapsOpen = CAPTURE_GAPS.filter((g) => g.status === "open").length;
+  const respondedCount = CAPTURE_RESPONDENTS.filter((r) => r.status !== "pending").length;
+  return (
+    <div className="space-y-5">
+      <SectionLabel>What's happening now</SectionLabel>
+      <article className="rounded-lg border border-violet-200 bg-violet-50/40 p-4">
+        <div className="flex items-start gap-3 mb-3">
+          <div className="w-9 h-9 rounded-md bg-white border border-violet-200 flex items-center justify-center shrink-0"><Users className="w-4 h-4 text-violet-600" strokeWidth={1.75} /></div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-semibold text-gray-900">Capture in progress</h3>
+            <p className="text-[12px] text-gray-500 mt-0.5">{totalAnswers} answers · {totalFiles} file · {respondedCount} of {CAPTURE_RESPONDENTS.length} people responded</p>
+          </div>
+        </div>
+        <div className="space-y-1.5 mt-2">
+          {CAPTURE_RESPONDENTS.map((r) => {
+            const initials = r.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+            const statusCfg = {
+              active:    { badge: "bg-violet-50 border-violet-200 text-violet-700", label: "Answering" },
+              responded: { badge: "bg-emerald-50 border-emerald-200 text-emerald-700", label: "Responded" },
+              pending:   { badge: "bg-gray-50 border-gray-200 text-gray-500", label: "Pending" },
+            }[r.status];
+            return (
+              <div key={r.name} className="flex items-center gap-3 rounded-md border border-gray-200 bg-white px-3 py-2">
+                <div className="w-7 h-7 rounded-full bg-gray-100 border border-gray-200 text-gray-600 text-[9px] font-semibold inline-flex items-center justify-center shrink-0">{initials}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[12px] font-medium text-gray-900">{r.name}</span>
+                    <span className="text-[10px] text-gray-500">{r.role}</span>
+                  </div>
+                  <span className="text-[10px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{r.answers} answer{r.answers !== 1 ? "s" : ""}{r.files > 0 ? ` · ${r.files} file` : ""}</span>
+                </div>
+                <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold border ${statusCfg.badge}`}>{statusCfg.label}</span>
+              </div>
+            );
+          })}
+        </div>
+      </article>
+      <div>
+        <SectionLabel>Knowledge gaps</SectionLabel>
+        <div className="flex items-center gap-3 mt-2 mb-2 text-[11px]">
+          <span className="text-emerald-700 font-medium">{gapsResolved} resolved</span>
+          <span className="text-gray-300">·</span>
+          <span className="text-violet-700 font-medium">{gapsPartial} partial</span>
+          <span className="text-gray-300">·</span>
+          <span className="text-yellow-700 font-medium">{gapsOpen} open</span>
+        </div>
+        <div className="space-y-1">
+          {CAPTURE_GAPS.map((gap) => {
+            const cfg = {
+              resolved: { border: "border-emerald-200", bg: "bg-emerald-50/30", icon: <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" strokeWidth={1.75} />, text: "text-gray-700" },
+              partial:  { border: "border-violet-200", bg: "bg-violet-50/20", icon: <Loader2 className="w-3 h-3 text-violet-600 shrink-0" strokeWidth={1.75} />, text: "text-gray-700" },
+              open:     { border: "border-yellow-200", bg: "bg-yellow-50/30", icon: <AlertTriangle className="w-3 h-3 text-yellow-600 shrink-0" strokeWidth={1.75} />, text: "text-gray-700" },
+            }[gap.status];
+            return (
+              <div key={gap.text} className={`flex items-center gap-2 rounded-md border ${cfg.border} ${cfg.bg} px-3 py-2`}>
+                {cfg.icon}
+                <span className={`text-[11px] ${cfg.text}`}>{gap.text}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function StakeholderRow({ stakeholder, isChecked, onToggle }) {
   const s = stakeholder;
   const initials = s.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
@@ -351,6 +466,7 @@ function StakeholderRow({ stakeholder, isChecked, onToggle }) {
 
 function DataTab({ session }) {
   const isSeeding = session.subStageId === 2;
+  const isCapture = session.subStageId >= 4 && session.subStageId <= 5;
   return (
     <div className="space-y-5">
       <div><SectionLabel>Source</SectionLabel>
@@ -366,7 +482,14 @@ function DataTab({ session }) {
             <div className="mt-2 space-y-2">{CRAWL_CATEGORIES.map((cat) => (<CategoryGroup key={cat.label} category={cat} />))}</div>
           </div>
           <div><SectionLabel>Knowledge gaps</SectionLabel>
-            <div className="mt-2 space-y-1">{KNOWLEDGE_GAPS.map((gap) => (<div key={gap} className="flex items-center gap-2 rounded-md border border-yellow-200 bg-yellow-50/30 px-3 py-2"><AlertTriangle className="w-3 h-3 text-yellow-600 shrink-0" strokeWidth={1.75} /><span className="text-[11px] text-gray-700">{gap}</span></div>))}</div>
+            <div className="mt-2 space-y-1">{isCapture ? (
+              CAPTURE_GAPS.map((gap) => {
+                const cfg = { resolved: { b: "border-emerald-200", bg: "bg-emerald-50/30", ic: <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" strokeWidth={1.75} /> }, partial: { b: "border-violet-200", bg: "bg-violet-50/20", ic: <Loader2 className="w-3 h-3 text-violet-600 shrink-0" strokeWidth={1.75} /> }, open: { b: "border-yellow-200", bg: "bg-yellow-50/30", ic: <AlertTriangle className="w-3 h-3 text-yellow-600 shrink-0" strokeWidth={1.75} /> } }[gap.status];
+                return (<div key={gap.text} className={`flex items-center gap-2 rounded-md border ${cfg.b} ${cfg.bg} px-3 py-2`}>{cfg.ic}<span className="text-[11px] text-gray-700">{gap.text}</span></div>);
+              })
+            ) : (
+              KNOWLEDGE_GAPS.map((gap) => (<div key={gap} className="flex items-center gap-2 rounded-md border border-yellow-200 bg-yellow-50/30 px-3 py-2"><AlertTriangle className="w-3 h-3 text-yellow-600 shrink-0" strokeWidth={1.75} /><span className="text-[11px] text-gray-700">{gap}</span></div>))
+            )}</div>
           </div>
         </>
       )}
@@ -391,22 +514,25 @@ function CategoryGroup({ category }) {
 }
 
 function LogsTab({ session }) {
-  const entries = session.subStageId === 3 ? LOGS_SCOPE : LOGS_SEEDING;
+  const entries = session.subStageId >= 4 ? LOGS_CAPTURE : session.subStageId === 3 ? LOGS_SCOPE : LOGS_SEEDING;
   return (
     <div className="space-y-3"><SectionLabel>Activity log</SectionLabel>
-      <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">{entries.map((entry, i) => (<ActivityEntry key={entry.ts} ts={entry.ts} actor={entry.actor} text={entry.text} last={i === entries.length - 1} />))}</div>
+      <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">{entries.map((entry, i) => (<ActivityEntry key={`${entry.ts}-${i}`} ts={entry.ts} actor={entry.actor} text={entry.text} last={i === entries.length - 1} />))}</div>
     </div>
   );
 }
 
 function ActionSidebar({ session }) {
-  const isSeeding = session.subStageId === 2, isScope = session.subStageId === 3;
+  const isSeeding = session.subStageId === 2;
+  const isScope = session.subStageId === 3;
+  const isCapture = session.subStageId >= 4 && session.subStageId <= 5;
   const confirmedCount = STAKEHOLDERS.filter((s) => s.defaultChecked).length;
   return (
     <aside className="space-y-4">
       <div><SectionLabel>Next action</SectionLabel>
         {isSeeding && (<article className="rounded-lg border border-gray-200 bg-white p-3 mt-2"><p className="text-[12px] text-gray-700 mb-3">Scanning — nothing needed from you yet.</p><button className="w-full h-8 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20"><Eye className="w-3 h-3" /> Watch progress</button></article>)}
         {isScope && (<article className="rounded-lg border border-violet-200 bg-white p-3 mt-2"><button className="w-full h-8 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30"><ArrowRight className="w-3 h-3" /> Move to Capture</button><p className="text-[10px] text-gray-500 text-center mt-1.5 leading-relaxed">Notifies {session.offboarder} and {confirmedCount} stakeholder{confirmedCount !== 1 ? "s" : ""} to begin.</p></article>)}
+        {isCapture && (<article className="rounded-lg border border-gray-200 bg-white p-3 mt-2"><p className="text-[12px] text-gray-700 mb-3">Waiting for {session.offboarder} and stakeholders to respond.</p><button className="w-full h-8 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20"><Eye className="w-3 h-3" /> Watch progress</button></article>)}
       </div>
       <div><SectionLabel>Session</SectionLabel>
         <div className="rounded-md border border-gray-200 bg-white p-3 mt-2 space-y-2 text-[11px]"><InfoRow label="Deadline" value={session.deadline} mono /><InfoRow label="Source" value="Trello · Backend Platform" /><InfoRow label="Days left" value={`${session.daysLeft}`} mono /></div>
