@@ -7,7 +7,8 @@ import {
   FileText, MessageSquare, Network, Eye,
   AlertTriangle, AlertOctagon, Clock, CheckCircle2, Loader2,
   ArrowRight, MoreHorizontal, Tag, Trello, Lock,
-  RefreshCw, UploadCloud, History, ShieldAlert
+  RefreshCw, UploadCloud, History, ShieldAlert,
+  Users, UserPlus, Check, ShieldCheck
 } from "lucide-react";
 import UCHO04ManagerReview from "./uc-ho-04-manager-review.jsx";
 
@@ -15,7 +16,7 @@ import UCHO04ManagerReview from "./uc-ho-04-manager-review.jsx";
    Session Command View — /session/[id]
 
    Redesign (PO direction · "fewer to be seen, easier to use"):
-     · 6 tabs → 2. Overview + Manager review. Stages/Data/Settings are
+     · 6 tabs → 2. Overview + Review. Stages/Data/Settings are
        folded into Overview and the action rail; Audit is a link, not a
        tab. Legacy ?tab=stages|data|audit|settings deep-links resolve to
        Overview (no 404).
@@ -23,30 +24,22 @@ import UCHO04ManagerReview from "./uc-ho-04-manager-review.jsx";
        ONLY on the two destructive actions (cancel, request more detail).
      · Trello 4-layer source (CL-091) · async question-queue capture
        (CL-098/099) · UC-HO-04 review wired in (CL-103).
-     · CL-118 (2026-06-09) · POC persona scope narrowed 9 → 8 —
-       Phương Anh Nguyễn (Sales · Senior Account Executive) removed
-       from POC scope. This supersedes CL-109 (the Phương Anh real
-       Manager review surface). Concrete removals: the `pa` entry
-       from SESSIONS, the `phuong-anh` slug branch in ReviewTab, the
-       PhuongAnhReview + PaSectionDetail components, the PA_SECTIONS
-       data, and the dead OverviewReview + ActionSidebar.isReview
-       paths (PA was the only session at subStage 6). The persona-
-       agnosticism of the UC-HO-04 + UC-HO-03 review model is
-       preserved at the architecture level — a future second offboarder
-       persona at subStage 6 would route through the same generic
-       review surface.
-     · CL-112 · the review unit is "items" everywhere so all review
-       surfaces and the dashboard use one noun. The post-commit KG
-       count on the dashboard is "entries" — a different unit at a
-       different stage.
-     · CL-111 · 30-day offboarding-window timeline. Minh — last day
-       Jul 4, review deadline Jun 30, 26 days left. Khánh Linh's
-       2-day urgent path lives on the dashboard, not here.
+     · CL-118 · POC persona scope narrowed 9 → 8 — Phương Anh removed.
+     · CL-112 · review unit is "items"; post-commit KG count is "entries".
+     · CL-111 · 30-day window. Minh — last day Jul 4, deadline Jun 30.
+     · CL-114 · Successor removed from session model; newcomer identity
+       via RBAC at KG access time.
+     · CL-119 · Prepare subStage 3 (review scope / duyệt) built out.
+       Session creator reviews crawl summary + category breakdown,
+       selects stakeholders from auto-derived list, then moves to
+       Capture. Tab renamed "Manager review" → "Review" (session
+       creator may be HR or Admin, not only Manager).
    ═══════════════════════════════════════════════════════════════════ */
 
 const FLOW = [
-  { id: "ml-overview", label: "Minh Lê · Overview",    trigger: "Phase 1 · Prepare · seeding from Trello." },
-  { id: "ml-review",   label: "Minh Lê · Review",      trigger: "Manager review · UC-HO-04 decision workspace." },
+  { id: "ml-overview", label: "Minh Lê · Seeding",      trigger: "Phase 1 · Prepare · seeding from Trello." },
+  { id: "ml-scope",    label: "Minh Lê · Review scope",  trigger: "Phase 1 · Prepare · review crawl results and confirm stakeholders." },
+  { id: "ml-review",   label: "Minh Lê · Review",        trigger: "Review · UC-HO-04 decision workspace." },
 ];
 
 // 3 user-facing phases · 8 internal sub-stages kept for tracking
@@ -78,23 +71,45 @@ function getSubStage(subStageId) {
   return null;
 }
 
-// CL-118 · the `pa` (Phương Anh Nguyễn · Sales) session entry is removed
-// from this map. Minh Lê remains the only wired session in the
-// session-command-view; Khánh Linh's urgent path lives on the
-// dashboard. Future offboarder personas would add their own entry here
-// using the same shape.
+// CL-118 · Minh Lê is the only wired session. Khánh Linh's urgent path
+// lives on the dashboard. CL-114 · successor removed from session model.
 const SESSIONS = {
   ml: {
     urlSlug: "minh-le", offboarder: "Minh Lê", role: "Senior Backend Engineer",
     dept: "Engineering", initials: "ML", subStageId: 2, daysLeft: 26,
-    successor: "Trần Hữu Nam", deadline: "June 30, 2026 · 17:00",
+    deadline: "June 30, 2026 · 17:00",
   },
 };
+
+/* ─── Mock data · Prepare subStage 3 (review scope) ────────────────── */
+
+const CRAWL_SUMMARY = {
+  totalKept: 38, thinSkipped: 14, redacted: 2, gaps: 8,
+};
+
+const CRAWL_CATEGORIES = [
+  { label: "Architecture decisions",  count: 10 },
+  { label: "Bug/Hotfix resolutions",  count: 8 },
+  { label: "Core Feature specs",      count: 7 },
+  { label: "Code review patterns",    count: 5 },
+  { label: "Infrastructure/DevOps",   count: 4 },
+  { label: "Documentation/Runbooks",  count: 2 },
+  { label: "Integration configs",     count: 2 },
+];
+
+const STAKEHOLDERS = [
+  { id: "duy",    name: "Duy Nguyễn",    role: "Data Platform Engineer",  cards: 18, detail: "5 Architecture, 3 Core Feature", defaultChecked: true },
+  { id: "linh",   name: "Linh Phạm",     role: "Frontend Engineer",       cards: 12, detail: "4 Core Feature, 2 Bug/Hotfix",   defaultChecked: true },
+  { id: "thao",   name: "Thảo Vũ",       role: "Engineering Director",    cards: 7,  detail: "3 Architecture, 1 Infrastructure", defaultChecked: true },
+  { id: "huong",  name: "Hương Trần",    role: "QA Lead",                 cards: 9,  detail: "6 Bug/Hotfix, 2 Code Review",     defaultChecked: true },
+  { id: "bao",    name: "Bảo Ngọc Lê",   role: "DevOps Engineer",         cards: 6,  detail: "4 Infrastructure, 2 Integration",  defaultChecked: false },
+  { id: "tung",   name: "Tùng Đặng",     role: "Product Manager",         cards: 4,  detail: "2 Core Feature, 1 Architecture",   defaultChecked: false },
+];
 
 // Visible tabs · two only. "review" carries the UC-HO-04 badge.
 const TABS = [
   { id: "overview", label: "Overview" },
-  { id: "review",   label: "Manager review" },
+  { id: "review",   label: "Review" },
 ];
 
 export default function SessionCommandView({ embedded = false, view = "ml-overview" } = {}) {
@@ -104,16 +119,17 @@ export default function SessionCommandView({ embedded = false, view = "ml-overvi
   });
 
   if (embedded) {
-    // view = "<sessionKey>-<tabId>[-<state>]" e.g. "ml-overview", "ml-review-s4".
     const parts = view.split("-");
     const sessKey = parts[0] || "ml";
     const rawTab = parts[1] || "overview";
     const state = parts[2];
-    // Everything that isn't the review surface resolves to Overview.
     const tab = rawTab === "review" ? "review" : "overview";
+    // "scope" view renders Overview with subStageId overridden to 3
+    const isScope = rawTab === "scope";
     const session = SESSIONS[sessKey];
     if (!session) return null;
-    return <CommandView session={session} activeTab={tab} state={state} />;
+    const sessionForView = isScope ? { ...session, subStageId: 3 } : session;
+    return <CommandView session={sessionForView} activeTab={tab} state={state} />;
   }
 
   const step = FLOW[stepIdx];
@@ -190,6 +206,7 @@ function FooterNav({ stepIdx, step, onChange }) {
 
 function StepRenderer({ id }) {
   if (id === "ml-overview") return <CommandView session={SESSIONS.ml} activeTab="overview" />;
+  if (id === "ml-scope")    return <CommandView session={{ ...SESSIONS.ml, subStageId: 3 }} activeTab="overview" />;
   if (id === "ml-review")   return <CommandView session={SESSIONS.ml} activeTab="review" />;
   return null;
 }
@@ -218,7 +235,8 @@ function CommandView({ session, activeTab, state }) {
   );
 }
 
-/* ─── Hero · identity + 3-phase progress (the Stages tab lives here) ─── */
+/* ─── Hero · identity + 3-phase progress ─────────────────────────────
+   CL-114 · successor removed from subtitle. */
 
 function Hero({ session }) {
   const phase = getPhase(session.subStageId);
@@ -245,7 +263,7 @@ function Hero({ session }) {
             )}
           </div>
           <p className="text-sm text-gray-500 mb-3">
-            {session.role} · successor <span className="text-gray-700">{session.successor || "to be assigned"}</span> · deadline <span className="text-gray-700" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{session.deadline}</span>
+            {session.role} · deadline <span className="text-gray-700" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{session.deadline}</span>
           </p>
 
           <PhaseProgress subStageId={session.subStageId} />
@@ -340,18 +358,15 @@ function TabBar({ session, activeTab }) {
   );
 }
 
-/* ─── Overview · varies by phase ─────────────────────────────────────
-   CL-118 · the subStage === 6 ("Answers reviewed") branch + the
-   matching OverviewReview component are removed because Phương Anh
-   was the only wired session in that state. A future session at
-   subStage 6 would re-introduce a generic items-preview surface,
-   keyed off its own bundle items rather than the deleted PA_SECTIONS
-   mockup data. */
+/* ─── Overview · varies by subStage ──────────────────────────────────── */
 
 function OverviewTab({ session }) {
   if (session.subStageId === 2) return <OverviewSeeding session={session} />;
+  if (session.subStageId === 3) return <OverviewScope session={session} />;
   return null;
 }
+
+/* ─── SubStage 2 · Seeding in progress ───────────────────────────────── */
 
 function OverviewSeeding({ session }) {
   return (
@@ -400,6 +415,131 @@ function OverviewSeeding({ session }) {
     </div>
   );
 }
+
+/* ─── SubStage 3 · Review scope (duyệt) ─────────────────────────────
+   Crawl is complete. Session creator reviews the summary + category
+   breakdown, selects stakeholders from auto-derived list, then
+   moves to Capture. Summary-level confirmation only — item-level
+   review happens later in UC-HO-04. */
+
+function OverviewScope({ session }) {
+  const [checked, setChecked] = React.useState(() => {
+    const m = {};
+    STAKEHOLDERS.forEach((s) => { m[s.id] = s.defaultChecked; });
+    return m;
+  });
+
+  const toggle = (id) => setChecked((prev) => ({ ...prev, [id]: !prev[id] }));
+  const confirmedCount = Object.values(checked).filter(Boolean).length;
+
+  return (
+    <div className="space-y-5">
+      {/* ── Summary banner ── */}
+      <SectionLabel>Crawl complete</SectionLabel>
+      <article className="rounded-lg border border-emerald-200 bg-emerald-50/30 p-4">
+        <div className="flex items-start gap-3 mb-3">
+          <div className="w-9 h-9 rounded-md bg-white border border-emerald-200 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" strokeWidth={1.75} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-semibold text-gray-900">
+              {CRAWL_SUMMARY.totalKept} items from Trello · {CRAWL_SUMMARY.gaps} knowledge gaps
+            </h3>
+            <p className="text-[12px] text-gray-500 mt-0.5">
+              {CRAWL_SUMMARY.thinSkipped} thin cards skipped · {CRAWL_SUMMARY.redacted} contained sensitive content (auto-redacted)
+            </p>
+          </div>
+        </div>
+
+        {/* Category breakdown */}
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-3">
+          {CRAWL_CATEGORIES.map((cat) => (
+            <div key={cat.label} className="flex items-center justify-between text-[11px] py-0.5">
+              <span className="text-gray-700">{cat.label}</span>
+              <span className="text-gray-900 font-medium" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{cat.count}</span>
+            </div>
+          ))}
+          <div className="flex items-center justify-between text-[11px] py-0.5">
+            <span className="text-yellow-700 font-medium">Knowledge gaps</span>
+            <span className="text-yellow-700 font-medium" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{CRAWL_SUMMARY.gaps}</span>
+          </div>
+        </div>
+      </article>
+
+      {/* ── Source (complete) ── */}
+      <div>
+        <SectionLabel>Source</SectionLabel>
+        <div className="mt-2">
+          <SourceRow icon={Trello} name="Trello" detail={`${CRAWL_SUMMARY.totalKept} items kept · ${CRAWL_SUMMARY.thinSkipped} skipped · ${CRAWL_SUMMARY.redacted} redacted`} status="done" subDetail="4-layer filter" />
+        </div>
+      </div>
+
+      {/* ── Stakeholder selection (UC-HO-08) ── */}
+      <div>
+        <SectionLabel>Stakeholders</SectionLabel>
+        <p className="text-[11px] text-gray-500 mt-1 mb-2">Auto-derived from Trello card co-occurrence. Select who to notify for Capture.</p>
+        <div className="space-y-1.5">
+          {STAKEHOLDERS.map((s) => (
+            <StakeholderRow key={s.id} stakeholder={s} isChecked={checked[s.id]} onToggle={() => toggle(s.id)} />
+          ))}
+        </div>
+        <button className="mt-2 h-8 px-3 rounded-md border border-dashed border-gray-300 bg-white hover:bg-gray-50 text-gray-600 text-xs font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20">
+          <UserPlus className="w-3 h-3" />
+          Add someone
+        </button>
+      </div>
+
+      {/* ── Recent activity ── */}
+      <div>
+        <SectionLabel>Recent activity</SectionLabel>
+        <div className="rounded-lg border border-gray-200 bg-white mt-2 overflow-hidden">
+          <ActivityEntry ts="14:41:03" actor="System"        text="Knowledge map ready · 8 gaps identified" />
+          <ActivityEntry ts="14:40:18" actor="Worker Agent"  text="Sensitive-content check passed · 2 items redacted" />
+          <ActivityEntry ts="14:38:44" actor="Worker Agent"  text="Trello scan complete · 38 kept · 14 skipped" />
+          <ActivityEntry ts="14:35:00" actor="Planner Agent" text="Applied 4-layer hard-filter to Trello" />
+          <ActivityEntry ts="14:32:08" actor="Hà Vy"         text="Started session" last />
+        </div>
+        <AuditLink session={session} />
+      </div>
+    </div>
+  );
+}
+
+function StakeholderRow({ stakeholder, isChecked, onToggle }) {
+  const s = stakeholder;
+  const initials = s.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+  return (
+    <label className={`flex items-center gap-3 rounded-md border px-3 py-2.5 cursor-pointer transition-colors ${
+      isChecked ? "border-violet-200 bg-violet-50/30" : "border-gray-200 bg-white hover:bg-gray-50"
+    }`}>
+      <button
+        type="button"
+        role="checkbox"
+        aria-checked={isChecked}
+        onClick={onToggle}
+        className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20 ${
+          isChecked ? "bg-violet-600 border-violet-600" : "bg-white border-gray-300"
+        }`}
+      >
+        {isChecked && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
+      </button>
+      <div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-semibold inline-flex items-center justify-center shrink-0">
+        {initials}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-900">{s.name}</span>
+          <span className="text-[10px] text-gray-500">{s.role}</span>
+        </div>
+        <div className="text-[10px] text-gray-500 mt-0.5" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>
+          {s.cards} cards · {s.detail}
+        </div>
+      </div>
+    </label>
+  );
+}
+
+/* ─── Shared components ──────────────────────────────────────────────── */
 
 function AuditLink({ session }) {
   return (
@@ -459,13 +599,19 @@ function ActivityEntry({ ts, actor, text, last }) {
   );
 }
 
-/* ─── Action rail · next action + info + cancel (Settings folds here) ──
-   CL-118 · the isReview branch (subStage === 6) is removed alongside
-   OverviewReview — Phương Anh was the only session that triggered it.
-   A future subStage-6 session would add its own action card here. */
+/* ─── Action rail ────────────────────────────────────────────────────
+   Adapts to subStage. CL-114 · successor removed from Session block. */
 
 function ActionSidebar({ session }) {
   const isSeeding = session.subStageId === 2;
+  const isScope   = session.subStageId === 3;
+
+  const [checked] = React.useState(() => {
+    const m = {};
+    STAKEHOLDERS.forEach((s) => { m[s.id] = s.defaultChecked; });
+    return m;
+  });
+  const confirmedCount = Object.values(checked).filter(Boolean).length;
 
   return (
     <aside className="space-y-4">
@@ -480,12 +626,22 @@ function ActionSidebar({ session }) {
             </button>
           </article>
         )}
+        {isScope && (
+          <article className="rounded-lg border border-violet-200 bg-white p-3 mt-2">
+            <button className="w-full h-8 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30">
+              <ArrowRight className="w-3 h-3" />
+              Move to Capture
+            </button>
+            <p className="text-[10px] text-gray-500 text-center mt-1.5 leading-relaxed">
+              Notifies {session.offboarder} and {confirmedCount} stakeholder{confirmedCount !== 1 ? "s" : ""} to begin.
+            </p>
+          </article>
+        )}
       </div>
 
       <div>
         <SectionLabel>Session</SectionLabel>
         <div className="rounded-md border border-gray-200 bg-white p-3 mt-2 space-y-2 text-[11px]">
-          <InfoRow label="Successor" value={session.successor || "to be assigned"} />
           <InfoRow label="Deadline"  value={session.deadline} mono />
           <InfoRow label="Source"    value="Trello" />
         </div>
@@ -532,12 +688,7 @@ function SectionLabel({ children }) {
   return <h2 className="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-medium">{children}</h2>;
 }
 
-/* ─── Manager review (CL-103 · Minh Lê) ──────────────────────────────
-   CL-118 · the `phuong-anh` slug branch is removed; CL-109's Phương Anh
-   real-review surface (PhuongAnhReview + PaSectionDetail + PA_SECTIONS)
-   is superseded. Minh Lê routes to UCHO04ManagerReview; any other
-   slug renders empty (the slug allow-list lives in
-   app/session/[id]/page.tsx, which CL-118 updates separately). */
+/* ─── Review tab (CL-103 · renamed from "Manager review" per CL-119) ── */
 
 function ReviewTab({ session, state }) {
   if (session.urlSlug === "minh-le") {
