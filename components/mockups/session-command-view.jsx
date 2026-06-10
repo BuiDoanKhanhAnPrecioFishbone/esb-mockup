@@ -4,45 +4,29 @@ import React from "react";
 import Link from "next/link";
 import {
   ChevronLeft, ChevronRight, X,
-  FileText, MessageSquare, Network, Eye,
+  FileText, Database, Eye,
   AlertTriangle, AlertOctagon, Clock, CheckCircle2, Loader2,
-  ArrowRight, MoreHorizontal, Tag, Trello, Lock,
-  RefreshCw, UploadCloud, History, ShieldAlert,
-  Users, UserPlus, Check, ShieldCheck
+  ArrowRight, MoreHorizontal, Trello,
+  UploadCloud, History,
+  UserPlus, Check
 } from "lucide-react";
-import UCHO04ManagerReview from "./uc-ho-04-manager-review.jsx";
 
 /* ═══════════════════════════════════════════════════════════════════
    Session Command View — /session/[id]
 
-   Redesign (PO direction · "fewer to be seen, easier to use"):
-     · 6 tabs → 2. Overview + Review. Stages/Data/Settings are
-       folded into Overview and the action rail; Audit is a link, not a
-       tab. Legacy ?tab=stages|data|audit|settings deep-links resolve to
-       Overview (no 404).
-     · Explainer prose removed. Labels + values only; helper text kept
-       ONLY on the two destructive actions (cancel, request more detail).
-     · Trello 4-layer source (CL-091) · async question-queue capture
-       (CL-098/099) · UC-HO-04 review wired in (CL-103).
-     · CL-118 · POC persona scope narrowed 9 → 8 — Phương Anh removed.
-     · CL-112 · review unit is "items"; post-commit KG count is "entries".
-     · CL-111 · 30-day window. Minh — last day Jul 4, deadline Jun 30.
-     · CL-114 · Successor removed from session model; newcomer identity
-       via RBAC at KG access time.
-     · CL-119 · Prepare subStage 3 (review scope / duyệt) built out.
-       Session creator reviews crawl summary + category breakdown,
-       selects stakeholders from auto-derived list, then moves to
-       Capture. Tab renamed "Manager review" → "Review" (session
-       creator may be HR or Admin, not only Manager).
+   3-tab Prepare-first build:
+     · Overview · Data · Logs — UC-HO-04 Review removed entirely.
+     · Overview: subStage 2 (seeding) + subStage 3 (review scope).
+     · Data: source detail + items grouped by category + upload.
+     · Logs: full activity feed (uncapped).
+     · CL-114 · successor removed. CL-118 · Minh Lê only.
    ═══════════════════════════════════════════════════════════════════ */
 
 const FLOW = [
   { id: "ml-overview", label: "Minh Lê · Seeding",      trigger: "Phase 1 · Prepare · seeding from Trello." },
   { id: "ml-scope",    label: "Minh Lê · Review scope",  trigger: "Phase 1 · Prepare · review crawl results and confirm stakeholders." },
-  { id: "ml-review",   label: "Minh Lê · Review",        trigger: "Review · UC-HO-04 decision workspace." },
 ];
 
-// 3 user-facing phases · 8 internal sub-stages kept for tracking
 const LIFECYCLE_PHASES = [
   { id: 1, key: "prepare", label: "Prepare", subStages: [
     { id: 1, label: "Setup confirmed" },
@@ -71,8 +55,6 @@ function getSubStage(subStageId) {
   return null;
 }
 
-// CL-118 · Minh Lê is the only wired session. Khánh Linh's urgent path
-// lives on the dashboard. CL-114 · successor removed from session model.
 const SESSIONS = {
   ml: {
     urlSlug: "minh-le", offboarder: "Minh Lê", role: "Senior Backend Engineer",
@@ -81,35 +63,59 @@ const SESSIONS = {
   },
 };
 
-/* ─── Mock data · Prepare subStage 3 (review scope) ────────────────── */
+/* ─── Mock data ────────────────────────────────────────────────────── */
 
-const CRAWL_SUMMARY = {
-  totalKept: 38, thinSkipped: 14, redacted: 2, gaps: 8,
-};
+const CRAWL_SUMMARY = { totalKept: 38, thinSkipped: 14, redacted: 2, gaps: 8 };
 
 const CRAWL_CATEGORIES = [
-  { label: "Architecture decisions",  count: 10 },
-  { label: "Bug/Hotfix resolutions",  count: 8 },
-  { label: "Core Feature specs",      count: 7 },
-  { label: "Code review patterns",    count: 5 },
-  { label: "Infrastructure/DevOps",   count: 4 },
-  { label: "Documentation/Runbooks",  count: 2 },
-  { label: "Integration configs",     count: 2 },
+  { label: "Architecture decisions",  count: 10, items: ["Migrate auth to Entra ID", "Event-driven order pipeline", "GraphQL schema v3"] },
+  { label: "Bug/Hotfix resolutions",  count: 8,  items: ["Race condition in payment retry", "Memory leak in WebSocket handler"] },
+  { label: "Core Feature specs",      count: 7,  items: ["Real-time inventory sync", "Multi-tenant API gateway", "Batch export pipeline"] },
+  { label: "Code review patterns",    count: 5,  items: ["PR template enforcement", "Load test gate for staging"] },
+  { label: "Infrastructure/DevOps",   count: 4,  items: ["Terraform module for AKS", "CI/CD pipeline migration to GitHub Actions"] },
+  { label: "Documentation/Runbooks",  count: 2,  items: ["Incident response playbook", "On-call escalation matrix"] },
+  { label: "Integration configs",     count: 2,  items: ["Salesforce webhook setup", "Datadog APM instrumentation"] },
+];
+
+const KNOWLEDGE_GAPS = [
+  "Vendor contract context", "Team onboarding norms", "Cross-team API dependencies",
+  "Production incident post-mortems", "Client escalation procedures",
+  "Infrastructure cost allocation", "Release cadence rationale", "Tech debt prioritization criteria",
 ];
 
 const STAKEHOLDERS = [
-  { id: "duy",    name: "Duy Nguyễn",    role: "Data Platform Engineer",  cards: 18, detail: "5 Architecture, 3 Core Feature", defaultChecked: true },
-  { id: "linh",   name: "Linh Phạm",     role: "Frontend Engineer",       cards: 12, detail: "4 Core Feature, 2 Bug/Hotfix",   defaultChecked: true },
-  { id: "thao",   name: "Thảo Vũ",       role: "Engineering Director",    cards: 7,  detail: "3 Architecture, 1 Infrastructure", defaultChecked: true },
-  { id: "huong",  name: "Hương Trần",    role: "QA Lead",                 cards: 9,  detail: "6 Bug/Hotfix, 2 Code Review",     defaultChecked: true },
-  { id: "bao",    name: "Bảo Ngọc Lê",   role: "DevOps Engineer",         cards: 6,  detail: "4 Infrastructure, 2 Integration",  defaultChecked: false },
-  { id: "tung",   name: "Tùng Đặng",     role: "Product Manager",         cards: 4,  detail: "2 Core Feature, 1 Architecture",   defaultChecked: false },
+  { id: "duy",   name: "Duy Nguyễn",   role: "Data Platform Engineer", cards: 18, detail: "5 Architecture, 3 Core Feature", defaultChecked: true },
+  { id: "linh",  name: "Linh Phạm",    role: "Frontend Engineer",      cards: 12, detail: "4 Core Feature, 2 Bug/Hotfix",   defaultChecked: true },
+  { id: "thao",  name: "Thảo Vũ",      role: "Engineering Director",   cards: 7,  detail: "3 Architecture, 1 Infrastructure", defaultChecked: true },
+  { id: "huong", name: "Hương Trần",   role: "QA Lead",                cards: 9,  detail: "6 Bug/Hotfix, 2 Code Review",     defaultChecked: true },
+  { id: "bao",   name: "Bảo Ngọc Lê",  role: "DevOps Engineer",        cards: 6,  detail: "4 Infrastructure, 2 Integration",  defaultChecked: false },
+  { id: "tung",  name: "Tùng Đặng",    role: "Product Manager",        cards: 4,  detail: "2 Core Feature, 1 Architecture",   defaultChecked: false },
 ];
 
-// Visible tabs · two only. "review" carries the UC-HO-04 badge.
+const LOGS_SEEDING = [
+  { ts: "14:36:24", actor: "Worker Agent",  text: "Trello scan complete · 24 kept · 11 skipped · 0 redacted" },
+  { ts: "14:35:00", actor: "Planner Agent", text: "Applied 4-layer hard-filter to Trello" },
+  { ts: "14:34:12", actor: "System",        text: "Connected to Trello · authorized scope confirmed" },
+  { ts: "14:33:45", actor: "System",        text: "Source configuration loaded · 1 integration active" },
+  { ts: "14:32:08", actor: "Hà Vy",         text: "Started session" },
+];
+
+const LOGS_SCOPE = [
+  { ts: "14:41:03", actor: "System",        text: "Knowledge map ready · 8 gaps identified" },
+  { ts: "14:40:18", actor: "Worker Agent",  text: "Sensitive-content check passed · 2 items redacted" },
+  { ts: "14:39:50", actor: "Worker Agent",  text: "Label prioritization complete · Bug/Hotfix · Architecture · Core Feature" },
+  { ts: "14:38:44", actor: "Worker Agent",  text: "Trello scan complete · 38 kept · 14 skipped" },
+  { ts: "14:37:30", actor: "Worker Agent",  text: "Content depth filter applied · thin cards removed" },
+  { ts: "14:36:00", actor: "Planner Agent", text: "Applied 4-layer hard-filter to Trello" },
+  { ts: "14:34:12", actor: "System",        text: "Connected to Trello · authorized scope confirmed" },
+  { ts: "14:33:45", actor: "System",        text: "Source configuration loaded · 1 integration active" },
+  { ts: "14:32:08", actor: "Hà Vy",         text: "Started session" },
+];
+
 const TABS = [
   { id: "overview", label: "Overview" },
-  { id: "review",   label: "Review" },
+  { id: "data",     label: "Data" },
+  { id: "logs",     label: "Logs" },
 ];
 
 export default function SessionCommandView({ embedded = false, view = "ml-overview" } = {}) {
@@ -122,14 +128,12 @@ export default function SessionCommandView({ embedded = false, view = "ml-overvi
     const parts = view.split("-");
     const sessKey = parts[0] || "ml";
     const rawTab = parts[1] || "overview";
-    const state = parts[2];
-    const tab = rawTab === "review" ? "review" : "overview";
-    // "scope" view renders Overview with subStageId overridden to 3
     const isScope = rawTab === "scope";
+    const activeTab = ["data", "logs"].includes(rawTab) ? rawTab : "overview";
     const session = SESSIONS[sessKey];
     if (!session) return null;
     const sessionForView = isScope ? { ...session, subStageId: 3 } : session;
-    return <CommandView session={sessionForView} activeTab={tab} state={state} />;
+    return <CommandView session={sessionForView} activeTab={activeTab} />;
   }
 
   const step = FLOW[stepIdx];
@@ -142,7 +146,7 @@ export default function SessionCommandView({ embedded = false, view = "ml-overvi
   );
 }
 
-/* ─── Standalone demo chrome (skipped when embedded in AppShell) ────── */
+/* ─── Standalone demo chrome ─────────────────────────────────────────── */
 
 function TopBar({ step, stepIdx, onJump }) {
   return (
@@ -156,17 +160,10 @@ function TopBar({ step, stepIdx, onJump }) {
         </div>
         <div className="flex items-center gap-1 shrink-0">
           {FLOW.map((s, i) => (
-            <button
-              key={s.id}
-              onClick={() => onJump(i)}
-              title={s.label}
+            <button key={s.id} onClick={() => onJump(i)} title={s.label}
               className={`h-7 px-2 rounded-md border text-[10px] font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20 ${
                 i === stepIdx ? "bg-violet-600 text-white border-violet-600" : "bg-white text-violet-700 border-violet-200 hover:border-violet-400"
-              }`}
-              style={{ fontFamily: "ui-monospace, Menlo, monospace" }}
-            >
-              {i + 1}
-            </button>
+              }`} style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{i + 1}</button>
           ))}
         </div>
       </div>
@@ -179,26 +176,16 @@ function FooterNav({ stepIdx, step, onChange }) {
   const atLast = stepIdx === FLOW.length - 1;
   return (
     <footer className="bg-white border-t border-gray-200 px-5 py-2.5 flex items-center justify-between sticky bottom-0 z-20">
-      <button
-        onClick={() => !atFirst && onChange(stepIdx - 1)}
-        disabled={atFirst}
+      <button onClick={() => !atFirst && onChange(stepIdx - 1)} disabled={atFirst}
         className={`h-8 px-3 rounded-md text-sm font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20 ${
-          atFirst ? "text-gray-300 cursor-not-allowed" : "text-gray-700 hover:bg-gray-100"
-        }`}
-      >
-        <ChevronLeft className="w-3.5 h-3.5" />
-        Previous
+          atFirst ? "text-gray-300 cursor-not-allowed" : "text-gray-700 hover:bg-gray-100"}`}>
+        <ChevronLeft className="w-3.5 h-3.5" /> Previous
       </button>
       <div className="hidden sm:block text-[11px] text-gray-500 max-w-md text-center truncate px-3">{step.trigger}</div>
-      <button
-        onClick={() => !atLast && onChange(stepIdx + 1)}
-        disabled={atLast}
+      <button onClick={() => !atLast && onChange(stepIdx + 1)} disabled={atLast}
         className={`h-8 px-3 rounded-md text-sm font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30 ${
-          atLast ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-violet-600 hover:bg-violet-700 text-white"
-        }`}
-      >
-        Next
-        <ChevronRight className="w-3.5 h-3.5" />
+          atLast ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-violet-600 hover:bg-violet-700 text-white"}`}>
+        Next <ChevronRight className="w-3.5 h-3.5" />
       </button>
     </footer>
   );
@@ -207,42 +194,34 @@ function FooterNav({ stepIdx, step, onChange }) {
 function StepRenderer({ id }) {
   if (id === "ml-overview") return <CommandView session={SESSIONS.ml} activeTab="overview" />;
   if (id === "ml-scope")    return <CommandView session={{ ...SESSIONS.ml, subStageId: 3 }} activeTab="overview" />;
-  if (id === "ml-review")   return <CommandView session={SESSIONS.ml} activeTab="review" />;
   return null;
 }
 
 /* ─── Command view shell ────────────────────────────────────────────── */
 
-function CommandView({ session, activeTab, state }) {
-  if (activeTab === "review") {
-    return (
-      <div className="max-w-7xl mx-auto">
-        <Hero session={session} />
-        <TabBar session={session} activeTab="review" />
-        <ReviewTab session={session} state={state} />
-      </div>
-    );
-  }
+function CommandView({ session, activeTab }) {
   return (
     <div className="max-w-7xl mx-auto">
       <Hero session={session} />
-      <TabBar session={session} activeTab="overview" />
+      <TabBar session={session} activeTab={activeTab} />
       <div className="grid grid-cols-[1fr_280px] gap-5 p-6">
-        <div className="min-w-0"><OverviewTab session={session} /></div>
+        <div className="min-w-0">
+          {activeTab === "overview" && <OverviewTab session={session} />}
+          {activeTab === "data"     && <DataTab session={session} />}
+          {activeTab === "logs"     && <LogsTab session={session} />}
+        </div>
         <ActionSidebar session={session} />
       </div>
     </div>
   );
 }
 
-/* ─── Hero · identity + 3-phase progress ─────────────────────────────
-   CL-114 · successor removed from subtitle. */
+/* ─── Hero ───────────────────────────────────────────────────────────── */
 
 function Hero({ session }) {
   const phase = getPhase(session.subStageId);
   const subStage = getSubStage(session.subStageId);
   const isUrgent = session.daysLeft <= 3;
-  const base = `/session/${session.urlSlug}`;
 
   return (
     <section className="bg-white border-b border-gray-200 px-6 py-5">
@@ -250,43 +229,29 @@ function Hero({ session }) {
         <div className="w-14 h-14 rounded-full bg-gray-100 border border-gray-200 text-gray-700 text-base font-semibold inline-flex items-center justify-center shrink-0">
           {session.initials}
         </div>
-
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <h1 className="text-xl font-semibold text-gray-900 tracking-tight">{session.offboarder}</h1>
             <span className="text-[10px] px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold bg-gray-100 border border-gray-200 text-gray-700">{session.dept}</span>
             {isUrgent && (
               <span className="text-[10px] px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold bg-rose-50 border border-rose-200 text-rose-700 inline-flex items-center gap-1">
-                <AlertOctagon className="w-2.5 h-2.5" />
-                {session.daysLeft} days left
+                <AlertOctagon className="w-2.5 h-2.5" />{session.daysLeft} days left
               </span>
             )}
           </div>
           <p className="text-sm text-gray-500 mb-3">
             {session.role} · deadline <span className="text-gray-700" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{session.deadline}</span>
           </p>
-
           <PhaseProgress subStageId={session.subStageId} />
-
           <div className="flex items-center gap-2 mt-2 text-[11px] text-gray-500 flex-wrap">
             <span className="font-semibold text-gray-900">Phase {phase.id} · {phase.label}</span>
             <span className="text-gray-300">·</span>
             <span>{subStage.label}</span>
           </div>
         </div>
-
-        <div className="flex items-center gap-1 shrink-0">
-          <Link
-            href={`${base}?tab=audit`}
-            className="h-8 px-3 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20"
-          >
-            <History className="w-3 h-3" />
-            Audit log
-          </Link>
-          <button className="h-8 w-8 rounded-md hover:bg-gray-100 inline-flex items-center justify-center text-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20" title="Session settings">
-            <MoreHorizontal className="w-3.5 h-3.5" />
-          </button>
-        </div>
+        <button className="h-8 w-8 rounded-md hover:bg-gray-100 inline-flex items-center justify-center text-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20 shrink-0" title="Session settings">
+          <MoreHorizontal className="w-3.5 h-3.5" />
+        </button>
       </div>
     </section>
   );
@@ -319,8 +284,7 @@ function PhaseProgress({ subStageId }) {
           const isCurrent = phase.id === currentPhase.id;
           return (
             <span key={phase.id} className={`text-[10px] uppercase tracking-wider font-medium text-center ${
-              isDone ? "text-emerald-700" : isCurrent ? "text-violet-700" : "text-gray-400"
-            }`}>
+              isDone ? "text-emerald-700" : isCurrent ? "text-violet-700" : "text-gray-400"}`}>
               {phase.id}. {phase.label}
             </span>
           );
@@ -330,7 +294,7 @@ function PhaseProgress({ subStageId }) {
   );
 }
 
-/* ─── Two-tab bar ───────────────────────────────────────────────────── */
+/* ─── Tab bar ────────────────────────────────────────────────────────── */
 
 function TabBar({ session, activeTab }) {
   const base = `/session/${session.urlSlug}`;
@@ -341,15 +305,10 @@ function TabBar({ session, activeTab }) {
           const isActive = tab.id === activeTab;
           const href = tab.id === "overview" ? base : `${base}?tab=${tab.id}`;
           return (
-            <Link
-              key={tab.id}
-              href={href}
+            <Link key={tab.id} href={href}
               className={`h-10 px-3 text-sm font-medium border-b-2 transition-colors focus:outline-none inline-flex items-center ${
-                isActive ? "border-violet-600 text-violet-700" : "border-transparent text-gray-500 hover:text-gray-900"
-              }`}
-            >
+                isActive ? "border-violet-600 text-violet-700" : "border-transparent text-gray-500 hover:text-gray-900"}`}>
               {tab.label}
-              {tab.id === "review" && <span className="ml-1 text-[10px] px-1 py-0.5 rounded-sm bg-violet-50 border border-violet-200 text-violet-700 font-semibold" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>UC-HO-04</span>}
             </Link>
           );
         })}
@@ -358,15 +317,13 @@ function TabBar({ session, activeTab }) {
   );
 }
 
-/* ─── Overview · varies by subStage ──────────────────────────────────── */
+/* ─── Overview tab ───────────────────────────────────────────────────── */
 
 function OverviewTab({ session }) {
   if (session.subStageId === 2) return <OverviewSeeding session={session} />;
   if (session.subStageId === 3) return <OverviewScope session={session} />;
   return null;
 }
-
-/* ─── SubStage 2 · Seeding in progress ───────────────────────────────── */
 
 function OverviewSeeding({ session }) {
   return (
@@ -383,7 +340,6 @@ function OverviewSeeding({ session }) {
           </div>
           <span className="text-[11px] text-gray-500 shrink-0" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>4m 12s</span>
         </div>
-
         <ul className="space-y-1 text-[11px] text-gray-600">
           <SubStep done>Authorization scope established</SubStep>
           <SubStep done>Connected Trello · 1 source</SubStep>
@@ -395,32 +351,15 @@ function OverviewSeeding({ session }) {
           <SubStep>Knowledge map build</SubStep>
         </ul>
       </article>
-
       <div>
         <SectionLabel>Source</SectionLabel>
         <div className="mt-2">
           <SourceRow icon={Trello} name="Trello" detail="In Progress / Review / Done · thin cards skipped · labels prioritized" status="active" subDetail="4-layer filter" />
         </div>
       </div>
-
-      <div>
-        <SectionLabel>Recent activity</SectionLabel>
-        <div className="rounded-lg border border-gray-200 bg-white mt-2 overflow-hidden">
-          <ActivityEntry ts="14:36:24" actor="Worker Agent"  text="Trello scan complete · 24 kept · 11 skipped · 0 redacted" />
-          <ActivityEntry ts="14:35:00" actor="Planner Agent" text="Applied 4-layer hard-filter to Trello" />
-          <ActivityEntry ts="14:32:08" actor="Hà Vy"         text="Started session" last />
-        </div>
-        <AuditLink session={session} />
-      </div>
     </div>
   );
 }
-
-/* ─── SubStage 3 · Review scope (duyệt) ─────────────────────────────
-   Crawl is complete. Session creator reviews the summary + category
-   breakdown, selects stakeholders from auto-derived list, then
-   moves to Capture. Summary-level confirmation only — item-level
-   review happens later in UC-HO-04. */
 
 function OverviewScope({ session }) {
   const [checked, setChecked] = React.useState(() => {
@@ -428,13 +367,10 @@ function OverviewScope({ session }) {
     STAKEHOLDERS.forEach((s) => { m[s.id] = s.defaultChecked; });
     return m;
   });
-
   const toggle = (id) => setChecked((prev) => ({ ...prev, [id]: !prev[id] }));
-  const confirmedCount = Object.values(checked).filter(Boolean).length;
 
   return (
     <div className="space-y-5">
-      {/* ── Summary banner ── */}
       <SectionLabel>Crawl complete</SectionLabel>
       <article className="rounded-lg border border-emerald-200 bg-emerald-50/30 p-4">
         <div className="flex items-start gap-3 mb-3">
@@ -442,16 +378,10 @@ function OverviewScope({ session }) {
             <CheckCircle2 className="w-4 h-4 text-emerald-600" strokeWidth={1.75} />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold text-gray-900">
-              {CRAWL_SUMMARY.totalKept} items from Trello · {CRAWL_SUMMARY.gaps} knowledge gaps
-            </h3>
-            <p className="text-[12px] text-gray-500 mt-0.5">
-              {CRAWL_SUMMARY.thinSkipped} thin cards skipped · {CRAWL_SUMMARY.redacted} contained sensitive content (auto-redacted)
-            </p>
+            <h3 className="text-sm font-semibold text-gray-900">{CRAWL_SUMMARY.totalKept} items from Trello · {CRAWL_SUMMARY.gaps} knowledge gaps</h3>
+            <p className="text-[12px] text-gray-500 mt-0.5">{CRAWL_SUMMARY.thinSkipped} thin cards skipped · {CRAWL_SUMMARY.redacted} contained sensitive content (auto-redacted)</p>
           </div>
         </div>
-
-        {/* Category breakdown */}
         <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-3">
           {CRAWL_CATEGORIES.map((cat) => (
             <div key={cat.label} className="flex items-center justify-between text-[11px] py-0.5">
@@ -466,7 +396,6 @@ function OverviewScope({ session }) {
         </div>
       </article>
 
-      {/* ── Source (complete) ── */}
       <div>
         <SectionLabel>Source</SectionLabel>
         <div className="mt-2">
@@ -474,7 +403,6 @@ function OverviewScope({ session }) {
         </div>
       </div>
 
-      {/* ── Stakeholder selection (UC-HO-08) ── */}
       <div>
         <SectionLabel>Stakeholders</SectionLabel>
         <p className="text-[11px] text-gray-500 mt-1 mb-2">Auto-derived from Trello card co-occurrence. Select who to notify for Capture.</p>
@@ -484,22 +412,8 @@ function OverviewScope({ session }) {
           ))}
         </div>
         <button className="mt-2 h-8 px-3 rounded-md border border-dashed border-gray-300 bg-white hover:bg-gray-50 text-gray-600 text-xs font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20">
-          <UserPlus className="w-3 h-3" />
-          Add someone
+          <UserPlus className="w-3 h-3" /> Add someone
         </button>
-      </div>
-
-      {/* ── Recent activity ── */}
-      <div>
-        <SectionLabel>Recent activity</SectionLabel>
-        <div className="rounded-lg border border-gray-200 bg-white mt-2 overflow-hidden">
-          <ActivityEntry ts="14:41:03" actor="System"        text="Knowledge map ready · 8 gaps identified" />
-          <ActivityEntry ts="14:40:18" actor="Worker Agent"  text="Sensitive-content check passed · 2 items redacted" />
-          <ActivityEntry ts="14:38:44" actor="Worker Agent"  text="Trello scan complete · 38 kept · 14 skipped" />
-          <ActivityEntry ts="14:35:00" actor="Planner Agent" text="Applied 4-layer hard-filter to Trello" />
-          <ActivityEntry ts="14:32:08" actor="Hà Vy"         text="Started session" last />
-        </div>
-        <AuditLink session={session} />
       </div>
     </div>
   );
@@ -509,50 +423,194 @@ function StakeholderRow({ stakeholder, isChecked, onToggle }) {
   const s = stakeholder;
   const initials = s.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
   return (
-    <label className={`flex items-center gap-3 rounded-md border px-3 py-2.5 cursor-pointer transition-colors ${
-      isChecked ? "border-violet-200 bg-violet-50/30" : "border-gray-200 bg-white hover:bg-gray-50"
-    }`}>
-      <button
-        type="button"
-        role="checkbox"
-        aria-checked={isChecked}
-        onClick={onToggle}
-        className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20 ${
-          isChecked ? "bg-violet-600 border-violet-600" : "bg-white border-gray-300"
-        }`}
-      >
+    <div onClick={onToggle}
+      className={`flex items-center gap-3 rounded-md border px-3 py-2.5 cursor-pointer transition-colors ${
+        isChecked ? "border-violet-200 bg-violet-50/30" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
+      <span className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+        isChecked ? "bg-violet-600 border-violet-600" : "bg-white border-gray-300"}`}>
         {isChecked && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
-      </button>
-      <div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-semibold inline-flex items-center justify-center shrink-0">
-        {initials}
-      </div>
+      </span>
+      <div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-semibold inline-flex items-center justify-center shrink-0">{initials}</div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-gray-900">{s.name}</span>
           <span className="text-[10px] text-gray-500">{s.role}</span>
         </div>
-        <div className="text-[10px] text-gray-500 mt-0.5" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>
-          {s.cards} cards · {s.detail}
+        <div className="text-[10px] text-gray-500 mt-0.5" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{s.cards} cards · {s.detail}</div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Data tab ───────────────────────────────────────────────────────── */
+
+function DataTab({ session }) {
+  const isSeeding = session.subStageId === 2;
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <SectionLabel>Source</SectionLabel>
+        <div className="mt-2">
+          <SourceRow icon={Trello} name="Trello"
+            detail={isSeeding
+              ? "In Progress / Review / Done · thin cards skipped · labels prioritized"
+              : `${CRAWL_SUMMARY.totalKept} items kept · ${CRAWL_SUMMARY.thinSkipped} skipped · ${CRAWL_SUMMARY.redacted} redacted`}
+            status={isSeeding ? "active" : "done"} subDetail="4-layer filter" />
         </div>
       </div>
-    </label>
+
+      {isSeeding ? (
+        <div>
+          <SectionLabel>Items</SectionLabel>
+          <div className="mt-2 rounded-lg border border-gray-200 bg-white p-4 text-center">
+            <Loader2 className="w-4 h-4 text-violet-600 animate-spin mx-auto mb-2" strokeWidth={1.75} />
+            <p className="text-[12px] text-gray-500">Scanning in progress — items will appear here when seeding completes.</p>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div>
+            <SectionLabel>Items by category</SectionLabel>
+            <div className="mt-2 space-y-2">
+              {CRAWL_CATEGORIES.map((cat) => (
+                <CategoryGroup key={cat.label} category={cat} />
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <SectionLabel>Knowledge gaps</SectionLabel>
+            <div className="mt-2 space-y-1">
+              {KNOWLEDGE_GAPS.map((gap) => (
+                <div key={gap} className="flex items-center gap-2 rounded-md border border-yellow-200 bg-yellow-50/30 px-3 py-2">
+                  <AlertTriangle className="w-3 h-3 text-yellow-600 shrink-0" strokeWidth={1.75} />
+                  <span className="text-[11px] text-gray-700">{gap}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      <div>
+        <SectionLabel>Upload</SectionLabel>
+        <button className="w-full mt-2 rounded-lg border border-dashed border-gray-300 bg-gray-50/40 hover:bg-gray-50 px-3 py-4 text-center transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20">
+          <UploadCloud className="w-5 h-5 text-gray-400 mx-auto mb-1" strokeWidth={1.75} />
+          <span className="text-[12px] text-gray-600 font-medium">Drag files here or click to upload</span>
+          <p className="text-[10px] text-gray-400 mt-0.5">Handover briefs, scope docs, architecture diagrams</p>
+        </button>
+      </div>
+    </div>
   );
 }
 
-/* ─── Shared components ──────────────────────────────────────────────── */
-
-function AuditLink({ session }) {
+function CategoryGroup({ category }) {
+  const [expanded, setExpanded] = React.useState(false);
   return (
-    <Link
-      href={`/session/${session.urlSlug}?tab=audit`}
-      className="mt-2 inline-flex items-center gap-1.5 text-[11px] text-gray-500 hover:text-violet-700 transition-colors"
-    >
-      <History className="w-3 h-3" strokeWidth={1.75} />
-      View full audit log
-      <ChevronRight className="w-3 h-3" />
-    </Link>
+    <div className="rounded-md border border-gray-200 bg-white overflow-hidden">
+      <button onClick={() => setExpanded(!expanded)}
+        className="w-full px-3 py-2 flex items-center justify-between text-left hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20">
+        <div className="flex items-center gap-2">
+          <Database className="w-3 h-3 text-gray-400" strokeWidth={1.75} />
+          <span className="text-sm font-medium text-gray-900">{category.label}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{category.count}</span>
+          <ChevronRight className={`w-3 h-3 text-gray-400 transition-transform ${expanded ? "rotate-90" : ""}`} />
+        </div>
+      </button>
+      {expanded && (
+        <div className="border-t border-gray-100 px-3 py-2 space-y-1">
+          {category.items.map((item) => (
+            <div key={item} className="flex items-center gap-2 text-[11px] text-gray-700 py-0.5">
+              <FileText className="w-2.5 h-2.5 text-gray-400 shrink-0" strokeWidth={1.75} />
+              <span>{item}</span>
+            </div>
+          ))}
+          {category.count > category.items.length && (
+            <span className="text-[10px] text-gray-400">+{category.count - category.items.length} more</span>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
+
+/* ─── Logs tab ───────────────────────────────────────────────────────── */
+
+function LogsTab({ session }) {
+  const entries = session.subStageId === 3 ? LOGS_SCOPE : LOGS_SEEDING;
+  return (
+    <div className="space-y-3">
+      <SectionLabel>Activity log</SectionLabel>
+      <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+        {entries.map((entry, i) => (
+          <ActivityEntry key={entry.ts} ts={entry.ts} actor={entry.actor} text={entry.text} last={i === entries.length - 1} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Action sidebar ─────────────────────────────────────────────────── */
+
+function ActionSidebar({ session }) {
+  const isSeeding = session.subStageId === 2;
+  const isScope   = session.subStageId === 3;
+  const confirmedCount = STAKEHOLDERS.filter((s) => s.defaultChecked).length;
+
+  return (
+    <aside className="space-y-4">
+      <div>
+        <SectionLabel>Next action</SectionLabel>
+        {isSeeding && (
+          <article className="rounded-lg border border-gray-200 bg-white p-3 mt-2">
+            <p className="text-[12px] text-gray-700 mb-3">Scanning — nothing needed from you yet.</p>
+            <button className="w-full h-8 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20">
+              <Eye className="w-3 h-3" /> Watch progress
+            </button>
+          </article>
+        )}
+        {isScope && (
+          <article className="rounded-lg border border-violet-200 bg-white p-3 mt-2">
+            <button className="w-full h-8 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30">
+              <ArrowRight className="w-3 h-3" /> Move to Capture
+            </button>
+            <p className="text-[10px] text-gray-500 text-center mt-1.5 leading-relaxed">
+              Notifies {session.offboarder} and {confirmedCount} stakeholder{confirmedCount !== 1 ? "s" : ""} to begin.
+            </p>
+          </article>
+        )}
+      </div>
+
+      <div>
+        <SectionLabel>Session</SectionLabel>
+        <div className="rounded-md border border-gray-200 bg-white p-3 mt-2 space-y-2 text-[11px]">
+          <InfoRow label="Deadline" value={session.deadline} mono />
+          <InfoRow label="Source" value="Trello" />
+        </div>
+      </div>
+
+      <CancelSession session={session} />
+    </aside>
+  );
+}
+
+function CancelSession({ session }) {
+  return (
+    <div className="pt-2 border-t border-gray-200">
+      <button className="w-full h-8 rounded-md text-gray-500 hover:text-rose-700 hover:bg-rose-50 text-xs font-medium inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-rose-500/20">
+        <X className="w-3 h-3" /> Cancel session
+      </button>
+      <p className="text-[10px] text-gray-400 text-center mt-1 leading-relaxed">
+        Discards seeded context permanently. {session.offboarder} won't be asked to capture.
+      </p>
+    </div>
+  );
+}
+
+/* ─── Shared primitives ──────────────────────────────────────────────── */
 
 function SubStep({ done, active, children }) {
   return (
@@ -569,8 +627,8 @@ function SubStep({ done, active, children }) {
 
 function SourceRow({ icon: Icon, name, detail, status, subDetail }) {
   const cfg = {
-    active:  { cls: "border-violet-200 bg-violet-50/20", badge: "bg-violet-50 border-violet-200 text-violet-700", label: "In progress" },
-    done:    { cls: "border-emerald-200 bg-emerald-50/20", badge: "bg-emerald-50 border-emerald-200 text-emerald-700", label: "Complete" },
+    active: { cls: "border-violet-200 bg-violet-50/20", badge: "bg-violet-50 border-violet-200 text-violet-700", label: "In progress" },
+    done:   { cls: "border-emerald-200 bg-emerald-50/20", badge: "bg-emerald-50 border-emerald-200 text-emerald-700", label: "Complete" },
   }[status];
   return (
     <article className={`rounded-md border px-3 py-2.5 flex items-center gap-3 ${cfg.cls}`}>
@@ -599,82 +657,6 @@ function ActivityEntry({ ts, actor, text, last }) {
   );
 }
 
-/* ─── Action rail ────────────────────────────────────────────────────
-   Adapts to subStage. CL-114 · successor removed from Session block. */
-
-function ActionSidebar({ session }) {
-  const isSeeding = session.subStageId === 2;
-  const isScope   = session.subStageId === 3;
-
-  const [checked] = React.useState(() => {
-    const m = {};
-    STAKEHOLDERS.forEach((s) => { m[s.id] = s.defaultChecked; });
-    return m;
-  });
-  const confirmedCount = Object.values(checked).filter(Boolean).length;
-
-  return (
-    <aside className="space-y-4">
-      <div>
-        <SectionLabel>Next action</SectionLabel>
-        {isSeeding && (
-          <article className="rounded-lg border border-gray-200 bg-white p-3 mt-2">
-            <p className="text-[12px] text-gray-700 mb-3">Scanning — nothing needed from you yet.</p>
-            <button className="w-full h-8 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20">
-              <Eye className="w-3 h-3" />
-              Watch progress
-            </button>
-          </article>
-        )}
-        {isScope && (
-          <article className="rounded-lg border border-violet-200 bg-white p-3 mt-2">
-            <button className="w-full h-8 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30">
-              <ArrowRight className="w-3 h-3" />
-              Move to Capture
-            </button>
-            <p className="text-[10px] text-gray-500 text-center mt-1.5 leading-relaxed">
-              Notifies {session.offboarder} and {confirmedCount} stakeholder{confirmedCount !== 1 ? "s" : ""} to begin.
-            </p>
-          </article>
-        )}
-      </div>
-
-      <div>
-        <SectionLabel>Session</SectionLabel>
-        <div className="rounded-md border border-gray-200 bg-white p-3 mt-2 space-y-2 text-[11px]">
-          <InfoRow label="Deadline"  value={session.deadline} mono />
-          <InfoRow label="Source"    value="Trello" />
-        </div>
-      </div>
-
-      <div>
-        <SectionLabel>Upload</SectionLabel>
-        <button className="w-full mt-2 rounded-lg border border-dashed border-gray-300 bg-gray-50/40 hover:bg-gray-50 px-3 py-3 text-center transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20">
-          <UploadCloud className="w-4 h-4 text-gray-400 mx-auto mb-1" strokeWidth={1.75} />
-          <span className="text-[11px] text-gray-600 font-medium">Add files</span>
-        </button>
-      </div>
-
-      <CancelSession session={session} />
-    </aside>
-  );
-}
-
-/* Destructive action keeps its helper line (per the kept-text rule). */
-function CancelSession({ session }) {
-  return (
-    <div className="pt-2 border-t border-gray-200">
-      <button className="w-full h-8 rounded-md text-gray-500 hover:text-rose-700 hover:bg-rose-50 text-xs font-medium inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-rose-500/20">
-        <X className="w-3 h-3" />
-        Cancel session
-      </button>
-      <p className="text-[10px] text-gray-400 text-center mt-1 leading-relaxed">
-        Discards seeded context permanently. {session.offboarder} won't be asked to capture.
-      </p>
-    </div>
-  );
-}
-
 function InfoRow({ label, value, mono }) {
   return (
     <div className="flex items-center justify-between gap-2">
@@ -686,13 +668,4 @@ function InfoRow({ label, value, mono }) {
 
 function SectionLabel({ children }) {
   return <h2 className="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-medium">{children}</h2>;
-}
-
-/* ─── Review tab (CL-103 · renamed from "Manager review" per CL-119) ── */
-
-function ReviewTab({ session, state }) {
-  if (session.urlSlug === "minh-le") {
-    return <UCHO04ManagerReview embedded state={state || "s1"} />;
-  }
-  return null;
 }
