@@ -158,6 +158,8 @@ The **Knowledge Graph Consumer plane / POC showcase** uses the `MASTER.md` "AI-N
 
 **POC capture model (CL-098 / CL-099):** the voice interview is Phase 2. In the POC, capture is **self-serve upload + an asynchronous question queue** the Offboarder answers in text — the queue being manager prompts (UC-HO-05) + network questions (UC-HO-08) + the Offboarder's own additions. The captured content is reviewed and signed via UC-HO-03 as before, then committed via UC-HO-04. A pre-commit, ACL-bounded correction loop (UC-HO-08 flags → Offboarder fixes) runs alongside (CL-101).
 
+**Data tab architecture (CL-120 · 2026-06-10):** Data tab restructured around Board → AI-derived Module → Card accordion. Q&A model: single answer + re-ask (not threads). Knowledge gaps: 4 metadata checks (zero tokens) + 2 AI types piggybacked on clustering (implicit knowledge + contradiction) + human-created out-of-scope questions. Approval flow minimized: zero gates during Capture, one "Commit to KG" gate at Deliver. File uploads on answer or module. Capture→Deliver auto-transition with timeout + manual override. Full details in `docs/arteep/CL-120-session-detail-grill-me.md`.
+
 ### Onboarding (ON) · reframed per CL-113 (2026-06-08)
 - **UC-ON-01** **Generate Newcomer Initial Exploration Prompts** *(working name · reframed from "Generate Personalized Onboarding Playbook" per CL-113)* — the system reads section blueprints + the successor's role and synthesizes a curated set of starter prompts (4–6 working default; final count + static-vs-LLM strategy pending) that seed into the newcomer's KG entry view at the end of Phase 3. **No playbook document is generated.**
 - **UC-ON-02** **Explore Knowledge Graph (role-customized)** *(working name · reframed from "Read Playbook with Inline Knowledge Tools" per CL-113)* — **one UC** for all four Consumer archetypes, distinguished by default lens / filter / starting prompts, **not by separate surfaces**. Resolves the UC-ON-02 single-vs-split flagged as a CL-104 follow-up — there is no playbook for the split to be about.
@@ -296,7 +298,7 @@ The Consumption plane is the **single artifact** for all four reader archetypes 
 
 ---
 
-## 10. Design Change Log Summary (CL-001 through CL-118)
+## 10. Design Change Log Summary (CL-001 through CL-120)
 
 118 entries across these major themes. Sections CL-001 through CL-101 are unchanged — see prior commits of this file or the change-log itself for theme summaries.
 

@@ -1007,6 +1007,7 @@ The defaults in CL-003, CL-004, and CL-005 are working assumptions. The followin
 | **Consumer graph rebuild to company-wide default (CL-110)** | (documented · build deferred per PO) | S-KG | PO + BA |
 | **POC persona scope** | **RESOLVED 2026-06-09 (CL-118) — locked set narrowed 9 → 8; Phương Anh removed; four-archetype Consumer-plane model intact; urgent-exception + Step Zero preserved** | POC build | PO (resolved) |
 | **Session Detail Page 3-view × 3-tab restructure (CL-119)** | **LOGGED 2026-06-09 (CL-119) — Manager / Stakeholder / Offboarder views × Overview / Data / Logs tabs · Side-Panel UX · Azure Integration Hub pipeline · Stakeholder relationship-based · uc-ho-04 reference-only. Surface application deferred to next chat session per PO direction.** | POC build | PO (logged · surface application pending) |
+| **Session Detail Data Architecture (CL-120)** | **LOGGED 2026-06-10 (CL-120) — Board→Module→Card accordion · AI-derived modules · Q&A single-answer + re-ask · 4 metadata + 2 AI gap detection · zero-gate Capture + one-gate Deliver · auto-transition with manual override. See companion doc.** | POC build | PO (logged · build pending) |
 | **TBD-Z1 OAuth scope minimums per connector** | (no default — hard block) | SZ | IT Security |
 | **TBD-Z2 Connector approval workflow + SLA** | (no default — hard block) | SZ | IT + Legal |
 | **TBD-Z3 Default sync frequency vs. rate limits** | (no default — hard block) | SZ | Product + IT |

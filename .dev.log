@@ -248,3 +248,25 @@
  GET /session/minh-le?tab=settings 200 in 55ms
  ✓ Compiled in 991ms (734 modules)
  GET /session/minh-le?tab=settings 200 in 154ms
+ ○ Compiling /knowledge-graph ...
+ ✓ Compiled /knowledge-graph in 637ms (730 modules)
+ GET /knowledge-graph 200 in 1128ms
+ ○ Compiling /settings ...
+ ✓ Compiled /settings in 658ms (742 modules)
+ GET /settings 200 in 1123ms
+ GET /knowledge-graph 200 in 196ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 771ms (761 modules)
+ GET /sw.js 404 in 1009ms
+ GET /knowledge-graph 200 in 612ms
+ GET /session/minh-le?tab=settings 200 in 89ms
+ GET /sw.js 404 in 91ms
+ GET /knowledge-graph 200 in 31ms
+ GET /session/minh-le 200 in 48ms
+ GET /knowledge-graph 200 in 39ms
+ GET /settings 200 in 40ms
+ ✓ Compiled /spec in 186ms (461 modules)
+ GET /spec 200 in 364ms
+ ✓ Compiled /spec/uc-ho-01/normal in 464ms (776 modules)
+ GET /spec/uc-ho-01/normal 200 in 582ms
