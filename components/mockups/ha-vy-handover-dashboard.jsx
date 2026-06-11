@@ -12,13 +12,10 @@ import {
 /* ═══════════════════════════════════════════════════════════════════
    Dashboard — Session Creator (HR / Manager) view
 
-   CL-122 · Action-first layout with 4 action cards at top, session
-   cards below. Departure banner (State C) for HRIS departures.
-   Phase-segmented progress bars. Task lines with nav targets.
-   CL-121 · Create session → /session/new.
-   CL-120 · Phase-segmented progress. No single percentage.
-   CL-118 · 2 active sessions. CL-117 · No time-aggregated KPIs.
-   CL-115 · No role qualifier. CL-114 · No successor.
+   CL-122 · Action-first layout. Stepper visible in embedded mode.
+   Terminology: "session" not "handover" in all user-facing copy.
+   Activity feed scoped per state (active vs completed events).
+   Open gaps count matches visible session data.
    ═══════════════════════════════════════════════════════════════════ */
 
 const FLOW = [
@@ -75,11 +72,19 @@ const SESSION_DONE = {
   duration: "3 days, 4 hours", stats: { entries: 487, canonical: 12, gaps: 9 },
 };
 
-const ACTIVITY = [
+const ACTIVITY_ACTIVE = [
+  { ts: "1 hour ago", actor: "System", text: "Thanh Tùng's crawl complete — 3 boards, 127 cards, 4 modules derived", severity: "medium" },
+  { ts: "2 hours ago", actor: "System", text: "Stakeholder joined Minh Lê's session · asked 2 questions", severity: "low" },
+  { ts: "3 hours ago", actor: "Minh Lê", text: "Answered 3 questions in Payment Service module", severity: "low" },
+  { ts: "5 hours ago", actor: "Hà Vy", text: "Added 3 priority prompts to Minh Lê's session", severity: "low" },
+  { ts: "1 day ago", actor: "System", text: "Minh Lê's crawl complete — 2 boards, 89 cards, 5 modules", severity: "low" },
+];
+
+const ACTIVITY_COMPLETED = [
   { ts: "2 min ago", actor: "System", text: "KG access ready · starter prompts seeded for Senior Backend Engineer role", severity: "low" },
   { ts: "7 min ago", actor: "System", text: "Minh Lê's session committed to knowledge graph · 487 entries", severity: "low" },
   { ts: "1 hour ago", actor: "System", text: "Thanh Tùng's crawl complete — 3 boards, 127 cards, 4 modules derived", severity: "medium" },
-  { ts: "3 hours ago", actor: "Hà Vy", text: "Added 3 priority prompts to Minh Lê's session", severity: "low" },
+  { ts: "3 hours ago", actor: "Hà Vy", text: "Reviewed and committed Minh Lê's answers", severity: "low" },
 ];
 
 export default function HaVyHandoverDashboard({ embedded = false, view = "active" } = {}) {
@@ -88,7 +93,16 @@ export default function HaVyHandoverDashboard({ embedded = false, view = "active
     return i >= 0 ? i : 1;
   });
   const step = FLOW[stepIdx];
-  if (embedded) return <StepRenderer id={step.id} />;
+
+  if (embedded) {
+    return (
+      <div>
+        <FlowBar step={step} stepIdx={stepIdx} onJump={setStepIdx} />
+        <StepRenderer id={step.id} />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col text-gray-900" style={{ fontFamily: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif' }}>
       <TopBar />
@@ -116,7 +130,7 @@ function DeparturesPending() {
           <Layers className="w-6 h-6 text-gray-400" strokeWidth={1.5} />
         </div>
         <h3 className="text-sm font-medium text-gray-700 mb-1">No active sessions</h3>
-        <p className="text-xs text-gray-500 mb-4">Start a handover session for an upcoming departure above,<br />or create one manually.</p>
+        <p className="text-xs text-gray-500 mb-4">Start a session for an upcoming departure above,<br />or create one manually.</p>
         <Link href="/session/new" className="h-8 px-4 rounded-md border border-dashed border-gray-300 text-xs text-gray-500 hover:text-gray-700 hover:border-gray-400 inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20">
           <Plus className="w-3 h-3" />Create session manually
         </Link>
@@ -137,7 +151,7 @@ function ActiveDashboard() {
         <ActionCard label="Needs your action" value={needsAction} color="urgent" active={hl === "action"} onClick={() => setHl(h => h === "action" ? null : "action")} />
         <ActionCard label="Deadline ≤ 7 days" value={approaching} color={approaching > 0 ? "urgent" : "normal"} active={hl === "deadline"} onClick={() => setHl(h => h === "deadline" ? null : "deadline")} />
         <ActionCard label="Active sessions" value={SESSIONS.length} color="normal" active={hl === "all"} onClick={() => setHl(h => h === "all" ? null : "all")} />
-        <ActionCard label="Open gaps" value={3} color="warn" active={hl === "gaps"} onClick={() => setHl(h => h === "gaps" ? null : "gaps")} />
+        <ActionCard label="Open gaps" value={2} color="warn" active={hl === "gaps"} onClick={() => setHl(h => h === "gaps" ? null : "gaps")} />
       </div>
       <div className="grid grid-cols-3 gap-5">
         <div className="col-span-2 space-y-3">
@@ -152,7 +166,7 @@ function ActiveDashboard() {
         </div>
         <div className="space-y-3">
           <SectionLabel>Recent activity</SectionLabel>
-          {ACTIVITY.map((a, i) => <ActivityItem key={i} {...a} />)}
+          {ACTIVITY_ACTIVE.map((a, i) => <ActivityItem key={i} {...a} />)}
         </div>
       </div>
     </div>
@@ -169,7 +183,7 @@ function CompletedDashboard() {
           <CheckCircle2 className="w-4 h-4 text-emerald-700" strokeWidth={2} />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold text-gray-900">Minh Lê's handover is complete</h3>
+          <h3 className="text-sm font-semibold text-gray-900">Minh Lê's session is complete</h3>
           <p className="text-xs text-gray-500 mt-0.5">487 entries · 12 canonical facts · 9 gaps resolved · KG access ready</p>
         </div>
       </article>
@@ -177,7 +191,7 @@ function CompletedDashboard() {
         <ActionCard label="Needs your action" value={active.filter(s => s.blockedOnManager).length} color="urgent" />
         <ActionCard label="Deadline ≤ 7 days" value={0} color="normal" />
         <ActionCard label="Active sessions" value={active.length} color="normal" />
-        <ActionCard label="Open gaps" value={1} color="warn" />
+        <ActionCard label="Open gaps" value={0} color="normal" />
       </div>
       <div className="grid grid-cols-3 gap-5">
         <div className="col-span-2 space-y-5">
@@ -192,7 +206,7 @@ function CompletedDashboard() {
         </div>
         <div className="space-y-3">
           <SectionLabel>Recent activity</SectionLabel>
-          {ACTIVITY.map((a, i) => <ActivityItem key={i} {...a} />)}
+          {ACTIVITY_COMPLETED.map((a, i) => <ActivityItem key={i} {...a} />)}
         </div>
       </div>
     </div>
@@ -230,7 +244,7 @@ function DepartureBanner({ departures }) {
             <div className="flex items-center gap-3">
               <span className="text-[10px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>Last day {d.lastDay} · {d.daysLeft}d</span>
               <Link href="/session/new" className="h-7 px-2.5 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-[11px] font-medium inline-flex items-center gap-1 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30">
-                Start handover<ArrowRight className="w-2.5 h-2.5" />
+                Start session<ArrowRight className="w-2.5 h-2.5" />
               </Link>
             </div>
           </div>
@@ -262,7 +276,7 @@ function SessionCard({ session, highlighted, dimmed }) {
         <div className={`w-10 h-10 rounded-full text-[11px] font-semibold inline-flex items-center justify-center shrink-0 border ${blocked ? "bg-yellow-50 text-yellow-700 border-yellow-200" : "bg-gray-100 text-gray-700 border-gray-200"}`}>{session.initials}</div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <h3 className="text-sm font-semibold text-gray-900">{session.name}&apos;s handover</h3>
+            <h3 className="text-sm font-semibold text-gray-900">{session.name}&apos;s session</h3>
             <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold border ${phaseColors[phase.key]}`}>{phase.label}</span>
             {blocked && <span className="text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold bg-yellow-50 border border-yellow-200 text-yellow-700 inline-flex items-center gap-1"><Clock className="w-2.5 h-2.5" />Waiting on you</span>}
           </div>
@@ -290,7 +304,7 @@ function CompletedCard({ session }) {
       <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-semibold inline-flex items-center justify-center shrink-0 border border-emerald-200">{session.initials}</div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
-          <h3 className="text-sm font-semibold text-gray-900">{session.name}&apos;s handover</h3>
+          <h3 className="text-sm font-semibold text-gray-900">{session.name}&apos;s session</h3>
           <span className="text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold bg-emerald-50 border border-emerald-200 text-emerald-700 inline-flex items-center gap-1"><CheckCircle2 className="w-2.5 h-2.5" />Complete</span>
           <span className="text-[10px] text-gray-500">{session.completedAt}</span>
         </div>
