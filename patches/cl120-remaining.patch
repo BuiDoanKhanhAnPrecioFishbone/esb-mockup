@@ -1,0 +1,72 @@
+diff --git a/ARTEEP-context-snapshot.md b/ARTEEP-context-snapshot.md
+index 511b685..1bbab29 100644
+--- a/ARTEEP-context-snapshot.md
++++ b/ARTEEP-context-snapshot.md
+@@ -142,6 +142,15 @@ The **Knowledge Graph Consumer plane / POC showcase** uses the `MASTER.md` "AI-N
+ 
+ **English-only showcase (CL-097):** no Vietnamese text appears in the Consumer-plane showcase. The "Canonical · Sự thật gốc" / bilingual-tooltip rule above is overridden within the showcase — Canonical renders in English only ("Canonical" / "Canonical fact"). Usernames are latinized handles (see §3).
+ 
++
++### Data Tab & Side-Panel Primitives (CL-119 / CL-120)
++- **Data tab accordion:** Board → AI-derived Module → Card (two levels). Module registry persists at board level in KG. Users can rename, merge, create, delete modules; drag cards between modules.
++- **Side Panel:** ~480px right-side drawer, Data-tab only. In Prepare: card detail + gaps + add questions. In Capture: full Q&A + answer input + file upload.
++- **Q&A model:** Single answer + re-ask (not threads). Three entry points: card-level, module-level (select cards), out-of-scope (becomes knowledge gap).
++- **Knowledge gaps:** 4 metadata checks (missing description, incomplete checklist, high-priority not done, stale) + 2 AI piggybacked on clustering (implicit knowledge, contradiction) + human-created.
++- **Approval flow:** Zero gates during Capture. One "Commit to KG" at Deliver. Four total Manager touchpoints.
++- **File uploads:** On answer (A) + on module header (C). No standalone card-level upload.
++- **Logs tab:** Flat chronological + filter chips (All · System · Questions · Files · Edits).
+ ---
+ 
+ ## 5. Use Cases (11 + Step Zero)
+@@ -390,6 +399,16 @@ The Consumption plane is the **single artifact** for all four reader archetypes
+ - CL-087 Sales source mix (Salesforce + shared Calendar + SharePoint) remains documented per CL-091; no longer demoed end-to-end
+ - Surface application pending: dashboard `SESSIONS_ACTIVE` 3 → 2 + activity-feed entry; session-command-view `phuong-anh` slug branch + `PhuongAnhReview` + `PA_SECTIONS` removal; `app/session/[id]/page.tsx` slug allow-list
+ 
++### Session Detail Data Architecture (CL-120, 2026-06-10)
++- Board→Module→Card data tab · AI-derived modules with user rename/merge/create/delete · module registry persists at board level in KG
++- Q&A single-answer + re-ask (not threads) · three entry points: card-level, module-level (select cards), out-of-scope (becomes knowledge gap)
++- Knowledge gaps: 4 metadata checks (zero tokens) + 2 AI (implicit knowledge + contradiction, piggybacked on clustering) + human-created
++- Minimal approval: zero gates during Capture · one "Commit to KG" at Deliver · four total Manager touchpoints
++- File uploads: on answer (A) + on module (C) · no standalone card-level upload
++- Capture→Deliver: auto-transition on completion or timeout + Manager manual override
++- Logs tab: flat chronological + filter chips (All · System · Questions · Files · Edits)
++- Full details in companion doc: `docs/arteep/CL-120-session-detail-grill-me.md`
++
+ ---
+ 
+ ## 11. Pending Decisions (Need Stakeholder Input)
+@@ -424,6 +443,9 @@ The Consumption plane is the **single artifact** for all four reader archetypes
+ - **Newcomer initial-prompt seeding strategy** — 4–6 prompts (working default)? static templates vs LLM-generated at commit time? token-budget implications? The synthesis step at commit time is where this lives. Owner: BA + Product.
+ - **UC-ON-01 / UC-ON-02 final naming** — working names locked ("Generate Newcomer Initial Exploration Prompts" · "Explore Knowledge Graph · role-customized"); final names to land when the UC spec is rewritten. Owner: BA.
+ 
++### New — Session Detail Data Architecture (logged 2026-06-10 · CL-120)
++- **Build pending.** 24 decisions locked in grill-me session: Board→Module→Card accordion, AI-derived modules, Q&A single-answer + re-ask, 4 metadata + 2 AI gap detection, zero-gate Capture + one-gate Deliver, auto-transition with manual override. Companion doc: `docs/arteep/CL-120-session-detail-grill-me.md`.
++
+ ### Step Zero Blockers (Plan v2)
+ - TBD-Z1 — OAuth scope minimums per connector
+ - TBD-Z2 — Connector approval workflow + SLA
+diff --git a/docs/arteep/ARTEEP-design-change-log.md b/docs/arteep/ARTEEP-design-change-log.md
+index d48649b..6a48f1a 100644
+--- a/docs/arteep/ARTEEP-design-change-log.md
++++ b/docs/arteep/ARTEEP-design-change-log.md
+@@ -985,6 +985,20 @@
+ 
+ ---
+ 
++## Session Detail Page · Data Architecture & Interaction Model (grill-me session · 2026-06-10)
++
++### CL-120 — Data tab restructure, Q&A model, knowledge gaps, approval flow, stage transitions (companion doc)
++
++| Field | Value |
++|---|---|
++| Date | 2026-06-10 |
++| Sprint | POC build · Management plane (session detail page) |
++| Change | 24 design decisions resolving the Data tab data architecture (board → AI-derived modules → cards), Q&A interaction model (single answer + re-ask), knowledge gap detection (4 metadata + 2 AI piggybacked on clustering + human-created), minimal approval flow (zero gates during Capture, one "Commit to KG" at Deliver), file uploads (on answer + on module), stage transitions (auto with timeout + manual override), and Logs tab (flat + filter chips). Full details in companion doc: `docs/arteep/CL-120-session-detail-grill-me.md`. |
++| UC Reference | UC-HO-01 · UC-HO-04 · UC-HO-08 · CL-119 (builds on 3-view × 3-tab + Side-Panel) · CL-091 (Trello source) · CL-099 (async capture) |
++| Why | The Data tab is the primary working surface for all three roles. These decisions lock the data architecture, interaction model, and approval flow so the build can proceed without mid-build redesigns. |
++| Decided By | PO (Tram) + BA (Claude) — grill-me format |
++| Category | Architectural Decision (significant) · UX Refinement · Performance (token efficiency) |
++
+ ## Pending Decisions (Need Stakeholder Input)
+ 
+ The defaults in CL-003, CL-004, and CL-005 are working assumptions. The following decisions remain open and should be confirmed before their respective sprints begin:
