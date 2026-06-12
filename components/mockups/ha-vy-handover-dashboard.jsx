@@ -5,19 +5,15 @@ import Link from "next/link";
 import {
   ChevronLeft, ChevronRight, Plus, ArrowRight, X,
   AlertTriangle, CheckCircle2, Clock,
-  Database, Network, Sparkles, Users,
+  Database, Network, Sparkles, Users, FileText,
   Bell, Layers, ClipboardList, User
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════════════
    Dashboard — Role-based views with demo tab switcher
-
-   CL-123 · Stage-scoped metrics (not task lines). No completed
-   section — completed sessions live at /sessions. Simplified
-   completion banner (no stats minicards). "Session" not "handover."
-   CL-122 · Action-first layout. Role tabs for demo.
-   CL-124 · Offboarder view (placeholder — build next).
-   CL-125 · Stakeholder view (placeholder — build next).
+   CL-122/123 · Action-first layout. Stage metrics. No completed section.
+   CL-124 · Offboarder: single-column question queue, 3 action cards.
+   CL-125 · Stakeholder: placeholder (build next).
    ═══════════════════════════════════════════════════════════════════ */
 
 const ROLES = [
@@ -70,20 +66,8 @@ const DEPARTURES = [
 ];
 
 const SESSIONS = [
-  {
-    id: "thanh-tung", name: "Thanh Tùng", role: "QA Lead",
-    dept: "Engineering", initials: "TT", subStageId: 3, daysLeft: 28,
-    blockedOnManager: true,
-    metricsLeft: "3 boards · 127 cards · 4 modules",
-    metricsRight: { label: "0 questions added", color: "warn" },
-  },
-  {
-    id: "minh-le", name: "Minh Lê", role: "Senior Backend Engineer",
-    dept: "Engineering", initials: "ML", subStageId: 5, daysLeft: 22,
-    blockedOnManager: false,
-    metricsLeft: "9 of 14 answered · 7 satisfied",
-    metricsRight: { label: "2 gaps open", color: "warn" },
-  },
+  { id: "thanh-tung", name: "Thanh Tùng", role: "QA Lead", dept: "Engineering", initials: "TT", subStageId: 3, daysLeft: 28, blockedOnManager: true, metricsLeft: "3 boards · 127 cards · 4 modules", metricsRight: { label: "0 questions added", color: "warn" } },
+  { id: "minh-le", name: "Minh Lê", role: "Senior Backend Engineer", dept: "Engineering", initials: "ML", subStageId: 5, daysLeft: 22, blockedOnManager: false, metricsLeft: "9 of 14 answered · 7 satisfied", metricsRight: { label: "2 gaps open", color: "warn" } },
 ];
 
 const ACTIVITY_ACTIVE = [
@@ -100,13 +84,22 @@ const ACTIVITY_COMPLETED = [
   { ts: "3 hours ago", actor: "Hà Vy", text: "Reviewed and committed Minh Lê's answers", severity: "low" },
 ];
 
+const OB_QUESTIONS = [
+  { q: "How does the Kafka retry logic handle poison messages?", from: "AI-generated", fromType: "ai", module: "Payment Service" },
+  { q: "What's the rollback procedure for the Atlas migration?", from: "Hà Vy", fromType: "human", module: "CI/CD Pipeline" },
+  { q: "What are the undocumented rate limits on the payment API?", from: "Stakeholder A", fromType: "human", module: "Payment Service" },
+  { q: "Who owns the vendor XYZ contract renewal?", from: "AI-generated", fromType: "ai", module: "Inventory Sync" },
+  { q: "Is there a runbook for the nightly batch job failures?", from: "Stakeholder A", fromType: "human", module: "CI/CD Pipeline" },
+];
+const OB_ANSWERED = [
+  { q: "Where is the API key rotation doc?", module: "Shared Libraries", satisfied: true },
+  { q: "Who should I contact about the SLA penalty terms?", module: "Inventory Sync", satisfied: false },
+];
+
 export default function HaVyHandoverDashboard({ embedded = false, view = "active" } = {}) {
   const [role, setRole] = useState("manager");
   const flow = role === "manager" ? MANAGER_FLOW : role === "offboarder" ? OFFBOARDER_FLOW : role === "stakeholder-a" ? STAKEHOLDER_A_FLOW : STAKEHOLDER_B_FLOW;
-  const [stepIdx, setStepIdx] = useState(() => {
-    if (role === "manager") { const i = MANAGER_FLOW.findIndex(s => s.id === view); return i >= 0 ? i : 1; }
-    return 0;
-  });
+  const [stepIdx, setStepIdx] = useState(() => { if (role === "manager") { const i = MANAGER_FLOW.findIndex(s => s.id === view); return i >= 0 ? i : 1; } return 0; });
   const step = flow[Math.min(stepIdx, flow.length - 1)];
   const handleRoleChange = (r) => { setRole(r); setStepIdx(r === "manager" ? 1 : 0); };
 
@@ -117,7 +110,6 @@ export default function HaVyHandoverDashboard({ embedded = false, view = "active
       <RoleRenderer role={role} stepId={step.id} />
     </div>);
   }
-
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col text-gray-900" style={{ fontFamily: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif' }}>
       <TopBar />
@@ -145,18 +137,16 @@ function ManagerStep({ id }) {
 }
 
 function ManagerDepartures() {
-  return (
-    <div className="max-w-4xl mx-auto p-6">
-      <DashboardHeader />
-      <DepartureBanner departures={DEPARTURES} />
-      <div className="text-center py-12">
-        <div className="w-14 h-14 rounded-full bg-gray-100 inline-flex items-center justify-center mb-4"><Layers className="w-6 h-6 text-gray-400" strokeWidth={1.5} /></div>
-        <h3 className="text-sm font-medium text-gray-700 mb-1">No active sessions</h3>
-        <p className="text-xs text-gray-500 mb-4">Start a session for an upcoming departure above,<br />or create one manually.</p>
-        <Link href="/session/new" className="h-8 px-4 rounded-md border border-dashed border-gray-300 text-xs text-gray-500 hover:text-gray-700 hover:border-gray-400 inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20"><Plus className="w-3 h-3" />Create session manually</Link>
-      </div>
+  return (<div className="max-w-4xl mx-auto p-6">
+    <DashboardHeader />
+    <DepartureBanner departures={DEPARTURES} />
+    <div className="text-center py-12">
+      <div className="w-14 h-14 rounded-full bg-gray-100 inline-flex items-center justify-center mb-4"><Layers className="w-6 h-6 text-gray-400" strokeWidth={1.5} /></div>
+      <h3 className="text-sm font-medium text-gray-700 mb-1">No active sessions</h3>
+      <p className="text-xs text-gray-500 mb-4">Start a session for an upcoming departure above,<br />or create one manually.</p>
+      <Link href="/session/new" className="h-8 px-4 rounded-md border border-dashed border-gray-300 text-xs text-gray-500 hover:text-gray-700 hover:border-gray-400 inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20"><Plus className="w-3 h-3" />Create session manually</Link>
     </div>
-  );
+  </div>);
 }
 
 function ManagerActive() {
@@ -164,83 +154,174 @@ function ManagerActive() {
   const sorted = [...SESSIONS].sort((a, b) => (b.blockedOnManager ? 1 : 0) - (a.blockedOnManager ? 1 : 0));
   const needsAction = SESSIONS.filter(s => s.blockedOnManager).length;
   const approaching = SESSIONS.filter(s => s.daysLeft <= 7).length;
-  return (
-    <div className="max-w-4xl mx-auto p-6">
-      <DashboardHeader />
-      <div className="grid grid-cols-4 gap-3 mb-6">
-        <ActionCard label="Needs your action" value={needsAction} color="urgent" active={hl === "action"} onClick={() => setHl(h => h === "action" ? null : "action")} />
-        <ActionCard label="Deadline ≤ 7 days" value={approaching} color={approaching > 0 ? "urgent" : "normal"} active={hl === "deadline"} onClick={() => setHl(h => h === "deadline" ? null : "deadline")} />
-        <ActionCard label="Active sessions" value={SESSIONS.length} color="normal" active={hl === "all"} onClick={() => setHl(h => h === "all" ? null : "all")} />
-        <ActionCard label="Open gaps" value={2} color="warn" active={hl === "gaps"} onClick={() => setHl(h => h === "gaps" ? null : "gaps")} />
+  return (<div className="max-w-4xl mx-auto p-6">
+    <DashboardHeader />
+    <div className="grid grid-cols-4 gap-3 mb-6">
+      <ActionCard label="Needs your action" value={needsAction} color="urgent" active={hl === "action"} onClick={() => setHl(h => h === "action" ? null : "action")} />
+      <ActionCard label="Deadline ≤ 7 days" value={approaching} color={approaching > 0 ? "urgent" : "normal"} active={hl === "deadline"} onClick={() => setHl(h => h === "deadline" ? null : "deadline")} />
+      <ActionCard label="Active sessions" value={SESSIONS.length} color="normal" active={hl === "all"} onClick={() => setHl(h => h === "all" ? null : "all")} />
+      <ActionCard label="Open gaps" value={2} color="warn" active={hl === "gaps"} onClick={() => setHl(h => h === "gaps" ? null : "gaps")} />
+    </div>
+    <div className="grid grid-cols-3 gap-5">
+      <div className="col-span-2 space-y-3">
+        <SectionLabel count={SESSIONS.length}>Active sessions</SectionLabel>
+        {sorted.map(s => { const match = hl === "action" ? s.blockedOnManager : hl === "deadline" ? s.daysLeft <= 7 : hl === "all" || hl === "gaps"; return <SessionCard key={s.id} session={s} highlighted={hl && match} dimmed={hl && !match} />; })}
+        <Link href="/session/new" className="w-full h-10 rounded-md border border-dashed border-gray-300 text-sm text-gray-500 hover:text-gray-700 hover:border-gray-400 inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20"><Plus className="w-3.5 h-3.5" />Create session</Link>
       </div>
-      <div className="grid grid-cols-3 gap-5">
-        <div className="col-span-2 space-y-3">
-          <SectionLabel count={SESSIONS.length}>Active sessions</SectionLabel>
-          {sorted.map(s => { const match = hl === "action" ? s.blockedOnManager : hl === "deadline" ? s.daysLeft <= 7 : hl === "all" || hl === "gaps"; return <SessionCard key={s.id} session={s} highlighted={hl && match} dimmed={hl && !match} />; })}
-          <Link href="/session/new" className="w-full h-10 rounded-md border border-dashed border-gray-300 text-sm text-gray-500 hover:text-gray-700 hover:border-gray-400 inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20"><Plus className="w-3.5 h-3.5" />Create session</Link>
-        </div>
-        <div className="space-y-3">
-          <SectionLabel>Recent activity</SectionLabel>
-          {ACTIVITY_ACTIVE.map((a, i) => <ActivityItem key={i} {...a} />)}
-        </div>
+      <div className="space-y-3">
+        <SectionLabel>Recent activity</SectionLabel>
+        {ACTIVITY_ACTIVE.map((a, i) => <ActivityItem key={i} {...a} />)}
       </div>
     </div>
-  );
+  </div>);
 }
 
 function ManagerCompleted() {
   const [dismissed, setDismissed] = useState(false);
   const active = SESSIONS.filter(s => s.id !== "minh-le");
-  return (
-    <div className="max-w-4xl mx-auto p-6">
-      <DashboardHeader />
-      {!dismissed && (
-        <article className="rounded-lg border border-emerald-200 bg-emerald-50/40 p-4 mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" strokeWidth={2} />
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900">Minh Lê&apos;s session is complete</h3>
-              <p className="text-xs text-gray-500 mt-0.5">Knowledge committed · <Link href="/sessions" className="text-violet-600 underline">View in sessions →</Link></p>
-            </div>
-          </div>
-          <button onClick={() => setDismissed(true)} className="w-7 h-7 rounded-md hover:bg-emerald-100 inline-flex items-center justify-center text-emerald-400 hover:text-emerald-600 transition-colors"><X className="w-3.5 h-3.5" /></button>
-        </article>
-      )}
-      <div className="grid grid-cols-4 gap-3 mb-6">
-        <ActionCard label="Needs your action" value={active.filter(s => s.blockedOnManager).length} color="urgent" />
-        <ActionCard label="Deadline ≤ 7 days" value={0} color="normal" />
-        <ActionCard label="Active sessions" value={active.length} color="normal" />
-        <ActionCard label="Open gaps" value={0} color="normal" />
-      </div>
-      <div className="grid grid-cols-3 gap-5">
-        <div className="col-span-2 space-y-3">
-          <SectionLabel count={active.length}>Active sessions</SectionLabel>
-          {active.map(s => <SessionCard key={s.id} session={s} />)}
-          <p className="text-xs text-gray-500 pt-2"><Link href="/sessions" className="text-violet-600 underline">View all sessions →</Link> (includes 1 completed)</p>
-        </div>
-        <div className="space-y-3">
-          <SectionLabel>Recent activity</SectionLabel>
-          {ACTIVITY_COMPLETED.map((a, i) => <ActivityItem key={i} {...a} />)}
-        </div>
-      </div>
+  return (<div className="max-w-4xl mx-auto p-6">
+    <DashboardHeader />
+    {!dismissed && (<article className="rounded-lg border border-emerald-200 bg-emerald-50/40 p-4 mb-6 flex items-center justify-between">
+      <div className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" strokeWidth={2} /><div><h3 className="text-sm font-semibold text-gray-900">Minh Lê&apos;s session is complete</h3><p className="text-xs text-gray-500 mt-0.5">Knowledge committed · <Link href="/sessions" className="text-violet-600 underline">View in sessions →</Link></p></div></div>
+      <button onClick={() => setDismissed(true)} className="w-7 h-7 rounded-md hover:bg-emerald-100 inline-flex items-center justify-center text-emerald-400 hover:text-emerald-600 transition-colors"><X className="w-3.5 h-3.5" /></button>
+    </article>)}
+    <div className="grid grid-cols-4 gap-3 mb-6">
+      <ActionCard label="Needs your action" value={active.filter(s => s.blockedOnManager).length} color="urgent" />
+      <ActionCard label="Deadline ≤ 7 days" value={0} color="normal" />
+      <ActionCard label="Active sessions" value={active.length} color="normal" />
+      <ActionCard label="Open gaps" value={0} color="normal" />
     </div>
-  );
+    <div className="grid grid-cols-3 gap-5">
+      <div className="col-span-2 space-y-3">
+        <SectionLabel count={active.length}>Active sessions</SectionLabel>
+        {active.map(s => <SessionCard key={s.id} session={s} />)}
+        <p className="text-xs text-gray-500 pt-2"><Link href="/sessions" className="text-violet-600 underline">View all sessions →</Link> (includes 1 completed)</p>
+      </div>
+      <div className="space-y-3"><SectionLabel>Recent activity</SectionLabel>{ACTIVITY_COMPLETED.map((a, i) => <ActivityItem key={i} {...a} />)}</div>
+    </div>
+  </div>);
 }
 
-function OffboarderStep({ id }) { return <Placeholder role="Offboarder" stepId={id} spec="CL-124" description="Single-column question queue with deadline bar, 3 action cards (To answer / Answered / Files), inline progress bar, and auto-advancing Side Panel." />; }
+/* ═══ OFFBOARDER (CL-124) ═══ */
+
+function OffboarderStep({ id }) {
+  if (id === "not-started") return <OBNotStarted />;
+  if (id === "active-queue") return <OBActiveQueue />;
+  if (id === "all-answered") return <OBAllAnswered />;
+  if (id === "complete") return <OBComplete />;
+  return null;
+}
+
+function DeadlineBar({ days }) {
+  const color = days > 14 ? "safe" : days > 7 ? "amber" : "danger";
+  const cls = { safe: "bg-emerald-50 border-emerald-200 text-emerald-800", amber: "bg-yellow-50 border-yellow-200 text-yellow-800", danger: "bg-rose-50 border-rose-200 text-rose-800" }[color];
+  return (<div className={`rounded-lg border px-4 py-2.5 mb-4 text-[12px] flex items-center gap-2 ${cls}`}><Clock className="w-3.5 h-3.5 shrink-0" /><span><span className="font-semibold">{days} days</span> until your last day · July 4, 2026</span></div>);
+}
+
+function OBNotStarted() {
+  return (<div className="max-w-2xl mx-auto p-6">
+    <DeadlineBar days={30} />
+    <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center mt-4">
+      <div className="w-12 h-12 rounded-full bg-gray-100 inline-flex items-center justify-center mb-3"><Clock className="w-5 h-5 text-gray-400" strokeWidth={1.5} /></div>
+      <h3 className="text-sm font-medium text-gray-700 mb-1">Your session is being prepared</h3>
+      <p className="text-xs text-gray-500">You&apos;ll be notified when your question queue is ready.</p>
+    </div>
+  </div>);
+}
+
+function OBActiveQueue() {
+  return (<div className="max-w-2xl mx-auto p-6">
+    <DeadlineBar days={22} />
+    <div className="grid grid-cols-3 gap-3 mb-4">
+      <ActionCard label="To answer" value={5} color="urgent" />
+      <ActionCard label="Answered" value={9} color="good" />
+      <ActionCard label="Files uploaded" value={2} color="normal" />
+    </div>
+    <div className="flex items-center gap-3 mb-4">
+      <div className="flex-1 h-[5px] rounded-full bg-gray-200 overflow-hidden"><div className="h-full rounded-full bg-violet-500" style={{ width: "64%" }} /></div>
+      <span className="text-[11px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>9 / 14</span>
+    </div>
+    <SectionLabel count={5}>Questions waiting for you</SectionLabel>
+    <div className="space-y-2 mt-2">
+      {OB_QUESTIONS.map((q, i) => (
+        <Link key={i} href="/session/minh-le?tab=data" className="block rounded-lg border border-gray-200 bg-white px-4 py-3 hover:border-gray-300 hover:shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-violet-500/20">
+          <div className="text-[13px] text-gray-900 mb-1">{q.q}</div>
+          <div className="text-[11px] text-gray-500 flex items-center gap-1.5">
+            {q.fromType === "ai" ? <Sparkles className="w-3 h-3 text-violet-500" /> : <User className="w-3 h-3" />}
+            <span>{q.from}</span>
+            <span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 ml-1">{q.module}</span>
+          </div>
+        </Link>
+      ))}
+    </div>
+    <div className="mt-3">
+      <Link href="/session/minh-le?tab=data" className="h-8 px-4 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30">Answer next question<ArrowRight className="w-3 h-3" /></Link>
+      <p className="text-[10px] text-gray-400 mt-1.5">Opens in Data tab · Side Panel auto-advances after each answer</p>
+    </div>
+    <div className="mt-6">
+      <SectionLabel count={9}>Recently answered</SectionLabel>
+      <div className="space-y-2 mt-2">
+        {OB_ANSWERED.map((q, i) => (
+          <div key={i} className="rounded-lg border border-gray-200 bg-white px-4 py-3 opacity-50">
+            <div className="text-[13px] text-gray-900 line-through mb-1">{q.q}</div>
+            <div className="text-[11px] text-gray-500 flex items-center gap-1.5">
+              <CheckCircle2 className="w-3 h-3 text-emerald-500" /><span>Answered</span>
+              {q.satisfied && <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">✓ Satisfied</span>}
+              {!q.satisfied && <span className="text-[9px] text-gray-400">waiting for review</span>}
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 ml-1">{q.module}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>);
+}
+
+function OBAllAnswered() {
+  return (<div className="max-w-2xl mx-auto p-6">
+    <DeadlineBar days={18} />
+    <div className="grid grid-cols-3 gap-3 mb-4">
+      <ActionCard label="To answer" value={0} color="good" />
+      <ActionCard label="Answered" value={14} color="good" />
+      <ActionCard label="Files uploaded" value={4} color="normal" />
+    </div>
+    <div className="flex items-center gap-3 mb-6">
+      <div className="flex-1 h-[5px] rounded-full bg-gray-200 overflow-hidden"><div className="h-full rounded-full bg-emerald-500" style={{ width: "100%" }} /></div>
+      <span className="text-[11px] text-emerald-600 font-medium" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>14 / 14 ✓</span>
+    </div>
+    <div className="rounded-lg border border-emerald-200 bg-emerald-50/40 p-6 text-center">
+      <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" strokeWidth={1.5} />
+      <h3 className="text-sm font-medium text-gray-900 mb-1">You&apos;re all caught up</h3>
+      <p className="text-xs text-gray-500">All 14 questions answered. Your knowledge will be reviewed and committed.<br />If new questions come in, you&apos;ll be notified.</p>
+    </div>
+  </div>);
+}
+
+function OBComplete() {
+  return (<div className="max-w-2xl mx-auto p-6">
+    <div className="rounded-lg border border-emerald-200 bg-emerald-50/40 p-8 text-center">
+      <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-3" strokeWidth={1.5} />
+      <h3 className="text-base font-semibold text-gray-900 mb-1">Your knowledge has been preserved</h3>
+      <p className="text-xs text-gray-500">14 answers and 4 files committed to the knowledge graph.<br />Future team members can access this knowledge.<br /><br />Thank you, Minh Lê.</p>
+    </div>
+  </div>);
+}
+
+/* ═══ STAKEHOLDER PLACEHOLDERS (CL-125) ═══ */
+
 function StakeholderAStep({ id }) { return <Placeholder role="Stakeholder A" stepId={id} spec="CL-125" description="Activity feed grouped by session. Inline answers with max-height + expand. Mark satisfied and ask follow-up inline. Only actionable items shown." />; }
 function StakeholderBStep({ id }) { return <Placeholder role="Stakeholder B" stepId={id} spec="CL-125" description="Empty state with nudge: Minh Lê is leaving soon. Ask about knowledge you will need. CTA: Ask your first question." />; }
 
 function Placeholder({ role, stepId, spec, description }) {
-  return (
-    <div className="max-w-4xl mx-auto p-6"><div className="text-center py-16">
-      <div className="w-14 h-14 rounded-full bg-violet-50 inline-flex items-center justify-center mb-4"><ClipboardList className="w-6 h-6 text-violet-400" strokeWidth={1.5} /></div>
-      <h3 className="text-sm font-semibold text-gray-900 mb-1">{role} · {stepId}</h3>
-      <p className="text-xs text-gray-500 mb-3 max-w-md mx-auto">{description}</p>
-      <span className="text-[10px] px-2 py-1 rounded bg-violet-50 text-violet-700 font-medium">Spec: {spec} · Build pending</span>
-    </div></div>
-  );
+  return (<div className="max-w-4xl mx-auto p-6"><div className="text-center py-16">
+    <div className="w-14 h-14 rounded-full bg-violet-50 inline-flex items-center justify-center mb-4"><ClipboardList className="w-6 h-6 text-violet-400" strokeWidth={1.5} /></div>
+    <h3 className="text-sm font-semibold text-gray-900 mb-1">{role} · {stepId}</h3>
+    <p className="text-xs text-gray-500 mb-3 max-w-md mx-auto">{description}</p>
+    <span className="text-[10px] px-2 py-1 rounded bg-violet-50 text-violet-700 font-medium">Spec: {spec} · Build pending</span>
+  </div></div>);
 }
+
+/* ═══ SHARED COMPONENTS ═══ */
 
 function DashboardHeader() {
   return (<div className="flex items-center justify-between mb-6">
@@ -250,25 +331,15 @@ function DashboardHeader() {
 }
 
 function DepartureBanner({ departures }) {
-  return (
-    <article className="rounded-lg border border-yellow-200 bg-yellow-50/40 p-4 mb-6">
-      <div className="flex items-center gap-2 mb-3"><AlertTriangle className="w-3.5 h-3.5 text-yellow-700" strokeWidth={2} /><h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider">{departures.length} upcoming departures from HRIS</h3></div>
-      <div className="space-y-2">
-        {departures.map((d, i) => (
-          <div key={i} className="flex items-center justify-between bg-white rounded-md border border-gray-200 px-3 py-2">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 text-gray-700 text-[10px] font-semibold inline-flex items-center justify-center shrink-0">{d.initials}</div>
-              <div><div className="text-sm font-medium text-gray-900">{d.name}</div><div className="text-[11px] text-gray-500">{d.role} · {d.dept}</div></div>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="text-[10px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>Last day {d.lastDay} · {d.daysLeft}d</span>
-              <Link href="/session/new" className="h-7 px-2.5 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-[11px] font-medium inline-flex items-center gap-1 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30">Start session<ArrowRight className="w-2.5 h-2.5" /></Link>
-            </div>
-          </div>
-        ))}
+  return (<article className="rounded-lg border border-yellow-200 bg-yellow-50/40 p-4 mb-6">
+    <div className="flex items-center gap-2 mb-3"><AlertTriangle className="w-3.5 h-3.5 text-yellow-700" strokeWidth={2} /><h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider">{departures.length} upcoming departures from HRIS</h3></div>
+    <div className="space-y-2">{departures.map((d, i) => (
+      <div key={i} className="flex items-center justify-between bg-white rounded-md border border-gray-200 px-3 py-2">
+        <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 text-gray-700 text-[10px] font-semibold inline-flex items-center justify-center shrink-0">{d.initials}</div><div><div className="text-sm font-medium text-gray-900">{d.name}</div><div className="text-[11px] text-gray-500">{d.role} · {d.dept}</div></div></div>
+        <div className="flex items-center gap-3"><span className="text-[10px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>Last day {d.lastDay} · {d.daysLeft}d</span><Link href="/session/new" className="h-7 px-2.5 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-[11px] font-medium inline-flex items-center gap-1 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30">Start session<ArrowRight className="w-2.5 h-2.5" /></Link></div>
       </div>
-    </article>
-  );
+    ))}</div>
+  </article>);
 }
 
 function ActionCard({ label, value, color = "normal", active, onClick }) {
@@ -283,42 +354,33 @@ function SessionCard({ session, highlighted, dimmed }) {
   const phase = getPhase(session.subStageId);
   const blocked = session.blockedOnManager;
   const pc = { prepare: "bg-blue-50 border-blue-200 text-blue-700", capture: "bg-violet-50 border-violet-200 text-violet-700", deliver: "bg-emerald-50 border-emerald-200 text-emerald-700" };
-  return (
-    <Link href={`/session/${session.id}`} className={`block rounded-lg border bg-white transition-all hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 ${highlighted ? "border-violet-400 shadow-sm" : dimmed ? "border-gray-200 opacity-40" : blocked ? "border-yellow-200" : "border-gray-200 hover:border-gray-300"}`} style={blocked ? { borderLeft: "2px solid rgb(234,179,8)" } : undefined}>
-      <article className="p-4 flex items-start gap-4">
-        <div className={`w-10 h-10 rounded-full text-[11px] font-semibold inline-flex items-center justify-center shrink-0 border ${blocked ? "bg-yellow-50 text-yellow-700 border-yellow-200" : "bg-gray-100 text-gray-700 border-gray-200"}`}>{session.initials}</div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <h3 className="text-sm font-semibold text-gray-900">{session.name}&apos;s session</h3>
-            <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold border ${pc[phase.key]}`}>{phase.label}</span>
-            {blocked && <span className="text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold bg-yellow-50 border border-yellow-200 text-yellow-700 inline-flex items-center gap-1"><Clock className="w-2.5 h-2.5" />Waiting on you</span>}
-          </div>
-          <p className="text-[12px] text-gray-500 mb-3">{session.role} · {session.dept} · {session.daysLeft} days left</p>
-          <PhaseProgress subStageId={session.subStageId} />
-          <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
-            <span className="text-[11px] text-gray-700">{session.metricsLeft}</span>
-            <span className={`text-[11px] font-medium ${session.metricsRight.color === "warn" ? "text-yellow-700" : session.metricsRight.color === "good" ? "text-emerald-600" : "text-gray-500"}`}>{session.metricsRight.label}</span>
-          </div>
+  return (<Link href={`/session/${session.id}`} className={`block rounded-lg border bg-white transition-all hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 ${highlighted ? "border-violet-400 shadow-sm" : dimmed ? "border-gray-200 opacity-40" : blocked ? "border-yellow-200" : "border-gray-200 hover:border-gray-300"}`} style={blocked ? { borderLeft: "2px solid rgb(234,179,8)" } : undefined}>
+    <article className="p-4 flex items-start gap-4">
+      <div className={`w-10 h-10 rounded-full text-[11px] font-semibold inline-flex items-center justify-center shrink-0 border ${blocked ? "bg-yellow-50 text-yellow-700 border-yellow-200" : "bg-gray-100 text-gray-700 border-gray-200"}`}>{session.initials}</div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1 flex-wrap">
+          <h3 className="text-sm font-semibold text-gray-900">{session.name}&apos;s session</h3>
+          <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold border ${pc[phase.key]}`}>{phase.label}</span>
+          {blocked && <span className="text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold bg-yellow-50 border border-yellow-200 text-yellow-700 inline-flex items-center gap-1"><Clock className="w-2.5 h-2.5" />Waiting on you</span>}
         </div>
-        <span className="h-8 px-3 rounded-md border border-gray-300 bg-white text-gray-700 text-sm font-medium inline-flex items-center gap-1.5 shrink-0">Open<ArrowRight className="w-3 h-3" /></span>
-      </article>
-    </Link>
-  );
+        <p className="text-[12px] text-gray-500 mb-3">{session.role} · {session.dept} · {session.daysLeft} days left</p>
+        <PhaseProgress subStageId={session.subStageId} />
+        <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
+          <span className="text-[11px] text-gray-700">{session.metricsLeft}</span>
+          <span className={`text-[11px] font-medium ${session.metricsRight.color === "warn" ? "text-yellow-700" : session.metricsRight.color === "good" ? "text-emerald-600" : "text-gray-500"}`}>{session.metricsRight.label}</span>
+        </div>
+      </div>
+      <span className="h-8 px-3 rounded-md border border-gray-300 bg-white text-gray-700 text-sm font-medium inline-flex items-center gap-1.5 shrink-0">Open<ArrowRight className="w-3 h-3" /></span>
+    </article>
+  </Link>);
 }
 
 function PhaseProgress({ subStageId, done }) {
   const cur = getPhase(subStageId); const curSub = getSub(subStageId);
   return (<div>
-    <div className="flex items-center justify-between mb-1 text-[10px]">
-      <span className="text-gray-700 font-medium">{done ? "All 3 phases complete" : <>Phase {cur.id} of 3 · <span className="text-gray-900">{cur.label}</span></>}</span>
-      <span className="text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{done ? "Complete" : curSub.label}</span>
-    </div>
-    <div className="grid grid-cols-3 gap-1">
-      {PHASES.map(p => { const isDone = done || p.id < cur.id; const isCur = !done && p.id === cur.id; let pct = 0; if (isCur) { const idx = p.subs.findIndex(s => s.id === subStageId); pct = ((idx + 0.5) / p.subs.length) * 100; } return (<div key={p.id} className="relative h-2 rounded-sm bg-gray-200 overflow-hidden">{isDone && <div className="absolute inset-0 bg-emerald-500" />}{isCur && <div className="absolute inset-y-0 left-0 bg-violet-500" style={{ width: `${pct}%` }} />}</div>); })}
-    </div>
-    <div className="grid grid-cols-3 gap-1 mt-1">
-      {PHASES.map(p => { const isDone = done || p.id < cur.id; const isCur = !done && p.id === cur.id; return <span key={p.id} className={`text-[9px] uppercase tracking-wider font-medium text-center ${isDone ? "text-emerald-700" : isCur ? "text-violet-700" : "text-gray-400"}`}>{p.label}</span>; })}
-    </div>
+    <div className="flex items-center justify-between mb-1 text-[10px]"><span className="text-gray-700 font-medium">{done ? "All 3 phases complete" : <>Phase {cur.id} of 3 · <span className="text-gray-900">{cur.label}</span></>}</span><span className="text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{done ? "Complete" : curSub.label}</span></div>
+    <div className="grid grid-cols-3 gap-1">{PHASES.map(p => { const isDone = done || p.id < cur.id; const isCur = !done && p.id === cur.id; let pct = 0; if (isCur) { const idx = p.subs.findIndex(s => s.id === subStageId); pct = ((idx + 0.5) / p.subs.length) * 100; } return (<div key={p.id} className="relative h-2 rounded-sm bg-gray-200 overflow-hidden">{isDone && <div className="absolute inset-0 bg-emerald-500" />}{isCur && <div className="absolute inset-y-0 left-0 bg-violet-500" style={{ width: `${pct}%` }} />}</div>); })}</div>
+    <div className="grid grid-cols-3 gap-1 mt-1">{PHASES.map(p => { const isDone = done || p.id < cur.id; const isCur = !done && p.id === cur.id; return <span key={p.id} className={`text-[9px] uppercase tracking-wider font-medium text-center ${isDone ? "text-emerald-700" : isCur ? "text-violet-700" : "text-gray-400"}`}>{p.label}</span>; })}</div>
   </div>);
 }
 
@@ -334,6 +396,8 @@ function ActivityItem({ ts, actor, text, severity }) {
   </div>);
 }
 
+/* ═══ CHROME (standalone mode) ═══ */
+
 function RoleTabBar({ role, onChange }) {
   return (<div className="bg-white border-b border-gray-200 px-5 overflow-x-auto"><div className="flex gap-0 min-w-0">
     {ROLES.map(r => (<button key={r.id} onClick={() => onChange(r.id)} className={`flex items-center gap-2 px-4 py-2.5 border-b-2 transition-colors shrink-0 focus:outline-none ${role === r.id ? "border-violet-600 text-gray-900" : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>
@@ -345,13 +409,8 @@ function RoleTabBar({ role, onChange }) {
 
 function FlowBar({ step, stepIdx, flow, onJump, roleLabel }) {
   return (<div className="bg-white border-b border-gray-200 px-5 py-2 flex items-center justify-between gap-4">
-    <div className="min-w-0 flex-1">
-      <div className="flex items-center gap-2 text-[11px] text-gray-500"><span className="uppercase tracking-wider font-semibold text-violet-700">{roleLabel}</span><span className="text-gray-300">·</span><span style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>step {stepIdx + 1} of {flow.length}</span></div>
-      <h1 className="text-sm font-semibold text-gray-900 truncate mt-0.5">{step.label}</h1>
-    </div>
-    <div className="flex items-center gap-1 shrink-0">
-      {flow.map((s, i) => (<button key={s.id} onClick={() => onJump(i)} title={s.label} className={`w-7 h-7 rounded-md border text-[11px] font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20 ${i === stepIdx ? "bg-violet-600 text-white border-violet-600" : "bg-white text-violet-700 border-violet-200 hover:border-violet-400"}`} style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{i + 1}</button>))}
-    </div>
+    <div className="min-w-0 flex-1"><div className="flex items-center gap-2 text-[11px] text-gray-500"><span className="uppercase tracking-wider font-semibold text-violet-700">{roleLabel}</span><span className="text-gray-300">·</span><span style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>step {stepIdx + 1} of {flow.length}</span></div><h1 className="text-sm font-semibold text-gray-900 truncate mt-0.5">{step.label}</h1></div>
+    <div className="flex items-center gap-1 shrink-0">{flow.map((s, i) => (<button key={s.id} onClick={() => onJump(i)} title={s.label} className={`w-7 h-7 rounded-md border text-[11px] font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20 ${i === stepIdx ? "bg-violet-600 text-white border-violet-600" : "bg-white text-violet-700 border-violet-200 hover:border-violet-400"}`} style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{i + 1}</button>))}</div>
   </div>);
 }
 
