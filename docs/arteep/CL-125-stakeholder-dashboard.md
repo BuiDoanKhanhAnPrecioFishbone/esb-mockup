@@ -4,9 +4,9 @@
 |---|---|
 | Date | 2026-06-11 |
 | Sprint | POC build · Dashboard |
-| Change | Stakeholder dashboard design — 3 states (no questions, active, all satisfied). Feed shows only actionable items (answers to review + waiting for answer). Satisfied items not shown — history in session detail. Answers inline with max 4-line height + "See more" expand. Attachments shown as compact indicators. Feed grouped by session, not flat chronological. |
-| UC Reference | CL-122 (dashboard interactions) · CL-123 (dashboard refinements) · CL-124 (offboarder dashboard) |
-| Why | The stakeholder's mental model is a notification feed: "did my questions get answered?" Design must surface actionable items and hide completed history. |
+| Change | Stakeholder dashboard design — 3 states (no questions, active, all satisfied). Two demo personas: Stakeholder A (active, 2 sessions) and Stakeholder B (no questions). Activity feed grouped by session, only actionable items shown. Inline answers with max-height + expand. Compact attachment indicators. |
+| UC Reference | CL-122 (dashboard interactions) · CL-123 (dashboard refinements) · CL-124 (offboarder dashboard) · CL-120 (file uploads on answers) |
+| Why | Stakeholder's mental model is a notification feed: "did my questions get answered?" Design must surface answers inline so they can review and mark satisfied without navigating. |
 | Decided By | PO (Tram) + BA (Claude) — grill-me format |
 | Category | UX Refinement |
 
@@ -23,47 +23,53 @@
 
 ### State 2: Active (Stakeholder A — 2 sessions)
 - **Action summary** (3 cards): Answers to review: 2 | Waiting: 2 | Sessions: 2
-- **Feed grouped by session** (only actionable items):
+- **Activity feed grouped by session** (only actionable items — no satisfied/completed items):
 
 **Minh Lê's session · Capture · 22 days left**
 - ✅ Answer ready: "Who should I contact about the SLA penalty terms?"
-  - Answer text inline (max 4 lines, "See more" to expand)
+  - Inline answer text (max 4 lines, "See more" expands inline)
   - If attachment: compact indicator (📎 filename · size) + "View in session →"
   - [Mark satisfied] [Ask follow-up]
-- ⏳ Waiting: "What are the undocumented rate limits on the payment API?" · 3 days
+- ⏳ Waiting for Minh Lê · 3 days: "What are the undocumented rate limits on the payment API?"
 - [Ask a question]
 
 **Thanh Tùng's session · Prepare · 28 days left**
-- ⏳ Waiting: "Which E2E tests are flaky and need ownership transfer?" · 1 day
+- ⏳ Waiting for Thanh Tùng · 1 day: "Which E2E tests are flaky and need ownership transfer?"
 - [Ask a question]
 
 ### State 3: All satisfied
 - **Action summary**: Answers to review: 0 | Waiting: 0 | Sessions: 2
 - **Caught-up card** (emerald): "You're all caught up. All your questions have been answered and reviewed."
+- Activity feed shows no items (all satisfied = all removed from actionable feed)
+- Session cards still visible for context + "Ask a question" CTA
 
 ---
 
-## Key Decisions
+## Key Design Decisions
 
 ### Feed shows only actionable items
-- **Answers to review** — offboarder answered, stakeholder hasn't marked satisfied
-- **Waiting for answer** — stakeholder asked, offboarder hasn't answered
-- **Already satisfied items are NOT shown.** They're done. History lives in session detail page. Consistent with Manager dashboard pattern (completed sessions → /sessions, not on dashboard).
+- **Shown**: answers waiting for review + questions waiting for answer
+- **Not shown**: already-satisfied items. They're done. History lives in session detail page.
+- Consistent with Manager dashboard pattern (active sessions on dashboard, completed at /sessions)
 
-### Answer text: full text with max height
-- Show full answer text but cap at ~4 lines (~80px max-height)
-- "See more" expands inline (not navigate away)
-- Stakeholder can mark satisfied after reading the expanded answer without navigating
+### Grouped by session (not flat chronological)
+- Each session is a group header with session name + phase badge + days left
+- Questions nested below each session
+- "Ask a question" CTA at bottom of each group → `/session/[id]?tab=data`
 
-### Attachments: compact indicator
-- Below answer text: 📎 filename · size (per file)
-- "View in session →" link to open full Side Panel with download
-- Dashboard preview = "there's an attachment." Actual file interaction in session detail.
+### Inline answer text with max height
+- Show full answer text, capped at ~4 lines (~80px max-height)
+- "See more" expands inline (stakeholder can mark satisfied after reading expanded text)
+- No navigation required for text-only answers
 
-### Grouping: by session
-- Questions grouped under session headers, not flat chronological
-- Each session group: session name + phase badge + days left
-- "Ask a question" CTA at the bottom of each group → `/session/[id]?tab=data`
+### Attachment handling
+- Compact indicator below answer text: 📎 filename · size (per file)
+- "View in session →" link for full download/preview
+- Dashboard shows the indicator; actual file interaction happens in session detail
+
+### Action summary cards
+- 3 cards: Answers to review | Waiting for answer | Sessions
+- Sparse numbers are OK — stakeholders typically have 1–5 questions. The cards still communicate "what needs me" at a glance.
 
 ---
 
@@ -71,12 +77,12 @@
 
 | Element | Click behavior |
 |---|---|
-| "Mark satisfied" | Inline — button becomes ✓ Satisfied badge. Item removed from feed (it's no longer actionable). No navigation. |
-| "Ask follow-up" | Inline — text input expands below the answer. Submit without navigating. New question appears in "Waiting" state. |
-| "See more" on answer | Inline expand — reveals full answer text. No navigation. |
-| "View in session →" on attachment | → `/session/[id]?tab=data` with Side Panel open to that Q's card |
-| "Ask a question" on session group | → `/session/[id]?tab=data` (needs module context) |
-| "Open session" | → `/session/[id]` |
+| "Mark satisfied" | Inline — button becomes ✓ badge, item fades and removes from feed |
+| "Ask follow-up" | Inline — text input expands below the answer. Submit without navigating. |
+| "See more" on truncated answer | Expands inline to show full text |
+| "View in session →" on attachment | → `/session/[id]?tab=data` with Side Panel open to that Q |
+| "Ask a question" on session group | → `/session/[id]?tab=data` (browse modules to ask) |
+| "Open session" | → `/session/[id]` (Overview tab) |
 
 ---
 
