@@ -6,7 +6,7 @@ import { ArrowRight, Calendar, Check, ChevronDown, Users } from "lucide-react";
 
 /* Create Session (CL-121 + grill refinements)
    Accordion of HRIS departures. Expand to configure + start.
-   No dropdown. No board disabling. Max 3 boards selectable. */
+   No dropdown. No board limit. All boards equally selectable. */
 
 const OFFBOARDERS = [
   { id: "minh-le", name: "Minh L\u00ea", role: "Senior Backend Engineer", dept: "Engineering", lastDay: "July 4, 2026", daysLeft: 30, initials: "ML" },
@@ -69,10 +69,7 @@ function DepartureCard({ person, isExpanded, onToggle }) {
   const handleBoardToggle = (boardId) => {
     setBoardSelection(prev => {
       const isOn = prev[boardId];
-      if (isOn) return { ...prev, [boardId]: false };
-      const count = Object.values(prev).filter(Boolean).length;
-      if (count >= 3) return prev;
-      return { ...prev, [boardId]: true };
+      return { ...prev, [boardId]: !isOn };
     });
   };
 
@@ -127,12 +124,11 @@ function DepartureCard({ person, isExpanded, onToggle }) {
             {/* Board picker */}
             <div>
               <label className="text-[11px] text-gray-500 uppercase tracking-wider font-medium mb-1.5 block">
-                Data sources \u2014 Trello boards <span style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>({selectedCount} of 3 selected)</span>
+                Data sources \u2014 Trello boards <span style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>({selectedCount} selected)</span>
               </label>
               <div className="space-y-2">
                 {BOARDS.map(b => {
                   const isOn = boardSelection[b.id];
-                  const atMax = selectedCount >= 3 && !isOn;
                   return (
                     <button
                       key={b.id}
@@ -140,9 +136,7 @@ function DepartureCard({ person, isExpanded, onToggle }) {
                       className={`w-full rounded-lg border p-3 text-left transition-all flex items-center gap-3 focus:outline-none focus:ring-2 focus:ring-violet-500/20 ${
                         isOn
                           ? "border-violet-300 bg-violet-50/30"
-                          : atMax
-                            ? "border-gray-200 bg-white opacity-50 cursor-not-allowed"
-                            : "border-gray-200 bg-white hover:border-gray-300"
+                          : "border-gray-200 bg-white hover:border-gray-300"
                       }`}
                     >
                       <div className={`w-5 h-5 rounded border inline-flex items-center justify-center shrink-0 transition-colors ${
@@ -161,7 +155,6 @@ function DepartureCard({ person, isExpanded, onToggle }) {
                   );
                 })}
               </div>
-              {atMaxMessage(selectedCount)}
             </div>
 
             {/* CTA */}
@@ -183,11 +176,4 @@ function DepartureCard({ person, isExpanded, onToggle }) {
       )}
     </div>
   );
-}
-
-function atMaxMessage(count) {
-  if (count >= 3) {
-    return <p className="text-[10px] text-yellow-700 mt-1.5">Maximum 3 boards selected. Deselect one to choose a different board.</p>;
-  }
-  return null;
 }
