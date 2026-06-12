@@ -31,7 +31,7 @@ const PRIMARY_NAV: NavItem[] = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard, match: (p) => p === "/" },
   {
     label: "Sessions",
-    href: "/session/minh-le",
+    href: "/sessions",
     icon: Briefcase,
     match: (p) => p.startsWith("/session"),
   },
@@ -221,22 +221,6 @@ type Notification = {
   href?: string;
 };
 
-// CL-118 · the `n-pha-review` Phương Anh notification is removed
-// (Phương Anh / Sales is out of POC scope; the `/session/phuong-anh`
-// route 404s).
-// CL-112 · `n-minhle-committed` uses the post-commit vocabulary
-// "entries", not "items".
-// CL-113 / CL-116 · `n-minhle-committed` no longer says "playbook";
-// the post-commit beat is Knowledge Graph access readiness for the
-// Newcomer role.
-// CL-114 · `n-minhle-committed` no longer names the successor
-// ("Trần Hữu Nam"). Newcomer identity is RBAC-flagged at KG access
-// time, not session-time; the role string ("Senior Backend Engineer")
-// is what role-customized prompts key off.
-// CL-098 · `n-minhle-seeding` no longer says "interview ready to
-// schedule" — the live voice interview (UC-HO-02) is deferred to
-// Phase 2. POC capture is the async question queue (CL-098/099),
-// so the seeding-complete beat ends with the queue being ready.
 const NOTIFICATIONS: Notification[] = [
   {
     id: "n-kltran-urgent",
