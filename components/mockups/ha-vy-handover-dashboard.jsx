@@ -3,25 +3,50 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import {
-  ChevronLeft, ChevronRight, Plus, ArrowRight,
+  ChevronLeft, ChevronRight, Plus, ArrowRight, X,
   AlertTriangle, CheckCircle2, Clock,
-  Calendar, Database, Network, Sparkles,
-  Bell, Layers
+  Database, Network, Sparkles, Users,
+  Bell, Layers, ClipboardList, User
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════════════
-   Dashboard — Session Creator (HR / Manager) view
+   Dashboard — Role-based views with demo tab switcher
 
-   CL-122 · Action-first layout. Stepper visible in embedded mode.
-   Terminology: "session" not "handover" in all user-facing copy.
-   Activity feed scoped per state (active vs completed events).
-   Open gaps count matches visible session data.
+   CL-123 · Stage-scoped metrics (not task lines). No completed
+   section — completed sessions live at /sessions. Simplified
+   completion banner (no stats minicards). "Session" not "handover."
+   CL-122 · Action-first layout. Role tabs for demo.
+   CL-124 · Offboarder view (placeholder — build next).
+   CL-125 · Stakeholder view (placeholder — build next).
    ═══════════════════════════════════════════════════════════════════ */
 
-const FLOW = [
+const ROLES = [
+  { id: "manager", label: "Hà Vy", sub: "Manager / HR", icon: "HV" },
+  { id: "offboarder", label: "Minh Lê", sub: "Offboarder", icon: "ML" },
+  { id: "stakeholder-a", label: "Stakeholder A", sub: "Active · 2 sessions", icon: "SA" },
+  { id: "stakeholder-b", label: "Stakeholder B", sub: "No questions", icon: "SB" },
+];
+
+const MANAGER_FLOW = [
   { id: "departures", label: "Departures pending", trigger: "HRIS flagged 2 departures — no sessions created yet." },
-  { id: "active",     label: "Active sessions",    trigger: "2 sessions in different lifecycle phases." },
-  { id: "completed",  label: "Session completed",  trigger: "Minh Lê's session committed to KG." },
+  { id: "active", label: "Active sessions", trigger: "2 sessions in different lifecycle phases." },
+  { id: "completed", label: "Session completed", trigger: "Minh Lê's session committed to KG." },
+];
+
+const OFFBOARDER_FLOW = [
+  { id: "not-started", label: "Not started", trigger: "Session in Prepare. Offboarder waiting." },
+  { id: "active-queue", label: "Active queue", trigger: "5 questions to answer, 9 done." },
+  { id: "all-answered", label: "All answered", trigger: "All 14 questions answered." },
+  { id: "complete", label: "Complete", trigger: "Knowledge committed to KG." },
+];
+
+const STAKEHOLDER_A_FLOW = [
+  { id: "active", label: "Active", trigger: "2 answers to review, 2 waiting." },
+  { id: "all-satisfied", label: "All satisfied", trigger: "All questions answered and reviewed." },
+];
+
+const STAKEHOLDER_B_FLOW = [
+  { id: "no-questions", label: "No questions", trigger: "Added to session but hasn't engaged." },
 ];
 
 const PHASES = [
@@ -49,97 +74,92 @@ const SESSIONS = [
     id: "thanh-tung", name: "Thanh Tùng", role: "QA Lead",
     dept: "Engineering", initials: "TT", subStageId: 3, daysLeft: 28,
     blockedOnManager: true,
-    tasks: [
-      { text: "Crawl complete — needs your review", dot: "urgent", link: "/session/thanh-tung?tab=data" },
-      { text: "No questions added yet", dot: "warn" },
-    ],
+    metricsLeft: "3 boards · 127 cards · 4 modules",
+    metricsRight: { label: "0 questions added", color: "warn" },
   },
   {
     id: "minh-le", name: "Minh Lê", role: "Senior Backend Engineer",
     dept: "Engineering", initials: "ML", subStageId: 5, daysLeft: 22,
     blockedOnManager: false,
-    tasks: [
-      { text: "5 questions unanswered", dot: "urgent", link: "/session/minh-le?tab=data&filter=unanswered" },
-      { text: "2 knowledge gaps open", dot: "warn" },
-      { text: "3 of 5 modules covered", dot: "good" },
-    ],
+    metricsLeft: "9 of 14 answered · 7 satisfied",
+    metricsRight: { label: "2 gaps open", color: "warn" },
   },
 ];
-
-const SESSION_DONE = {
-  name: "Minh Lê", role: "Senior Backend Engineer", dept: "Engineering",
-  initials: "ML", subStageId: 8, completedAt: "Just now",
-  duration: "3 days, 4 hours", stats: { entries: 487, canonical: 12, gaps: 9 },
-};
 
 const ACTIVITY_ACTIVE = [
   { ts: "1 hour ago", actor: "System", text: "Thanh Tùng's crawl complete — 3 boards, 127 cards, 4 modules derived", severity: "medium" },
   { ts: "2 hours ago", actor: "System", text: "Stakeholder joined Minh Lê's session · asked 2 questions", severity: "low" },
   { ts: "3 hours ago", actor: "Minh Lê", text: "Answered 3 questions in Payment Service module", severity: "low" },
   { ts: "5 hours ago", actor: "Hà Vy", text: "Added 3 priority prompts to Minh Lê's session", severity: "low" },
-  { ts: "1 day ago", actor: "System", text: "Minh Lê's crawl complete — 2 boards, 89 cards, 5 modules", severity: "low" },
 ];
 
 const ACTIVITY_COMPLETED = [
-  { ts: "2 min ago", actor: "System", text: "KG access ready · starter prompts seeded for Senior Backend Engineer role", severity: "low" },
-  { ts: "7 min ago", actor: "System", text: "Minh Lê's session committed to knowledge graph · 487 entries", severity: "low" },
+  { ts: "2 min ago", actor: "System", text: "KG access ready · starter prompts seeded", severity: "low" },
+  { ts: "7 min ago", actor: "System", text: "Minh Lê's session committed · 487 entries", severity: "low" },
   { ts: "1 hour ago", actor: "System", text: "Thanh Tùng's crawl complete — 3 boards, 127 cards, 4 modules derived", severity: "medium" },
   { ts: "3 hours ago", actor: "Hà Vy", text: "Reviewed and committed Minh Lê's answers", severity: "low" },
 ];
 
 export default function HaVyHandoverDashboard({ embedded = false, view = "active" } = {}) {
+  const [role, setRole] = useState("manager");
+  const flow = role === "manager" ? MANAGER_FLOW : role === "offboarder" ? OFFBOARDER_FLOW : role === "stakeholder-a" ? STAKEHOLDER_A_FLOW : STAKEHOLDER_B_FLOW;
   const [stepIdx, setStepIdx] = useState(() => {
-    const i = FLOW.findIndex(s => s.id === view);
-    return i >= 0 ? i : 1;
+    if (role === "manager") { const i = MANAGER_FLOW.findIndex(s => s.id === view); return i >= 0 ? i : 1; }
+    return 0;
   });
-  const step = FLOW[stepIdx];
+  const step = flow[Math.min(stepIdx, flow.length - 1)];
+  const handleRoleChange = (r) => { setRole(r); setStepIdx(r === "manager" ? 1 : 0); };
 
   if (embedded) {
-    return (
-      <div>
-        <FlowBar step={step} stepIdx={stepIdx} onJump={setStepIdx} />
-        <StepRenderer id={step.id} />
-      </div>
-    );
+    return (<div>
+      <RoleTabBar role={role} onChange={handleRoleChange} />
+      <FlowBar step={step} stepIdx={Math.min(stepIdx, flow.length - 1)} flow={flow} onJump={setStepIdx} roleLabel={ROLES.find(r => r.id === role)?.sub} />
+      <RoleRenderer role={role} stepId={step.id} />
+    </div>);
   }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col text-gray-900" style={{ fontFamily: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif' }}>
       <TopBar />
-      <FlowBar step={step} stepIdx={stepIdx} onJump={setStepIdx} />
-      <main className="flex-1"><StepRenderer id={step.id} /></main>
-      <FooterNav stepIdx={stepIdx} onChange={setStepIdx} />
+      <RoleTabBar role={role} onChange={handleRoleChange} />
+      <FlowBar step={step} stepIdx={Math.min(stepIdx, flow.length - 1)} flow={flow} onJump={setStepIdx} roleLabel={ROLES.find(r => r.id === role)?.sub} />
+      <main className="flex-1"><RoleRenderer role={role} stepId={step.id} /></main>
+      <FooterNav stepIdx={Math.min(stepIdx, flow.length - 1)} total={flow.length} onChange={setStepIdx} trigger={step.trigger} />
     </div>
   );
 }
 
-function StepRenderer({ id }) {
-  if (id === "departures") return <DeparturesPending />;
-  if (id === "active") return <ActiveDashboard />;
-  if (id === "completed") return <CompletedDashboard />;
+function RoleRenderer({ role, stepId }) {
+  if (role === "manager") return <ManagerStep id={stepId} />;
+  if (role === "offboarder") return <OffboarderStep id={stepId} />;
+  if (role === "stakeholder-a") return <StakeholderAStep id={stepId} />;
+  if (role === "stakeholder-b") return <StakeholderBStep id={stepId} />;
   return null;
 }
 
-function DeparturesPending() {
+function ManagerStep({ id }) {
+  if (id === "departures") return <ManagerDepartures />;
+  if (id === "active") return <ManagerActive />;
+  if (id === "completed") return <ManagerCompleted />;
+  return null;
+}
+
+function ManagerDepartures() {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <DashboardHeader />
       <DepartureBanner departures={DEPARTURES} />
       <div className="text-center py-12">
-        <div className="w-14 h-14 rounded-full bg-gray-100 inline-flex items-center justify-center mb-4">
-          <Layers className="w-6 h-6 text-gray-400" strokeWidth={1.5} />
-        </div>
+        <div className="w-14 h-14 rounded-full bg-gray-100 inline-flex items-center justify-center mb-4"><Layers className="w-6 h-6 text-gray-400" strokeWidth={1.5} /></div>
         <h3 className="text-sm font-medium text-gray-700 mb-1">No active sessions</h3>
         <p className="text-xs text-gray-500 mb-4">Start a session for an upcoming departure above,<br />or create one manually.</p>
-        <Link href="/session/new" className="h-8 px-4 rounded-md border border-dashed border-gray-300 text-xs text-gray-500 hover:text-gray-700 hover:border-gray-400 inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20">
-          <Plus className="w-3 h-3" />Create session manually
-        </Link>
+        <Link href="/session/new" className="h-8 px-4 rounded-md border border-dashed border-gray-300 text-xs text-gray-500 hover:text-gray-700 hover:border-gray-400 inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20"><Plus className="w-3 h-3" />Create session manually</Link>
       </div>
     </div>
   );
 }
 
-function ActiveDashboard() {
+function ManagerActive() {
   const [hl, setHl] = useState(null);
   const sorted = [...SESSIONS].sort((a, b) => (b.blockedOnManager ? 1 : 0) - (a.blockedOnManager ? 1 : 0));
   const needsAction = SESSIONS.filter(s => s.blockedOnManager).length;
@@ -156,13 +176,8 @@ function ActiveDashboard() {
       <div className="grid grid-cols-3 gap-5">
         <div className="col-span-2 space-y-3">
           <SectionLabel count={SESSIONS.length}>Active sessions</SectionLabel>
-          {sorted.map(s => {
-            const match = hl === "action" ? s.blockedOnManager : hl === "deadline" ? s.daysLeft <= 7 : hl === "all" || hl === "gaps";
-            return <SessionCard key={s.id} session={s} highlighted={hl && match} dimmed={hl && !match} />;
-          })}
-          <Link href="/session/new" className="w-full h-10 rounded-md border border-dashed border-gray-300 text-sm text-gray-500 hover:text-gray-700 hover:border-gray-400 inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20">
-            <Plus className="w-3.5 h-3.5" />Create session
-          </Link>
+          {sorted.map(s => { const match = hl === "action" ? s.blockedOnManager : hl === "deadline" ? s.daysLeft <= 7 : hl === "all" || hl === "gaps"; return <SessionCard key={s.id} session={s} highlighted={hl && match} dimmed={hl && !match} />; })}
+          <Link href="/session/new" className="w-full h-10 rounded-md border border-dashed border-gray-300 text-sm text-gray-500 hover:text-gray-700 hover:border-gray-400 inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20"><Plus className="w-3.5 h-3.5" />Create session</Link>
         </div>
         <div className="space-y-3">
           <SectionLabel>Recent activity</SectionLabel>
@@ -173,20 +188,24 @@ function ActiveDashboard() {
   );
 }
 
-function CompletedDashboard() {
+function ManagerCompleted() {
+  const [dismissed, setDismissed] = useState(false);
   const active = SESSIONS.filter(s => s.id !== "minh-le");
   return (
     <div className="max-w-4xl mx-auto p-6">
       <DashboardHeader />
-      <article className="rounded-lg border border-emerald-200 bg-emerald-50/40 p-4 mb-6 flex items-start gap-3">
-        <div className="w-10 h-10 rounded-full bg-white border border-emerald-200 flex items-center justify-center shrink-0">
-          <CheckCircle2 className="w-4 h-4 text-emerald-700" strokeWidth={2} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold text-gray-900">Minh Lê's session is complete</h3>
-          <p className="text-xs text-gray-500 mt-0.5">487 entries · 12 canonical facts · 9 gaps resolved · KG access ready</p>
-        </div>
-      </article>
+      {!dismissed && (
+        <article className="rounded-lg border border-emerald-200 bg-emerald-50/40 p-4 mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" strokeWidth={2} />
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900">Minh Lê&apos;s session is complete</h3>
+              <p className="text-xs text-gray-500 mt-0.5">Knowledge committed · <Link href="/sessions" className="text-violet-600 underline">View in sessions →</Link></p>
+            </div>
+          </div>
+          <button onClick={() => setDismissed(true)} className="w-7 h-7 rounded-md hover:bg-emerald-100 inline-flex items-center justify-center text-emerald-400 hover:text-emerald-600 transition-colors"><X className="w-3.5 h-3.5" /></button>
+        </article>
+      )}
       <div className="grid grid-cols-4 gap-3 mb-6">
         <ActionCard label="Needs your action" value={active.filter(s => s.blockedOnManager).length} color="urgent" />
         <ActionCard label="Deadline ≤ 7 days" value={0} color="normal" />
@@ -194,15 +213,10 @@ function CompletedDashboard() {
         <ActionCard label="Open gaps" value={0} color="normal" />
       </div>
       <div className="grid grid-cols-3 gap-5">
-        <div className="col-span-2 space-y-5">
-          <div className="space-y-3">
-            <SectionLabel count={active.length}>Active sessions</SectionLabel>
-            {active.map(s => <SessionCard key={s.id} session={s} />)}
-          </div>
-          <div className="space-y-3">
-            <SectionLabel count={1}>Completed</SectionLabel>
-            <CompletedCard session={SESSION_DONE} />
-          </div>
+        <div className="col-span-2 space-y-3">
+          <SectionLabel count={active.length}>Active sessions</SectionLabel>
+          {active.map(s => <SessionCard key={s.id} session={s} />)}
+          <p className="text-xs text-gray-500 pt-2"><Link href="/sessions" className="text-violet-600 underline">View all sessions →</Link> (includes 1 completed)</p>
         </div>
         <div className="space-y-3">
           <SectionLabel>Recent activity</SectionLabel>
@@ -213,39 +227,42 @@ function CompletedDashboard() {
   );
 }
 
-function DashboardHeader() {
+function OffboarderStep({ id }) { return <Placeholder role="Offboarder" stepId={id} spec="CL-124" description="Single-column question queue with deadline bar, 3 action cards (To answer / Answered / Files), inline progress bar, and auto-advancing Side Panel." />; }
+function StakeholderAStep({ id }) { return <Placeholder role="Stakeholder A" stepId={id} spec="CL-125" description="Activity feed grouped by session. Inline answers with max-height + expand. Mark satisfied and ask follow-up inline. Only actionable items shown." />; }
+function StakeholderBStep({ id }) { return <Placeholder role="Stakeholder B" stepId={id} spec="CL-125" description="Empty state with nudge: Minh Lê is leaving soon. Ask about knowledge you will need. CTA: Ask your first question." />; }
+
+function Placeholder({ role, stepId, spec, description }) {
   return (
-    <div className="flex items-center justify-between mb-6">
-      <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Dashboard</h1>
-      <Link href="/session/new" className="h-8 px-3 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30">
-        <Plus className="w-3 h-3" />Create session
-      </Link>
-    </div>
+    <div className="max-w-4xl mx-auto p-6"><div className="text-center py-16">
+      <div className="w-14 h-14 rounded-full bg-violet-50 inline-flex items-center justify-center mb-4"><ClipboardList className="w-6 h-6 text-violet-400" strokeWidth={1.5} /></div>
+      <h3 className="text-sm font-semibold text-gray-900 mb-1">{role} · {stepId}</h3>
+      <p className="text-xs text-gray-500 mb-3 max-w-md mx-auto">{description}</p>
+      <span className="text-[10px] px-2 py-1 rounded bg-violet-50 text-violet-700 font-medium">Spec: {spec} · Build pending</span>
+    </div></div>
   );
+}
+
+function DashboardHeader() {
+  return (<div className="flex items-center justify-between mb-6">
+    <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Dashboard</h1>
+    <Link href="/session/new" className="h-8 px-3 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30"><Plus className="w-3 h-3" />Create session</Link>
+  </div>);
 }
 
 function DepartureBanner({ departures }) {
   return (
     <article className="rounded-lg border border-yellow-200 bg-yellow-50/40 p-4 mb-6">
-      <div className="flex items-center gap-2 mb-3">
-        <AlertTriangle className="w-3.5 h-3.5 text-yellow-700" strokeWidth={2} />
-        <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider">{departures.length} upcoming departures from HRIS</h3>
-      </div>
+      <div className="flex items-center gap-2 mb-3"><AlertTriangle className="w-3.5 h-3.5 text-yellow-700" strokeWidth={2} /><h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider">{departures.length} upcoming departures from HRIS</h3></div>
       <div className="space-y-2">
         {departures.map((d, i) => (
           <div key={i} className="flex items-center justify-between bg-white rounded-md border border-gray-200 px-3 py-2">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 text-gray-700 text-[10px] font-semibold inline-flex items-center justify-center shrink-0">{d.initials}</div>
-              <div>
-                <div className="text-sm font-medium text-gray-900">{d.name}</div>
-                <div className="text-[11px] text-gray-500">{d.role} · {d.dept}</div>
-              </div>
+              <div><div className="text-sm font-medium text-gray-900">{d.name}</div><div className="text-[11px] text-gray-500">{d.role} · {d.dept}</div></div>
             </div>
             <div className="flex items-center gap-3">
               <span className="text-[10px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>Last day {d.lastDay} · {d.daysLeft}d</span>
-              <Link href="/session/new" className="h-7 px-2.5 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-[11px] font-medium inline-flex items-center gap-1 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30">
-                Start session<ArrowRight className="w-2.5 h-2.5" />
-              </Link>
+              <Link href="/session/new" className="h-7 px-2.5 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-[11px] font-medium inline-flex items-center gap-1 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30">Start session<ArrowRight className="w-2.5 h-2.5" /></Link>
             </div>
           </div>
         ))}
@@ -256,41 +273,32 @@ function DepartureBanner({ departures }) {
 
 function ActionCard({ label, value, color = "normal", active, onClick }) {
   const cls = { urgent: "text-rose-600", warn: "text-yellow-700", good: "text-emerald-600", normal: "text-gray-900" }[color];
-  return (
-    <button onClick={onClick} className={`rounded-lg border bg-white p-3 text-left transition-all focus:outline-none focus:ring-2 focus:ring-violet-500/20 ${active ? "border-violet-400 ring-2 ring-violet-500/10" : "border-gray-200 hover:border-gray-300"}`}>
-      <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">{label}</div>
-      <div className={`text-xl font-semibold ${cls}`} style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{value}</div>
-    </button>
-  );
+  return (<button onClick={onClick} className={`rounded-lg border bg-white p-3 text-left transition-all focus:outline-none focus:ring-2 focus:ring-violet-500/20 ${active ? "border-violet-400 ring-2 ring-violet-500/10" : "border-gray-200 hover:border-gray-300"}`}>
+    <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">{label}</div>
+    <div className={`text-xl font-semibold ${cls}`} style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{value}</div>
+  </button>);
 }
 
 function SessionCard({ session, highlighted, dimmed }) {
   const phase = getPhase(session.subStageId);
   const blocked = session.blockedOnManager;
-  const phaseColors = { prepare: "bg-blue-50 border-blue-200 text-blue-700", capture: "bg-violet-50 border-violet-200 text-violet-700", deliver: "bg-emerald-50 border-emerald-200 text-emerald-700" };
+  const pc = { prepare: "bg-blue-50 border-blue-200 text-blue-700", capture: "bg-violet-50 border-violet-200 text-violet-700", deliver: "bg-emerald-50 border-emerald-200 text-emerald-700" };
   return (
-    <Link href={`/session/${session.id}`}
-      className={`block rounded-lg border bg-white transition-all hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 ${highlighted ? "border-violet-400 shadow-sm" : dimmed ? "border-gray-200 opacity-40" : blocked ? "border-yellow-200" : "border-gray-200 hover:border-gray-300"}`}
-      style={blocked ? { borderLeft: "2px solid rgb(234,179,8)" } : undefined}>
+    <Link href={`/session/${session.id}`} className={`block rounded-lg border bg-white transition-all hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 ${highlighted ? "border-violet-400 shadow-sm" : dimmed ? "border-gray-200 opacity-40" : blocked ? "border-yellow-200" : "border-gray-200 hover:border-gray-300"}`} style={blocked ? { borderLeft: "2px solid rgb(234,179,8)" } : undefined}>
       <article className="p-4 flex items-start gap-4">
         <div className={`w-10 h-10 rounded-full text-[11px] font-semibold inline-flex items-center justify-center shrink-0 border ${blocked ? "bg-yellow-50 text-yellow-700 border-yellow-200" : "bg-gray-100 text-gray-700 border-gray-200"}`}>{session.initials}</div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <h3 className="text-sm font-semibold text-gray-900">{session.name}&apos;s session</h3>
-            <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold border ${phaseColors[phase.key]}`}>{phase.label}</span>
+            <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold border ${pc[phase.key]}`}>{phase.label}</span>
             {blocked && <span className="text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold bg-yellow-50 border border-yellow-200 text-yellow-700 inline-flex items-center gap-1"><Clock className="w-2.5 h-2.5" />Waiting on you</span>}
           </div>
           <p className="text-[12px] text-gray-500 mb-3">{session.role} · {session.dept} · {session.daysLeft} days left</p>
           <PhaseProgress subStageId={session.subStageId} />
-          <ul className="mt-2 space-y-1">
-            {session.tasks.map((t, i) => (
-              <li key={i} className="flex items-center gap-1.5 text-[11px] text-gray-600">
-                <span className={`w-[5px] h-[5px] rounded-full shrink-0 ${t.dot === "urgent" ? "bg-rose-500" : t.dot === "warn" ? "bg-yellow-500" : "bg-emerald-500"}`} />
-                <span className="flex-1">{t.text}</span>
-                {t.link && <ArrowRight className="w-2.5 h-2.5 text-gray-400 shrink-0" />}
-              </li>
-            ))}
-          </ul>
+          <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
+            <span className="text-[11px] text-gray-700">{session.metricsLeft}</span>
+            <span className={`text-[11px] font-medium ${session.metricsRight.color === "warn" ? "text-yellow-700" : session.metricsRight.color === "good" ? "text-emerald-600" : "text-gray-500"}`}>{session.metricsRight.label}</span>
+          </div>
         </div>
         <span className="h-8 px-3 rounded-md border border-gray-300 bg-white text-gray-700 text-sm font-medium inline-flex items-center gap-1.5 shrink-0">Open<ArrowRight className="w-3 h-3" /></span>
       </article>
@@ -298,146 +306,70 @@ function SessionCard({ session, highlighted, dimmed }) {
   );
 }
 
-function CompletedCard({ session }) {
-  return (
-    <article className="rounded-lg border border-gray-200 bg-white p-4 flex items-start gap-4">
-      <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-semibold inline-flex items-center justify-center shrink-0 border border-emerald-200">{session.initials}</div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <h3 className="text-sm font-semibold text-gray-900">{session.name}&apos;s session</h3>
-          <span className="text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold bg-emerald-50 border border-emerald-200 text-emerald-700 inline-flex items-center gap-1"><CheckCircle2 className="w-2.5 h-2.5" />Complete</span>
-          <span className="text-[10px] text-gray-500">{session.completedAt}</span>
-        </div>
-        <p className="text-[12px] text-gray-500 mb-3">{session.role} · {session.dept}</p>
-        <PhaseProgress subStageId={session.subStageId} done />
-        <div className="grid grid-cols-3 gap-2 mt-3">
-          <StatTile icon={Database} label="Entries" value={session.stats.entries} />
-          <StatTile icon={Network} label="Canonical" value={session.stats.canonical} />
-          <StatTile icon={Sparkles} label="Gaps resolved" value={session.stats.gaps} />
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function StatTile({ icon: Icon, label, value }) {
-  return (
-    <div className="rounded-md border border-gray-200 bg-gray-50/40 px-2 py-1.5">
-      <div className="flex items-center gap-1 text-[10px] text-gray-500 uppercase tracking-wider font-medium"><Icon className="w-2.5 h-2.5" strokeWidth={1.75} />{label}</div>
-      <div className="text-sm font-semibold text-gray-900 mt-0.5" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{value}</div>
-    </div>
-  );
-}
-
 function PhaseProgress({ subStageId, done }) {
-  const cur = getPhase(subStageId);
-  const curSub = getSub(subStageId);
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-1 text-[10px]">
-        <span className="text-gray-700 font-medium">{done ? "All 3 phases complete" : <>Phase {cur.id} of 3 · <span className="text-gray-900">{cur.label}</span></>}</span>
-        <span className="text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{done ? "Complete" : curSub.label}</span>
-      </div>
-      <div className="grid grid-cols-3 gap-1">
-        {PHASES.map(p => {
-          const isDone = done || p.id < cur.id;
-          const isCur = !done && p.id === cur.id;
-          let pct = 0;
-          if (isCur) { const idx = p.subs.findIndex(s => s.id === subStageId); pct = ((idx + 0.5) / p.subs.length) * 100; }
-          return (
-            <div key={p.id} className="relative h-2 rounded-sm bg-gray-200 overflow-hidden">
-              {isDone && <div className="absolute inset-0 bg-emerald-500" />}
-              {isCur && <div className="absolute inset-y-0 left-0 bg-violet-500" style={{ width: `${pct}%` }} />}
-            </div>
-          );
-        })}
-      </div>
-      <div className="grid grid-cols-3 gap-1 mt-1">
-        {PHASES.map(p => {
-          const isDone = done || p.id < cur.id;
-          const isCur = !done && p.id === cur.id;
-          return <span key={p.id} className={`text-[9px] uppercase tracking-wider font-medium text-center ${isDone ? "text-emerald-700" : isCur ? "text-violet-700" : "text-gray-400"}`}>{p.label}</span>;
-        })}
-      </div>
+  const cur = getPhase(subStageId); const curSub = getSub(subStageId);
+  return (<div>
+    <div className="flex items-center justify-between mb-1 text-[10px]">
+      <span className="text-gray-700 font-medium">{done ? "All 3 phases complete" : <>Phase {cur.id} of 3 · <span className="text-gray-900">{cur.label}</span></>}</span>
+      <span className="text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{done ? "Complete" : curSub.label}</span>
     </div>
-  );
+    <div className="grid grid-cols-3 gap-1">
+      {PHASES.map(p => { const isDone = done || p.id < cur.id; const isCur = !done && p.id === cur.id; let pct = 0; if (isCur) { const idx = p.subs.findIndex(s => s.id === subStageId); pct = ((idx + 0.5) / p.subs.length) * 100; } return (<div key={p.id} className="relative h-2 rounded-sm bg-gray-200 overflow-hidden">{isDone && <div className="absolute inset-0 bg-emerald-500" />}{isCur && <div className="absolute inset-y-0 left-0 bg-violet-500" style={{ width: `${pct}%` }} />}</div>); })}
+    </div>
+    <div className="grid grid-cols-3 gap-1 mt-1">
+      {PHASES.map(p => { const isDone = done || p.id < cur.id; const isCur = !done && p.id === cur.id; return <span key={p.id} className={`text-[9px] uppercase tracking-wider font-medium text-center ${isDone ? "text-emerald-700" : isCur ? "text-violet-700" : "text-gray-400"}`}>{p.label}</span>; })}
+    </div>
+  </div>);
 }
 
 function SectionLabel({ count, children }) {
-  return (
-    <h2 className="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-medium flex items-center gap-2">
-      <span>{children}</span>
-      {count !== undefined && <span className="text-gray-400" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>· {count}</span>}
-    </h2>
-  );
+  return (<h2 className="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-medium flex items-center gap-2"><span>{children}</span>{count !== undefined && <span className="text-gray-400" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>· {count}</span>}</h2>);
 }
 
 function ActivityItem({ ts, actor, text, severity }) {
   const border = { low: "rgb(229,231,235)", medium: "rgb(234,179,8)", high: "rgb(244,63,94)" }[severity];
-  return (
-    <div className="rounded-md border border-gray-200 bg-white px-3 py-2" style={{ borderLeft: `2px solid ${border}` }}>
-      <div className="flex items-center justify-between mb-0.5 gap-2">
-        <span className="text-[10px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{ts}</span>
-        <span className="text-[10px] text-gray-700 font-medium shrink-0">{actor}</span>
-      </div>
-      <div className="text-[11px] text-gray-900 leading-relaxed">{text}</div>
+  return (<div className="rounded-md border border-gray-200 bg-white px-3 py-2" style={{ borderLeft: `2px solid ${border}` }}>
+    <div className="flex items-center justify-between mb-0.5 gap-2"><span className="text-[10px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{ts}</span><span className="text-[10px] text-gray-700 font-medium shrink-0">{actor}</span></div>
+    <div className="text-[11px] text-gray-900 leading-relaxed">{text}</div>
+  </div>);
+}
+
+function RoleTabBar({ role, onChange }) {
+  return (<div className="bg-white border-b border-gray-200 px-5 overflow-x-auto"><div className="flex gap-0 min-w-0">
+    {ROLES.map(r => (<button key={r.id} onClick={() => onChange(r.id)} className={`flex items-center gap-2 px-4 py-2.5 border-b-2 transition-colors shrink-0 focus:outline-none ${role === r.id ? "border-violet-600 text-gray-900" : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>
+      <div className={`w-6 h-6 rounded-full text-[9px] font-semibold inline-flex items-center justify-center ${role === r.id ? "bg-violet-100 text-violet-700" : "bg-gray-100 text-gray-500"}`}>{r.icon}</div>
+      <div className="text-left"><div className="text-[12px] font-medium leading-tight">{r.label}</div><div className="text-[10px] text-gray-500 leading-tight">{r.sub}</div></div>
+    </button>))}
+  </div></div>);
+}
+
+function FlowBar({ step, stepIdx, flow, onJump, roleLabel }) {
+  return (<div className="bg-white border-b border-gray-200 px-5 py-2 flex items-center justify-between gap-4">
+    <div className="min-w-0 flex-1">
+      <div className="flex items-center gap-2 text-[11px] text-gray-500"><span className="uppercase tracking-wider font-semibold text-violet-700">{roleLabel}</span><span className="text-gray-300">·</span><span style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>step {stepIdx + 1} of {flow.length}</span></div>
+      <h1 className="text-sm font-semibold text-gray-900 truncate mt-0.5">{step.label}</h1>
     </div>
-  );
+    <div className="flex items-center gap-1 shrink-0">
+      {flow.map((s, i) => (<button key={s.id} onClick={() => onJump(i)} title={s.label} className={`w-7 h-7 rounded-md border text-[11px] font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20 ${i === stepIdx ? "bg-violet-600 text-white border-violet-600" : "bg-white text-violet-700 border-violet-200 hover:border-violet-400"}`} style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{i + 1}</button>))}
+    </div>
+  </div>);
 }
 
 function TopBar() {
-  return (
-    <header className="bg-white border-b border-gray-200 px-5 py-2.5 flex items-center justify-between gap-4">
-      <div className="flex items-center gap-2 shrink-0">
-        <div className="w-1.5 h-1.5 bg-violet-500 rounded-full" />
-        <span className="text-gray-900 font-semibold tracking-[0.18em] text-xs" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>ART-EEP</span>
-      </div>
-      <div className="flex items-center gap-3">
-        <button className="h-8 w-8 rounded-md hover:bg-gray-100 inline-flex items-center justify-center text-gray-500 relative"><Bell className="w-3.5 h-3.5" strokeWidth={1.75} /><span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-rose-500" /></button>
-        <div className="flex items-center gap-2 pl-2 border-l border-gray-200">
-          <div className="w-7 h-7 rounded-full bg-violet-100 text-violet-700 text-[11px] font-semibold inline-flex items-center justify-center">HV</div>
-          <div className="text-[11px]"><div className="font-medium text-gray-900 leading-tight">Hà Vy</div><div className="text-gray-500 leading-tight">Manager · Engineering</div></div>
-        </div>
-      </div>
-    </header>
-  );
-}
-
-function FlowBar({ step, stepIdx, onJump }) {
-  return (
-    <div className="bg-white border-b border-gray-200 px-5 py-2 flex items-center justify-between gap-4">
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2 text-[11px] text-gray-500">
-          <span className="uppercase tracking-wider font-semibold text-violet-700">Manager / HR view</span>
-          <span className="text-gray-300">·</span>
-          <span style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>step {stepIdx + 1} of {FLOW.length}</span>
-        </div>
-        <h1 className="text-sm font-semibold text-gray-900 truncate mt-0.5">{step.label}</h1>
-      </div>
-      <div className="flex items-center gap-1 shrink-0">
-        {FLOW.map((s, i) => (
-          <button key={s.id} onClick={() => onJump(i)} title={s.label}
-            className={`w-7 h-7 rounded-md border text-[11px] font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20 ${i === stepIdx ? "bg-violet-600 text-white border-violet-600" : "bg-white text-violet-700 border-violet-200 hover:border-violet-400"}`}
-            style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{i + 1}</button>
-        ))}
-      </div>
+  return (<header className="bg-white border-b border-gray-200 px-5 py-2.5 flex items-center justify-between gap-4">
+    <div className="flex items-center gap-2 shrink-0"><div className="w-1.5 h-1.5 bg-violet-500 rounded-full" /><span className="text-gray-900 font-semibold tracking-[0.18em] text-xs" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>ART-EEP</span></div>
+    <div className="flex items-center gap-3">
+      <button className="h-8 w-8 rounded-md hover:bg-gray-100 inline-flex items-center justify-center text-gray-500 relative"><Bell className="w-3.5 h-3.5" strokeWidth={1.75} /><span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-rose-500" /></button>
+      <div className="flex items-center gap-2 pl-2 border-l border-gray-200"><div className="w-7 h-7 rounded-full bg-violet-100 text-violet-700 text-[11px] font-semibold inline-flex items-center justify-center">HV</div><div className="text-[11px]"><div className="font-medium text-gray-900 leading-tight">Hà Vy</div><div className="text-gray-500 leading-tight">Manager · Engineering</div></div></div>
     </div>
-  );
+  </header>);
 }
 
-function FooterNav({ stepIdx, onChange }) {
-  const atFirst = stepIdx === 0, atLast = stepIdx === FLOW.length - 1;
-  return (
-    <footer className="bg-white border-t border-gray-200 px-5 py-2.5 flex items-center justify-between sticky bottom-0 z-20">
-      <button onClick={() => !atFirst && onChange(stepIdx - 1)} disabled={atFirst}
-        className={`h-8 px-3 rounded-md text-sm font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20 ${atFirst ? "text-gray-300 cursor-not-allowed" : "text-gray-700 hover:bg-gray-100"}`}>
-        <ChevronLeft className="w-3.5 h-3.5" />Previous
-      </button>
-      <div className="hidden sm:block text-[11px] text-gray-500 max-w-md text-center truncate px-3">{FLOW[stepIdx].trigger}</div>
-      <button onClick={() => !atLast && onChange(stepIdx + 1)} disabled={atLast}
-        className={`h-8 px-3 rounded-md text-sm font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30 ${atLast ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-violet-600 hover:bg-violet-700 text-white"}`}>
-        Next<ChevronRight className="w-3.5 h-3.5" />
-      </button>
-    </footer>
-  );
+function FooterNav({ stepIdx, total, onChange, trigger }) {
+  const atFirst = stepIdx === 0, atLast = stepIdx === total - 1;
+  return (<footer className="bg-white border-t border-gray-200 px-5 py-2.5 flex items-center justify-between sticky bottom-0 z-20">
+    <button onClick={() => !atFirst && onChange(stepIdx - 1)} disabled={atFirst} className={`h-8 px-3 rounded-md text-sm font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20 ${atFirst ? "text-gray-300 cursor-not-allowed" : "text-gray-700 hover:bg-gray-100"}`}><ChevronLeft className="w-3.5 h-3.5" />Previous</button>
+    <div className="hidden sm:block text-[11px] text-gray-500 max-w-md text-center truncate px-3">{trigger}</div>
+    <button onClick={() => !atLast && onChange(stepIdx + 1)} disabled={atLast} className={`h-8 px-3 rounded-md text-sm font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30 ${atLast ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-violet-600 hover:bg-violet-700 text-white"}`}>Next<ChevronRight className="w-3.5 h-3.5" /></button>
+  </footer>);
 }
