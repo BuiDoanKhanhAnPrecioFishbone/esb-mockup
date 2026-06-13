@@ -12,7 +12,7 @@ import {
 /* ═══ Session Command View — CL-119/120/127 ═══
    Prepare phase with 3 roles (Manager, Offboarder, Coworker).
    Hero bar + tabs (Overview, Data, Logs).
-   Data tab: Board→Module→Card accordion + Side Panel. */
+   Data tab: Board→Module→Card accordion + Side Panel RIGHT DRAWER. */
 
 const ROLES = [
   { id: "manager", label: "Hà Vy", sub: "Manager / HR", icon: "HV" },
@@ -91,7 +91,25 @@ function OverviewContent({ role, stepId, isReady }) { if (role === "offboarder")
 function ManagerOverview({ stepId, isReady }) {
   if (!isReady) return (<div className="rounded-lg border border-gray-200 bg-white p-6 text-center"><div className="w-10 h-10 rounded-full bg-violet-50 inline-flex items-center justify-center mb-3 mx-auto"><div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-violet-500 animate-spin" /></div><h3 className="text-sm font-medium text-gray-900 mb-1">Collecting data from {SESSION.boards} boards...</h3><p className="text-xs text-gray-500">This takes a few minutes. You can leave and come back — we&apos;ll notify you when it&apos;s ready.</p></div>);
   if (stepId === "capture-preview") return (<div className="rounded-lg border border-emerald-200 bg-emerald-50/40 p-4"><div className="flex items-center gap-2 mb-2"><CheckCircle2 className="w-4 h-4 text-emerald-600" /><h3 className="text-sm font-semibold text-gray-900">Capture is active</h3></div><p className="text-xs text-gray-500">Minh Lê has been notified and can start answering questions. Coworkers can still add new questions.</p></div>);
-  return (<div className="rounded-lg border border-gray-200 bg-white p-5"><h3 className="text-sm font-semibold text-gray-900 mb-3">Data collection complete</h3><div className="grid grid-cols-4 gap-3 mb-4"><MetricCard label="Boards processed" value={SESSION.boards} /><MetricCard label="Cards eligible" value={SESSION.cards} /><MetricCard label="Knowledge areas" value={SESSION.modules} /><MetricCard label="Questions generated" value={SESSION.questions} /></div><div className="flex items-center gap-3 pt-3 border-t border-gray-100"><button className="h-9 px-4 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">Review in Data tab</button><Link href="/session/minh-le" className="h-9 px-4 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center gap-2 transition-colors">Start Capture<ArrowRight className="w-3.5 h-3.5" /></Link></div><p className="text-[10px] text-gray-400 mt-2">Coworkers have been notified and can add questions. You can review the Data tab before starting Capture.</p></div>);
+  return (<div className="space-y-4">
+    <div className="rounded-lg border border-gray-200 bg-white p-5">
+      <h3 className="text-sm font-semibold text-gray-900 mb-3">Data collection complete</h3>
+      <div className="grid grid-cols-4 gap-3 mb-4"><MetricCard label="Boards processed" value={SESSION.boards} /><MetricCard label="Cards eligible" value={SESSION.cards} /><MetricCard label="Knowledge areas" value={SESSION.modules} /><MetricCard label="Questions generated" value={SESSION.questions} /></div>
+      <div className="pt-3 border-t border-gray-100 space-y-2">
+        <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Knowledge areas found</p>
+        <div className="flex flex-wrap gap-1.5">{["Payment Service", "CI/CD Pipeline", "Shared Libraries", "Monitoring & Alerts", "Infrastructure as Code"].map(m => (<span key={m} className="text-[11px] px-2 py-1 rounded-md bg-gray-50 border border-gray-200 text-gray-700">{m}</span>))}</div>
+      </div>
+      <div className="pt-3 mt-3 border-t border-gray-100 grid grid-cols-2 gap-3">
+        <div><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">Coworker engagement</p><p className="text-[12px] text-gray-700">2 of 3 coworkers have asked questions</p><p className="text-[11px] text-gray-500">1 coworker hasn&apos;t engaged yet</p></div>
+        <div><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">Knowledge gaps</p><p className="text-[12px] text-gray-700">3 gaps detected</p><p className="text-[11px] text-gray-500">1 incomplete checklist · 2 missing descriptions</p></div>
+      </div>
+    </div>
+    <div className="flex items-center gap-3">
+      <button className="h-9 px-4 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">Review in Data tab</button>
+      <Link href="/session/minh-le" className="h-9 px-4 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center gap-2 transition-colors">Start Capture<ArrowRight className="w-3.5 h-3.5" /></Link>
+    </div>
+    <p className="text-[10px] text-gray-400">Coworkers have been notified and can add questions. You can review the Data tab before starting Capture.</p>
+  </div>);
 }
 
 function OffboarderOverview({ stepId }) {
@@ -108,12 +126,12 @@ function DataContent({ role, stepId, isReady }) {
   const [selectedCard, setSelectedCard] = useState(null);
   if (role === "offboarder" && stepId !== "capture-preview") return (<div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center"><h3 className="text-sm font-medium text-gray-700 mb-1">Questions are being collected</h3><p className="text-xs text-gray-500">You&apos;ll be able to answer them once Capture starts.</p></div>);
   if (!isReady) return (<div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center"><div className="w-10 h-10 rounded-full bg-violet-50 inline-flex items-center justify-center mb-3 mx-auto"><div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-violet-500 animate-spin" /></div><h3 className="text-sm font-medium text-gray-700 mb-1">Data is being collected...</h3><p className="text-xs text-gray-500">The accordion will appear here when the crawl finishes.</p></div>);
-  return (<div className={`${selectedCard ? "grid grid-cols-[1fr_340px] gap-4" : ""}`}>
+  return (<div className="relative">
     <div>
       <div className="mb-4 flex items-center gap-2"><input placeholder="Ask a general question not tied to a specific card..." className="flex-1 h-9 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400" /><button className="h-9 px-3 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium transition-colors">Ask</button></div>
       {MODULES_DATA.map((board, bi) => (<div key={bi} className="rounded-lg border border-gray-200 bg-white mb-3 overflow-hidden"><div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center gap-2"><Layers className="w-3.5 h-3.5 text-gray-400" /><span className="text-sm font-semibold text-gray-900">{board.board}</span><span className="text-[11px] text-gray-500">{board.boardCards} cards</span></div>{board.modules.map((mod, mi) => (<ModuleSection key={mi} mod={mod} role={role} selectedCard={selectedCard} onSelectCard={setSelectedCard} />))}</div>))}
     </div>
-    {selectedCard && <SidePanel card={selectedCard} role={role} onClose={() => setSelectedCard(null)} isCapture={stepId === "capture-preview"} />}
+    {selectedCard && <><div className="fixed inset-0 bg-black/10 z-30" onClick={() => setSelectedCard(null)} /><div className="fixed top-0 right-0 h-full w-[480px] bg-white border-l border-gray-200 shadow-xl z-40 overflow-y-auto"><SidePanel card={selectedCard} role={role} onClose={() => setSelectedCard(null)} isCapture={stepId === "capture-preview"} /></div></>}
   </div>);
 }
 
@@ -128,8 +146,8 @@ function ModuleSection({ mod, role, selectedCard, onSelectCard }) {
 
 function SidePanel({ card, role, onClose, isCapture }) {
   const [followUp, setFollowUp] = useState("");
-  return (<div className="rounded-lg border border-gray-200 bg-white p-4 sticky top-4 max-h-[calc(100vh-120px)] overflow-y-auto">
-    <div className="flex items-center justify-between mb-1"><h3 className="text-[14px] font-semibold text-gray-900">{card.name}</h3><button onClick={onClose} className="w-6 h-6 rounded hover:bg-gray-100 inline-flex items-center justify-center text-gray-400"><X className="w-3.5 h-3.5" /></button></div>
+  return (<div className="p-5">
+    <div className="flex items-center justify-between mb-3"><h3 className="text-[15px] font-semibold text-gray-900">{card.name}</h3><button onClick={onClose} className="w-7 h-7 rounded-md hover:bg-gray-100 inline-flex items-center justify-center text-gray-400"><X className="w-4 h-4" /></button></div>
     <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mt-3 mb-1 pt-2 border-t border-gray-100">Description</p>
     <p className="text-[11px] text-gray-700 leading-relaxed mb-2">{card.desc}</p>
     {card.checklist.length > 0 && (<><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mt-3 mb-1 pt-2 border-t border-gray-100">Checklist</p>{card.checklist.map((c, i) => (<div key={i} className="flex items-center gap-1.5 text-[11px] py-0.5">{c.done ? <CheckCircle2 className="w-3 h-3 text-emerald-500" /> : <div className="w-3 h-3 rounded border border-gray-300" />}<span className={c.done ? "text-gray-500 line-through" : "text-gray-700"}>{c.text}</span></div>))}</>)}
