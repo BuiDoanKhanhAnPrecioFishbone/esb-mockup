@@ -119,7 +119,22 @@ function OffboarderOverview({ stepId }) {
 
 function CoworkerOverview({ isReady }) {
   if (!isReady) return (<div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center"><div className="w-12 h-12 rounded-full bg-gray-100 inline-flex items-center justify-center mb-3 mx-auto"><Clock className="w-5 h-5 text-gray-400" strokeWidth={1.5} /></div><h3 className="text-sm font-medium text-gray-700 mb-1">Session is being set up</h3><p className="text-xs text-gray-500">You&apos;ll be notified when you can browse and ask questions.</p></div>);
-  return (<div className="rounded-lg border border-gray-200 bg-white p-5"><h3 className="text-sm font-semibold text-gray-900 mb-1">Minh Lê is leaving soon</h3><p className="text-xs text-gray-500 mb-3">Browse their knowledge areas in the Data tab and ask questions about what you&apos;ll need after they&apos;re gone. Questions can be added anytime, even after Capture starts.</p><button className="h-8 px-4 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium inline-flex items-center gap-1.5 transition-colors">Browse Data tab<ArrowRight className="w-3 h-3" /></button></div>);
+  return (<div className="space-y-4">
+    <div className="rounded-lg border border-gray-200 bg-white p-5">
+      <h3 className="text-sm font-semibold text-gray-900 mb-1">Minh Lê is leaving soon</h3>
+      <p className="text-[12px] text-gray-500 mb-3">Senior Backend Engineer · Engineering · Last day July 4, 2026</p>
+      <p className="text-xs text-gray-500 mb-4">Browse their knowledge areas below and ask questions about what you&apos;ll need after they&apos;re gone. Questions can be added anytime, even after Capture starts.</p>
+      <div className="pt-3 border-t border-gray-100 space-y-2">
+        <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Knowledge areas available</p>
+        <div className="flex flex-wrap gap-1.5">{["Payment Service", "CI/CD Pipeline", "Shared Libraries", "Monitoring & Alerts", "Infrastructure as Code"].map(m => (<span key={m} className="text-[11px] px-2 py-1 rounded-md bg-gray-50 border border-gray-200 text-gray-700">{m}</span>))}</div>
+      </div>
+      <div className="pt-3 mt-3 border-t border-gray-100 grid grid-cols-2 gap-3">
+        <div><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">Your activity</p><p className="text-[12px] text-gray-700">You&apos;ve asked 0 questions</p><p className="text-[11px] text-gray-500">Browse the Data tab to ask</p></div>
+        <div><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">Other coworkers</p><p className="text-[12px] text-gray-700">2 others are asking questions</p><p className="text-[11px] text-gray-500">{SESSION.questions} questions collected so far</p></div>
+      </div>
+    </div>
+    <button className="h-9 px-4 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center gap-2 transition-colors">Browse Data tab<ArrowRight className="w-3.5 h-3.5" /></button>
+  </div>);
 }
 
 function DataContent({ role, stepId, isReady }) {
