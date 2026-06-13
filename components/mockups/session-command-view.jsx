@@ -1,570 +1,161 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import {
-  ChevronLeft, ChevronRight, X,
-  FileText, Database, Eye, Users,
-  AlertTriangle, AlertOctagon, Clock, CheckCircle2, Loader2,
-  ArrowRight, MoreHorizontal, Trello,
-  UploadCloud, History,
-  UserPlus, Check
+  ChevronLeft, ChevronRight, ArrowRight, X,
+  CheckCircle2, Clock, AlertTriangle, Sparkles,
+  Bell, Layers, User, Users, FileText,
+  ChevronDown, Plus, Search, MessageCircle
 } from "lucide-react";
 
+/* ═══ Session Command View — CL-119/120/127 ═══
+   Prepare phase with 3 roles (Manager, Offboarder, Coworker).
+   Hero bar + tabs (Overview, Data, Logs).
+   Data tab: Board→Module→Card accordion + Side Panel. */
+
+const ROLES = [
+  { id: "manager", label: "Hà Vy", sub: "Manager / HR", icon: "HV" },
+  { id: "offboarder", label: "Minh Lê", sub: "Offboarder", icon: "ML" },
+  { id: "coworker", label: "Coworker", sub: "Project peer", icon: "CW" },
+];
+
 const FLOW = [
-  { id: "ml-seeding",  label: "Minh Lê · Seeding",      trigger: "Phase 1 · Prepare · seeding from Trello (loading state)." },
-  { id: "ml-scope",    label: "Minh Lê · Review scope",  trigger: "Phase 1 · Prepare · crawl complete — review results and confirm stakeholders." },
-  { id: "ml-capture",  label: "Minh Lê · Capture",       trigger: "Phase 2 · Capture · waiting for Minh Lê and stakeholders." },
+  { id: "collecting", label: "Collecting data", trigger: "Crawl running — 3 boards being processed." },
+  { id: "ready", label: "Ready for review", trigger: "Crawl done. 5 modules, 14 questions, 3 gaps." },
+  { id: "capture-preview", label: "Capture (preview)", trigger: "After Manager clicks Start Capture — offboarder answering." },
 ];
 
-const LIFECYCLE_PHASES = [
-  { id: 1, key: "prepare", label: "Prepare", subStages: [
-    { id: 1, label: "Setup confirmed" },
-    { id: 2, label: "Context seeding" },
-    { id: 3, label: "Knowledge map ready" },
-  ] },
-  { id: 2, key: "capture", label: "Capture", subStages: [
-    { id: 4, label: "Questions assigned" },
-    { id: 5, label: "Answering queue" },
-    { id: 6, label: "Answers reviewed" },
-  ] },
-  { id: 3, key: "deliver", label: "Deliver", subStages: [
-    { id: 7, label: "Committed to KG" },
-    { id: 8, label: "Playbook delivered" },
-  ] },
-];
-
-function getPhase(subStageId) {
-  return LIFECYCLE_PHASES.find((p) => p.subStages.some((s) => s.id === subStageId));
-}
-function getSubStage(subStageId) {
-  for (const p of LIFECYCLE_PHASES) {
-    const s = p.subStages.find((x) => x.id === subStageId);
-    if (s) return s;
-  }
-  return null;
-}
-
-const SESSIONS = {
-  ml: {
-    urlSlug: "minh-le", offboarder: "Minh Lê", role: "Senior Backend Engineer",
-    dept: "Engineering", initials: "ML", subStageId: 3, daysLeft: 26,
-    deadline: "June 30, 2026 · 17:00",
-  },
+const SESSION = {
+  name: "Minh Lê", role: "Senior Backend Engineer", dept: "Engineering",
+  initials: "ML", daysLeft: 30, deadline: "Jun 30, 2026",
+  boards: 3, cards: 64, modules: 5, questions: 14, gaps: 3, coworkers: 3,
 };
 
-const CRAWL_SUMMARY = { totalKept: 38, thinSkipped: 14, redacted: 2, gaps: 8 };
-
-const CRAWL_CATEGORIES = [
-  { label: "Architecture decisions",  count: 10, items: ["Migrate payment service to event-driven (Kafka)", "Replace REST gateway with GraphQL federation", "Adopt CQRS for order domain", "Database sharding strategy for tenant isolation"] },
-  { label: "Bug/Hotfix resolutions",  count: 8,  items: ["Race condition in payment retry loop (#1247)", "Memory leak in WebSocket connection pool (#1183)", "Deadlock in concurrent inventory update (#1302)"] },
-  { label: "Core Feature specs",      count: 7,  items: ["Real-time inventory sync across warehouses", "Multi-tenant API rate limiting", "Batch export pipeline for finance reconciliation", "Webhook delivery guarantee system"] },
-  { label: "Code review patterns",    count: 5,  items: ["PR template enforcement for backend services", "Load test gate required before staging merge", "SQL migration review checklist"] },
-  { label: "Infrastructure/DevOps",   count: 4,  items: ["Terraform modules for AKS cluster provisioning", "GitHub Actions CI/CD pipeline (replaced Jenkins)", "Datadog APM instrumentation for payment flow"] },
-  { label: "Documentation/Runbooks",  count: 2,  items: ["Production incident response playbook", "On-call escalation matrix and rotation rules"] },
-  { label: "Integration configs",     count: 2,  items: ["Stripe webhook endpoint configuration", "SAP ERP nightly sync job parameters"] },
+const MODULES_DATA = [
+  { board: "Backend Services", boardCards: 34, modules: [
+    { name: "Payment Service", cards: 12, qs: 4, gaps: 1, items: [
+      { name: "Kafka retry configuration", desc: "Configures retry behavior for Kafka consumers when processing fails. Includes dead letter queue routing, backoff strategy, and poison message handling. Current config uses exponential backoff with max 5 retries.", checklist: [{ text: "DLQ routing configured", done: true }, { text: "Backoff strategy documented", done: false }, { text: "Alert on repeated failures", done: false }], gaps: ["Incomplete checklist — 2 of 3 items not done"], qs: [{ q: "How does the retry logic handle poison messages?", from: "AI-generated" }, { q: "What's the max retry count before DLQ routing?", from: "AI-generated" }] },
+      { name: "Payment gateway timeout handling", desc: "Timeout configuration and fallback behavior for payment gateway calls. Uses circuit breaker pattern with 30s timeout.", checklist: [], gaps: [], qs: [{ q: "What happens when the gateway times out mid-transaction?", from: "AI-generated" }] },
+      { name: "Stripe webhook handler", desc: "Processes Stripe webhook events for payment confirmations and refunds.", checklist: [], gaps: [], qs: [{ q: "Which webhook events are critical vs optional?", from: "Coworker" }] },
+    ]},
+    { name: "CI/CD Pipeline", cards: 8, qs: 3, gaps: 1, items: [
+      { name: "Atlas migration rollback", desc: "MongoDB Atlas migration procedures and rollback steps.", checklist: [], gaps: ["Missing description detail"], qs: [{ q: "What's the rollback procedure for failed Atlas migrations?", from: "Hà Vy" }] },
+    ]},
+    { name: "Shared Libraries", cards: 6, qs: 2, gaps: 0, items: [
+      { name: "API key rotation", desc: "Scheduled rotation of API keys across services. Runs every 90 days via GitHub Action.", checklist: [{ text: "Rotation schedule documented", done: true }, { text: "Auto-rotation configured", done: true }], gaps: [], qs: [{ q: "Where is the API key rotation runbook?", from: "AI-generated" }] },
+    ]},
+  ]},
+  { board: "Platform Infrastructure", boardCards: 18, modules: [
+    { name: "Monitoring & Alerts", cards: 10, qs: 3, gaps: 1, items: [] },
+    { name: "Infrastructure as Code", cards: 8, qs: 2, gaps: 0, items: [] },
+  ]},
 ];
 
-const KNOWLEDGE_GAPS = [
-  "Verbal agreements with Stripe on custom retry policy",
-  "Why the order service bypasses the cache layer on weekends",
-  "Undocumented manual step in the SAP reconciliation flow",
-  "Performance tuning tricks for the Kafka consumer group",
-  "Context behind the inventory service's 3-second timeout",
-  "Cross-team API contract with the Data Platform team",
-  "Rationale for the tech debt items deferred from Q1",
-  "On-call war stories — recurring false-positive alerts and their workarounds",
-];
-
-const STAKEHOLDERS = [
-  { id: "duy",   name: "Duy Nguyễn",   role: "Data Platform Engineer", cards: 18, detail: "5 Architecture · 3 Core Feature — co-owns Kafka pipeline + inventory sync", defaultChecked: true },
-  { id: "linh",  name: "Linh Phạm",    role: "Frontend Engineer",      cards: 12, detail: "4 Core Feature · 2 Bug/Hotfix — consumes Minh's API gateway + webhooks", defaultChecked: true },
-  { id: "thao",  name: "Thảo Vũ",      role: "Engineering Director",   cards: 7,  detail: "3 Architecture · 1 Infrastructure — approved sharding + CQRS decisions",  defaultChecked: true },
-  { id: "huong", name: "Hương Trần",   role: "QA Lead",                cards: 9,  detail: "6 Bug/Hotfix · 2 Code Review — owns regression suite for payment flow",  defaultChecked: true },
-  { id: "bao",   name: "Bảo Ngọc Lê",  role: "DevOps Engineer",        cards: 6,  detail: "4 Infrastructure · 2 Integration — maintains AKS + CI/CD Minh built",   defaultChecked: false },
-  { id: "tung",  name: "Tùng Đặng",    role: "Product Manager",        cards: 4,  detail: "2 Core Feature · 1 Architecture — prioritized inventory sync + export",  defaultChecked: false },
-];
-
-const CAPTURE_RESPONDENTS = [
-  { name: "Minh Lê",     role: "Offboarder",   answers: 5, files: 1, status: "active" },
-  { name: "Duy Nguyễn",  role: "Stakeholder",  answers: 2, files: 0, status: "responded" },
-  { name: "Linh Phạm",   role: "Stakeholder",  answers: 1, files: 0, status: "responded" },
-  { name: "Hương Trần",  role: "Stakeholder",  answers: 0, files: 0, status: "pending" },
-];
-
-const CAPTURE_GAPS = [
-  { text: "Verbal agreements with Stripe on custom retry policy", status: "resolved" },
-  { text: "Why the order service bypasses the cache layer on weekends", status: "resolved" },
-  { text: "Undocumented manual step in the SAP reconciliation flow", status: "resolved" },
-  { text: "Performance tuning tricks for the Kafka consumer group", status: "partial" },
-  { text: "Context behind the inventory service's 3-second timeout", status: "partial" },
-  { text: "Cross-team API contract with the Data Platform team", status: "open" },
-  { text: "Rationale for the tech debt items deferred from Q1", status: "open" },
-  { text: "On-call war stories — recurring false-positive alerts and their workarounds", status: "open" },
-];
-
-const LOGS_SEEDING = [
-  { ts: "14:36:24", actor: "Worker Agent",  text: "Trello board 'Backend Platform' scan complete · 24 cards kept · 11 thin skipped · 0 redacted" },
-  { ts: "14:35:00", actor: "Planner Agent", text: "Applied 4-layer hard-filter to Minh Lê's Trello board" },
-  { ts: "14:34:12", actor: "System",        text: "Connected to Trello · board 'Backend Platform' · authorized via Hà Vy's scope" },
-  { ts: "14:33:45", actor: "System",        text: "Source configuration loaded · Trello (Engineering dept mapping) · 1 integration active" },
-  { ts: "14:32:08", actor: "Hà Vy",         text: "Started handover session for Minh Lê · Senior Backend Engineer · last day Jul 4" },
-];
-
-const LOGS_SCOPE = [
-  { ts: "14:41:03", actor: "System",        text: "Knowledge map ready · 8 gaps identified — topics with no Trello coverage" },
-  { ts: "14:40:18", actor: "Worker Agent",  text: "Sensitive-content check passed · 2 cards redacted (contained API keys in comments)" },
-  { ts: "14:39:50", actor: "Worker Agent",  text: "Label prioritization complete · Bug/Hotfix (8) · Architecture (10) · Core Feature (7)" },
-  { ts: "14:38:44", actor: "Worker Agent",  text: "Content depth filter · 38 cards with description or comments kept · 14 title-only cards skipped" },
-  { ts: "14:37:30", actor: "Worker Agent",  text: "Scanned lists · In Progress (6) · Review (4) · Done (42) · skipped Backlog (23) and To-Do (17)" },
-  { ts: "14:36:00", actor: "Planner Agent", text: "Applied 4-layer hard-filter to Minh Lê's Trello board 'Backend Platform'" },
-  { ts: "14:34:12", actor: "System",        text: "Connected to Trello · board 'Backend Platform' · authorized via Hà Vy's scope" },
-  { ts: "14:33:45", actor: "System",        text: "Source configuration loaded · Trello (Engineering dept mapping) · 1 integration active" },
-  { ts: "14:32:08", actor: "Hà Vy",         text: "Started handover session for Minh Lê · Senior Backend Engineer · last day Jul 4" },
-];
-
-const LOGS_CAPTURE = [
-  { ts: "16:22:10", actor: "Minh Lê",       text: "Answered 'Undocumented manual step in the SAP reconciliation flow'" },
-  { ts: "16:15:45", actor: "Linh Phạm",     text: "Accepted Minh Lê's answer on 'Webhook delivery guarantee system'" },
-  { ts: "16:04:33", actor: "Duy Nguyễn",    text: "Answered 'Performance tuning tricks for the Kafka consumer group'" },
-  { ts: "15:51:20", actor: "Minh Lê",       text: "Uploaded architecture-decisions-2026.pdf" },
-  { ts: "15:42:08", actor: "Duy Nguyễn",    text: "Answered 'Cross-team API contract with the Data Platform team'" },
-  { ts: "15:30:15", actor: "Minh Lê",       text: "Answered 'Why the order service bypasses the cache layer on weekends'" },
-  { ts: "15:18:40", actor: "Minh Lê",       text: "Answered 'Verbal agreements with Stripe on custom retry policy'" },
-  { ts: "15:05:22", actor: "System",        text: "Minh Lê started answering · 14 questions in queue" },
-  { ts: "14:55:00", actor: "System",        text: "Notified Minh Lê and 4 stakeholders · Capture phase started" },
-  { ts: "14:50:30", actor: "System",        text: "Question queue seeded · 14 questions across 8 knowledge gaps" },
-  { ts: "14:48:12", actor: "Hà Vy",         text: "Confirmed 4 stakeholders · moved session to Capture" },
-  { ts: "14:41:03", actor: "System",        text: "Knowledge map ready · 8 gaps identified — topics with no Trello coverage" },
-  { ts: "14:40:18", actor: "Worker Agent",  text: "Sensitive-content check passed · 2 cards redacted (contained API keys in comments)" },
-  { ts: "14:38:44", actor: "Worker Agent",  text: "Trello scan complete · 38 kept · 14 skipped" },
-  { ts: "14:32:08", actor: "Hà Vy",         text: "Started handover session for Minh Lê · Senior Backend Engineer · last day Jul 4" },
-];
-
-const TABS = [
-  { id: "overview", label: "Overview" },
-  { id: "data",     label: "Data" },
-  { id: "logs",     label: "Logs" },
-];
-
-export default function SessionCommandView({ embedded = false, view = "ml-overview" } = {}) {
-  const [stepIdx, setStepIdx] = React.useState(() => {
-    const i = FLOW.findIndex((s) => s.id === view);
-    return i >= 0 ? i : 0;
-  });
-  if (embedded) {
-    const parts = view.split("-");
-    const sessKey = parts[0] || "ml";
-    const rawTab = parts[1] || "overview";
-    const activeTab = ["data", "logs"].includes(rawTab) ? rawTab : "overview";
-    const session = SESSIONS[sessKey];
-    if (!session) return null;
-    let sessionForView = session;
-    if (rawTab === "scope") sessionForView = { ...session, subStageId: 3 };
-    if (rawTab === "capture") sessionForView = { ...session, subStageId: 5 };
-    return <CommandView session={sessionForView} activeTab={activeTab} />;
-  }
-  const step = FLOW[stepIdx];
-  return (
-    <div className="min-h-screen bg-gray-50 flex flex-col text-gray-900" style={{ fontFamily: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif' }}>
-      <TopBar step={step} stepIdx={stepIdx} onJump={setStepIdx} />
-      <main className="flex-1"><StepRenderer id={step.id} /></main>
-      <FooterNav stepIdx={stepIdx} step={step} onChange={setStepIdx} />
-    </div>
-  );
+export default function SessionCommandView({ embedded = false, view = "ready" } = {}) {
+  const [role, setRole] = useState("manager");
+  const [stepIdx, setStepIdx] = useState(() => { const i = FLOW.findIndex(s => s.id === view); return i >= 0 ? i : 1; });
+  const step = FLOW[Math.min(stepIdx, FLOW.length - 1)];
+  const handleRoleChange = (r) => { setRole(r); setStepIdx(role === "manager" ? stepIdx : Math.min(stepIdx, 1)); };
+  if (embedded) { return (<div><RoleTabBar role={role} onChange={handleRoleChange} /><FlowBar step={step} stepIdx={Math.min(stepIdx, FLOW.length - 1)} onJump={setStepIdx} roleLabel={ROLES.find(r => r.id === role)?.sub} /><SessionPage role={role} stepId={step.id} /></div>); }
+  return (<div className="min-h-screen bg-gray-50 flex flex-col text-gray-900" style={{ fontFamily: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif' }}><TopBar /><RoleTabBar role={role} onChange={handleRoleChange} /><FlowBar step={step} stepIdx={Math.min(stepIdx, FLOW.length - 1)} onJump={setStepIdx} roleLabel={ROLES.find(r => r.id === role)?.sub} /><main className="flex-1"><SessionPage role={role} stepId={step.id} /></main><FooterNav stepIdx={Math.min(stepIdx, FLOW.length - 1)} total={FLOW.length} onChange={setStepIdx} trigger={step.trigger} /></div>);
 }
 
-function TopBar({ step, stepIdx, onJump }) {
-  return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-20">
-      <div className="px-5 py-2.5 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2 min-w-0 shrink-0">
-          <div className="w-1.5 h-1.5 bg-violet-500 rounded-full" />
-          <span className="text-gray-900 font-semibold tracking-[0.18em] text-xs" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>ART-EEP</span>
-          <span className="text-gray-300 text-xs">·</span>
-          <span className="text-xs text-gray-900 font-medium">Session command view</span>
-        </div>
-        <div className="flex items-center gap-1 shrink-0">
-          {FLOW.map((s, i) => (
-            <button key={s.id} onClick={() => onJump(i)} title={s.label}
-              className={`h-7 px-2 rounded-md border text-[10px] font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20 ${
-                i === stepIdx ? "bg-violet-600 text-white border-violet-600" : "bg-white text-violet-700 border-violet-200 hover:border-violet-400"
-              }`} style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{i + 1}</button>
-          ))}
-        </div>
-      </div>
-    </header>
-  );
+function SessionPage({ role, stepId }) {
+  const [activeTab, setActiveTab] = useState("overview");
+  const phase = stepId === "capture-preview" ? "capture" : "prepare";
+  const isReady = stepId === "ready" || stepId === "capture-preview";
+  const tabs = [{ id: "overview", label: "Overview" }, { id: "data", label: "Data", disabled: role === "offboarder" && phase === "prepare" }, { id: "logs", label: "Logs", hidden: role === "coworker" }];
+  return (<div className="max-w-5xl mx-auto p-6">
+    <HeroBar phase={phase} stepId={stepId} />
+    <div className="flex gap-0 border-b border-gray-200 mb-5">{tabs.filter(t => !t.hidden).map(t => (<button key={t.id} onClick={() => !t.disabled && setActiveTab(t.id)} className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === t.id ? "border-violet-600 text-gray-900" : t.disabled ? "border-transparent text-gray-300 cursor-not-allowed" : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>{t.label}</button>))}</div>
+    {activeTab === "overview" && <OverviewContent role={role} stepId={stepId} isReady={isReady} />}
+    {activeTab === "data" && <DataContent role={role} stepId={stepId} isReady={isReady} />}
+    {activeTab === "logs" && <LogsContent role={role} stepId={stepId} />}
+  </div>);
 }
 
-function FooterNav({ stepIdx, step, onChange }) {
-  const atFirst = stepIdx === 0, atLast = stepIdx === FLOW.length - 1;
-  return (
-    <footer className="bg-white border-t border-gray-200 px-5 py-2.5 flex items-center justify-between sticky bottom-0 z-20">
-      <button onClick={() => !atFirst && onChange(stepIdx - 1)} disabled={atFirst}
-        className={`h-8 px-3 rounded-md text-sm font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20 ${atFirst ? "text-gray-300 cursor-not-allowed" : "text-gray-700 hover:bg-gray-100"}`}>
-        <ChevronLeft className="w-3.5 h-3.5" /> Previous
-      </button>
-      <div className="hidden sm:block text-[11px] text-gray-500 max-w-md text-center truncate px-3">{step.trigger}</div>
-      <button onClick={() => !atLast && onChange(stepIdx + 1)} disabled={atLast}
-        className={`h-8 px-3 rounded-md text-sm font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30 ${atLast ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-violet-600 hover:bg-violet-700 text-white"}`}>
-        Next <ChevronRight className="w-3.5 h-3.5" />
-      </button>
-    </footer>
-  );
+function HeroBar({ phase }) {
+  const s = SESSION;
+  const phaseLabel = phase === "prepare" ? "Prepare" : phase === "capture" ? "Capture" : "Deliver";
+  const phaseCls = phase === "prepare" ? "bg-blue-50 border-blue-200 text-blue-700" : phase === "capture" ? "bg-violet-50 border-violet-200 text-violet-700" : "bg-emerald-50 border-emerald-200 text-emerald-700";
+  const metrics = phase === "prepare" ? `${s.coworkers} coworkers · ${s.questions} questions · ${s.gaps} gaps` : `9 of 14 answered · 7 satisfied · 2 gaps open`;
+  return (<div className="rounded-lg border border-gray-200 bg-white p-4 mb-5 flex items-center gap-4">
+    <div className="w-12 h-12 rounded-full bg-violet-100 text-violet-700 text-sm font-semibold inline-flex items-center justify-center shrink-0">{s.initials}</div>
+    <div className="flex-1 min-w-0"><div className="flex items-center gap-2 mb-0.5"><h1 className="text-lg font-semibold text-gray-900">{s.name}&apos;s session</h1><span className={`text-[9px] px-2 py-0.5 rounded uppercase tracking-wider font-semibold border ${phaseCls}`}>{phaseLabel}</span></div><p className="text-[12px] text-gray-500">{s.role} · {s.dept}</p><p className="text-[11px] text-gray-500 mt-0.5" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{s.daysLeft} days left · Deadline {s.deadline} · {metrics}</p></div>
+  </div>);
 }
 
-function StepRenderer({ id }) {
-  if (id === "ml-seeding") return <CommandView session={{ ...SESSIONS.ml, subStageId: 2 }} activeTab="overview" />;
-  if (id === "ml-scope")   return <CommandView session={{ ...SESSIONS.ml, subStageId: 3 }} activeTab="overview" />;
-  if (id === "ml-capture") return <CommandView session={{ ...SESSIONS.ml, subStageId: 5 }} activeTab="overview" />;
-  return null;
+function OverviewContent({ role, stepId, isReady }) { if (role === "offboarder") return <OffboarderOverview stepId={stepId} />; if (role === "coworker") return <CoworkerOverview isReady={isReady} />; return <ManagerOverview stepId={stepId} isReady={isReady} />; }
+
+function ManagerOverview({ stepId, isReady }) {
+  if (!isReady) return (<div className="rounded-lg border border-gray-200 bg-white p-6 text-center"><div className="w-10 h-10 rounded-full bg-violet-50 inline-flex items-center justify-center mb-3 mx-auto"><div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-violet-500 animate-spin" /></div><h3 className="text-sm font-medium text-gray-900 mb-1">Collecting data from {SESSION.boards} boards...</h3><p className="text-xs text-gray-500">This takes a few minutes. You can leave and come back — we&apos;ll notify you when it&apos;s ready.</p></div>);
+  if (stepId === "capture-preview") return (<div className="rounded-lg border border-emerald-200 bg-emerald-50/40 p-4"><div className="flex items-center gap-2 mb-2"><CheckCircle2 className="w-4 h-4 text-emerald-600" /><h3 className="text-sm font-semibold text-gray-900">Capture is active</h3></div><p className="text-xs text-gray-500">Minh Lê has been notified and can start answering questions. Coworkers can still add new questions.</p></div>);
+  return (<div className="rounded-lg border border-gray-200 bg-white p-5"><h3 className="text-sm font-semibold text-gray-900 mb-3">Data collection complete</h3><div className="grid grid-cols-4 gap-3 mb-4"><MetricCard label="Boards processed" value={SESSION.boards} /><MetricCard label="Cards eligible" value={SESSION.cards} /><MetricCard label="Knowledge areas" value={SESSION.modules} /><MetricCard label="Questions generated" value={SESSION.questions} /></div><div className="flex items-center gap-3 pt-3 border-t border-gray-100"><button className="h-9 px-4 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">Review in Data tab</button><Link href="/session/minh-le" className="h-9 px-4 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center gap-2 transition-colors">Start Capture<ArrowRight className="w-3.5 h-3.5" /></Link></div><p className="text-[10px] text-gray-400 mt-2">Coworkers have been notified and can add questions. You can review the Data tab before starting Capture.</p></div>);
 }
 
-function CommandView({ session, activeTab }) {
-  const [subStageId, setSubStageId] = React.useState(session.subStageId);
-  const currentSession = { ...session, subStageId };
-  const moveToCapture = () => setSubStageId(5);
-  return (
-    <div className="max-w-7xl mx-auto">
-      <Hero session={currentSession} />
-      <TabBar session={currentSession} activeTab={activeTab} />
-      <div className="grid grid-cols-[1fr_280px] gap-5 p-6">
-        <div className="min-w-0">
-          {activeTab === "overview" && <OverviewTab session={currentSession} />}
-          {activeTab === "data" && <DataTab session={currentSession} />}
-          {activeTab === "logs" && <LogsTab session={currentSession} />}
-        </div>
-        <ActionSidebar session={currentSession} onMoveToCapture={moveToCapture} />
-      </div>
-    </div>
-  );
+function OffboarderOverview({ stepId }) {
+  if (stepId === "capture-preview") return (<div className="rounded-lg border border-violet-200 bg-violet-50/30 p-4"><div className="flex items-center gap-2 mb-1"><Sparkles className="w-4 h-4 text-violet-600" /><h3 className="text-sm font-semibold text-gray-900">Your question queue is ready</h3></div><p className="text-xs text-gray-500">14 questions waiting for your answers. Open the Data tab to start answering.</p><Link href="/session/minh-le?tab=data" className="mt-3 h-8 px-4 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium inline-flex items-center gap-1.5 transition-colors">Open question queue<ArrowRight className="w-3 h-3" /></Link></div>);
+  return (<div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center"><div className="w-12 h-12 rounded-full bg-gray-100 inline-flex items-center justify-center mb-3 mx-auto"><Clock className="w-5 h-5 text-gray-400" strokeWidth={1.5} /></div><h3 className="text-sm font-medium text-gray-700 mb-1">Your session is being prepared</h3><p className="text-xs text-gray-500">You&apos;ll be notified when your question queue is ready.</p></div>);
 }
 
-function Hero({ session }) {
-  const phase = getPhase(session.subStageId);
-  const subStage = getSubStage(session.subStageId);
-  const isUrgent = session.daysLeft <= 3;
-  return (
-    <section className="bg-white border-b border-gray-200 px-6 py-5">
-      <div className="flex items-start gap-5">
-        <div className="w-14 h-14 rounded-full bg-gray-100 border border-gray-200 text-gray-700 text-base font-semibold inline-flex items-center justify-center shrink-0">{session.initials}</div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <h1 className="text-xl font-semibold text-gray-900 tracking-tight">{session.offboarder}</h1>
-            <span className="text-[10px] px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold bg-gray-100 border border-gray-200 text-gray-700">{session.dept}</span>
-            {isUrgent && <span className="text-[10px] px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold bg-rose-50 border border-rose-200 text-rose-700 inline-flex items-center gap-1"><AlertOctagon className="w-2.5 h-2.5" />{session.daysLeft} days left</span>}
-          </div>
-          <p className="text-sm text-gray-500 mb-3">{session.role} · deadline <span className="text-gray-700" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{session.deadline}</span></p>
-          <PhaseProgress subStageId={session.subStageId} />
-          <div className="flex items-center gap-2 mt-2 text-[11px] text-gray-500 flex-wrap">
-            <span className="font-semibold text-gray-900">Phase {phase.id} · {phase.label}</span>
-            <span className="text-gray-300">·</span>
-            <span>{subStage.label}</span>
-          </div>
-        </div>
-        <button className="h-8 w-8 rounded-md hover:bg-gray-100 inline-flex items-center justify-center text-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20 shrink-0" title="Session settings"><MoreHorizontal className="w-3.5 h-3.5" /></button>
-      </div>
-    </section>
-  );
+function CoworkerOverview({ isReady }) {
+  if (!isReady) return (<div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center"><div className="w-12 h-12 rounded-full bg-gray-100 inline-flex items-center justify-center mb-3 mx-auto"><Clock className="w-5 h-5 text-gray-400" strokeWidth={1.5} /></div><h3 className="text-sm font-medium text-gray-700 mb-1">Session is being set up</h3><p className="text-xs text-gray-500">You&apos;ll be notified when you can browse and ask questions.</p></div>);
+  return (<div className="rounded-lg border border-gray-200 bg-white p-5"><h3 className="text-sm font-semibold text-gray-900 mb-1">Minh Lê is leaving soon</h3><p className="text-xs text-gray-500 mb-3">Browse their knowledge areas in the Data tab and ask questions about what you&apos;ll need after they&apos;re gone. Questions can be added anytime, even after Capture starts.</p><button className="h-8 px-4 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium inline-flex items-center gap-1.5 transition-colors">Browse Data tab<ArrowRight className="w-3 h-3" /></button></div>);
 }
 
-function PhaseProgress({ subStageId }) {
-  const currentPhase = getPhase(subStageId);
-  return (
+function DataContent({ role, stepId, isReady }) {
+  const [selectedCard, setSelectedCard] = useState(null);
+  if (role === "offboarder" && stepId !== "capture-preview") return (<div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center"><h3 className="text-sm font-medium text-gray-700 mb-1">Questions are being collected</h3><p className="text-xs text-gray-500">You&apos;ll be able to answer them once Capture starts.</p></div>);
+  if (!isReady) return (<div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center"><div className="w-10 h-10 rounded-full bg-violet-50 inline-flex items-center justify-center mb-3 mx-auto"><div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-violet-500 animate-spin" /></div><h3 className="text-sm font-medium text-gray-700 mb-1">Data is being collected...</h3><p className="text-xs text-gray-500">The accordion will appear here when the crawl finishes.</p></div>);
+  return (<div className={`${selectedCard ? "grid grid-cols-[1fr_340px] gap-4" : ""}`}>
     <div>
-      <div className="grid grid-cols-3 gap-1">
-        {LIFECYCLE_PHASES.map((phase) => {
-          const isDone = phase.id < currentPhase.id, isCurrent = phase.id === currentPhase.id;
-          let fill = 0;
-          if (isCurrent) { const subIdx = phase.subStages.findIndex((s) => s.id === subStageId); fill = ((subIdx + 0.5) / phase.subStages.length) * 100; }
-          return (<div key={phase.id} className="relative h-2 rounded-sm bg-gray-200 overflow-hidden" title={phase.label}>{isDone && <div className="absolute inset-0 bg-emerald-500" />}{isCurrent && <div className="absolute inset-y-0 left-0 bg-violet-500 animate-pulse" style={{ width: `${fill}%` }} />}</div>);
-        })}
-      </div>
-      <div className="grid grid-cols-3 gap-1 mt-1">
-        {LIFECYCLE_PHASES.map((phase) => {
-          const isDone = phase.id < currentPhase.id, isCurrent = phase.id === currentPhase.id;
-          return (<span key={phase.id} className={`text-[10px] uppercase tracking-wider font-medium text-center ${isDone ? "text-emerald-700" : isCurrent ? "text-violet-700" : "text-gray-400"}`}>{phase.id}. {phase.label}</span>);
-        })}
-      </div>
+      <div className="mb-4 flex items-center gap-2"><input placeholder="Ask a general question not tied to a specific card..." className="flex-1 h-9 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400" /><button className="h-9 px-3 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium transition-colors">Ask</button></div>
+      {MODULES_DATA.map((board, bi) => (<div key={bi} className="rounded-lg border border-gray-200 bg-white mb-3 overflow-hidden"><div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center gap-2"><Layers className="w-3.5 h-3.5 text-gray-400" /><span className="text-sm font-semibold text-gray-900">{board.board}</span><span className="text-[11px] text-gray-500">{board.boardCards} cards</span></div>{board.modules.map((mod, mi) => (<ModuleSection key={mi} mod={mod} role={role} selectedCard={selectedCard} onSelectCard={setSelectedCard} />))}</div>))}
     </div>
-  );
+    {selectedCard && <SidePanel card={selectedCard} role={role} onClose={() => setSelectedCard(null)} isCapture={stepId === "capture-preview"} />}
+  </div>);
 }
 
-function TabBar({ session, activeTab }) {
-  const base = `/session/${session.urlSlug}`;
-  return (
-    <div className="bg-white border-b border-gray-200 px-6 sticky top-0 z-10">
-      <div className="flex items-center gap-1">
-        {TABS.map((tab) => {
-          const isActive = tab.id === activeTab;
-          const href = tab.id === "overview" ? base : `${base}?tab=${tab.id}`;
-          return (<Link key={tab.id} href={href} className={`h-10 px-3 text-sm font-medium border-b-2 transition-colors focus:outline-none inline-flex items-center ${isActive ? "border-violet-600 text-violet-700" : "border-transparent text-gray-500 hover:text-gray-900"}`}>{tab.label}</Link>);
-        })}
-      </div>
-    </div>
-  );
+function ModuleSection({ mod, role, selectedCard, onSelectCard }) {
+  const [expanded, setExpanded] = useState(true);
+  return (<div className="border-b border-gray-100 last:border-b-0">
+    <button onClick={() => setExpanded(!expanded)} className="w-full px-4 py-2 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"><div className="flex items-center gap-2"><ChevronDown className={`w-3 h-3 text-gray-400 transition-transform ${expanded ? "" : "-rotate-90"}`} /><span className="text-[13px] font-medium text-gray-900">{mod.name}</span><span className="text-[11px] text-gray-500">{mod.cards} cards</span>{mod.qs > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-600 border border-violet-200">{mod.qs} Qs</span>}{mod.gaps > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-yellow-50 text-yellow-700 border border-yellow-200">{mod.gaps} gap</span>}</div>{role === "manager" && <span className="text-[10px] text-gray-400 hover:text-violet-600">Rename</span>}</button>
+    {expanded && mod.items && mod.items.map((card, ci) => { const isSel = selectedCard?.name === card.name; return (<button key={ci} onClick={() => onSelectCard(card)} className={`w-full px-4 py-2 pl-10 flex items-center gap-2 text-left border-t border-gray-50 transition-colors ${isSel ? "bg-violet-50 border-l-2 border-l-violet-500" : "hover:bg-gray-50"}`}><FileText className="w-3 h-3 text-gray-400 shrink-0" /><span className="text-[12px] text-gray-800 flex-1">{card.name}</span>{card.gaps.length > 0 && <span className="text-[8px] px-1 py-0.5 rounded bg-yellow-50 text-yellow-700">gap</span>}{card.qs.length > 0 && <span className="text-[8px] px-1 py-0.5 rounded bg-violet-50 text-violet-600">{card.qs.length} Q</span>}</button>); })}
+    {expanded && (!mod.items || mod.items.length === 0) && (<div className="px-4 py-2 pl-10 text-[11px] text-gray-400 border-t border-gray-50">{mod.cards} cards — click to expand in full build</div>)}
+  </div>);
 }
 
-function OverviewTab({ session }) {
-  if (session.subStageId === 2) return <OverviewSeeding session={session} />;
-  if (session.subStageId === 3) return <OverviewScope session={session} />;
-  if (session.subStageId >= 4 && session.subStageId <= 5) return <OverviewCapture session={session} />;
-  return null;
+function SidePanel({ card, role, onClose, isCapture }) {
+  const [followUp, setFollowUp] = useState("");
+  return (<div className="rounded-lg border border-gray-200 bg-white p-4 sticky top-4 max-h-[calc(100vh-120px)] overflow-y-auto">
+    <div className="flex items-center justify-between mb-1"><h3 className="text-[14px] font-semibold text-gray-900">{card.name}</h3><button onClick={onClose} className="w-6 h-6 rounded hover:bg-gray-100 inline-flex items-center justify-center text-gray-400"><X className="w-3.5 h-3.5" /></button></div>
+    <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mt-3 mb-1 pt-2 border-t border-gray-100">Description</p>
+    <p className="text-[11px] text-gray-700 leading-relaxed mb-2">{card.desc}</p>
+    {card.checklist.length > 0 && (<><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mt-3 mb-1 pt-2 border-t border-gray-100">Checklist</p>{card.checklist.map((c, i) => (<div key={i} className="flex items-center gap-1.5 text-[11px] py-0.5">{c.done ? <CheckCircle2 className="w-3 h-3 text-emerald-500" /> : <div className="w-3 h-3 rounded border border-gray-300" />}<span className={c.done ? "text-gray-500 line-through" : "text-gray-700"}>{c.text}</span></div>))}</>)}
+    {card.gaps.length > 0 && (<><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mt-3 mb-1 pt-2 border-t border-gray-100">Knowledge gaps ({card.gaps.length})</p>{card.gaps.map((g, i) => (<div key={i} className="text-[10px] text-yellow-800 bg-yellow-50 border border-yellow-200 rounded-md px-2.5 py-1.5 mb-1 flex items-start gap-1.5"><AlertTriangle className="w-3 h-3 shrink-0 mt-0.5" />{g}</div>))}</>)}
+    <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mt-3 mb-1 pt-2 border-t border-gray-100">Questions ({card.qs.length})</p>
+    {card.qs.map((q, i) => (<div key={i} className="text-[11px] bg-gray-50 rounded-md px-2.5 py-2 mb-1.5"><p className="text-gray-900 mb-0.5">{q.q}</p><p className="text-[10px] text-gray-500 flex items-center gap-1">{q.from === "AI-generated" ? <><Sparkles className="w-2.5 h-2.5 text-violet-500" />{q.from}</> : <><User className="w-2.5 h-2.5" />{q.from}</>}</p>{isCapture && role === "offboarder" && (<div className="mt-2 pt-2 border-t border-gray-200"><textarea placeholder="Type your answer..." className="w-full h-16 px-2 py-1.5 rounded border border-gray-200 text-[11px] resize-none focus:outline-none focus:ring-2 focus:ring-violet-500/20" /><button className="mt-1 h-6 px-2 rounded bg-violet-600 text-white text-[10px]">Submit answer</button></div>)}</div>))}
+    {role !== "offboarder" && (<><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mt-3 mb-1 pt-2 border-t border-gray-100">Ask a question</p><div className="flex gap-1.5"><input value={followUp} onChange={e => setFollowUp(e.target.value)} placeholder="Type your question..." className="flex-1 h-8 px-2.5 rounded-md border border-gray-200 text-[11px] focus:outline-none focus:ring-2 focus:ring-violet-500/20" /><button className="h-8 px-2.5 rounded-md bg-violet-600 text-white text-[10px] font-medium">Ask</button></div><p className="text-[9px] text-gray-400 mt-1">Added to Minh Lê&apos;s question queue</p></>)}
+  </div>);
 }
 
-function OverviewSeeding({ session }) {
-  return (
-    <div className="space-y-5">
-      <SectionLabel>What's happening now</SectionLabel>
-      <article className="rounded-lg border border-violet-200 bg-violet-50/40 p-4">
-        <div className="flex items-start gap-3 mb-3">
-          <div className="w-9 h-9 rounded-md bg-white border border-violet-200 flex items-center justify-center shrink-0"><Loader2 className="w-4 h-4 text-violet-600 animate-spin" strokeWidth={1.75} /></div>
-          <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold text-gray-900">Seeding from Trello</h3>
-            <p className="text-[12px] text-gray-500 mt-0.5">~4 min remaining · runs in the background</p>
-          </div>
-          <span className="text-[11px] text-gray-500 shrink-0" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>4m 12s</span>
-        </div>
-        <ul className="space-y-1 text-[11px] text-gray-600">
-          <SubStep done>Authorization scope established via Hà Vy</SubStep>
-          <SubStep done>Connected Trello · board 'Backend Platform'</SubStep>
-          <SubStep done>Scanned lists · In Progress (6) · Review (4) · Done (42)</SubStep>
-          <SubStep active>Filtering by content depth · 24 kept · 11 thin skipped</SubStep>
-          <SubStep>Prioritizing labels · Bug/Hotfix · Architecture · Core Feature</SubStep>
-          <SubStep>Sensitive-content check (API keys, credentials)</SubStep>
-          <SubStep>Knowledge gaps inference</SubStep>
-          <SubStep>Knowledge map build</SubStep>
-        </ul>
-      </article>
-      <div><SectionLabel>Source</SectionLabel>
-        <div className="mt-2"><SourceRow icon={Trello} name="Trello · Backend Platform" detail="In Progress / Review / Done · thin cards skipped · labels prioritized" status="active" subDetail="4-layer filter" /></div>
-      </div>
-    </div>
-  );
+function LogsContent({ role, stepId }) {
+  if (stepId === "collecting") return <div className="text-center py-8 text-sm text-gray-500">No activity yet</div>;
+  const logs = [
+    { ts: "10:32 AM", type: "system", text: "Crawl complete — 3 boards, 64 eligible cards, 5 modules derived" },
+    { ts: "10:31 AM", type: "system", text: "Board: API Gateway — 31 cards scanned, 12 eligible" },
+    { ts: "10:29 AM", type: "system", text: "Board: Platform Infrastructure — 42 cards scanned, 18 eligible" },
+    { ts: "10:25 AM", type: "system", text: "Board: Backend Services — 89 cards scanned, 34 eligible" },
+    { ts: "10:24 AM", type: "system", text: "Crawl started — 3 boards selected" },
+    { ts: "10:24 AM", type: "system", text: "Session created by Hà Vy" },
+  ];
+  return (<div className="space-y-1.5"><div className="flex gap-2 mb-3">{["All", "System", "Questions", "Files", "Edits"].map(f => (<button key={f} className={`px-2.5 py-1 rounded-md text-[11px] ${f === "All" ? "bg-violet-50 text-violet-700 font-medium" : "text-gray-500 hover:bg-gray-100"}`}>{f}</button>))}</div>{logs.map((l, i) => (<div key={i} className="flex items-start gap-3 px-3 py-2 rounded-md border border-gray-200 bg-white"><span className="text-[10px] text-gray-500 shrink-0 mt-0.5" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{l.ts}</span><span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 uppercase tracking-wider font-medium shrink-0">{l.type}</span><span className="text-[11px] text-gray-900">{l.text}</span></div>))}</div>);
 }
 
-function OverviewScope({ session }) {
-  const [checked, setChecked] = React.useState(() => { const m = {}; STAKEHOLDERS.forEach((s) => { m[s.id] = s.defaultChecked; }); return m; });
-  const toggle = (id) => setChecked((prev) => ({ ...prev, [id]: !prev[id] }));
-  return (
-    <div className="space-y-5">
-      <SectionLabel>Crawl complete</SectionLabel>
-      <article className="rounded-lg border border-emerald-200 bg-emerald-50/30 p-4">
-        <div className="flex items-start gap-3 mb-3">
-          <div className="w-9 h-9 rounded-md bg-white border border-emerald-200 flex items-center justify-center shrink-0"><CheckCircle2 className="w-4 h-4 text-emerald-600" strokeWidth={1.75} /></div>
-          <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold text-gray-900">{CRAWL_SUMMARY.totalKept} items from Trello · {CRAWL_SUMMARY.gaps} knowledge gaps</h3>
-            <p className="text-[12px] text-gray-500 mt-0.5">{CRAWL_SUMMARY.thinSkipped} thin cards skipped · {CRAWL_SUMMARY.redacted} contained sensitive content (auto-redacted)</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-3">
-          {CRAWL_CATEGORIES.map((cat) => (<div key={cat.label} className="flex items-center justify-between text-[11px] py-0.5"><span className="text-gray-700">{cat.label}</span><span className="text-gray-900 font-medium" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{cat.count}</span></div>))}
-          <div className="flex items-center justify-between text-[11px] py-0.5"><span className="text-yellow-700 font-medium">Knowledge gaps</span><span className="text-yellow-700 font-medium" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{CRAWL_SUMMARY.gaps}</span></div>
-        </div>
-      </article>
-      <div><SectionLabel>Source</SectionLabel>
-        <div className="mt-2"><SourceRow icon={Trello} name="Trello · Backend Platform" detail={`${CRAWL_SUMMARY.totalKept} items kept · ${CRAWL_SUMMARY.thinSkipped} skipped · ${CRAWL_SUMMARY.redacted} redacted`} status="done" subDetail="4-layer filter" /></div>
-      </div>
-      <div><SectionLabel>Stakeholders</SectionLabel>
-        <p className="text-[11px] text-gray-500 mt-1 mb-2">Auto-derived from Trello card co-occurrence. Select who to notify for Capture.</p>
-        <div className="space-y-1.5">{STAKEHOLDERS.map((s) => (<StakeholderRow key={s.id} stakeholder={s} isChecked={checked[s.id]} onToggle={() => toggle(s.id)} />))}</div>
-        <button className="mt-2 h-8 px-3 rounded-md border border-dashed border-gray-300 bg-white hover:bg-gray-50 text-gray-600 text-xs font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20"><UserPlus className="w-3 h-3" /> Add someone</button>
-      </div>
-    </div>
-  );
-}
+function MetricCard({ label, value }) { return (<div className="rounded-md bg-gray-50 border border-gray-200 px-3 py-2"><div className="text-[9px] text-gray-500 uppercase tracking-wider font-medium">{label}</div><div className="text-lg font-semibold text-gray-900 mt-0.5" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{value}</div></div>); }
 
-function OverviewCapture({ session }) {
-  const totalAnswers = CAPTURE_RESPONDENTS.reduce((s, r) => s + r.answers, 0);
-  const totalFiles = CAPTURE_RESPONDENTS.reduce((s, r) => s + r.files, 0);
-  const gapsResolved = CAPTURE_GAPS.filter((g) => g.status === "resolved").length;
-  const gapsPartial = CAPTURE_GAPS.filter((g) => g.status === "partial").length;
-  const gapsOpen = CAPTURE_GAPS.filter((g) => g.status === "open").length;
-  const respondedCount = CAPTURE_RESPONDENTS.filter((r) => r.status !== "pending").length;
-  return (
-    <div className="space-y-5">
-      <SectionLabel>What's happening now</SectionLabel>
-      <article className="rounded-lg border border-violet-200 bg-violet-50/40 p-4">
-        <div className="flex items-start gap-3 mb-3">
-          <div className="w-9 h-9 rounded-md bg-white border border-violet-200 flex items-center justify-center shrink-0"><Users className="w-4 h-4 text-violet-600" strokeWidth={1.75} /></div>
-          <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold text-gray-900">Capture in progress</h3>
-            <p className="text-[12px] text-gray-500 mt-0.5">{totalAnswers} answers · {totalFiles} file · {respondedCount} of {CAPTURE_RESPONDENTS.length} people responded</p>
-          </div>
-        </div>
-        <div className="space-y-1.5 mt-2">
-          {CAPTURE_RESPONDENTS.map((r) => {
-            const initials = r.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
-            const statusCfg = {
-              active:    { badge: "bg-violet-50 border-violet-200 text-violet-700", label: "Answering" },
-              responded: { badge: "bg-emerald-50 border-emerald-200 text-emerald-700", label: "Responded" },
-              pending:   { badge: "bg-gray-50 border-gray-200 text-gray-500", label: "Pending" },
-            }[r.status];
-            return (
-              <div key={r.name} className="flex items-center gap-3 rounded-md border border-gray-200 bg-white px-3 py-2">
-                <div className="w-7 h-7 rounded-full bg-gray-100 border border-gray-200 text-gray-600 text-[9px] font-semibold inline-flex items-center justify-center shrink-0">{initials}</div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[12px] font-medium text-gray-900">{r.name}</span>
-                    <span className="text-[10px] text-gray-500">{r.role}</span>
-                  </div>
-                  <span className="text-[10px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{r.answers} answer{r.answers !== 1 ? "s" : ""}{r.files > 0 ? ` · ${r.files} file` : ""}</span>
-                </div>
-                <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold border ${statusCfg.badge}`}>{statusCfg.label}</span>
-              </div>
-            );
-          })}
-        </div>
-      </article>
-      <div>
-        <SectionLabel>Knowledge gaps</SectionLabel>
-        <div className="flex items-center gap-3 mt-2 mb-2 text-[11px]">
-          <span className="text-emerald-700 font-medium">{gapsResolved} resolved</span>
-          <span className="text-gray-300">·</span>
-          <span className="text-violet-700 font-medium">{gapsPartial} partial</span>
-          <span className="text-gray-300">·</span>
-          <span className="text-yellow-700 font-medium">{gapsOpen} open</span>
-        </div>
-        <div className="space-y-1">
-          {CAPTURE_GAPS.map((gap) => {
-            const cfg = {
-              resolved: { border: "border-emerald-200", bg: "bg-emerald-50/30", icon: <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" strokeWidth={1.75} />, text: "text-gray-700" },
-              partial:  { border: "border-violet-200", bg: "bg-violet-50/20", icon: <Loader2 className="w-3 h-3 text-violet-600 shrink-0" strokeWidth={1.75} />, text: "text-gray-700" },
-              open:     { border: "border-yellow-200", bg: "bg-yellow-50/30", icon: <AlertTriangle className="w-3 h-3 text-yellow-600 shrink-0" strokeWidth={1.75} />, text: "text-gray-700" },
-            }[gap.status];
-            return (
-              <div key={gap.text} className={`flex items-center gap-2 rounded-md border ${cfg.border} ${cfg.bg} px-3 py-2`}>
-                {cfg.icon}
-                <span className={`text-[11px] ${cfg.text}`}>{gap.text}</span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function StakeholderRow({ stakeholder, isChecked, onToggle }) {
-  const s = stakeholder;
-  const initials = s.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
-  return (
-    <div onClick={onToggle} className={`flex items-center gap-3 rounded-md border px-3 py-2.5 cursor-pointer transition-colors ${isChecked ? "border-violet-200 bg-violet-50/30" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
-      <span className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${isChecked ? "bg-violet-600 border-violet-600" : "bg-white border-gray-300"}`}>{isChecked && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}</span>
-      <div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-semibold inline-flex items-center justify-center shrink-0">{initials}</div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2"><span className="text-sm font-medium text-gray-900">{s.name}</span><span className="text-[10px] text-gray-500">{s.role}</span></div>
-        <div className="text-[10px] text-gray-500 mt-0.5" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{s.cards} cards · {s.detail}</div>
-      </div>
-    </div>
-  );
-}
-
-function DataTab({ session }) {
-  const isSeeding = session.subStageId === 2;
-  const isCapture = session.subStageId >= 4 && session.subStageId <= 5;
-  return (
-    <div className="space-y-5">
-      <div><SectionLabel>Source</SectionLabel>
-        <div className="mt-2"><SourceRow icon={Trello} name="Trello · Backend Platform" detail={isSeeding ? "In Progress / Review / Done · thin cards skipped · labels prioritized" : `${CRAWL_SUMMARY.totalKept} items kept · ${CRAWL_SUMMARY.thinSkipped} skipped · ${CRAWL_SUMMARY.redacted} redacted`} status={isSeeding ? "active" : "done"} subDetail="4-layer filter" /></div>
-      </div>
-      {isSeeding ? (
-        <div><SectionLabel>Items</SectionLabel>
-          <div className="mt-2 rounded-lg border border-gray-200 bg-white p-4 text-center"><Loader2 className="w-4 h-4 text-violet-600 animate-spin mx-auto mb-2" strokeWidth={1.75} /><p className="text-[12px] text-gray-500">Scanning in progress — items will appear here when seeding completes.</p></div>
-        </div>
-      ) : (
-        <>
-          <div><SectionLabel>Items by category</SectionLabel>
-            <div className="mt-2 space-y-2">{CRAWL_CATEGORIES.map((cat) => (<CategoryGroup key={cat.label} category={cat} />))}</div>
-          </div>
-          <div><SectionLabel>Knowledge gaps</SectionLabel>
-            <div className="mt-2 space-y-1">{isCapture ? (
-              CAPTURE_GAPS.map((gap) => {
-                const cfg = { resolved: { b: "border-emerald-200", bg: "bg-emerald-50/30", ic: <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" strokeWidth={1.75} /> }, partial: { b: "border-violet-200", bg: "bg-violet-50/20", ic: <Loader2 className="w-3 h-3 text-violet-600 shrink-0" strokeWidth={1.75} /> }, open: { b: "border-yellow-200", bg: "bg-yellow-50/30", ic: <AlertTriangle className="w-3 h-3 text-yellow-600 shrink-0" strokeWidth={1.75} /> } }[gap.status];
-                return (<div key={gap.text} className={`flex items-center gap-2 rounded-md border ${cfg.b} ${cfg.bg} px-3 py-2`}>{cfg.ic}<span className="text-[11px] text-gray-700">{gap.text}</span></div>);
-              })
-            ) : (
-              KNOWLEDGE_GAPS.map((gap) => (<div key={gap} className="flex items-center gap-2 rounded-md border border-yellow-200 bg-yellow-50/30 px-3 py-2"><AlertTriangle className="w-3 h-3 text-yellow-600 shrink-0" strokeWidth={1.75} /><span className="text-[11px] text-gray-700">{gap}</span></div>))
-            )}</div>
-          </div>
-        </>
-      )}
-      <div><SectionLabel>Upload</SectionLabel>
-        <button className="w-full mt-2 rounded-lg border border-dashed border-gray-300 bg-gray-50/40 hover:bg-gray-50 px-3 py-4 text-center transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20"><UploadCloud className="w-5 h-5 text-gray-400 mx-auto mb-1" strokeWidth={1.75} /><span className="text-[12px] text-gray-600 font-medium">Drag files here or click to upload</span><p className="text-[10px] text-gray-400 mt-0.5">Handover briefs, scope docs, architecture diagrams</p></button>
-      </div>
-    </div>
-  );
-}
-
-function CategoryGroup({ category }) {
-  const [expanded, setExpanded] = React.useState(false);
-  return (
-    <div className="rounded-md border border-gray-200 bg-white overflow-hidden">
-      <button onClick={() => setExpanded(!expanded)} className="w-full px-3 py-2 flex items-center justify-between text-left hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20">
-        <div className="flex items-center gap-2"><Database className="w-3 h-3 text-gray-400" strokeWidth={1.75} /><span className="text-sm font-medium text-gray-900">{category.label}</span></div>
-        <div className="flex items-center gap-2"><span className="text-[11px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{category.count}</span><ChevronRight className={`w-3 h-3 text-gray-400 transition-transform ${expanded ? "rotate-90" : ""}`} /></div>
-      </button>
-      {expanded && (<div className="border-t border-gray-100 px-3 py-2 space-y-1">{category.items.map((item) => (<div key={item} className="flex items-center gap-2 text-[11px] text-gray-700 py-0.5"><FileText className="w-2.5 h-2.5 text-gray-400 shrink-0" strokeWidth={1.75} /><span>{item}</span></div>))}{category.count > category.items.length && (<span className="text-[10px] text-gray-400">+{category.count - category.items.length} more</span>)}</div>)}
-    </div>
-  );
-}
-
-function LogsTab({ session }) {
-  const entries = session.subStageId >= 4 ? LOGS_CAPTURE : session.subStageId === 3 ? LOGS_SCOPE : LOGS_SEEDING;
-  return (
-    <div className="space-y-3"><SectionLabel>Activity log</SectionLabel>
-      <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">{entries.map((entry, i) => (<ActivityEntry key={`${entry.ts}-${i}`} ts={entry.ts} actor={entry.actor} text={entry.text} last={i === entries.length - 1} />))}</div>
-    </div>
-  );
-}
-
-function ActionSidebar({ session, onMoveToCapture }) {
-  const isSeeding = session.subStageId === 2;
-  const isScope = session.subStageId === 3;
-  const isCapture = session.subStageId >= 4 && session.subStageId <= 5;
-  const confirmedCount = STAKEHOLDERS.filter((s) => s.defaultChecked).length;
-  return (
-    <aside className="space-y-4">
-      <div><SectionLabel>Next action</SectionLabel>
-        {isSeeding && (<article className="rounded-lg border border-gray-200 bg-white p-3 mt-2"><p className="text-[12px] text-gray-700 mb-3">Scanning — nothing needed from you yet.</p><button className="w-full h-8 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20"><Eye className="w-3 h-3" /> Watch progress</button></article>)}
-        {isScope && (<article className="rounded-lg border border-violet-200 bg-white p-3 mt-2"><button onClick={onMoveToCapture} className="w-full h-8 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30"><ArrowRight className="w-3 h-3" /> Move to Capture</button><p className="text-[10px] text-gray-500 text-center mt-1.5 leading-relaxed">Notifies {session.offboarder} and {confirmedCount} stakeholder{confirmedCount !== 1 ? "s" : ""} to begin.</p></article>)}
-        {isCapture && (<article className="rounded-lg border border-gray-200 bg-white p-3 mt-2"><p className="text-[12px] text-gray-700 mb-3">Waiting for {session.offboarder} and stakeholders to respond.</p><button className="w-full h-8 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20"><Eye className="w-3 h-3" /> Watch progress</button></article>)}
-      </div>
-      <div><SectionLabel>Session</SectionLabel>
-        <div className="rounded-md border border-gray-200 bg-white p-3 mt-2 space-y-2 text-[11px]"><InfoRow label="Deadline" value={session.deadline} mono /><InfoRow label="Source" value="Trello · Backend Platform" /><InfoRow label="Days left" value={`${session.daysLeft}`} mono /></div>
-      </div>
-      <CancelSession session={session} />
-    </aside>
-  );
-}
-
-function CancelSession({ session }) {
-  return (
-    <div className="pt-2 border-t border-gray-200">
-      <button className="w-full h-8 rounded-md text-gray-500 hover:text-rose-700 hover:bg-rose-50 text-xs font-medium inline-flex items-center justify-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-rose-500/20"><X className="w-3 h-3" /> Cancel session</button>
-      <p className="text-[10px] text-gray-400 text-center mt-1 leading-relaxed">Discards seeded context permanently. {session.offboarder} won't be asked to capture.</p>
-    </div>
-  );
-}
-
-function SubStep({ done, active, children }) {
-  return (<li className="flex items-start gap-1.5"><span className="shrink-0 mt-0.5">{done && <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" strokeWidth={2.5} />}{active && <Loader2 className="w-2.5 h-2.5 text-violet-600 animate-spin" strokeWidth={2} />}{!done && !active && <Clock className="w-2.5 h-2.5 text-gray-300" strokeWidth={1.75} />}</span><span className={`leading-relaxed ${done ? "text-gray-700" : active ? "text-gray-900 font-medium" : "text-gray-400"}`}>{children}</span></li>);
-}
-
-function SourceRow({ icon: Icon, name, detail, status, subDetail }) {
-  const cfg = { active: { cls: "border-violet-200 bg-violet-50/20", badge: "bg-violet-50 border-violet-200 text-violet-700", label: "In progress" }, done: { cls: "border-emerald-200 bg-emerald-50/20", badge: "bg-emerald-50 border-emerald-200 text-emerald-700", label: "Complete" } }[status];
-  return (<article className={`rounded-md border px-3 py-2.5 flex items-center gap-3 ${cfg.cls}`}><Icon className="w-3.5 h-3.5 text-gray-500 shrink-0" strokeWidth={1.75} /><div className="flex-1 min-w-0"><div className="flex items-center gap-2 mb-0.5"><span className="text-sm font-medium text-gray-900">{name}</span><span className={`text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold border ${cfg.badge}`}>{cfg.label}</span>{subDetail && <span className="text-[10px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{subDetail}</span>}</div><div className="text-[11px] text-gray-500 leading-relaxed">{detail}</div></div></article>);
-}
-
-function ActivityEntry({ ts, actor, text, last }) {
-  return (<div className={`px-3 py-2 ${!last ? "border-b border-gray-100" : ""}`}><div className="flex items-center justify-between gap-3 mb-0.5"><span className="text-[10px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{ts}</span><span className="text-[10px] text-gray-700 font-medium shrink-0">{actor}</span></div><div className="text-[11px] text-gray-900 leading-relaxed">{text}</div></div>);
-}
-
-function InfoRow({ label, value, mono }) {
-  return (<div className="flex items-center justify-between gap-2"><span className="text-gray-500">{label}</span><span className="text-gray-900 font-medium text-right" style={mono ? { fontFamily: "ui-monospace, Menlo, monospace" } : undefined}>{value}</span></div>);
-}
-
-function SectionLabel({ children }) {
-  return <h2 className="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-medium">{children}</h2>;
-}
+function RoleTabBar({ role, onChange }) { return (<div className="bg-white border-b border-gray-200 px-5 overflow-x-auto"><div className="flex gap-0 min-w-0">{ROLES.map(r => (<button key={r.id} onClick={() => onChange(r.id)} className={`flex items-center gap-2 px-4 py-2.5 border-b-2 transition-colors shrink-0 focus:outline-none ${role === r.id ? "border-violet-600 text-gray-900" : "border-transparent text-gray-500 hover:text-gray-700"}`}><div className={`w-6 h-6 rounded-full text-[9px] font-semibold inline-flex items-center justify-center ${role === r.id ? "bg-violet-100 text-violet-700" : "bg-gray-100 text-gray-500"}`}>{r.icon}</div><div className="text-left"><div className="text-[12px] font-medium leading-tight">{r.label}</div><div className="text-[10px] text-gray-500 leading-tight">{r.sub}</div></div></button>))}</div></div>); }
+function FlowBar({ step, stepIdx, onJump, roleLabel }) { return (<div className="bg-white border-b border-gray-200 px-5 py-2 flex items-center justify-between gap-4"><div className="min-w-0 flex-1"><div className="flex items-center gap-2 text-[11px] text-gray-500"><span className="uppercase tracking-wider font-semibold text-violet-700">{roleLabel}</span><span className="text-gray-300">·</span><span style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>step {stepIdx + 1} of {FLOW.length}</span></div><h1 className="text-sm font-semibold text-gray-900 truncate mt-0.5">{step.label}</h1></div><div className="flex items-center gap-1 shrink-0">{FLOW.map((s, i) => (<button key={s.id} onClick={() => onJump(i)} title={s.label} className={`w-7 h-7 rounded-md border text-[11px] font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20 ${i === stepIdx ? "bg-violet-600 text-white border-violet-600" : "bg-white text-violet-700 border-violet-200 hover:border-violet-400"}`} style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{i + 1}</button>))}</div></div>); }
+function TopBar() { return (<header className="bg-white border-b border-gray-200 px-5 py-2.5 flex items-center justify-between gap-4"><div className="flex items-center gap-2 shrink-0"><div className="w-1.5 h-1.5 bg-violet-500 rounded-full" /><span className="text-gray-900 font-semibold tracking-[0.18em] text-xs" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>ART-EEP</span></div><div className="flex items-center gap-3"><button className="h-8 w-8 rounded-md hover:bg-gray-100 inline-flex items-center justify-center text-gray-500 relative"><Bell className="w-3.5 h-3.5" strokeWidth={1.75} /><span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-rose-500" /></button><div className="flex items-center gap-2 pl-2 border-l border-gray-200"><div className="w-7 h-7 rounded-full bg-violet-100 text-violet-700 text-[11px] font-semibold inline-flex items-center justify-center">HV</div><div className="text-[11px]"><div className="font-medium text-gray-900 leading-tight">Hà Vy</div><div className="text-gray-500 leading-tight">Manager · Engineering</div></div></div></div></header>); }
+function FooterNav({ stepIdx, total, onChange, trigger }) { const atFirst = stepIdx === 0, atLast = stepIdx === total - 1; return (<footer className="bg-white border-t border-gray-200 px-5 py-2.5 flex items-center justify-between sticky bottom-0 z-20"><button onClick={() => !atFirst && onChange(stepIdx - 1)} disabled={atFirst} className={`h-8 px-3 rounded-md text-sm font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20 ${atFirst ? "text-gray-300 cursor-not-allowed" : "text-gray-700 hover:bg-gray-100"}`}><ChevronLeft className="w-3.5 h-3.5" />Previous</button><div className="hidden sm:block text-[11px] text-gray-500 max-w-md text-center truncate px-3">{trigger}</div><button onClick={() => !atLast && onChange(stepIdx + 1)} disabled={atLast} className={`h-8 px-3 rounded-md text-sm font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30 ${atLast ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-violet-600 hover:bg-violet-700 text-white"}`}>Next<ChevronRight className="w-3.5 h-3.5" /></button></footer>); }
