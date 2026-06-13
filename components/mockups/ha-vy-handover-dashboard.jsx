@@ -9,13 +9,13 @@ import {
   Bell, Layers, ClipboardList, User
 } from "lucide-react";
 
-/* ═══ Dashboard — CL-122/123/124/125/126 ═══ */
+/* ═══ Dashboard — CL-122/123/124/125/126/127 ═══ */
 
 const ROLES = [
   { id: "manager", label: "Hà Vy", sub: "Manager / HR", icon: "HV" },
   { id: "offboarder", label: "Minh Lê", sub: "Offboarder", icon: "ML" },
-  { id: "stakeholder-a", label: "Stakeholder A", sub: "Active · 2 sessions", icon: "SA" },
-  { id: "stakeholder-b", label: "Stakeholder B", sub: "No questions", icon: "SB" },
+  { id: "coworker-a", label: "Coworker A", sub: "Active · 2 sessions", icon: "SA" },
+  { id: "coworker-b", label: "Coworker B", sub: "No questions", icon: "SB" },
 ];
 
 const MANAGER_FLOW = [
@@ -29,11 +29,11 @@ const OFFBOARDER_FLOW = [
   { id: "all-answered", label: "All answered", trigger: "All 14 questions answered." },
   { id: "complete", label: "Complete", trigger: "Knowledge committed to KG." },
 ];
-const STAKEHOLDER_A_FLOW = [
+const COWORKER_A_FLOW = [
   { id: "active", label: "Active", trigger: "2 answers to review, 2 waiting." },
   { id: "all-satisfied", label: "All satisfied", trigger: "All questions answered and reviewed." },
 ];
-const STAKEHOLDER_B_FLOW = [
+const COWORKER_B_FLOW = [
   { id: "no-questions", label: "No questions", trigger: "Added to session but hasn't engaged." },
 ];
 
@@ -55,7 +55,7 @@ const SESSIONS = [
 ];
 const ACTIVITY_ACTIVE = [
   { ts: "1 hour ago", actor: "System", text: "Thanh Tùng's crawl complete — 3 boards, 127 cards, 4 modules derived", severity: "medium" },
-  { ts: "2 hours ago", actor: "System", text: "Stakeholder joined Minh Lê's session · asked 2 questions", severity: "low" },
+  { ts: "2 hours ago", actor: "System", text: "Coworker joined Minh Lê's session · asked 2 questions", severity: "low" },
   { ts: "3 hours ago", actor: "Minh Lê", text: "Answered 3 questions in Payment Service module", severity: "low" },
   { ts: "5 hours ago", actor: "Hà Vy", text: "Added 3 priority prompts to Minh Lê's session", severity: "low" },
 ];
@@ -66,8 +66,8 @@ const ACTIVITY_COMPLETED = [
   { ts: "3 hours ago", actor: "Hà Vy", text: "Reviewed and committed Minh Lê's answers", severity: "low" },
 ];
 const OB_QUESTIONS = [
-  { q: "What are the undocumented rate limits on the payment API?", from: "Stakeholder A", fromType: "human", module: "Payment Service" },
-  { q: "Is there a runbook for the nightly batch job failures?", from: "Stakeholder A", fromType: "human", module: "CI/CD Pipeline" },
+  { q: "What are the undocumented rate limits on the payment API?", from: "Coworker A", fromType: "human", module: "Payment Service" },
+  { q: "Is there a runbook for the nightly batch job failures?", from: "Coworker A", fromType: "human", module: "CI/CD Pipeline" },
   { q: "What's the rollback procedure for the Atlas migration?", from: "Hà Vy", fromType: "human", module: "CI/CD Pipeline" },
   { q: "How does the Kafka retry logic handle poison messages?", from: "AI-generated", fromType: "ai", module: "Payment Service" },
   { q: "Who owns the vendor XYZ contract renewal?", from: "AI-generated", fromType: "ai", module: "Inventory Sync" },
@@ -89,7 +89,7 @@ const SHA_FEED = [
 
 export default function HaVyHandoverDashboard({ embedded = false, view = "active" } = {}) {
   const [role, setRole] = useState("manager");
-  const flow = role === "manager" ? MANAGER_FLOW : role === "offboarder" ? OFFBOARDER_FLOW : role === "stakeholder-a" ? STAKEHOLDER_A_FLOW : STAKEHOLDER_B_FLOW;
+  const flow = role === "manager" ? MANAGER_FLOW : role === "offboarder" ? OFFBOARDER_FLOW : role === "coworker-a" ? COWORKER_A_FLOW : COWORKER_B_FLOW;
   const [stepIdx, setStepIdx] = useState(() => { if (role === "manager") { const i = MANAGER_FLOW.findIndex(s => s.id === view); return i >= 0 ? i : 1; } return 0; });
   const step = flow[Math.min(stepIdx, flow.length - 1)];
   const handleRoleChange = (r) => { setRole(r); setStepIdx(r === "manager" ? 1 : 0); };
@@ -97,7 +97,7 @@ export default function HaVyHandoverDashboard({ embedded = false, view = "active
   return (<div className="min-h-screen bg-gray-50 flex flex-col text-gray-900" style={{ fontFamily: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif' }}><TopBar /><RoleTabBar role={role} onChange={handleRoleChange} /><FlowBar step={step} stepIdx={Math.min(stepIdx, flow.length - 1)} flow={flow} onJump={setStepIdx} roleLabel={ROLES.find(r => r.id === role)?.sub} /><main className="flex-1"><RoleRenderer role={role} stepId={step.id} /></main><FooterNav stepIdx={Math.min(stepIdx, flow.length - 1)} total={flow.length} onChange={setStepIdx} trigger={step.trigger} /></div>);
 }
 
-function RoleRenderer({ role, stepId }) { if (role === "manager") return <ManagerStep id={stepId} />; if (role === "offboarder") return <OffboarderStep id={stepId} />; if (role === "stakeholder-a") return <StakeholderAStep id={stepId} />; if (role === "stakeholder-b") return <StakeholderBStep id={stepId} />; return null; }
+function RoleRenderer({ role, stepId }) { if (role === "manager") return <ManagerStep id={stepId} />; if (role === "offboarder") return <OffboarderStep id={stepId} />; if (role === "coworker-a") return <CoworkerAStep id={stepId} />; if (role === "coworker-b") return <CoworkerBStep id={stepId} />; return null; }
 
 /* ═══ MANAGER ═══ */
 function ManagerStep({ id }) { if (id === "departures") return <ManagerDepartures />; if (id === "active") return <ManagerActive />; if (id === "completed") return <ManagerCompleted />; return null; }
@@ -113,8 +113,8 @@ function OBActiveQueue() { return (<div className="max-w-2xl mx-auto p-6"><Deadl
 function OBAllAnswered() { return (<div className="max-w-2xl mx-auto p-6"><DeadlineBar days={18} /><div className="grid grid-cols-3 gap-3 mb-4"><ActionCard label="To answer" value={0} color="good" /><ActionCard label="Answered" value={14} color="good" /><ActionCard label="Files uploaded" value={4} color="normal" /></div><div className="flex items-center gap-3 mb-6"><div className="flex-1 h-[5px] rounded-full bg-gray-200 overflow-hidden"><div className="h-full rounded-full bg-emerald-500" style={{ width: "100%" }} /></div><span className="text-[11px] text-emerald-600 font-medium" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>14 / 14 ✓</span></div><div className="rounded-lg border border-emerald-200 bg-emerald-50/40 p-6 text-center"><CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" strokeWidth={1.5} /><h3 className="text-sm font-medium text-gray-900 mb-1">You&apos;re all caught up</h3><p className="text-xs text-gray-500">All 14 questions answered. Your knowledge will be reviewed and committed.<br />If new questions come in, you&apos;ll be notified.</p></div></div>); }
 function OBComplete() { return (<div className="max-w-2xl mx-auto p-6"><div className="rounded-lg border border-emerald-200 bg-emerald-50/40 p-8 text-center"><CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-3" strokeWidth={1.5} /><h3 className="text-base font-semibold text-gray-900 mb-1">Your knowledge has been preserved</h3><p className="text-xs text-gray-500">14 answers and 4 files committed to the knowledge graph.<br />Future team members can access this knowledge.<br /><br />Thank you, Minh Lê.</p></div></div>); }
 
-/* ═══ STAKEHOLDER A (CL-125) ═══ */
-function StakeholderAStep({ id }) { if (id === "active") return <SHAActive />; if (id === "all-satisfied") return <SHAAllSatisfied />; return null; }
+/* ═══ COWORKER A (CL-125) ═══ */
+function CoworkerAStep({ id }) { if (id === "active") return <SHAActive />; if (id === "all-satisfied") return <SHAAllSatisfied />; return null; }
 function SHAActive() {
   const [expanded, setExpanded] = useState({});
   const [satisfied, setSatisfied] = useState({});
@@ -123,9 +123,9 @@ function SHAActive() {
 }
 function SHAAllSatisfied() { return (<div className="max-w-3xl mx-auto p-6"><div className="grid grid-cols-3 gap-3 mb-6"><ActionCard label="Answers to review" value={0} color="good" /><ActionCard label="Waiting for answer" value={0} color="good" /><ActionCard label="Sessions" value={2} color="normal" /></div><div className="rounded-lg border border-emerald-200 bg-emerald-50/40 p-6 text-center"><CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" strokeWidth={1.5} /><h3 className="text-sm font-medium text-gray-900 mb-1">You&apos;re all caught up</h3><p className="text-xs text-gray-500">All your questions have been answered and reviewed.</p></div></div>); }
 
-/* ═══ STAKEHOLDER B (CL-125) ═══ */
-function StakeholderBStep() { return <SHBNoQuestions />; }
-function SHBNoQuestions() { return (<div className="max-w-3xl mx-auto p-6"><div className="grid grid-cols-3 gap-3 mb-6"><ActionCard label="Answers to review" value={0} color="normal" /><ActionCard label="Waiting for answer" value={0} color="normal" /><ActionCard label="Sessions" value={1} color="normal" /></div><SectionLabel>Activity</SectionLabel><div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center mt-3 mb-5"><p className="text-[12px] text-gray-500">No activity yet — you haven&apos;t asked any questions</p></div><SectionLabel>Your sessions</SectionLabel><div className="rounded-lg border border-gray-200 bg-white p-4 mt-3"><div className="flex items-center gap-2 mb-1"><h3 className="text-sm font-semibold text-gray-900">Minh Lê&apos;s session</h3><span className="text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold border bg-violet-50 border-violet-200 text-violet-700">Capture</span></div><p className="text-[11px] text-gray-500 mb-2">Stakeholder · 0 questions · 22 days left</p><p className="text-[11px] text-gray-500 mb-3 flex items-start gap-1.5"><AlertTriangle className="w-3 h-3 text-yellow-600 shrink-0 mt-0.5" />Minh Lê is leaving soon. Ask about knowledge you&apos;ll need after they&apos;re gone.</p><Link href="/session/minh-le?tab=data" className="h-7 px-3 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-[10px] font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30">Ask your first question<ArrowRight className="w-2.5 h-2.5" /></Link></div></div>); }
+/* ═══ COWORKER B (CL-125) ═══ */
+function CoworkerBStep() { return <SHBNoQuestions />; }
+function SHBNoQuestions() { return (<div className="max-w-3xl mx-auto p-6"><div className="grid grid-cols-3 gap-3 mb-6"><ActionCard label="Answers to review" value={0} color="normal" /><ActionCard label="Waiting for answer" value={0} color="normal" /><ActionCard label="Sessions" value={1} color="normal" /></div><SectionLabel>Activity</SectionLabel><div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center mt-3 mb-5"><p className="text-[12px] text-gray-500">No activity yet — you haven&apos;t asked any questions</p></div><SectionLabel>Your sessions</SectionLabel><div className="rounded-lg border border-gray-200 bg-white p-4 mt-3"><div className="flex items-center gap-2 mb-1"><h3 className="text-sm font-semibold text-gray-900">Minh Lê&apos;s session</h3><span className="text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold border bg-violet-50 border-violet-200 text-violet-700">Capture</span></div><p className="text-[11px] text-gray-500 mb-2">Coworker · 0 questions · 22 days left</p><p className="text-[11px] text-gray-500 mb-3 flex items-start gap-1.5"><AlertTriangle className="w-3 h-3 text-yellow-600 shrink-0 mt-0.5" />Minh Lê is leaving soon. Ask about knowledge you&apos;ll need after they&apos;re gone.</p><Link href="/session/minh-le?tab=data" className="h-7 px-3 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-[10px] font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30">Ask your first question<ArrowRight className="w-2.5 h-2.5" /></Link></div></div>); }
 
 /* ═══ SHARED ═══ */
 function DashboardHeader() { return (<div className="flex items-center justify-between mb-6"><h1 className="text-xl font-semibold text-gray-900 tracking-tight">Dashboard</h1><Link href="/session/new" className="h-8 px-3 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30"><Plus className="w-3 h-3" />Create session</Link></div>); }
