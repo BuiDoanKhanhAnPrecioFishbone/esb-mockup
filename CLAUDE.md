@@ -31,6 +31,13 @@ REAL APP — shared sidebar + topbar via components/app/AppShell.tsx
                             3 tabs: Overview · Data · Logs
                             Decisions: CL-119/120/127/128/129
 
+/knowledge-graph          → Consumer Plane KG explorer (CL-121)
+                            components/mockups/knowledge-graph-explorer.jsx
+                            Force-directed graph · dept-first default · 7 modules · 19 entries
+                            AI copilot chat bar · 5 Quick Start chips · side panel
+                            ?prompt=minh-le auto-fires from-session entry point
+                            12 locked grill-me decisions (see CL-121 patch file)
+
 SPEC TRACES — standalone walkthroughs (no AppShell, Prev/Next chrome)
 ─────────────────────────────────────────────────────────────────
 /spec                     → Index of traces (lives in AppShell)
@@ -60,6 +67,7 @@ The full ART-EEP context — design system (violet/yellow/rose/emerald palette),
 
 Deeper reference docs are in `docs/arteep/`:
 - `ARTEEP-design-change-log.md` — the change log is the source of truth for locked decisions
+- `CL-121-kg-explorer-patch.md` — 12 KG explorer grill-me decisions + from-session entry point
 - `CL-128-capture-phase-grill-me.md` — 14 Capture phase decisions
 - `CL-129-deliver-phase-design.md` — 10 Deliver phase decisions + 3 edge cases
 - `arteep-poc-full-surface-spec.md` — full spec of all built surfaces
@@ -86,6 +94,7 @@ Two are file-writing, one is a router. They must not bleed into each other.
 | Sessions registry (Active/Completed/All) | `components/mockups/all-sessions.jsx` |
 | Session detail: Prepare + Capture phases, Data tab accordion, Side Panel drawer, Logs, hero bar | `components/mockups/session-command-view.jsx` |
 | Session detail: Deliver Overview, Complete Overview, Commit modal, Back-to-Capture modal | `components/mockups/session-deliver.jsx` |
+| Knowledge Graph explorer, AI copilot, graph nodes, side panel, chat bar | `components/mockups/knowledge-graph-explorer.jsx` |
 | Sidebar, top bar, search, notifications, user pill | `components/app/AppShell.tsx` |
 | Team guide content | `TEAM-GUIDE.md` (rendered at `/guide`) |
 | A spec-trace state | `components/mockups/uc-ho-01-normal-flow.jsx` or `uc-ho-01-edge-cases.jsx` |
@@ -100,9 +109,9 @@ The session command view has 5 interactive steps navigable via the flow bar:
 | 2 Ready | Prepare | 4 metrics + knowledge areas + "Start Capture" CTA | "Being prepared" empty state | Knowledge areas + "Browse Data tab" |
 | 3 Capture | Capture | Progress bar + 3 metrics + "Move to Deliver" CTA | Progress bar + "Open question queue" CTA | 3 metrics + "Review in Data tab" |
 | 4 Deliver | Deliver | Per-module readiness table + "Commit to KG" + "Back to Capture" | "Thank you, Minh" + contribution stats + "What happens next" | "Session is being finalized" |
-| 5 Complete | Deliver | Emerald success banner + commit summary | Confetti + "Your knowledge has been committed" | "Session complete" |
+| 5 Complete | Deliver | Emerald success banner + commit summary + "Explore in Knowledge Graph" link | Confetti + "Your knowledge has been committed" | "Session complete" |
 
-Data tab behavior: read-only during Deliver/Complete (no ask inputs, no satisfaction buttons). "Committed" badges appear only on Complete (step 5).
+Data tab behavior: read-only during Deliver/Complete (no ask inputs, no satisfaction buttons). "Committed" badges appear only on Complete (step 5). Complete state's "Explore in Knowledge Graph" links to `/knowledge-graph?prompt=minh-le`.
 
 ### Adding a brand-new surface (new top-level route)
 
@@ -137,6 +146,8 @@ From `ARTEEP-context-snapshot.md` §4:
 | **blue** | Prepare phase badge only |
 
 Light mode only. `bg-gray-50` canvas, `bg-white` surfaces. 1px `border-gray-200` hairlines. 32px button heights. Monospace for timestamps/counts. Sentence-case English. Named humans ("Hà Vy" not "your manager"). "Sensitive content" not "PII".
+
+**KG explorer color encoding (CL-121):** Purple = knowledge nodes (modules + entries). Gray = structural (department, system nodes). Yellow = gap-flagged entries. Two colors + one accent.
 
 ## Personas (locked)
 
