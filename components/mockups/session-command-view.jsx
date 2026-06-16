@@ -69,16 +69,19 @@ export const MODULES_DATA = [
 function cardStatus(c) { if (!c.qs||c.qs.length===0) return "none"; return c.qs.filter(q=>q.answer).length===c.qs.length?"done":"pending"; }
 export function modProgress(m) { if (!m.items) return {total:m.qs,answered:0}; let t=0,a=0; m.items.forEach(c=>c.qs.forEach(q=>{t++;if(q.answer)a++})); return {total:t,answered:a}; }
 
-export default function SessionCommandView({ embedded = false, view = "ready" } = {}) {
-  const [role, setRole] = useState("manager");
-  const [stepIdx, setStepIdx] = useState(()=>{const i=FLOW.findIndex(s=>s.id===view);return i>=0?i:1;});
+export default function SessionCommandView({ embedded = false, view = "ready", role: roleProp, step: stepProp, tab: tabProp, chrome = true } = {}) {
+  const pinned = !!roleProp;
+  const showChrome = chrome && !pinned;
+  const [role, setRole] = useState(roleProp || "manager");
+  const [stepIdx, setStepIdx] = useState(()=>{const id=stepProp||view;const i=FLOW.findIndex(s=>s.id===id);return i>=0?i:1;});
   const step = FLOW[Math.min(stepIdx,FLOW.length-1)];
-  if (embedded) return <div><RoleTabBar role={role} onChange={setRole}/><FlowBar step={step} stepIdx={stepIdx} onJump={setStepIdx} roleLabel={ROLES.find(r=>r.id===role)?.sub}/><SessionPage role={role} stepId={step.id}/></div>;
-  return <div className="min-h-screen bg-gray-50 flex flex-col text-gray-900" style={{fontFamily:'ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif'}}><TopBar/><RoleTabBar role={role} onChange={setRole}/><FlowBar step={step} stepIdx={stepIdx} onJump={setStepIdx} roleLabel={ROLES.find(r=>r.id===role)?.sub}/><main className="flex-1"><SessionPage role={role} stepId={step.id}/></main><FooterNav stepIdx={stepIdx} total={FLOW.length} onChange={setStepIdx} trigger={step.trigger}/></div>;
+  const activeRole = pinned ? roleProp : role;
+  if (embedded) return <div>{showChrome&&<RoleTabBar role={role} onChange={setRole}/>}{showChrome&&<FlowBar step={step} stepIdx={stepIdx} onJump={setStepIdx} roleLabel={ROLES.find(r=>r.id===activeRole)?.sub}/>}<SessionPage role={activeRole} stepId={step.id} initialTab={tabProp}/></div>;
+  return <div className="min-h-screen bg-gray-50 flex flex-col text-gray-900" style={{fontFamily:'ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif'}}><TopBar/>{showChrome&&<RoleTabBar role={role} onChange={setRole}/>}{showChrome&&<FlowBar step={step} stepIdx={stepIdx} onJump={setStepIdx} roleLabel={ROLES.find(r=>r.id===activeRole)?.sub}/>}<main className="flex-1"><SessionPage role={activeRole} stepId={step.id} initialTab={tabProp}/></main>{showChrome&&<FooterNav stepIdx={stepIdx} total={FLOW.length} onChange={setStepIdx} trigger={step.trigger}/>}</div>;
 }
 
-function SessionPage({ role, stepId }) {
-  const [activeTab, setActiveTab] = useState("overview");
+function SessionPage({ role, stepId, initialTab }) {
+  const [activeTab, setActiveTab] = useState(initialTab || "overview");
   const phase = stepId==="capture"?"capture":stepId==="deliver"||stepId==="complete"?"deliver":"prepare";
   const isReady = stepId!=="collecting";
   const tabs = [{id:"overview",label:"Overview"},{id:"data",label:"Data",disabled:role==="offboarder"&&phase==="prepare"},{id:"logs",label:"Logs",hidden:role==="coworker"}];
