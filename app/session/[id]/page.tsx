@@ -1,6 +1,17 @@
 import { notFound } from "next/navigation";
+import type { ComponentType } from "react";
 import { AppShell } from "@/components/app/AppShell";
-import SessionCommandView from "@/components/mockups/session-command-view.jsx";
+import SessionCommandViewImpl from "@/components/mockups/session-command-view.jsx";
+
+type SCVProps = {
+  embedded?: boolean;
+  view?: string;
+  chrome?: boolean;
+  role?: string;
+  step?: string;
+  tab?: string;
+};
+const SessionCommandView = SessionCommandViewImpl as unknown as ComponentType<SCVProps>;
 
 type TabId = "overview" | "scope" | "data" | "logs";
 
@@ -37,7 +48,7 @@ export default async function SessionPage({
   // inline role/step switcher. The switcher belongs to the stage, not the product.
   if (role && VALID_ROLES.includes(role)) {
     const safeStep = VALID_STEPS.includes(step ?? "") ? (step as string) : "ready";
-    const productTab = safeTab === "scope" ? "overview" : safeTab;
+    const productTab: string = safeTab === "scope" ? "overview" : safeTab;
     return (
       <AppShell>
         <SessionCommandView embedded chrome={false} role={role} step={safeStep} tab={productTab} />
