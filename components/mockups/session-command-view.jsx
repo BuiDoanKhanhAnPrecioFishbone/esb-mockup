@@ -3,9 +3,12 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, ArrowRight, X, CheckCircle2, Clock, AlertTriangle, Sparkles, Bell, Layers, User, FileText, ChevronDown, Plus, MessageCircle, Upload, Paperclip } from "lucide-react";
 import { DeliverOverview, CompleteOverview } from "./session-deliver";
+import { useViewAs } from "@/lib/view-as";
 
 /* Session Command View — CL-119/120/127/128/129
-   Prepare + Capture + Deliver + Complete · 3 roles */
+   Prepare + Capture + Deliver + Complete · 3 roles
+   Role comes from the global "View as" switcher (lib/view-as). When a role is
+   pinned via prop (the /states stage clean-product mode) that wins instead. */
 
 const ROLES = [
   { id: "manager", label: "Hà Vy", sub: "Manager / HR", icon: "HV" },
@@ -70,14 +73,13 @@ function cardStatus(c) { if (!c.qs||c.qs.length===0) return "none"; return c.qs.
 export function modProgress(m) { if (!m.items) return {total:m.qs,answered:0}; let t=0,a=0; m.items.forEach(c=>c.qs.forEach(q=>{t++;if(q.answer)a++})); return {total:t,answered:a}; }
 
 export default function SessionCommandView({ embedded = false, view = "ready", role: roleProp, step: stepProp, tab: tabProp, chrome = true } = {}) {
+  const { role: ctxRole } = useViewAs();
   const pinned = !!roleProp;
-  const showChrome = chrome && !pinned;
-  const [role, setRole] = useState(roleProp || "manager");
-  const [stepIdx, setStepIdx] = useState(()=>{const id=stepProp||view;const i=FLOW.findIndex(s=>s.id===id);return i>=0?i:1;});
-  const step = FLOW[Math.min(stepIdx,FLOW.length-1)];
-  const activeRole = pinned ? roleProp : role;
-  if (embedded) return <div>{showChrome&&<PreviewStrip role={role} onRole={setRole} step={step} stepIdx={stepIdx} onJump={setStepIdx}/>}<SessionPage role={activeRole} stepId={step.id} initialTab={tabProp}/></div>;
-  return <div className="min-h-screen bg-gray-50 flex flex-col text-gray-900" style={{fontFamily:'ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif'}}><TopBar/>{showChrome&&<PreviewStrip role={role} onRole={setRole} step={step} stepIdx={stepIdx} onJump={setStepIdx}/>}<main className="flex-1"><SessionPage role={activeRole} stepId={step.id} initialTab={tabProp}/></main>{showChrome&&<FooterNav stepIdx={stepIdx} total={FLOW.length} onChange={setStepIdx} trigger={step.trigger}/>}</div>;
+  const activeRole = pinned ? roleProp : ctxRole;
+  const wantStep = stepProp || view;
+  const i = FLOW.findIndex(s=>s.id===wantStep);
+  const step = FLOW[i>=0?i:1];
+  return <SessionPage role={activeRole} stepId={step.id} initialTab={tabProp}/>;
 }
 
 function SessionPage({ role, stepId, initialTab }) {
@@ -192,6 +194,3 @@ function LogsContent({ role, stepId }) {
 
 export function ProgressBar() { return <div className="flex items-center gap-3 mb-1"><div className="flex-1 h-[6px] rounded-full bg-gray-200 overflow-hidden"><div className="h-full rounded-full bg-violet-500" style={{width:`${Math.round(SESSION.answered/SESSION.questions*100)}%`}}/></div><span className="text-[11px] text-gray-700 font-medium" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{SESSION.answered}/{SESSION.questions}</span></div>; }
 export function MC({ l, v }) { return <div className="rounded-md bg-gray-50 border border-gray-200 px-3 py-2"><div className="text-[9px] text-gray-500 uppercase tracking-wider font-medium">{l}</div><div className="text-lg font-semibold text-gray-900 mt-0.5" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{v}</div></div>; }
-function PreviewStrip({ role, onRole, step, stepIdx, onJump }) { return <div className="bg-slate-900 text-slate-200 px-5 py-2 flex items-center gap-3 flex-wrap"><span className="text-[10px] tracking-[0.16em] font-semibold text-slate-400" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>PREVIEW</span><span className="text-slate-600">·</span><div className="flex items-center gap-1">{ROLES.map(r=><button key={r.id} onClick={()=>onRole(r.id)} className={`h-7 px-2.5 rounded-md text-[12px] border ${role===r.id?"bg-violet-600 text-white border-violet-600":"bg-slate-800 text-slate-300 border-slate-700 hover:border-slate-500"}`}>{r.label}<span className="opacity-60 ml-1">· {r.sub}</span></button>)}</div><span className="text-slate-600">·</span><div className="flex items-center gap-1.5"><span className="text-[11px] text-slate-400" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>step {stepIdx+1}/{FLOW.length}</span><div className="flex items-center gap-1">{FLOW.map((s,i)=><button key={s.id} title={s.label} onClick={()=>onJump(i)} className={`w-7 h-7 rounded-md text-[11px] border ${i===stepIdx?"bg-violet-600 text-white border-violet-600":"bg-slate-800 text-slate-300 border-slate-700 hover:border-slate-500"}`} style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{i+1}</button>)}</div></div><span className="ml-auto text-[11px] text-slate-400 truncate">{step.label}</span></div>; }
-function TopBar() { return <header className="bg-white border-b border-gray-200 px-5 py-2.5 flex items-center justify-between gap-4"><div className="flex items-center gap-2 shrink-0"><div className="w-1.5 h-1.5 bg-violet-500 rounded-full"/><span className="text-gray-900 font-semibold tracking-[0.18em] text-xs" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>ART-EEP</span></div><div className="flex items-center gap-3"><button className="h-8 w-8 rounded-md hover:bg-gray-100 inline-flex items-center justify-center text-gray-500 relative"><Bell className="w-3.5 h-3.5" strokeWidth={1.75}/><span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-rose-500"/></button><div className="flex items-center gap-2 pl-2 border-l border-gray-200"><div className="w-7 h-7 rounded-full bg-violet-100 text-violet-700 text-[11px] font-semibold inline-flex items-center justify-center">HV</div><div className="text-[11px]"><div className="font-medium text-gray-900 leading-tight">Hà Vy</div><div className="text-gray-500 leading-tight">Manager</div></div></div></div></header>; }
-function FooterNav({ stepIdx, total, onChange, trigger }) { const atFirst=stepIdx===0,atLast=stepIdx===total-1; return <footer className="bg-white border-t border-gray-200 px-5 py-2.5 flex items-center justify-between sticky bottom-0 z-20"><button onClick={()=>!atFirst&&onChange(stepIdx-1)} disabled={atFirst} className={`h-8 px-3 rounded-md text-sm font-medium inline-flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500/20 ${atFirst?"text-gray-300 cursor-not-allowed":"text-gray-700 hover:bg-gray-100"}`}><ChevronLeft className="w-3.5 h-3.5"/>Prev</button><div className="hidden sm:block text-[11px] text-gray-500 max-w-md text-center truncate px-3">{trigger}</div><button onClick={()=>!atLast&&onChange(stepIdx+1)} disabled={atLast} className={`h-8 px-3 rounded-md text-sm font-medium inline-flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500/30 ${atLast?"bg-gray-100 text-gray-400 cursor-not-allowed":"bg-violet-600 hover:bg-violet-700 text-white"}`}>Next<ChevronRight className="w-3.5 h-3.5"/></button></footer>; }
