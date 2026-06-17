@@ -9,7 +9,7 @@ export const metadata = {
 export default function HomePage() {
   return (
     <AppShell>
-      <HaVyHandoverDashboard embedded view="active" />
+      <HaVyHandoverDashboard embedded />
     </AppShell>
   );
 }
