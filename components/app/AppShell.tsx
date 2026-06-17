@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Briefcase,
@@ -17,7 +17,13 @@ import {
   AlertOctagon,
   Sparkles,
   CheckCircle2,
+  ChevronDown,
+  Check,
+  Info,
+  X,
 } from "lucide-react";
+import { ViewAsProvider } from "@/lib/view-as";
+import { ROLES, isRouteAllowed, defaultRoute } from "@/lib/view-matrix";
 
 type NavItem = {
   label: string;
@@ -69,21 +75,40 @@ const SECONDARY_NAV: NavItem[] = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [role, setRole] = useState("manager");
+  const [note, setNote] = useState<string | null>(null);
+
+  const handleSwitch = (r: string) => {
+    setRole(r);
+    if (!isRouteAllowed(r, pathname)) {
+      const persona = ROLES.find((x) => x.id === r);
+      setNote(
+        `${persona?.label ?? "This role"} can't open this page — showing their dashboard.`
+      );
+      router.push(defaultRoute(r));
+    } else {
+      setNote(null);
+    }
+  };
 
   return (
-    <div
-      className="min-h-screen flex bg-gray-50 text-gray-900"
-      style={{
-        fontFamily:
-          'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif',
-      }}
-    >
-      <Sidebar pathname={pathname} />
-      <div className="flex-1 min-w-0 flex flex-col">
-        <TopBar />
-        <main className="flex-1 min-w-0">{children}</main>
+    <ViewAsProvider value={{ role, setRole }}>
+      <div
+        className="min-h-screen flex bg-gray-50 text-gray-900"
+        style={{
+          fontFamily:
+            'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif',
+        }}
+      >
+        <Sidebar pathname={pathname} />
+        <div className="flex-1 min-w-0 flex flex-col">
+          <TopBar role={role} onSwitch={handleSwitch} />
+          <main className="flex-1 min-w-0">{children}</main>
+        </div>
+        {note && <PreviewNote text={note} onClose={() => setNote(null)} />}
       </div>
-    </div>
+    </ViewAsProvider>
   );
 }
 
@@ -183,7 +208,7 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
   );
 }
 
-function TopBar() {
+function TopBar({ role, onSwitch }: { role: string; onSwitch: (r: string) => void }) {
   return (
     <header className="h-12 bg-white border-b border-gray-200 px-4 flex items-center gap-4">
       <div className="hidden sm:flex items-center gap-2 h-8 px-2.5 rounded-md border border-gray-200 bg-gray-50 max-w-md flex-1">
@@ -205,16 +230,113 @@ function TopBar() {
 
       <NotificationsButton />
 
-      <div className="flex items-center gap-2 pl-2 border-l border-gray-200">
-        <div className="w-7 h-7 rounded-full bg-violet-100 text-violet-700 text-[11px] font-semibold inline-flex items-center justify-center">
-          HV
-        </div>
-        <div className="text-[11px] text-gray-700 hidden lg:block">
-          <div className="font-medium text-gray-900 leading-tight">Hà Vy</div>
-          <div className="text-gray-500 leading-tight">Manager · Engineering</div>
-        </div>
-      </div>
+      <ViewAsButton role={role} onSwitch={onSwitch} />
     </header>
+  );
+}
+
+function ViewAsButton({ role, onSwitch }: { role: string; onSwitch: (r: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDown(e: PointerEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const cur = ROLES.find((r) => r.id === role) ?? ROLES[0];
+
+  return (
+    <div className="relative pl-2 border-l border-gray-200" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-2 h-8 px-1 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        <div className="w-7 h-7 rounded-full bg-violet-100 text-violet-700 text-[11px] font-semibold inline-flex items-center justify-center">
+          {cur.initials}
+        </div>
+        <div className="text-[11px] text-gray-700 hidden lg:block text-left">
+          <div className="font-medium text-gray-900 leading-tight">{cur.label}</div>
+          <div className="text-gray-500 leading-tight">{cur.sub}</div>
+        </div>
+        <ChevronDown className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.75} />
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          className="absolute right-0 top-11 w-60 rounded-xl border border-gray-200 bg-white shadow-lg z-50 overflow-hidden"
+        >
+          <div className="px-3 py-2 border-b border-gray-200">
+            <p
+              className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold"
+              style={{ fontFamily: "ui-monospace, Menlo, monospace" }}
+            >
+              Viewing as
+            </p>
+          </div>
+          <ul className="py-1">
+            {ROLES.map((r) => (
+              <li key={r.id}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onSwitch(r.id);
+                    setOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-gray-50 text-left focus:outline-none focus:bg-gray-50"
+                >
+                  <div className="w-6 h-6 rounded-full bg-gray-100 text-gray-600 text-[10px] font-semibold inline-flex items-center justify-center shrink-0">
+                    {r.initials}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[12px] font-medium text-gray-900 leading-tight">{r.label}</div>
+                    <div className="text-[10px] text-gray-500 leading-tight">{r.sub}</div>
+                  </div>
+                  {r.id === role && <Check className="w-3.5 h-3.5 text-violet-600 shrink-0" />}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div className="px-3 py-1.5 border-t border-gray-200 bg-gray-50/40">
+            <p className="text-[10px] text-gray-500">Preview · switches the whole app</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PreviewNote({ text, onClose }: { text: string; onClose: () => void }) {
+  return (
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 max-w-md w-[calc(100%-2rem)]">
+      <div className="flex items-start gap-2 rounded-lg bg-slate-900 text-slate-100 px-4 py-2.5 shadow-lg">
+        <Info className="w-4 h-4 mt-0.5 shrink-0 text-slate-300" strokeWidth={1.75} />
+        <p className="text-[12px] leading-snug flex-1">{text}</p>
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-slate-400 hover:text-slate-200 shrink-0"
+          aria-label="Dismiss"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
   );
 }
 

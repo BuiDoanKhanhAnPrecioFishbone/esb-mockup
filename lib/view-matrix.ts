@@ -6,6 +6,8 @@
 //   2. Serve as the enumerable, declarative INPUT for design generation
 //      (e.g. prototype-to-figma). Read this file to know every flow the web app
 //      has and every notable state within it — no need to trace conditional JSX.
+//   3. Drive runtime access control for the global "View as" switcher (which
+//      routes each role may see, and where to send them when one is blocked).
 //
 // Keep this in sync whenever a surface or its states change.
 
@@ -15,6 +17,7 @@ export interface RoleDef {
   id: string;
   label: string;
   sub: string;
+  initials: string;
 }
 export interface StepDef {
   id: string;
@@ -25,14 +28,13 @@ export interface TabDef {
   label: string;
 }
 
-// NOTE: the live mockup ships 3 roles. If "Stakeholder" in the RBAC docs is a
-// distinct 4th seat (relationship-based: same board/dept or higher managing
-// role) rather than a rename of "coworker", add it here and the matrix expands
-// automatically. Flagged for BA review.
+// The live mockup ships 3 roles. "Coworker" is one role (Stakeholder is the
+// deprecated name). If RBAC later splits a distinct 4th seat, add it here and
+// the matrix expands automatically.
 export const ROLES: RoleDef[] = [
-  { id: "manager", label: "Hà Vy", sub: "Manager / HR" },
-  { id: "offboarder", label: "Minh Lê", sub: "Offboarder" },
-  { id: "coworker", label: "Coworker", sub: "Project peer" },
+  { id: "manager", label: "Hà Vy", sub: "Manager / HR", initials: "HV" },
+  { id: "offboarder", label: "Minh Lê", sub: "Offboarder", initials: "ML" },
+  { id: "coworker", label: "Coworker", sub: "Project peer", initials: "CW" },
 ];
 
 export const STEPS: StepDef[] = [
@@ -174,4 +176,22 @@ export const FLOWS: Flow[] = [
 // the session-command-view clean-product-mode edit).
 export function sessionUrl(role: string, step: string, tab: string): string {
   return `/session/minh-le?role=${role}&step=${step}&tab=${tab}`;
+}
+
+// --- Runtime access control for the global "View as" switcher --------------
+// Most routes are open to all roles (rendering per-role where the surface
+// differs). A few are gated. Switching to a role that can't see the current
+// route redirects to that role's default route (all "/" for now).
+export const ROUTE_GATES: { prefix: string; roles: string[] }[] = [
+  { prefix: "/settings", roles: ["manager"] },
+  { prefix: "/prepare", roles: ["manager"] },
+];
+
+export function isRouteAllowed(role: string, pathname: string): boolean {
+  const gate = ROUTE_GATES.find((g) => pathname.startsWith(g.prefix));
+  return gate ? gate.roles.includes(role) : true;
+}
+
+export function defaultRoute(_role: string): string {
+  return "/";
 }
