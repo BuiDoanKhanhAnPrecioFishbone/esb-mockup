@@ -2,335 +2,107 @@
 
 import React from "react";
 import {
-  Settings as SettingsIcon, Plus, AlertTriangle, CheckCircle2,
-  Clock, RefreshCw, Lock, GitBranch, Github, Folder, MessageSquare,
-  Briefcase, FileText, Calendar, Database, ArrowUpRight, ShieldCheck,
-  AlertCircle, Hash
+  Settings as SettingsIcon, Plus, CheckCircle2, Clock,
+  Github, Folder, MessageSquare, FileText, Cloud, Users, AlertCircle
 } from "lucide-react";
 
-/* ═══════════════════════════════════════════════════════════════════
-   Settings — Platform Admin home (Step Zero · SZ)
-
-   Three sections:
-     1. Connector library · 8 integrations · status per connector
-     2. Connector health · last sync per source · failures highlighted
-     3. Department × source mapping · which dept uses which sources
-
-   Owner persona · An Quân Vũ (Platform Admin · IT)
-   ═══════════════════════════════════════════════════════════════════ */
+/* Settings — Connector library (Step Zero · simplified POC)
+   Single combined screen · option C · no drill-down
+   Owner persona · An Qu\u00e2n V\u0169 (Platform Admin · IT)
+   3 connected + 3 available + 2 coming soon */
 
 const CONNECTORS = [
-  { id: "m365",     name: "Microsoft 365",     icon: Database,        scope: "OneDrive · SharePoint · Teams",  status: "connected",  lastSync: "3 min ago",  items: 1842, governance: "shared workspaces only · email never scanned" },
-  { id: "google",   name: "Google Workspace",  icon: Folder,          scope: "Drive shared · Calendar",         status: "connected",  lastSync: "12 min ago", items: 1124, governance: "shared workspaces only · Gmail never scanned" },
-  { id: "jira",     name: "Jira",              icon: GitBranch,       scope: "Tickets · comments",              status: "connected",  lastSync: "4 min ago",  items: 524,  governance: "issues + comments only" },
-  { id: "github",   name: "GitHub",            icon: Github,          scope: "Shared repos only",               status: "connected",  lastSync: "4 min ago",  items: 318,  governance: "PR descriptions · commit messages · wiki" },
-  { id: "salesf",   name: "Salesforce",        icon: Briefcase,       scope: "Deals · accounts",                status: "connected",  lastSync: "20 min ago", items: 286,  governance: "owner-shared records only" },
-  { id: "slack",    name: "Slack",             icon: MessageSquare,   scope: "Shared channels only",            status: "degraded",   lastSync: "2 hours ago", items: 94,   governance: "no DMs · private channels excluded" },
-  { id: "notion",   name: "Notion",            icon: FileText,        scope: "Shared workspaces only",          status: "needs-auth", lastSync: "Never",       items: 0,    governance: "shared pages only · personal pages excluded" },
-  { id: "hris",     name: "Generic HRIS",      icon: Calendar,        scope: "BambooHR / Workday adapter",      status: "connected",  lastSync: "1 day ago",  items: 38,   governance: "department + last-day fields only" },
-];
-
-const DEPT_MAPPING = [
-  {
-    dept: "Engineering",
-    sources: ["Jira", "GitHub", "Google Drive shared", "M365 SharePoint"],
-    seedingFrequency: "Hourly",
-    sensitivity: "Standard",
-  },
-  {
-    dept: "Sales",
-    sources: ["Salesforce", "Google Calendar", "M365 SharePoint", "Slack"],
-    seedingFrequency: "Hourly",
-    sensitivity: "Standard",
-  },
-  {
-    dept: "People & Culture",
-    sources: ["HRIS", "Notion", "M365 SharePoint"],
-    seedingFrequency: "Every 4 hours",
-    sensitivity: "Elevated · Purview gate strict",
-  },
-];
-
-const RECENT_EVENTS = [
-  { ts: "2026-06-03 · 09:12:04Z", actor: "An Quân Vũ", action: "Slack connector marked degraded", detail: "Rate-limit threshold reached on shared channels · auto-throttling enabled", severity: "medium" },
-  { ts: "2026-06-03 · 08:47:31Z", actor: "System",     action: "Microsoft 365 sync completed",     detail: "1,842 items · 3 minutes",                                                  severity: "low"    },
-  { ts: "2026-06-03 · 07:30:00Z", actor: "System",     action: "All connectors validated",         detail: "OAuth scopes refreshed · no scope drift detected",                         severity: "low"    },
-  { ts: "2026-06-02 · 16:20:09Z", actor: "An Quân Vũ", action: "Notion connector added",           detail: "Awaiting initial OAuth grant from workspace admin",                        severity: "medium" },
+  { id: "trello",  name: "Trello",        icon: AlertCircle, iconBg: "bg-blue-50",    iconColor: "text-blue-600",   status: "connected", health: "Healthy",  stats: "3 boards \u00b7 162 cards",  lastSync: "2 min ago",   desc: "Kanban boards and cards" },
+  { id: "github",  name: "GitHub",        icon: Github,      iconBg: "bg-gray-100",   iconColor: "text-gray-700",   status: "connected", health: "Healthy",  stats: "4 repos \u00b7 89 PRs",     lastSync: "5 min ago",   desc: "Shared repos, PRs, wiki" },
+  { id: "gdrive",  name: "Google Drive",  icon: Folder,      iconBg: "bg-yellow-50",  iconColor: "text-yellow-700", status: "connected", health: "Syncing",  stats: "12 shared folders",         lastSync: "Initial sync\u2026", desc: "Shared folders and docs" },
+  { id: "jira",    name: "Jira",          icon: AlertCircle, iconBg: "bg-gray-50",    iconColor: "text-gray-500",   status: "available", health: null,       stats: null,                        lastSync: null,          desc: "Project tracking and issues" },
+  { id: "slack",   name: "Slack",         icon: MessageSquare, iconBg: "bg-gray-50",  iconColor: "text-gray-500",   status: "available", health: null,       stats: null,                        lastSync: null,          desc: "Shared channels only, no DMs" },
+  { id: "notion",  name: "Notion",        icon: FileText,    iconBg: "bg-gray-50",    iconColor: "text-gray-500",   status: "available", health: null,       stats: null,                        lastSync: null,          desc: "Shared workspaces only" },
+  { id: "salesf",  name: "Salesforce",    icon: Cloud,       iconBg: "bg-gray-50",    iconColor: "text-gray-400",   status: "coming",    health: null,       stats: null,                        lastSync: null,          desc: "Deals, accounts, contacts" },
+  { id: "hris",    name: "HRIS",          icon: Users,       iconBg: "bg-gray-50",    iconColor: "text-gray-400",   status: "coming",    health: null,       stats: null,                        lastSync: null,          desc: "BambooHR / Workday adapter" },
 ];
 
 export default function SettingsConnectors() {
+  const connected = CONNECTORS.filter(c => c.status === "connected").length;
+  const available = CONNECTORS.filter(c => c.status === "available").length;
+  const coming = CONNECTORS.filter(c => c.status === "coming").length;
+
   return (
-    <div className="max-w-7xl mx-auto p-6">
-      <Header />
-
-      <StatRow />
-
-      <div className="grid grid-cols-[1fr_320px] gap-5">
-        <div className="space-y-6 min-w-0">
-          <ConnectorLibrary />
-          <DepartmentMapping />
+    <div className="max-w-5xl mx-auto p-6">
+      <header className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-violet-700 mb-1">
+            <SettingsIcon className="w-5 h-5" strokeWidth={1.75} />
+            <span className="text-xs uppercase tracking-wider font-semibold" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>
+              Settings \u00b7 Step Zero
+            </span>
+          </div>
+          <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Connectors</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            {connected} connected \u00b7 {available} available \u00b7 {coming} coming soon
+          </p>
         </div>
-        <RecentActivity />
+        <button type="button" className="shrink-0 h-9 px-3 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30 cursor-pointer">
+          <Plus className="w-3.5 h-3.5" />
+          Add connector
+        </button>
+      </header>
+
+      <div className="grid grid-cols-4 gap-3">
+        {CONNECTORS.map(c => <ConnectorCard key={c.id} c={c} />)}
       </div>
-    </div>
-  );
-}
 
-function Header() {
-  return (
-    <header className="mb-6 flex items-start justify-between gap-4">
-      <div>
-        <div className="flex items-center gap-2 text-violet-700 mb-1">
-          <SettingsIcon className="w-5 h-5" strokeWidth={1.75} />
-          <span
-            className="text-xs uppercase tracking-wider font-semibold"
-            style={{ fontFamily: "ui-monospace, Menlo, monospace" }}
-          >
-            Settings · Step Zero
-          </span>
-        </div>
-        <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">
-          Org connectors and source mapping
-        </h1>
-        <p className="text-sm text-gray-600 mt-1 max-w-2xl leading-relaxed">
-          Configure the data sources ART-EEP scans during handover sessions. Only approved shared
-          workspaces are eligible per the data-ingestion governance rule. Email, personal folders,
-          and direct messages are never scanned.
+      <div className="mt-6 rounded-lg border border-gray-200 bg-white p-4">
+        <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-medium mb-2">Data-ingestion governance</p>
+        <p className="text-[12px] text-gray-600 leading-relaxed">
+          Only approved shared workspaces are scanned. Email, personal folders, and direct messages are never ingested.
+          Sensitive content is redacted via Microsoft Purview before reaching the knowledge graph.
         </p>
       </div>
-      <button
-        type="button"
-        className="shrink-0 h-9 px-3 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30"
-      >
-        <Plus className="w-3.5 h-3.5" />
-        Add connector
-      </button>
-    </header>
-  );
-}
-
-function StatRow() {
-  const connected = CONNECTORS.filter((c) => c.status === "connected").length;
-  const degraded = CONNECTORS.filter((c) => c.status === "degraded").length;
-  const needsAuth = CONNECTORS.filter((c) => c.status === "needs-auth").length;
-  return (
-    <div className="grid grid-cols-4 gap-3 mb-5">
-      <StatTile label="Connectors connected" value={connected}              sub={`of ${CONNECTORS.length} total`} tone="emerald" />
-      <StatTile label="Degraded"             value={degraded}               sub="auto-throttling"              tone={degraded ? "yellow" : "gray"} />
-      <StatTile label="Needs auth"           value={needsAuth}              sub="pending OAuth"                tone={needsAuth ? "rose" : "gray"} />
-      <StatTile label="Items synced today"   value="3,418"                  sub="across all sources" />
     </div>
-  );
-}
-
-function StatTile({ label, value, sub, tone }) {
-  const valueCls =
-    tone === "emerald" ? "text-emerald-700" :
-    tone === "yellow"  ? "text-yellow-700"  :
-    tone === "rose"    ? "text-rose-700"    :
-                         "text-gray-900";
-  return (
-    <article className="rounded-lg border border-gray-200 bg-white p-3.5">
-      <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-medium">{label}</p>
-      <p className={`text-xl font-semibold mt-1 ${valueCls}`} style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>
-        {value}
-      </p>
-      <p className="text-[11px] text-gray-500 mt-0.5">{sub}</p>
-    </article>
-  );
-}
-
-function ConnectorLibrary() {
-  return (
-    <section>
-      <div className="flex items-end justify-between mb-2">
-        <SectionLabel>Connector library</SectionLabel>
-        <span className="text-[10px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>
-          {CONNECTORS.length} integrations
-        </span>
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        {CONNECTORS.map((c) => <ConnectorCard key={c.id} c={c} />)}
-      </div>
-    </section>
   );
 }
 
 function ConnectorCard({ c }) {
   const Icon = c.icon;
-  const accent =
-    c.status === "connected"  ? "border-emerald-200 bg-emerald-50/30" :
-    c.status === "degraded"   ? "border-yellow-200 bg-yellow-50/30"   :
-    c.status === "needs-auth" ? "border-rose-200 bg-rose-50/30"       :
-                                "border-gray-200 bg-white";
+  const isComing = c.status === "coming";
+  const isAvailable = c.status === "available";
+  const isConnected = c.status === "connected";
+  const healthDot = c.health === "Healthy" ? "bg-emerald-500" : c.health === "Syncing" ? "bg-yellow-500" : null;
+  const healthText = c.health === "Healthy" ? "text-emerald-600" : c.health === "Syncing" ? "text-yellow-600" : "";
 
   return (
-    <article className={`rounded-lg border bg-white p-3.5 ${accent} hover:shadow-sm transition-shadow`}>
-      <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-md border border-gray-200 bg-white inline-flex items-center justify-center shrink-0">
-          <Icon className="w-4 h-4 text-gray-700" strokeWidth={1.75} />
+    <article className={`rounded-lg border bg-white p-4 transition-all ${isComing ? "border-gray-200 opacity-50" : isConnected ? "border-gray-200 hover:border-gray-300 hover:shadow-sm" : "border-gray-200"}`}>
+      <div className="flex items-center gap-2.5 mb-3">
+        <div className={`w-8 h-8 rounded-lg ${c.iconBg} inline-flex items-center justify-center shrink-0`}>
+          <Icon className={`w-4 h-4 ${c.iconColor}`} strokeWidth={1.75} />
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <h3 className="text-[13px] font-semibold text-gray-900">{c.name}</h3>
-            <StatusPill status={c.status} />
-          </div>
-          <p className="text-[11px] text-gray-600 mt-0.5">{c.scope}</p>
-          <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-500">
-            <Clock className="w-3 h-3" strokeWidth={1.75} />
-            <span>{c.lastSync}</span>
-            <span className="text-gray-300">·</span>
-            <span style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{c.items} items</span>
-          </div>
+        <h3 className="text-[13px] font-semibold text-gray-900">{c.name}</h3>
+      </div>
+
+      {isConnected && <>
+        <div className="flex items-center gap-1.5 mb-1.5">
+          <div className={`w-[5px] h-[5px] rounded-full ${healthDot}`}></div>
+          <span className={`text-[10px] font-medium ${healthText}`}>Connected \u00b7 {c.health}</span>
         </div>
-      </div>
-      <div className="mt-3 pt-3 border-t border-gray-200/60 flex items-start gap-1.5">
-        <Lock className="w-3 h-3 text-gray-400 shrink-0 mt-0.5" strokeWidth={1.75} />
-        <p className="text-[10px] text-gray-500 leading-snug">{c.governance}</p>
-      </div>
-    </article>
-  );
-}
+        <p className="text-[11px] text-gray-600 mb-0.5">{c.stats}</p>
+        <p className="text-[10px] text-gray-400" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>
+          <Clock className="w-3 h-3 inline -mt-0.5 mr-0.5" strokeWidth={1.75} />
+          {c.lastSync}
+        </p>
+      </>}
 
-function StatusPill({ status }) {
-  const cfg = {
-    connected:    { label: "Connected",   cls: "bg-emerald-100 text-emerald-700 border-emerald-200",  Icon: CheckCircle2 },
-    degraded:     { label: "Degraded",    cls: "bg-yellow-100 text-yellow-700 border-yellow-200",     Icon: AlertTriangle },
-    "needs-auth": { label: "Needs auth",  cls: "bg-rose-100 text-rose-700 border-rose-200",           Icon: AlertCircle },
-  }[status] ?? { label: status, cls: "bg-gray-100 text-gray-700 border-gray-200", Icon: AlertCircle };
-  const Icon = cfg.Icon;
-  return (
-    <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full border font-medium ${cfg.cls}`}>
-      <Icon className="w-2.5 h-2.5" strokeWidth={2} />
-      {cfg.label}
-    </span>
-  );
-}
-
-function DepartmentMapping() {
-  return (
-    <section>
-      <div className="flex items-end justify-between mb-2">
-        <SectionLabel>Department × source mapping</SectionLabel>
-        <button
-          type="button"
-          className="text-[11px] text-violet-700 hover:text-violet-900 inline-flex items-center gap-1"
-        >
-          Edit mapping
-          <ArrowUpRight className="w-3 h-3" />
+      {isAvailable && <>
+        <p className="text-[11px] text-gray-500 mb-3">{c.desc}</p>
+        <button type="button" className="w-full h-8 rounded-md border border-gray-300 text-gray-700 text-xs font-medium hover:bg-gray-50 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-violet-500/20">
+          Connect
         </button>
-      </div>
-      <article className="rounded-lg border border-gray-200 bg-white overflow-hidden">
-        <table className="w-full text-[12px]">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-200 text-[10px] uppercase tracking-wider text-gray-500">
-              <th className="text-left font-medium px-4 py-2.5">Department</th>
-              <th className="text-left font-medium px-4 py-2.5">Sources</th>
-              <th className="text-left font-medium px-4 py-2.5">Sync frequency</th>
-              <th className="text-left font-medium px-4 py-2.5">Sensitivity tier</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {DEPT_MAPPING.map((row) => (
-              <tr key={row.dept} className="hover:bg-gray-50/40">
-                <td className="px-4 py-3 font-semibold text-gray-900">{row.dept}</td>
-                <td className="px-4 py-3">
-                  <div className="flex flex-wrap gap-1">
-                    {row.sources.map((s) => (
-                      <span
-                        key={s}
-                        className="text-[10px] bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5 text-gray-700"
-                        style={{ fontFamily: "ui-monospace, Menlo, monospace" }}
-                      >
-                        {s}
-                      </span>
-                    ))}
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-gray-700">{row.seedingFrequency}</td>
-                <td className="px-4 py-3">
-                  {row.sensitivity.startsWith("Elevated") ? (
-                    <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full border border-yellow-200 bg-yellow-50 text-yellow-700 font-medium">
-                      <ShieldCheck className="w-2.5 h-2.5" />
-                      {row.sensitivity}
-                    </span>
-                  ) : (
-                    <span className="text-gray-700">{row.sensitivity}</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </article>
-    </section>
-  );
-}
+      </>}
 
-function RecentActivity() {
-  return (
-    <aside className="space-y-3">
-      <div className="flex items-end justify-between">
-        <SectionLabel>Recent activity</SectionLabel>
-        <RefreshCw className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.75} />
-      </div>
-      <ul className="space-y-1.5">
-        {RECENT_EVENTS.map((e, i) => (
-          <ActivityItem key={i} ev={e} />
-        ))}
-      </ul>
-      <article className="rounded-lg border border-gray-200 bg-white p-3.5">
-        <div className="flex items-center gap-1.5 mb-2">
-          <Hash className="w-3.5 h-3.5 text-gray-500" strokeWidth={1.75} />
-          <h4 className="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-medium">Today</h4>
-        </div>
-        <div className="space-y-1.5 text-[12px]">
-          <MiniStat label="Successful syncs"   value="42" tone="emerald" />
-          <MiniStat label="Throttled requests" value="3"  tone="yellow"  />
-          <MiniStat label="Failed syncs"       value="0"  tone="emerald" />
-          <MiniStat label="Scope drifts"       value="0"  tone="emerald" />
-        </div>
-      </article>
-    </aside>
-  );
-}
-
-function ActivityItem({ ev }) {
-  const leftCls =
-    ev.severity === "high"   ? "border-l-rose-500"   :
-    ev.severity === "medium" ? "border-l-yellow-500" :
-                               "border-l-gray-200";
-  return (
-    <li className={`rounded-md border border-gray-200 bg-white px-3 py-2 border-l-2 ${leftCls}`}>
-      <p className="text-[12px] text-gray-900 font-medium leading-snug">{ev.action}</p>
-      <p className="text-[11px] text-gray-600 mt-0.5 leading-snug">{ev.detail}</p>
-      <div className="flex items-center gap-1.5 mt-1 text-[10px] text-gray-500">
-        <span style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{ev.ts}</span>
-        <span className="text-gray-300">·</span>
-        <span>{ev.actor}</span>
-      </div>
-    </li>
-  );
-}
-
-function MiniStat({ label, value, tone }) {
-  const valueCls =
-    tone === "emerald" ? "text-emerald-700" :
-    tone === "yellow"  ? "text-yellow-700"  :
-    tone === "rose"    ? "text-rose-700"    :
-                         "text-gray-900";
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-gray-500">{label}</span>
-      <span className={`font-semibold ${valueCls}`} style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>
-        {value}
-      </span>
-    </div>
-  );
-}
-
-function SectionLabel({ children }) {
-  return (
-    <h2 className="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-medium">{children}</h2>
+      {isComing && <>
+        <p className="text-[11px] text-gray-400 mb-1">{c.desc}</p>
+        <p className="text-[10px] text-gray-400 font-medium">Coming soon</p>
+      </>}
+    </article>
   );
 }
