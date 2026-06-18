@@ -24,7 +24,13 @@ import {
   X,
 } from "lucide-react";
 import { ViewAsProvider } from "@/lib/view-as";
-import { ROLES, isRouteAllowed, defaultRoute, statesFor, defaultStateFor } from "@/lib/view-matrix";
+import {
+  ROLES,
+  isRouteAllowed,
+  defaultRoute,
+  statesFor,
+  defaultStateFor,
+} from "@/lib/view-matrix";
 
 type NavItem = {
   label: string;
@@ -78,8 +84,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [role, setRole] = useState("manager");
-  const [note, setNote] = useState<string | null>(null);
   const [viewState, setViewState] = useState("");
+  const [note, setNote] = useState<string | null>(null);
+
+  // Reset the view-state control to the current surface's default whenever the
+  // route or role changes, so the viewer never lands on an impossible state.
+  useEffect(() => {
+    setViewState(defaultStateFor(pathname, role));
+  }, [pathname, role]);
 
   const handleSwitch = (r: string) => {
     setRole(r);
@@ -94,14 +106,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
   };
 
-  useEffect(() => {
-    setViewState(defaultStateFor(pathname, role));
-  }, [pathname, role]);
-
-  const stateOptions = statesFor(pathname, role);
+  const states = statesFor(pathname, role);
 
   return (
-    <ViewAsProvider value={{ role, setRole, state: viewState, setState: setViewState }}>
+    <ViewAsProvider
+      value={{ role, setRole, state: viewState, setState: setViewState }}
+    >
       <div
         className="min-h-screen flex bg-gray-50 text-gray-900"
         style={{
@@ -114,8 +124,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <TopBar
             role={role}
             onSwitch={handleSwitch}
-            stateOptions={stateOptions}
-            state={viewState}
+            states={states}
+            viewState={viewState}
             onState={setViewState}
           />
           <main className="flex-1 min-w-0">{children}</main>
@@ -225,15 +235,15 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
 function TopBar({
   role,
   onSwitch,
-  stateOptions,
-  state,
+  states,
+  viewState,
   onState,
 }: {
   role: string;
   onSwitch: (r: string) => void;
-  stateOptions: { id: string; label: string }[];
-  state: string;
-  onState: (s: string) => void;
+  states: { id: string; label: string }[];
+  viewState: string;
+  onState: (v: string) => void;
 }) {
   return (
     <header className="h-12 bg-white border-b border-gray-200 px-4 flex items-center gap-4">
@@ -256,7 +266,7 @@ function TopBar({
 
       <NotificationsButton />
 
-      <StateSwitcher options={stateOptions} value={state} onChange={onState} />
+      <StateSwitcher states={states} value={viewState} onChange={onState} />
 
       <ViewAsButton role={role} onSwitch={onSwitch} />
     </header>
@@ -264,13 +274,13 @@ function TopBar({
 }
 
 function StateSwitcher({
-  options,
+  states,
   value,
   onChange,
 }: {
-  options: { id: string; label: string }[];
+  states: { id: string; label: string }[];
   value: string;
-  onChange: (s: string) => void;
+  onChange: (v: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -291,21 +301,22 @@ function StateSwitcher({
     };
   }, [open]);
 
-  if (!options || options.length <= 1) return null;
-  const cur = options.find((o) => o.id === value) ?? options[0];
+  if (!states || states.length <= 1) return null;
+  const cur = states.find((s) => s.id === value) ?? states[0];
 
   return (
     <div className="relative" ref={ref}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 h-8 px-2.5 rounded-md border border-gray-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
+        className="flex items-center gap-1.5 h-8 px-2.5 rounded-md border border-gray-200 bg-gray-50 hover:bg-gray-100 text-[12px] text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
         aria-haspopup="menu"
         aria-expanded={open}
-        title="Preview state"
+        title="Flip this view through its states"
       >
         <Layers className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.75} />
-        <span className="text-[12px] text-gray-700 hidden md:block max-w-[140px] truncate">{cur.label}</span>
+        <span className="hidden md:block text-gray-500">State</span>
+        <span className="font-medium text-gray-900 max-w-[120px] truncate">{cur.label}</span>
         <ChevronDown className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.75} />
       </button>
 
@@ -319,28 +330,28 @@ function StateSwitcher({
               className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold"
               style={{ fontFamily: "ui-monospace, Menlo, monospace" }}
             >
-              State
+              View state
             </p>
           </div>
           <ul className="py-1">
-            {options.map((o) => (
-              <li key={o.id}>
+            {states.map((s) => (
+              <li key={s.id}>
                 <button
                   type="button"
                   onClick={() => {
-                    onChange(o.id);
+                    onChange(s.id);
                     setOpen(false);
                   }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-gray-50 text-left focus:outline-none focus:bg-gray-50"
+                  className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 text-left focus:outline-none focus:bg-gray-50"
                 >
-                  <span className="flex-1 text-[12px] text-gray-900">{o.label}</span>
-                  {o.id === value && <Check className="w-3.5 h-3.5 text-violet-600 shrink-0" />}
+                  <span className="flex-1 text-[12px] text-gray-900">{s.label}</span>
+                  {s.id === value && <Check className="w-3.5 h-3.5 text-violet-600 shrink-0" />}
                 </button>
               </li>
             ))}
           </ul>
           <div className="px-3 py-1.5 border-t border-gray-200 bg-gray-50/40">
-            <p className="text-[10px] text-gray-500">Preview · this view only</p>
+            <p className="text-[10px] text-gray-500">Preview · cases of this view</p>
           </div>
         </div>
       )}

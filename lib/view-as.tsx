@@ -1,10 +1,11 @@
 "use client";
 
-// Global "View as" role + preview state for the mockup. One role selection and
-// one per-view state selection live in the AppShell top bar and flow to every
-// surface via this context. Surfaces read useViewAs().role / .state instead of
-// holding their own. When rendered standalone (no provider) the defaults keep
-// them working as Manager with each view's default state.
+// Global "View as" state for the mockup. The AppShell top-right controls (role
+// pill + state switcher) write here; every surface reads from here so one
+// selection flows to the whole app. `role` = which persona you're viewing as;
+// `state` = which case of the current view to show (lifecycle step, dashboard
+// flow state, etc). When rendered standalone (no provider) the defaults keep
+// surfaces working as Manager at their default state.
 
 import { createContext, useContext, type ReactNode } from "react";
 

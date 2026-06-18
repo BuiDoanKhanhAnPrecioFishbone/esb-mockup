@@ -8,8 +8,8 @@
 //      has and every notable state within it — no need to trace conditional JSX.
 //   3. Drive runtime access control for the global "View as" switcher (which
 //      routes each role may see, and where to send them when one is blocked).
-//   4. Drive the global "state" switcher (which states a given view exposes for
-//      the current role).
+//   4. Drive the global "State" switcher (which cases of the current view a
+//      viewer can flip through, and the default to land on).
 //
 // Keep this in sync whenever a surface or its states change.
 
@@ -198,12 +198,12 @@ export function defaultRoute(_role: string): string {
   return "/";
 }
 
-// --- State switcher: which states a view exposes for the current role -------
-// Powers the "state" dropdown next to "View as", letting anyone flip a single
-// view through all its cases without leaving the page. Only the surfaces wired
-// to read useViewAs().state are listed (session + dashboard); everything else
-// returns [] so the switcher hides. The dashboard's cases depend on the role.
-export const DASHBOARD_STATES: Record<string, StepDef[]> = {
+// --- Runtime state control for the global "State" switcher ------------------
+// Lets a viewer flip the CURRENT surface through its cases without leaving it.
+// Session detail = the 5 lifecycle steps. Dashboard = the current role's flow.
+// Every other route is single-state, so the switcher hides itself there.
+
+export const DASHBOARD_STATES: Record<string, FlowState[]> = {
   manager: [
     { id: "departures", label: "Departures pending" },
     { id: "active", label: "Active sessions" },
@@ -221,14 +221,19 @@ export const DASHBOARD_STATES: Record<string, StepDef[]> = {
   ],
 };
 
-export function statesFor(pathname: string, role: string): StepDef[] {
-  if (pathname.startsWith("/session/")) return STEPS.map((s) => ({ id: s.id, label: s.label }));
+function isSessionDetail(pathname: string): boolean {
+  return pathname.startsWith("/session/") && pathname !== "/session/new";
+}
+
+export function statesFor(pathname: string, role: string): FlowState[] {
+  if (isSessionDetail(pathname))
+    return STEPS.map((s) => ({ id: s.id, label: s.label }));
   if (pathname === "/") return DASHBOARD_STATES[role] ?? [];
   return [];
 }
 
 export function defaultStateFor(pathname: string, role: string): string {
-  if (pathname.startsWith("/session/")) return "capture";
+  if (isSessionDetail(pathname)) return "capture";
   if (pathname === "/") return role === "offboarder" ? "active-queue" : "active";
   return "";
 }
