@@ -1,9 +1,9 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { Send, Sparkles, X, ChevronRight, Flag } from "lucide-react";
+import { Send, Sparkles, X, ChevronRight, Flag, Filter } from "lucide-react";
 
 /* ART-EEP Consumer Plane — Knowledge Graph Explorer
-   15 locked decisions + report flow (HITL) + generic ?prompt= */
+   15 decisions + HITL report + filters + 0% hide on focus */
 
 const NODES = [
   { id:"eng", label:"Engineering", type:"dept", depth:0, summary:"Engineering department\n7 knowledge modules\n42 entries across 3 handovers" },
@@ -58,37 +58,17 @@ const CHIPS = [
 ];
 
 const PROMPTS = {
-  "minh-le": { filter: n => n.provenance?.some(p => p.name.includes("Minh")), input: "Show me Minh L\u00ea's contributions", response: "Minh L\u00ea contributed 42 entries across 6 modules (Payment, Auth, Database, CI/CD, Monitoring, Rate Limiting). 5 knowledge gaps remain across 3 modules. All entries are from his Jun 2026 handover session." },
-  "thanh-duc": { filter: n => n.provenance?.some(p => p.name.includes("Thanh")), input: "Show me Thanh \u0110\u1ee9c's contributions", response: "Thanh \u0110\u1ee9c contributed 9 entries across 4 modules (Payment, Database, Monitoring, Infrastructure as Code). All entries are verified. His handover was completed in Mar 2026." },
+  "minh-le": { filter: n => n.provenance?.some(p => p.name.includes("Minh")), input: "Show me Minh L\u00ea's contributions", response: "Minh L\u00ea contributed 42 entries across 6 modules (Payment, Auth, Database, CI/CD, Monitoring, Rate Limiting). 5 knowledge gaps remain across 3 modules." },
+  "thanh-duc": { filter: n => n.provenance?.some(p => p.name.includes("Thanh")), input: "Show me Thanh \u0110\u1ee9c's contributions", response: "Thanh \u0110\u1ee9c contributed 9 entries across 4 modules (Payment, Database, Monitoring, Infrastructure as Code). All entries are verified. Completed Mar 2026." },
 };
 
 const nodeR = (n) => n.type==="dept"?28:n.type==="module"?18:n.type==="system"?10:10;
 const nodeFill = (n) => n.hasGap?"#fef9c3":n.type==="dept"||n.type==="system"?"#f4f4f5":"#f5f3ff";
 const nodeStroke = (n) => n.hasGap?"#facc15":n.type==="dept"||n.type==="system"?"#d4d4d8":"#c4b5fd";
 
-function initPos(nodes, w, h) {
-  const mods=nodes.filter(n=>n.depth===1);const cx=w/2,cy=h/2;
-  nodes.forEach(n=>{n.vx=0;n.vy=0;});
-  const d=nodes.find(n=>n.depth===0);if(d){d.x=cx;d.y=cy;}
-  mods.forEach((m,i)=>{const a=(i/mods.length)*Math.PI*2-Math.PI/2;m.x=cx+Math.cos(a)*170;m.y=cy+Math.sin(a)*170;});
-  nodes.filter(n=>n.depth===2).forEach(n=>{
-    const p=nodes.find(pp=>pp.id===n.parent);
-    if(!p){n.x=cx+(Math.random()-.5)*200;n.y=cy+(Math.random()-.5)*200;return;}
-    const sibs=nodes.filter(s=>s.parent===n.parent&&s.depth===2);const idx=sibs.indexOf(n);
-    const ba=Math.atan2(p.y-cy,p.x-cx);const spread=sibs.length>1?Math.PI*0.6:0;
-    const a=ba-spread/2+(sibs.length>1?(idx/(sibs.length-1))*spread:0);
-    n.x=p.x+Math.cos(a)*90;n.y=p.y+Math.sin(a)*90;
-  });
-  const kv=nodes.find(n=>n.id==="s-keyvault");const pd=nodes.find(n=>n.id==="s-pagerduty");
-  if(kv){kv.x=cx+240;kv.y=cy-80;}if(pd){pd.x=cx+240;pd.y=cy+120;}
-}
+function initPos(nodes,w,h){const mods=nodes.filter(n=>n.depth===1);const cx=w/2,cy=h/2;nodes.forEach(n=>{n.vx=0;n.vy=0;});const d=nodes.find(n=>n.depth===0);if(d){d.x=cx;d.y=cy;}mods.forEach((m,i)=>{const a=(i/mods.length)*Math.PI*2-Math.PI/2;m.x=cx+Math.cos(a)*170;m.y=cy+Math.sin(a)*170;});nodes.filter(n=>n.depth===2).forEach(n=>{const p=nodes.find(pp=>pp.id===n.parent);if(!p){n.x=cx+(Math.random()-.5)*200;n.y=cy+(Math.random()-.5)*200;return;}const sibs=nodes.filter(s=>s.parent===n.parent&&s.depth===2);const idx=sibs.indexOf(n);const ba=Math.atan2(p.y-cy,p.x-cx);const spread=sibs.length>1?Math.PI*0.6:0;const a=ba-spread/2+(sibs.length>1?(idx/(sibs.length-1))*spread:0);n.x=p.x+Math.cos(a)*90;n.y=p.y+Math.sin(a)*90;});const kv=nodes.find(n=>n.id==="s-keyvault");const pd=nodes.find(n=>n.id==="s-pagerduty");if(kv){kv.x=cx+240;kv.y=cy-80;}if(pd){pd.x=cx+240;pd.y=cy+120;}}
 
-function sim(nodes,edges,w,h){
-  const a=0.2,rep=1800,sp=0.03,sl=100,ce=0.006,da=0.55;const m={};nodes.forEach(n=>{m[n.id]=n;});
-  for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){const na=nodes[i],nb=nodes[j],dx=nb.x-na.x,dy=nb.y-na.y,d=Math.sqrt(dx*dx+dy*dy)||1;const f=rep/(d*d)*a,fx=(dx/d)*f,fy=(dy/d)*f;na.vx-=fx;na.vy-=fy;nb.vx+=fx;nb.vy+=fy;}
-  edges.forEach(e=>{const s=m[e.from],t=m[e.to];if(!s||!t)return;const dx=t.x-s.x,dy=t.y-s.y,d=Math.sqrt(dx*dx+dy*dy)||1;const f=(d-sl)*sp*a,fx=(dx/d)*f,fy=(dy/d)*f;s.vx+=fx;s.vy+=fy;t.vx-=fx;t.vy-=fy;});
-  nodes.forEach(n=>{if(n._d)return;n.vx+=(w/2-n.x)*ce*a;n.vy+=(h/2-n.y)*ce*a;n.vx*=da;n.vy*=da;n.x+=n.vx;n.y+=n.vy;n.x=Math.max(40,Math.min(w-40,n.x));n.y=Math.max(40,Math.min(h-40,n.y));});
-}
+function sim(nodes,edges,w,h){const a=0.2,rep=1800,sp=0.03,sl=100,ce=0.006,da=0.55;const m={};nodes.forEach(n=>{m[n.id]=n;});for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){const na=nodes[i],nb=nodes[j],dx=nb.x-na.x,dy=nb.y-na.y,d=Math.sqrt(dx*dx+dy*dy)||1;const f=rep/(d*d)*a,fx=(dx/d)*f,fy=(dy/d)*f;na.vx-=fx;na.vy-=fy;nb.vx+=fx;nb.vy+=fy;}edges.forEach(e=>{const s=m[e.from],t=m[e.to];if(!s||!t)return;const dx=t.x-s.x,dy=t.y-s.y,d=Math.sqrt(dx*dx+dy*dy)||1;const f=(d-sl)*sp*a,fx=(dx/d)*f,fy=(dy/d)*f;s.vx+=fx;s.vy+=fy;t.vx-=fx;t.vy-=fy;});nodes.forEach(n=>{if(n._d)return;n.vx+=(w/2-n.x)*ce*a;n.vy+=(h/2-n.y)*ce*a;n.vx*=da;n.vy*=da;n.x+=n.vx;n.y+=n.vy;n.x=Math.max(40,Math.min(w-40,n.x));n.y=Math.max(40,Math.min(h-40,n.y));});}
 
 export default function KnowledgeGraphExplorer({embedded=false}={}){
   const svgRef=useRef(null),boxRef=useRef(null),animRef=useRef(null),nodesRef=useRef([]);
@@ -100,6 +80,8 @@ export default function KnowledgeGraphExplorer({embedded=false}={}){
   const [chatFocus,setChatFocus]=useState(null);const [chatResponse,setChatResponse]=useState("");const [chatInput,setChatInput]=useState("");
   const [reportingNode,setReportingNode]=useState(null);const [reportText,setReportText]=useState("");
   const [reported,setReported]=useState(new Map());
+  const [fStatus,setFStatus]=useState("all");const [fContrib,setFContrib]=useState("all");const [fGaps,setFGaps]=useState("all");
+  const hasActiveFilter=fStatus!=="all"||fContrib!=="all"||fGaps!=="all";
 
   const {visNodes,visEdges}=useMemo(()=>{
     const show=new Set();NODES.filter(n=>n.depth<=1).forEach(n=>show.add(n.id));
@@ -108,25 +90,12 @@ export default function KnowledgeGraphExplorer({embedded=false}={}){
     return{visNodes:NODES.filter(n=>show.has(n.id)),visEdges:EDGES.filter(e=>show.has(e.from)&&show.has(e.to))};
   },[expanded,chatFocus]);
 
-  useEffect(()=>{
-    const copies=visNodes.map(n=>{const o=nodesRef.current.find(x=>x.id===n.id);return{...n,x:o?.x??0,y:o?.y??0,vx:0,vy:0};});
-    if(copies.some(n=>n.x===0&&n.y===0))initPos(copies,dim.w,dim.h);nodesRef.current=copies;
-    let run=true;const step=()=>{if(!run)return;sim(nodesRef.current,visEdges,dim.w,dim.h);setTick(t=>t+1);animRef.current=requestAnimationFrame(step);};
-    animRef.current=requestAnimationFrame(step);return()=>{run=false;cancelAnimationFrame(animRef.current);};
-  },[visNodes,visEdges,dim]);
-
+  useEffect(()=>{const copies=visNodes.map(n=>{const o=nodesRef.current.find(x=>x.id===n.id);return{...n,x:o?.x??0,y:o?.y??0,vx:0,vy:0};});if(copies.some(n=>n.x===0&&n.y===0))initPos(copies,dim.w,dim.h);nodesRef.current=copies;let run=true;const step=()=>{if(!run)return;sim(nodesRef.current,visEdges,dim.w,dim.h);setTick(t=>t+1);animRef.current=requestAnimationFrame(step);};animRef.current=requestAnimationFrame(step);return()=>{run=false;cancelAnimationFrame(animRef.current);};},[visNodes,visEdges,dim]);
   useEffect(()=>{const el=boxRef.current;if(!el)return;const ro=new ResizeObserver(([e])=>{const{width,height}=e.contentRect;if(width>0)setDim({w:width,h:height});});ro.observe(el);return()=>ro.disconnect();},[]);
 
   useEffect(()=>{
-    const params=new URLSearchParams(window.location.search);const prompt=params.get("prompt");
-    const cfg=prompt&&PROMPTS[prompt];
-    if(cfg){
-      const mods=NODES.filter(n=>n.type==="module"&&cfg.filter(n)).map(n=>n.id);
-      const entries=NODES.filter(n=>n.depth===2&&n.type==="entry"&&mods.includes(n.parent)).map(n=>n.id);
-      setExpanded(new Set(mods));setChatFocus([...mods,...entries]);
-      setChatInput(cfg.input);setChatResponse(cfg.response);
-      window.history.replaceState({},"","/knowledge-graph");
-    }
+    const params=new URLSearchParams(window.location.search);const prompt=params.get("prompt");const cfg=prompt&&PROMPTS[prompt];
+    if(cfg){const mods=NODES.filter(n=>n.type==="module"&&cfg.filter(n)).map(n=>n.id);const entries=NODES.filter(n=>n.depth===2&&n.type==="entry"&&mods.includes(n.parent)).map(n=>n.id);setExpanded(new Set(mods));setChatFocus([...mods,...entries]);setChatInput(cfg.input);setChatResponse(cfg.response);window.history.replaceState({},"","/knowledge-graph");}
   },[]);
 
   const onDown=useCallback((e,id)=>{e.stopPropagation();e.preventDefault();const n=nodesRef.current.find(x=>x.id===id);if(n){n._d=true;setDragId(id);}},[]);
@@ -134,18 +103,42 @@ export default function KnowledgeGraphExplorer({embedded=false}={}){
   const onUp=useCallback(()=>{if(dragId){const n=nodesRef.current.find(x=>x.id===dragId);if(n)n._d=false;setDragId(null);}setPanning(false);},[dragId]);
   const onBgDown=useCallback((e)=>{if(e.target===svgRef.current||e.target.tagName==="rect"){setPanning(true);panRef.current={x:e.clientX,y:e.clientY,px:pan.x,py:pan.y};}},[pan]);
   const onWheel=useCallback((e)=>{e.preventDefault();const f=e.deltaY>0?0.93:1.07;setPan(p=>{const ns=Math.max(0.3,Math.min(3,p.s*f));const r=svgRef.current.getBoundingClientRect();const mx=e.clientX-r.left,my=e.clientY-r.top;return{s:ns,x:mx-(mx-p.x)*(ns/p.s),y:my-(my-p.y)*(ns/p.s)};});},[]);
-
   const onClickNode=useCallback((node)=>{if(node.type==="module"){setExpanded(prev=>{const n=new Set(prev);n.has(node.id)?n.delete(node.id):n.add(node.id);return n;});}setSelected(s=>s===node.id?null:node.id);setReportingNode(null);setReportText("");},[]);
   const onChip=useCallback((chip)=>{const mods=new Set();chip.focus.forEach(id=>{const nd=NODES.find(n=>n.id===id);if(nd?.parent){mods.add(nd.parent);}});setExpanded(prev=>new Set([...prev,...mods]));setChatFocus(chip.focus);setChatResponse(chip.response);setSelected(null);},[]);
   const onAsk=(nodeId)=>{const nd=NODES.find(n=>n.id===nodeId);if(!nd)return;const q=nd.type==="module"?`What are the risks in ${nd.label}?`:`Tell me about ${nd.label}`;setChatInput(q);const rel=NODES.filter(n=>n.parent===nodeId).map(n=>n.id);if(rel.length>0){setChatFocus(rel);setChatResponse(`${nd.label} contains ${nd.entries||rel.length} entries. ${nd.gaps>0?`${nd.gaps} knowledge gap${nd.gaps>1?"s":""} need attention.`:""} ${nd.summary||""}`);}else{setChatFocus([nodeId]);setChatResponse(nd.summary||"No additional details available.");}};
   const onSubmitReport=(nodeId)=>{if(!nodeId)return;setReported(prev=>{const n=new Map(prev);n.set(nodeId,{text:reportText,time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})});return n;});setReportingNode(null);setReportText("");};
+  const clearAll=()=>{setExpanded(new Set());setPan({x:0,y:0,s:1});setSelected(null);setChatFocus(null);setChatResponse("");setChatInput("");setReportingNode(null);setReportText("");setFStatus("all");setFContrib("all");setFGaps("all");};
 
-  const isHi=(id)=>{if(chatFocus)return chatFocus.includes(id);if(!selected)return true;if(id===selected)return true;return visEdges.some(e=>(e.from===selected&&e.to===id)||(e.to===selected&&e.from===id));};
+  /* Filter + focus visibility. Dept always visible. Modules visible if any child passes. */
+  const passesFilter=useCallback((id)=>{
+    const nd=NODES.find(n=>n.id===id);if(!nd)return true;
+    if(nd.type==="dept")return true;
+    if(nd.type==="system")return !hasActiveFilter;
+    if(nd.type==="module"){const kids=NODES.filter(c=>c.parent===nd.id&&c.depth===2);return kids.some(c=>entryPasses(c));}
+    return entryPasses(nd);
+  },[fStatus,fContrib,fGaps]);
+  const entryPasses=(nd)=>{
+    if(fStatus!=="all"&&nd.status!==fStatus)return false;
+    if(fGaps==="yes"&&!nd.hasGap)return false;
+    if(fContrib!=="all"){const par=NODES.find(p=>p.id===nd.parent);if(!par?.provenance)return false;if(fContrib==="minh-le"&&!par.provenance.some(p=>p.name.includes("Minh")))return false;if(fContrib==="thanh-duc"&&!par.provenance.some(p=>p.name.includes("Thanh")))return false;}
+    return true;
+  };
+
+  const isHi=(id)=>{
+    const nd=NODES.find(n=>n.id===id);
+    if(nd?.type==="dept")return true;
+    if(hasActiveFilter&&!passesFilter(id))return false;
+    if(chatFocus)return chatFocus.includes(id);
+    if(!selected)return true;
+    if(id===selected)return true;
+    return visEdges.some(e=>(e.from===selected&&e.to===id)||(e.to===selected&&e.from===id));
+  };
 
   const nodes=nodesRef.current;const nm={};nodes.forEach(n=>{nm[n.id]=n;});
   const selData=selected?NODES.find(n=>n.id===selected):null;
   const selEdges=selected?EDGES.filter(e=>e.from===selected||e.to===selected):[];
   const childEntries=selData?.type==="module"?NODES.filter(n=>n.parent===selData.id&&n.depth===2):[];
+  const FC=({label,active,onClick})=><button onClick={onClick} className={`px-2 py-0.5 text-[10px] font-medium rounded-full border transition-colors cursor-pointer ${active?"bg-violet-600 text-white border-violet-600":"bg-white text-gray-600 border-gray-200 hover:border-violet-300 hover:text-violet-700"}`}>{label}</button>;
 
   return(
     <div className={`${embedded?'':'p-4'} flex flex-col h-full min-h-0`} style={{fontFamily:"'Inter',system-ui,sans-serif"}}>
@@ -157,23 +150,33 @@ export default function KnowledgeGraphExplorer({embedded=false}={}){
         </div>
         <div className="flex items-center gap-2">
           <button onClick={()=>{setExpanded(new Set(NODES.filter(n=>n.type==="module").map(n=>n.id)));}} className="px-2.5 py-1 text-[11px] font-medium text-violet-700 bg-violet-50 rounded-md hover:bg-violet-100 transition-colors cursor-pointer">Expand all</button>
-          <button onClick={()=>{setExpanded(new Set());setPan({x:0,y:0,s:1});setSelected(null);setChatFocus(null);setChatResponse("");setChatInput("");setReportingNode(null);setReportText("");}} className="px-2.5 py-1 text-[11px] font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors cursor-pointer">Reset</button>
+          <button onClick={clearAll} className="px-2.5 py-1 text-[11px] font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors cursor-pointer">Reset</button>
         </div>
+      </div>
+      {/* Filter bar */}
+      <div className="flex items-center gap-3 mb-2 flex-shrink-0">
+        <div className="flex items-center gap-1"><Filter className="w-3 h-3 text-gray-400"/><span className="text-[10px] text-gray-500 mr-1">Status</span><FC label="All" active={fStatus==="all"} onClick={()=>setFStatus("all")}/><FC label="Verified" active={fStatus==="verified"} onClick={()=>setFStatus("verified")}/><FC label="Draft" active={fStatus==="draft"} onClick={()=>setFStatus("draft")}/></div>
+        <span className="text-gray-200">|</span>
+        <div className="flex items-center gap-1"><span className="text-[10px] text-gray-500 mr-1">Contributor</span><FC label="All" active={fContrib==="all"} onClick={()=>setFContrib("all")}/><FC label="Minh L\u00ea" active={fContrib==="minh-le"} onClick={()=>setFContrib("minh-le")}/><FC label="Thanh \u0110\u1ee9c" active={fContrib==="thanh-duc"} onClick={()=>setFContrib("thanh-duc")}/></div>
+        <span className="text-gray-200">|</span>
+        <div className="flex items-center gap-1"><FC label="Has gaps" active={fGaps==="yes"} onClick={()=>setFGaps(fGaps==="yes"?"all":"yes")}/></div>
+        {hasActiveFilter&&<button onClick={()=>{setFStatus("all");setFContrib("all");setFGaps("all");}} className="text-[10px] text-violet-600 hover:text-violet-800 cursor-pointer ml-1">Clear filters</button>}
       </div>
       <div className="flex-1 min-h-0 flex gap-2">
         <div ref={boxRef} className={`${selected?'w-3/5':'w-full'} bg-gray-50 rounded-lg border border-gray-200 relative overflow-hidden transition-all duration-200`} style={{cursor:panning?'grabbing':dragId?'grabbing':'grab'}}>
           <svg ref={svgRef} width={dim.w} height={dim.h} className="w-full h-full" style={{touchAction:'none'}} onPointerMove={onMove} onPointerUp={onUp} onPointerDown={onBgDown} onWheel={onWheel}>
             <g transform={`translate(${pan.x},${pan.y}) scale(${pan.s})`}>
-              {visEdges.map((e,i)=>{const s=nm[e.from],t=nm[e.to];if(!s||!t)return null;const sn=NODES.find(n=>n.id===e.from),tn=NODES.find(n=>n.id===e.to);const sr=nodeR(sn||{}),tr=nodeR(tn||{});const dx=t.x-s.x,dy=t.y-s.y,d=Math.sqrt(dx*dx+dy*dy)||1;const x1=s.x+(dx/d)*sr,y1=s.y+(dy/d)*sr,x2=t.x-(dx/d)*tr,y2=t.y-(dy/d)*tr;const hi=isHi(e.from)&&isHi(e.to);return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={e.type==="cross"?"#c4b5fd":"#d4d4d8"} strokeWidth={e.type==="cross"?0.8:0.6} strokeDasharray={e.type==="cross"?"4,3":"none"} opacity={hi?0.4:0.06} style={{transition:'opacity 0.15s'}}/>;
+              {visEdges.map((e,i)=>{const s=nm[e.from],t=nm[e.to];if(!s||!t)return null;const sn=NODES.find(n=>n.id===e.from),tn=NODES.find(n=>n.id===e.to);const sr=nodeR(sn||{}),tr=nodeR(tn||{});const dx=t.x-s.x,dy=t.y-s.y,d=Math.sqrt(dx*dx+dy*dy)||1;const x1=s.x+(dx/d)*sr,y1=s.y+(dy/d)*sr,x2=t.x-(dx/d)*tr,y2=t.y-(dy/d)*tr;const hi=isHi(e.from)&&isHi(e.to);if(!hi)return null;return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={e.type==="cross"?"#c4b5fd":"#d4d4d8"} strokeWidth={e.type==="cross"?0.8:0.6} strokeDasharray={e.type==="cross"?"4,3":"none"} opacity={0.4} style={{transition:'opacity 0.15s'}}/>;
               })}
               {nodes.map(node=>{const r=nodeR(node),hi=isHi(node.id),isSel=selected===node.id,isHov=hovered===node.id,isMod=node.type==="module",isExp=expanded.has(node.id),isReported=reported.has(node.id);
-                return <g key={node.id} transform={`translate(${node.x||0},${node.y||0})`} opacity={hi?1:0.12} style={{transition:'opacity 0.15s',cursor:'pointer'}} onPointerDown={e=>onDown(e,node.id)} onPointerEnter={e=>{setHovered(node.id);setTipPos({x:e.clientX,y:e.clientY});}} onPointerLeave={()=>setHovered(null)} onClick={()=>onClickNode(node)}>
+                if(!hi)return null;
+                return <g key={node.id} transform={`translate(${node.x||0},${node.y||0})`} style={{cursor:'pointer'}} onPointerDown={e=>onDown(e,node.id)} onPointerEnter={e=>{setHovered(node.id);setTipPos({x:e.clientX,y:e.clientY});}} onPointerLeave={()=>setHovered(null)} onClick={()=>onClickNode(node)}>
                   {(isHov||isSel)&&<circle r={r+4} fill="none" stroke={nodeStroke(node)} strokeWidth="1.5" opacity="0.3"/>}
                   <circle r={r} fill={nodeFill(node)} stroke={nodeStroke(node)} strokeWidth={isSel?2:0.8}/>
                   {isMod&&<text textAnchor="middle" dominantBaseline="central" fontSize="10" fontWeight="500" fill="#6d28d9" style={{pointerEvents:'none'}}>{isExp?"\u2212":"+"}</text>}
                   {node.type==="dept"&&<text textAnchor="middle" dominantBaseline="central" fontSize="10" fontWeight="500" fill="#71717a" style={{pointerEvents:'none'}}>Eng</text>}
                   {isReported&&<g transform={`translate(${r-2},${-r+2})`}><circle r="5.5" fill="#fecaca" stroke="#f87171" strokeWidth="1"/><text textAnchor="middle" dominantBaseline="central" fontSize="7" fill="#991b1b" fontWeight="600">!</text></g>}
-                  <text y={r+12} textAnchor="middle" fontSize={node.depth===0?11:node.depth===1?10:9} fontWeight={node.depth<=1?500:400} fill={hi?"#27272a":"#a1a1aa"} style={{pointerEvents:'none',userSelect:'none'}}>{node.label.length>20?node.label.slice(0,18)+"\u2026":node.label}</text>
+                  <text y={r+12} textAnchor="middle" fontSize={node.depth===0?11:node.depth===1?10:9} fontWeight={node.depth<=1?500:400} fill="#27272a" style={{pointerEvents:'none',userSelect:'none'}}>{node.label.length>20?node.label.slice(0,18)+"\u2026":node.label}</text>
                 </g>;})}
             </g>
           </svg>
