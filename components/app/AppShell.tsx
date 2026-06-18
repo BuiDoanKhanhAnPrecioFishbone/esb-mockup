@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   LayoutDashboard,
   Briefcase,
@@ -80,18 +80,36 @@ const SECONDARY_NAV: NavItem[] = [
   { label: "Help", icon: HelpCircle, disabled: true },
 ];
 
+// The State switcher serializes the current view-state into the URL so deep
+// links stay accurate — `?step=` on session detail (matches the existing
+// /states sessionUrl scheme), `?state=` elsewhere.
+function stateKeyFor(pathname: string): "step" | "state" {
+  if (pathname.startsWith("/session/") && pathname !== "/session/new")
+    return "step";
+  return "state";
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [role, setRole] = useState("manager");
   const [viewState, setViewState] = useState("");
   const [note, setNote] = useState<string | null>(null);
 
-  // Reset the view-state control to the current surface's default whenever the
-  // route or role changes, so the viewer never lands on an impossible state.
+  // Hydrate the view-state from the URL on mount and on every route/role/URL
+  // change. If the URL doesn't pin a valid state for this surface, fall back
+  // to the surface's default so the viewer never lands on an impossible state.
   useEffect(() => {
-    setViewState(defaultStateFor(pathname, role));
-  }, [pathname, role]);
+    const key = stateKeyFor(pathname);
+    const fromUrl = searchParams.get(key);
+    const candidates = statesFor(pathname, role).map((s) => s.id);
+    const next =
+      fromUrl && candidates.includes(fromUrl)
+        ? fromUrl
+        : defaultStateFor(pathname, role);
+    setViewState(next);
+  }, [pathname, role, searchParams]);
 
   const handleSwitch = (r: string) => {
     setRole(r);
@@ -106,11 +124,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Picking a state writes it to both context and the URL, so deep links and
+  // /states-stage previews stay in sync with the visible view.
+  const handleState = (v: string) => {
+    setViewState(v);
+    const key = stateKeyFor(pathname);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set(key, v);
+    const query = params.toString();
+    router.replace(`${pathname}${query ? `?${query}` : ""}`, { scroll: false });
+  };
+
   const states = statesFor(pathname, role);
 
   return (
     <ViewAsProvider
-      value={{ role, setRole, state: viewState, setState: setViewState }}
+      value={{ role, setRole, state: viewState, setState: handleState }}
     >
       <div
         className="min-h-screen flex bg-gray-50 text-gray-900"
@@ -126,7 +155,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             onSwitch={handleSwitch}
             states={states}
             viewState={viewState}
-            onState={setViewState}
+            onState={handleState}
           />
           <main className="flex-1 min-w-0">{children}</main>
         </div>
