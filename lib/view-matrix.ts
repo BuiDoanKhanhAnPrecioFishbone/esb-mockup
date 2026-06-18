@@ -8,7 +8,8 @@
 //      has and every notable state within it — no need to trace conditional JSX.
 //   3. Drive runtime access control for the global "View as" switcher (which
 //      routes each role may see, and where to send them when one is blocked).
-//   4. Drive the global State switcher (which states each view exposes).
+//   4. Drive the global "state" switcher (which states a given view exposes for
+//      the current role).
 //
 // Keep this in sync whenever a surface or its states change.
 
@@ -197,12 +198,12 @@ export function defaultRoute(_role: string): string {
   return "/";
 }
 
-// --- Runtime state options for the global State switcher --------------------
-// Each view exposes a list of selectable states for the top-bar State switcher.
-// Views not listed (or with a single state) hide the switcher. The dashboard's
-// states depend on the active role; the session command view shares the 5
-// lifecycle steps across roles.
-export const DASHBOARD_STATES: Record<string, { id: string; label: string }[]> = {
+// --- State switcher: which states a view exposes for the current role -------
+// Powers the "state" dropdown next to "View as", letting anyone flip a single
+// view through all its cases without leaving the page. Only the surfaces wired
+// to read useViewAs().state are listed (session + dashboard); everything else
+// returns [] so the switcher hides. The dashboard's cases depend on the role.
+export const DASHBOARD_STATES: Record<string, StepDef[]> = {
   manager: [
     { id: "departures", label: "Departures pending" },
     { id: "active", label: "Active sessions" },
@@ -220,25 +221,14 @@ export const DASHBOARD_STATES: Record<string, { id: string; label: string }[]> =
   ],
 };
 
-function isSessionCommandView(pathname: string): boolean {
-  return pathname.startsWith("/session/") && !pathname.startsWith("/session/new");
-}
-
-export function viewStates(
-  pathname: string,
-  role: string
-): { id: string; label: string }[] {
-  if (isSessionCommandView(pathname)) {
-    return STEPS.map((s) => ({ id: s.id, label: s.label }));
-  }
-  if (pathname === "/") {
-    return DASHBOARD_STATES[role] ?? [];
-  }
+export function statesFor(pathname: string, role: string): StepDef[] {
+  if (pathname.startsWith("/session/")) return STEPS.map((s) => ({ id: s.id, label: s.label }));
+  if (pathname === "/") return DASHBOARD_STATES[role] ?? [];
   return [];
 }
 
 export function defaultStateFor(pathname: string, role: string): string {
-  if (isSessionCommandView(pathname)) return "ready";
+  if (pathname.startsWith("/session/")) return "capture";
   if (pathname === "/") return role === "offboarder" ? "active-queue" : "active";
   return "";
 }
