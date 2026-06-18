@@ -6,6 +6,8 @@ export const metadata: Metadata = {
   description: "Clickable mockup playground for ART-EEP flows and ideas.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default function RootLayout({
   children,
 }: {
