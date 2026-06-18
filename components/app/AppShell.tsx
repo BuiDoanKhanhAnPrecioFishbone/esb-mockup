@@ -23,7 +23,13 @@ import {
   X,
 } from "lucide-react";
 import { ViewAsProvider } from "@/lib/view-as";
-import { ROLES, isRouteAllowed, defaultRoute } from "@/lib/view-matrix";
+import {
+  ROLES,
+  isRouteAllowed,
+  defaultRoute,
+  viewStates,
+  defaultStateFor,
+} from "@/lib/view-matrix";
 
 type NavItem = {
   label: string;
@@ -77,10 +83,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [role, setRole] = useState("manager");
+  const [step, setStep] = useState("");
   const [note, setNote] = useState<string | null>(null);
+
+  // Reset the selected state whenever the view changes — state ids are scoped
+  // per view, so a session step shouldn't leak onto the dashboard and back.
+  useEffect(() => {
+    setStep("");
+  }, [pathname]);
 
   const handleSwitch = (r: string) => {
     setRole(r);
+    setStep("");
     if (!isRouteAllowed(r, pathname)) {
       const persona = ROLES.find((x) => x.id === r);
       setNote(
@@ -93,7 +107,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <ViewAsProvider value={{ role, setRole }}>
+    <ViewAsProvider value={{ role, setRole, step, setStep }}>
       <div
         className="min-h-screen flex bg-gray-50 text-gray-900"
         style={{
@@ -103,7 +117,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       >
         <Sidebar pathname={pathname} />
         <div className="flex-1 min-w-0 flex flex-col">
-          <TopBar role={role} onSwitch={handleSwitch} />
+          <TopBar
+            role={role}
+            onSwitch={handleSwitch}
+            pathname={pathname}
+            step={step}
+            onStep={setStep}
+          />
           <main className="flex-1 min-w-0">{children}</main>
         </div>
         {note && <PreviewNote text={note} onClose={() => setNote(null)} />}
@@ -208,7 +228,19 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
   );
 }
 
-function TopBar({ role, onSwitch }: { role: string; onSwitch: (r: string) => void }) {
+function TopBar({
+  role,
+  onSwitch,
+  pathname,
+  step,
+  onStep,
+}: {
+  role: string;
+  onSwitch: (r: string) => void;
+  pathname: string;
+  step: string;
+  onStep: (s: string) => void;
+}) {
   return (
     <header className="h-12 bg-white border-b border-gray-200 px-4 flex items-center gap-4">
       <div className="hidden sm:flex items-center gap-2 h-8 px-2.5 rounded-md border border-gray-200 bg-gray-50 max-w-md flex-1">
@@ -230,8 +262,107 @@ function TopBar({ role, onSwitch }: { role: string; onSwitch: (r: string) => voi
 
       <NotificationsButton />
 
+      <StateSwitcher pathname={pathname} role={role} step={step} onStep={onStep} />
+
       <ViewAsButton role={role} onSwitch={onSwitch} />
     </header>
+  );
+}
+
+function StateSwitcher({
+  pathname,
+  role,
+  step,
+  onStep,
+}: {
+  pathname: string;
+  role: string;
+  step: string;
+  onStep: (s: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDown(e: PointerEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const states = viewStates(pathname, role);
+  if (states.length <= 1) return null;
+  const currentId = step || defaultStateFor(pathname, role);
+  const current = states.find((s) => s.id === currentId) ?? states[0];
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1.5 h-8 px-2.5 rounded-md border border-gray-200 bg-gray-50 hover:bg-gray-100 text-[12px] focus:outline-none focus:ring-2 focus:ring-violet-500/20"
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        <span
+          className="text-[9px] uppercase tracking-wider text-gray-400 font-semibold hidden lg:inline"
+          style={{ fontFamily: "ui-monospace, Menlo, monospace" }}
+        >
+          State
+        </span>
+        <span className="font-medium text-gray-900">{current.label}</span>
+        <ChevronDown className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.75} />
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          className="absolute right-0 top-11 w-56 rounded-xl border border-gray-200 bg-white shadow-lg z-50 overflow-hidden"
+        >
+          <div className="px-3 py-2 border-b border-gray-200">
+            <p
+              className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold"
+              style={{ fontFamily: "ui-monospace, Menlo, monospace" }}
+            >
+              State
+            </p>
+          </div>
+          <ul className="py-1">
+            {states.map((s) => (
+              <li key={s.id}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onStep(s.id);
+                    setOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-gray-50 text-left focus:outline-none focus:bg-gray-50"
+                >
+                  <span className="flex-1 min-w-0 text-[12px] text-gray-900 leading-tight">
+                    {s.label}
+                  </span>
+                  {s.id === current.id && (
+                    <Check className="w-3.5 h-3.5 text-violet-600 shrink-0" />
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div className="px-3 py-1.5 border-t border-gray-200 bg-gray-50/40">
+            <p className="text-[10px] text-gray-500">Preview · jump to any state of this view</p>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

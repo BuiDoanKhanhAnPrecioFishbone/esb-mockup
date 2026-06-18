@@ -8,6 +8,7 @@
 //      has and every notable state within it — no need to trace conditional JSX.
 //   3. Drive runtime access control for the global "View as" switcher (which
 //      routes each role may see, and where to send them when one is blocked).
+//   4. Drive the global State switcher (which states each view exposes).
 //
 // Keep this in sync whenever a surface or its states change.
 
@@ -194,4 +195,50 @@ export function isRouteAllowed(role: string, pathname: string): boolean {
 
 export function defaultRoute(_role: string): string {
   return "/";
+}
+
+// --- Runtime state options for the global State switcher --------------------
+// Each view exposes a list of selectable states for the top-bar State switcher.
+// Views not listed (or with a single state) hide the switcher. The dashboard's
+// states depend on the active role; the session command view shares the 5
+// lifecycle steps across roles.
+export const DASHBOARD_STATES: Record<string, { id: string; label: string }[]> = {
+  manager: [
+    { id: "departures", label: "Departures pending" },
+    { id: "active", label: "Active sessions" },
+    { id: "completed", label: "Session completed" },
+  ],
+  offboarder: [
+    { id: "not-started", label: "Not started" },
+    { id: "active-queue", label: "Active queue" },
+    { id: "all-answered", label: "All answered" },
+    { id: "complete", label: "Complete" },
+  ],
+  coworker: [
+    { id: "active", label: "Active" },
+    { id: "all-satisfied", label: "All satisfied" },
+  ],
+};
+
+function isSessionCommandView(pathname: string): boolean {
+  return pathname.startsWith("/session/") && !pathname.startsWith("/session/new");
+}
+
+export function viewStates(
+  pathname: string,
+  role: string
+): { id: string; label: string }[] {
+  if (isSessionCommandView(pathname)) {
+    return STEPS.map((s) => ({ id: s.id, label: s.label }));
+  }
+  if (pathname === "/") {
+    return DASHBOARD_STATES[role] ?? [];
+  }
+  return [];
+}
+
+export function defaultStateFor(pathname: string, role: string): string {
+  if (isSessionCommandView(pathname)) return "ready";
+  if (pathname === "/") return role === "offboarder" ? "active-queue" : "active";
+  return "";
 }
