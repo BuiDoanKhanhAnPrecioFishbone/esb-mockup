@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -80,36 +80,52 @@ const SECONDARY_NAV: NavItem[] = [
   { label: "Help", icon: HelpCircle, disabled: true },
 ];
 
-// The State switcher serializes the current view-state into the URL so deep
-// links stay accurate — `?step=` on session detail (matches the existing
-// /states sessionUrl scheme), `?state=` elsewhere.
-function stateKeyFor(pathname: string): "step" | "state" {
-  if (pathname.startsWith("/session/") && pathname !== "/session/new")
-    return "step";
-  return "state";
+// Routes where the State switcher round-trips through the URL (?step=) so
+// deep links survive refresh and previews opened from /states stay shareable.
+// Today: session detail only. The dashboard stays clean (no ?state= in URL).
+function isUrlSyncedRoute(pathname: string): boolean {
+  return pathname.startsWith("/session/") && pathname !== "/session/new";
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const searchParamsString = searchParams?.toString() ?? "";
   const [role, setRole] = useState("manager");
   const [viewState, setViewState] = useState("");
   const [note, setNote] = useState<string | null>(null);
 
-  // Hydrate the view-state from the URL on mount and on every route/role/URL
-  // change. If the URL doesn't pin a valid state for this surface, fall back
-  // to the surface's default so the viewer never lands on an impossible state.
+  // Seed the view-state on route/role/query change. On URL-synced routes the
+  // URL is the source of truth (so deep links + refresh land on the right
+  // state); elsewhere the surface default wins.
   useEffect(() => {
-    const key = stateKeyFor(pathname);
-    const fromUrl = searchParams.get(key);
-    const candidates = statesFor(pathname, role).map((s) => s.id);
-    const next =
-      fromUrl && candidates.includes(fromUrl)
-        ? fromUrl
-        : defaultStateFor(pathname, role);
-    setViewState(next);
-  }, [pathname, role, searchParams]);
+    if (isUrlSyncedRoute(pathname)) {
+      const urlStep = searchParams?.get("step");
+      setViewState(urlStep || defaultStateFor(pathname, role));
+    } else {
+      setViewState(defaultStateFor(pathname, role));
+    }
+    // searchParamsString stands in for searchParams in the dep array so we
+    // re-run only when the actual query changes, not on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, role, searchParamsString]);
+
+  // The single setter the StateSwitcher and the ViewAsProvider's setState
+  // both point at. On URL-synced routes it also calls router.replace so the
+  // URL bar matches the view — making every state shareable and refresh-safe.
+  // Other params (role, tab) are preserved.
+  const handleSetViewState = useCallback(
+    (next: string) => {
+      setViewState(next);
+      if (isUrlSyncedRoute(pathname)) {
+        const params = new URLSearchParams(searchParamsString);
+        params.set("step", next);
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      }
+    },
+    [pathname, router, searchParamsString]
+  );
 
   const handleSwitch = (r: string) => {
     setRole(r);
@@ -124,22 +140,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Picking a state writes it to both context and the URL, so deep links and
-  // /states-stage previews stay in sync with the visible view.
-  const handleState = (v: string) => {
-    setViewState(v);
-    const key = stateKeyFor(pathname);
-    const params = new URLSearchParams(searchParams.toString());
-    params.set(key, v);
-    const query = params.toString();
-    router.replace(`${pathname}${query ? `?${query}` : ""}`, { scroll: false });
-  };
-
   const states = statesFor(pathname, role);
 
   return (
     <ViewAsProvider
-      value={{ role, setRole, state: viewState, setState: handleState }}
+      value={{ role, setRole, state: viewState, setState: handleSetViewState }}
     >
       <div
         className="min-h-screen flex bg-gray-50 text-gray-900"
@@ -155,7 +160,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             onSwitch={handleSwitch}
             states={states}
             viewState={viewState}
-            onState={handleState}
+            onState={handleSetViewState}
           />
           <main className="flex-1 min-w-0">{children}</main>
         </div>
