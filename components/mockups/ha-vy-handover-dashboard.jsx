@@ -11,8 +11,8 @@ import {
 import { useViewAs } from "@/lib/view-as";
 
 /* ═══ Dashboard — CL-122/123/124/125/126/127 ═══
-   Role comes from the global "View as" switcher (lib/view-as). Coworker A/B are
-   demo-data nuances within the single "coworker" role. No in-surface switcher. */
+   Role + state come from the global "View as" + "State" switchers (lib/view-as).
+   Coworker A/B are demo-data nuances within the single "coworker" role. */
 
 const ROLES = [
   { id: "manager", label: "Hà Vy", sub: "Manager / HR", icon: "HV" },
@@ -91,8 +91,8 @@ const SHA_FEED = [
 ];
 
 export default function HaVyHandoverDashboard({ embedded = false } = {}) {
-  const { role } = useViewAs();
-  const stepId = role === "offboarder" ? "active-queue" : "active";
+  const { role, state } = useViewAs();
+  const stepId = state || (role === "offboarder" ? "active-queue" : "active");
   return <RoleRenderer role={role} stepId={stepId} />;
 }
 

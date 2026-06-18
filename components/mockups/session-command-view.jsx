@@ -7,8 +7,9 @@ import { useViewAs } from "@/lib/view-as";
 
 /* Session Command View — CL-119/120/127/128/129
    Prepare + Capture + Deliver + Complete · 3 roles
-   Role comes from the global "View as" switcher (lib/view-as). When a role is
-   pinned via prop (the /states stage clean-product mode) that wins instead. */
+   Role + state come from the global "View as" + "State" switchers (lib/view-as).
+   When a role is pinned via prop (the /states stage clean-product mode) that
+   wins for both role and step instead. */
 
 const ROLES = [
   { id: "manager", label: "Hà Vy", sub: "Manager / HR", icon: "HV" },
@@ -73,10 +74,10 @@ function cardStatus(c) { if (!c.qs||c.qs.length===0) return "none"; return c.qs.
 export function modProgress(m) { if (!m.items) return {total:m.qs,answered:0}; let t=0,a=0; m.items.forEach(c=>c.qs.forEach(q=>{t++;if(q.answer)a++})); return {total:t,answered:a}; }
 
 export default function SessionCommandView({ embedded = false, view = "ready", role: roleProp, step: stepProp, tab: tabProp, chrome = true } = {}) {
-  const { role: ctxRole } = useViewAs();
+  const { role: ctxRole, state: ctxState } = useViewAs();
   const pinned = !!roleProp;
   const activeRole = pinned ? roleProp : ctxRole;
-  const wantStep = stepProp || view;
+  const wantStep = pinned ? (stepProp || view) : (ctxState || stepProp || view);
   const i = FLOW.findIndex(s=>s.id===wantStep);
   const step = FLOW[i>=0?i:1];
   return <SessionPage role={activeRole} stepId={step.id} initialTab={tabProp}/>;
