@@ -6,10 +6,7 @@ import {
   Github, Folder, MessageSquare, FileText, Cloud, Users, AlertCircle
 } from "lucide-react";
 
-/* Settings — Connector library (Step Zero · simplified POC)
-   Single combined screen · option C · no drill-down
-   Owner persona · An Qu\u00e2n V\u0169 (Platform Admin · IT)
-   3 connected + 3 available + 2 coming soon */
+/* Settings — Connector library (Step Zero) */
 
 const CONNECTORS = [
   { id: "trello",  name: "Trello",        icon: AlertCircle, iconBg: "bg-blue-50",    iconColor: "text-blue-600",   status: "connected", health: "Healthy",  stats: "3 boards \u00b7 162 cards",  lastSync: "2 min ago",   desc: "Kanban boards and cards" },
@@ -34,12 +31,12 @@ export default function SettingsConnectors() {
           <div className="flex items-center gap-2 text-violet-700 mb-1">
             <SettingsIcon className="w-5 h-5" strokeWidth={1.75} />
             <span className="text-xs uppercase tracking-wider font-semibold" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>
-              Settings \u00b7 Step Zero
+              {"Settings \u00b7 Step Zero"}
             </span>
           </div>
           <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Connectors</h1>
           <p className="text-sm text-gray-500 mt-1">
-            {connected} connected \u00b7 {available} available \u00b7 {coming} coming soon
+            {connected}{" connected \u00b7 "}{available}{" available \u00b7 "}{coming}{" coming soon"}
           </p>
         </div>
         <button type="button" className="shrink-0 h-9 px-3 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30 cursor-pointer">
@@ -83,7 +80,7 @@ function ConnectorCard({ c }) {
       {isConnected && <>
         <div className="flex items-center gap-1.5 mb-1.5">
           <div className={`w-[5px] h-[5px] rounded-full ${healthDot}`}></div>
-          <span className={`text-[10px] font-medium ${healthText}`}>Connected \u00b7 {c.health}</span>
+          <span className={`text-[10px] font-medium ${healthText}`}>{"Connected \u00b7 "}{c.health}</span>
         </div>
         <p className="text-[11px] text-gray-600 mb-0.5">{c.stats}</p>
         <p className="text-[10px] text-gray-400" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>
