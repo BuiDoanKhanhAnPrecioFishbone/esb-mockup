@@ -8,11 +8,8 @@ import {
   Briefcase,
   Network,
   Settings,
-  HelpCircle,
   Bell,
   Search,
-  BookOpen,
-  Compass,
   LayoutGrid,
   Layers,
   AlertOctagon,
@@ -63,21 +60,16 @@ const PRIMARY_NAV: NavItem[] = [
   },
 ];
 
+// Only Design states stays in the "More" section for now. Spec traces, Team
+// guide, and Help are hidden from the sidebar (pages still exist at /spec
+// and /guide; just not surfaced in nav).
 const SECONDARY_NAV: NavItem[] = [
-  {
-    label: "Spec traces",
-    href: "/spec",
-    icon: Compass,
-    match: (p) => p.startsWith("/spec"),
-  },
   {
     label: "Design states",
     href: "/states",
     icon: LayoutGrid,
     match: (p) => p.startsWith("/states"),
   },
-  { label: "Team guide", href: "/guide", icon: BookOpen, match: (p) => p.startsWith("/guide") },
-  { label: "Help", icon: HelpCircle, disabled: true },
 ];
 
 // Routes where the State switcher round-trips through the URL (?step=) so
@@ -189,10 +181,14 @@ function Sidebar({ pathname }: { pathname: string }) {
           <NavLink key={item.label} item={item} pathname={pathname} />
         ))}
 
-        <NavSectionLabel className="mt-4">More</NavSectionLabel>
-        {SECONDARY_NAV.map((item) => (
-          <NavLink key={item.label} item={item} pathname={pathname} />
-        ))}
+        {SECONDARY_NAV.length > 0 && (
+          <>
+            <NavSectionLabel className="mt-4">More</NavSectionLabel>
+            {SECONDARY_NAV.map((item) => (
+              <NavLink key={item.label} item={item} pathname={pathname} />
+            ))}
+          </>
+        )}
       </nav>
 
       <div className="border-t border-gray-200 px-4 py-3 text-[11px] text-gray-500">
