@@ -39,7 +39,7 @@ export default function CreateSession({ embedded = false } = {}) {
 
       <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-3 flex items-center gap-1.5">
         <Users className="w-3 h-3" />
-        Upcoming departures from HRIS \u00b7 {OFFBOARDERS.length}
+        {"Upcoming departures from HRIS \u00b7 "}{OFFBOARDERS.length}
       </p>
 
       <div className="space-y-3">
@@ -77,7 +77,6 @@ function DepartureCard({ person, isExpanded, onToggle }) {
     <div className={`rounded-lg border bg-white transition-all ${
       isExpanded ? "border-violet-300 shadow-sm" : "border-gray-200 hover:border-gray-300"
     }`}>
-      {/* Header (always visible) */}
       <button
         onClick={onToggle}
         className="w-full px-4 py-3.5 flex items-center gap-3 text-left focus:outline-none focus:ring-2 focus:ring-violet-500/20 rounded-lg"
@@ -90,7 +89,7 @@ function DepartureCard({ person, isExpanded, onToggle }) {
             <h3 className="text-sm font-semibold text-gray-900">{person.name}</h3>
             <span className="text-[10px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{person.daysLeft}d left</span>
           </div>
-          <p className="text-[12px] text-gray-500">{person.role} \u00b7 {person.dept} \u00b7 Last day {person.lastDay}</p>
+          <p className="text-[12px] text-gray-500">{person.role} {"\u00b7"} {person.dept} {"\u00b7"} Last day {person.lastDay}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <span className={`text-[11px] font-medium ${
@@ -100,53 +99,35 @@ function DepartureCard({ person, isExpanded, onToggle }) {
         </div>
       </button>
 
-      {/* Expanded content */}
       {isExpanded && (
         <div className="px-4 pb-4 pt-0 border-t border-gray-100 mt-0">
           <div className="pt-4 space-y-5">
-            {/* Review deadline */}
             <div>
               <label className="text-[11px] text-gray-500 uppercase tracking-wider font-medium mb-1.5 block">Review deadline</label>
               <div className="flex items-center gap-2">
                 <div className="relative flex-1">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-                  <input
-                    type="text"
-                    value={deadline}
-                    onChange={(e) => setDeadline(e.target.value)}
-                    className="w-full h-10 pl-9 pr-3 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400"
-                  />
+                  <input type="text" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="w-full h-10 pl-9 pr-3 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400" />
                 </div>
                 <span className="text-[10px] text-gray-400 shrink-0">Last day minus 4 days (editable)</span>
               </div>
             </div>
 
-            {/* Board picker */}
             <div>
               <label className="text-[11px] text-gray-500 uppercase tracking-wider font-medium mb-1.5 block">
-                Data sources \u2014 Trello boards <span style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>({selectedCount} selected)</span>
+                {"Data sources \u2014 Trello boards"} <span style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>({selectedCount} selected)</span>
               </label>
               <div className="space-y-2">
                 {BOARDS.map(b => {
                   const isOn = boardSelection[b.id];
                   return (
-                    <button
-                      key={b.id}
-                      onClick={() => handleBoardToggle(b.id)}
-                      className={`w-full rounded-lg border p-3 text-left transition-all flex items-center gap-3 focus:outline-none focus:ring-2 focus:ring-violet-500/20 ${
-                        isOn
-                          ? "border-violet-300 bg-violet-50/30"
-                          : "border-gray-200 bg-white hover:border-gray-300"
-                      }`}
-                    >
-                      <div className={`w-5 h-5 rounded border inline-flex items-center justify-center shrink-0 transition-colors ${
-                        isOn ? "bg-violet-600 border-violet-600" : "bg-white border-gray-300"
-                      }`}>
+                    <button key={b.id} onClick={() => handleBoardToggle(b.id)} className={`w-full rounded-lg border p-3 text-left transition-all flex items-center gap-3 focus:outline-none focus:ring-2 focus:ring-violet-500/20 ${isOn ? "border-violet-300 bg-violet-50/30" : "border-gray-200 bg-white hover:border-gray-300"}`}>
+                      <div className={`w-5 h-5 rounded border inline-flex items-center justify-center shrink-0 transition-colors ${isOn ? "bg-violet-600 border-violet-600" : "bg-white border-gray-300"}`}>
                         {isOn && <Check className="w-3 h-3 text-white" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium text-gray-900">{b.name}</div>
-                        <div className="text-[11px] text-gray-500">{b.cards} cards \u00b7 last active {b.lastActive}</div>
+                        <div className="text-[11px] text-gray-500">{b.cards} cards {"\u00b7"} last active {b.lastActive}</div>
                       </div>
                       {b.suggested && (
                         <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-600 font-medium border border-violet-200">Suggested</span>
@@ -157,17 +138,9 @@ function DepartureCard({ person, isExpanded, onToggle }) {
               </div>
             </div>
 
-            {/* CTA */}
             <div className="flex items-center justify-between pt-4 border-t border-gray-200">
               <button onClick={() => {}} className="text-sm text-gray-500 hover:text-gray-700 transition-colors">Cancel</button>
-              <Link
-                href={`/session/${person.id}`}
-                className={`h-10 px-5 rounded-lg text-sm font-medium inline-flex items-center gap-2 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30 ${
-                  selectedCount > 0
-                    ? "bg-violet-600 hover:bg-violet-700 text-white"
-                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                }`}
-              >
+              <Link href={`/session/${person.id}`} className={`h-10 px-5 rounded-lg text-sm font-medium inline-flex items-center gap-2 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30 ${selectedCount > 0 ? "bg-violet-600 hover:bg-violet-700 text-white" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}>
                 Start session<ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
