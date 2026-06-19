@@ -12,7 +12,9 @@ import { useViewAs } from "@/lib/view-as";
 
 /* ═══ Dashboard — CL-122/123/124/125/126/127 ═══
    Role + state come from the global "View as" + "State" switchers (lib/view-as).
-   Coworker A/B are demo-data nuances within the single "coworker" role. */
+   Coworker A/B are demo-data nuances within the single "coworker" role.
+   URL pinning (CL-129+): role/state passed as props override context. Used
+   by /states matrix thumbnails and shareable deep links via app/page.tsx. */
 
 const ROLES = [
   { id: "manager", label: "Hà Vy", sub: "Manager / HR", icon: "HV" },
@@ -90,9 +92,12 @@ const SHA_FEED = [
   ]},
 ];
 
-export default function HaVyHandoverDashboard({ embedded = false } = {}) {
-  const { role, state } = useViewAs();
-  const stepId = state || (role === "offboarder" ? "active-queue" : "active");
+export default function HaVyHandoverDashboard({ embedded = false, role: roleProp, state: stateProp } = {}) {
+  const { role: ctxRole, state: ctxState } = useViewAs();
+  const pinned = !!roleProp;
+  const role = pinned ? roleProp : ctxRole;
+  const rawState = pinned ? (stateProp || "") : ctxState;
+  const stepId = rawState || (role === "offboarder" ? "active-queue" : "active");
   return <RoleRenderer role={role} stepId={stepId} />;
 }
 

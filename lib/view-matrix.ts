@@ -10,7 +10,7 @@
 //      routes each role may see, and where to send them when one is blocked).
 //   4. Drive the global "State" switcher (which cases of the current view a
 //      viewer can flip through, and the default to land on).
-//
+
 // Keep this in sync whenever a surface or its states change.
 
 export type Visibility = "visible" | "disabled" | "hidden";
@@ -98,8 +98,11 @@ export interface Flow {
   label: string;
   route: string;
   group: "workspace" | "session" | "spec";
-  matrix?: "session"; // session flow uses the role×step×tab matrix above
-  states?: FlowState[]; // other flows enumerate a flat list of notable states
+  // "session" → role × step × tab matrix (sessionUrl).
+  // "dashboard" → role × DASHBOARD_STATES[role] matrix (dashboardUrl).
+  // otherwise → flat list of states.
+  matrix?: "session" | "dashboard";
+  states?: FlowState[];
 }
 
 export const FLOWS: Flow[] = [
@@ -108,6 +111,7 @@ export const FLOWS: Flow[] = [
     label: "Handover dashboard",
     route: "/",
     group: "workspace",
+    matrix: "dashboard",
     states: [{ id: "default", label: "Active sessions" }],
   },
   {
@@ -178,6 +182,15 @@ export const FLOWS: Flow[] = [
 // the session-command-view clean-product-mode edit).
 export function sessionUrl(role: string, step: string, tab: string): string {
   return `/session/minh-le?role=${role}&step=${step}&tab=${tab}`;
+}
+
+// Clean-product URL for a dashboard role × state cell. Mirrors sessionUrl;
+// app/page.tsx reads ?role= and ?state= and pins the dashboard to that cell.
+export function dashboardUrl(role: string, state?: string): string {
+  const params = new URLSearchParams();
+  params.set("role", role);
+  if (state) params.set("state", state);
+  return `/?${params.toString()}`;
 }
 
 // --- Runtime access control for the global "View as" switcher --------------
