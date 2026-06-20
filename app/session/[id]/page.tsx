@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { ComponentType } from "react";
 import { AppShell } from "@/components/app/AppShell";
 import SessionCommandViewImpl from "@/components/mockups/session-command-view.jsx";
+import SessionThanhTungImpl from "@/components/mockups/session-thanh-tung.jsx";
 
 type SCVProps = {
   embedded?: boolean;
@@ -12,14 +13,15 @@ type SCVProps = {
   tab?: string;
 };
 const SessionCommandView = SessionCommandViewImpl as unknown as ComponentType<SCVProps>;
+const SessionThanhTung = SessionThanhTungImpl as unknown as ComponentType<{ embedded?: boolean }>;
 
 type TabId = "overview" | "scope" | "data" | "logs";
 
-const SESSIONS: Record<string, { initials: "ml"; title: string }> = {
+const SESSIONS: Record<string, { initials: string; title: string; component?: string }> = {
   "minh-le": { initials: "ml", title: "Minh L\u00ea \u00b7 session command view" },
-  "thanh-tung": { initials: "ml", title: "Thanh T\u00f9ng \u00b7 session command view" },
-  "thanh-duc": { initials: "ml", title: "Thanh \u0110\u1ee9c \u00b7 session command view" },
-  "anh-thu": { initials: "ml", title: "Anh Th\u01b0 \u00b7 session command view" },
+  "thanh-tung": { initials: "tt", title: "Thanh T\u00f9ng \u00b7 session command view", component: "thanh-tung" },
+  "thanh-duc": { initials: "td", title: "Thanh \u0110\u1ee9c \u00b7 session command view" },
+  "anh-thu": { initials: "at", title: "Anh Th\u01b0 \u00b7 session command view" },
 };
 
 const VALID_TABS: TabId[] = ["overview", "scope", "data", "logs"];
@@ -40,6 +42,15 @@ export default async function SessionPage({
   const { id } = await params;
   const session = SESSIONS[id];
   if (!session) notFound();
+
+  // Thanh T\u00f9ng has a dedicated component showing "Waiting on you" Prepare state
+  if (session.component === "thanh-tung") {
+    return (
+      <AppShell>
+        <SessionThanhTung embedded />
+      </AppShell>
+    );
+  }
 
   const { tab, role, step } = await searchParams;
   const safeTab: TabId = (VALID_TABS as string[]).includes(tab ?? "")
