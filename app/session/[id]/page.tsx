@@ -16,7 +16,10 @@ const SessionCommandView = SessionCommandViewImpl as unknown as ComponentType<SC
 type TabId = "overview" | "scope" | "data" | "logs";
 
 const SESSIONS: Record<string, { initials: "ml"; title: string }> = {
-  "minh-le": { initials: "ml", title: "Minh Lê · session command view" },
+  "minh-le": { initials: "ml", title: "Minh L\u00ea \u00b7 session command view" },
+  "thanh-tung": { initials: "ml", title: "Thanh T\u00f9ng \u00b7 session command view" },
+  "thanh-duc": { initials: "ml", title: "Thanh \u0110\u1ee9c \u00b7 session command view" },
+  "anh-thu": { initials: "ml", title: "Anh Th\u01b0 \u00b7 session command view" },
 };
 
 const VALID_TABS: TabId[] = ["overview", "scope", "data", "logs"];
@@ -43,9 +46,6 @@ export default async function SessionPage({
     ? (tab as TabId)
     : "overview";
 
-  // Clean product mode: when a role is pinned via URL (e.g. opened from the
-  // /states preview stage), render the real app for that single role with no
-  // inline role/step switcher. The switcher belongs to the stage, not the product.
   if (role && VALID_ROLES.includes(role)) {
     const safeStep = VALID_STEPS.includes(step ?? "") ? (step as string) : "ready";
     const productTab: string = safeTab === "scope" ? "overview" : safeTab;
@@ -73,6 +73,6 @@ export async function generateMetadata({
   const { id } = await params;
   const s = SESSIONS[id];
   return {
-    title: s ? s.title : "Session · ART-EEP",
+    title: s ? s.title : "Session \u00b7 ART-EEP",
   };
 }
