@@ -60,9 +60,6 @@ const PRIMARY_NAV: NavItem[] = [
   },
 ];
 
-// Only Design states stays in the "More" section for now. Spec traces, Team
-// guide, and Help are hidden from the sidebar (pages still exist at /spec
-// and /guide; just not surfaced in nav).
 const SECONDARY_NAV: NavItem[] = [
   {
     label: "Design states",
@@ -72,9 +69,6 @@ const SECONDARY_NAV: NavItem[] = [
   },
 ];
 
-// Routes where the State switcher round-trips through the URL (?step=) so
-// deep links survive refresh and previews opened from /states stay shareable.
-// Today: session detail only. The dashboard stays clean (no ?state= in URL).
 function isUrlSyncedRoute(pathname: string): boolean {
   return pathname.startsWith("/session/") && pathname !== "/session/new";
 }
@@ -88,9 +82,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [viewState, setViewState] = useState("");
   const [note, setNote] = useState<string | null>(null);
 
-  // Seed the view-state on route/role/query change. On URL-synced routes the
-  // URL is the source of truth (so deep links + refresh land on the right
-  // state); elsewhere the surface default wins.
+  // Read role from login cookie on mount
+  useEffect(() => {
+    const m = document.cookie.match(/mockup_role=(\w+)/);
+    if (m && ["manager", "offboarder", "coworker"].includes(m[1])) {
+      setRole(m[1]);
+    }
+  }, []);
+
   useEffect(() => {
     if (isUrlSyncedRoute(pathname)) {
       const urlStep = searchParams?.get("step");
@@ -98,15 +97,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     } else {
       setViewState(defaultStateFor(pathname, role));
     }
-    // searchParamsString stands in for searchParams in the dep array so we
-    // re-run only when the actual query changes, not on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, role, searchParamsString]);
 
-  // The single setter the StateSwitcher and the ViewAsProvider's setState
-  // both point at. On URL-synced routes it also calls router.replace so the
-  // URL bar matches the view — making every state shareable and refresh-safe.
-  // Other params (role, tab) are preserved.
   const handleSetViewState = useCallback(
     (next: string) => {
       setViewState(next);
@@ -121,10 +114,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const handleSwitch = (r: string) => {
     setRole(r);
+    // Also update the cookie so refresh preserves the choice
+    document.cookie = `mockup_role=${r};path=/;max-age=${60 * 60 * 24 * 7};samesite=lax`;
     if (!isRouteAllowed(r, pathname)) {
       const persona = ROLES.find((x) => x.id === r);
       setNote(
-        `${persona?.label ?? "This role"} can't open this page — showing their dashboard.`
+        `${persona?.label ?? "This role"} can't open this page \u2014 showing their dashboard.`
       );
       router.push(defaultRoute(r));
     } else {
@@ -194,7 +189,7 @@ function Sidebar({ pathname }: { pathname: string }) {
       <div className="border-t border-gray-200 px-4 py-3 text-[11px] text-gray-500">
         <p className="font-medium text-gray-700">Mockup playground</p>
         <p className="leading-snug mt-0.5">
-          Live preview of ART-EEP surfaces. Changes ship via Claude → main → Vercel.
+          Live preview of ART-EEP surfaces. Changes ship via Claude &rarr; main &rarr; Vercel.
         </p>
       </div>
     </aside>
@@ -288,7 +283,7 @@ function TopBar({
           className="text-[10px] text-gray-400 border border-gray-200 rounded px-1 py-0.5"
           style={{ fontFamily: "ui-monospace, Menlo, monospace" }}
         >
-          ⌘K
+          &lcub;K
         </span>
       </div>
 
@@ -381,7 +376,7 @@ function StateSwitcher({
             ))}
           </ul>
           <div className="px-3 py-1.5 border-t border-gray-200 bg-gray-50/40">
-            <p className="text-[10px] text-gray-500">Preview · cases of this view</p>
+            <p className="text-[10px] text-gray-500">Preview &middot; cases of this view</p>
           </div>
         </div>
       )}
@@ -467,7 +462,7 @@ function ViewAsButton({ role, onSwitch }: { role: string; onSwitch: (r: string) 
             ))}
           </ul>
           <div className="px-3 py-1.5 border-t border-gray-200 bg-gray-50/40">
-            <p className="text-[10px] text-gray-500">Preview · switches the whole app</p>
+            <p className="text-[10px] text-gray-500">Preview &middot; switches the whole app</p>
           </div>
         </div>
       )}
@@ -509,8 +504,8 @@ const NOTIFICATIONS: Notification[] = [
     id: "n-kltran-urgent",
     icon: AlertOctagon,
     tone: "rose",
-    title: "Khánh Linh Trần is urgent",
-    detail: "2 days until departure · awaiting your initiation",
+    title: "Kh\u00e1nh Linh Tr\u1ea7n is urgent",
+    detail: "2 days until departure \u00b7 awaiting your initiation",
     time: "38m",
     href: "/session/new",
   },
@@ -518,8 +513,8 @@ const NOTIFICATIONS: Notification[] = [
     id: "n-minhle-committed",
     icon: CheckCircle2,
     tone: "emerald",
-    title: "Minh Lê committed to knowledge graph",
-    detail: "487 entries committed · Knowledge Graph access ready for the Senior Backend Engineer role",
+    title: "Minh L\u00ea committed to knowledge graph",
+    detail: "487 entries committed \u00b7 Knowledge Graph access ready for the Senior Backend Engineer role",
     time: "2h",
     href: "/session/minh-le",
   },
@@ -527,8 +522,8 @@ const NOTIFICATIONS: Notification[] = [
     id: "n-minhle-seeding",
     icon: Sparkles,
     tone: "violet",
-    title: "Minh Lê seeding finished",
-    detail: "Knowledge map ready · question queue ready",
+    title: "Minh L\u00ea seeding finished",
+    detail: "Knowledge map ready \u00b7 question queue ready",
     time: "4h",
     href: "/session/minh-le",
   },
@@ -594,7 +589,7 @@ function NotificationsButton() {
               className="text-[10px] text-gray-500"
               style={{ fontFamily: "ui-monospace, Menlo, monospace" }}
             >
-              {NOTIFICATIONS.length} unread · feed updates in near-real-time
+              {NOTIFICATIONS.length} unread &middot; feed updates in near-real-time
             </p>
           </div>
         </div>
