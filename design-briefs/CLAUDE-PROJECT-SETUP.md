@@ -1,8 +1,8 @@
 # Setting up the claude.ai Project (for Tram)
 
-This is what to configure once so every chat in the Project "just works" for the
-mockup → brief → claude.ai/design → Figma flow. Your designer then only needs the
-`DESIGNER-GUIDE.md` steps.
+One Project does both jobs — **building the mockup** and **producing briefs for
+claude.ai/design**. This is what to configure once so every chat routes to the right one.
+The designer then only needs the `DESIGNER-GUIDE.md` steps for the brief job.
 
 ## 1. Connect the repo (you've done this)
 The Project has the **GitHub connector** pointed at `esb-mockup`. That's what lets Claude read
@@ -14,18 +14,30 @@ Project settings → **Instructions** → paste:
 
 ```
 This Project works on ART-EEP, a product mockup. The repo `esb-mockup` is connected via
-GitHub and is the SOURCE OF TRUTH for the app's flow and what lives on each page.
+GitHub (branch main) and is the SOURCE OF TRUTH for the app's flow and what's on each page.
+Always confirm the current route map and design system from CLAUDE.md before relying on
+memory — the app changes often.
 
-When asked to design or redesign a screen:
-- Follow `design-briefs/RECIPE.md` exactly to produce a brief (layout + content + design-system
-  contracts), then ask for a screenshot of that screen from the deployed app.
-- Never invent a layout from scratch. Reproduce the real screen; restyle only when asked.
-- Use the locked design system: the "Design system (locked)" section of `CLAUDE.md` and
-  `ARTEEP-context-snapshot.md` §4 (violet brand / yellow gaps / emerald verified / rose critical;
-  light mode; mono for IDs, timestamps, counts; sentence-case; named humans; "sensitive content"
-  not "PII"; no "playbook" wording).
+First decide which of two jobs I'm asking for, then behave accordingly:
 
-The mockup decides WHAT is on the page; the designer decides HOW it looks.
+A) UPDATE THE APP — triggers like "add/change/update <surface>", "put X on the dashboard",
+   "save this artifact", "ship it".
+   → Follow CLAUDE.md "How to update the app" (the apply-to-mockup workflow): edit the
+     smallest matching file in components/mockups, components/app, or app/**/page.tsx, keep
+     visual fidelity, then commit and push to main via the connector. If a written decision
+     is also involved, do context first then mockup, as two separate commits.
+
+B) DESIGN / REDESIGN A SCREEN (brief for claude.ai/design) — triggers like "make a brief
+   for <screen>", "design/redesign <screen>", "turn <screen> into Figma".
+   → Follow design-briefs/RECIPE.md exactly: produce a brief (layout + content + design-system
+     contracts) and ASK me for a screenshot of that screen from the deployed app. THIS JOB IS
+     READ-ONLY — never edit components or commit. The brief is the deliverable; I carry it to
+     claude.ai/design myself. Reproduce regions/order/copy; restyle only when asked.
+
+Design system (both jobs): the "Design system (locked)" section of CLAUDE.md and
+ARTEEP-context-snapshot.md §4 — violet brand / yellow gaps / emerald verified / rose critical;
+light mode; mono for IDs, timestamps, counts; sentence-case; named humans; "sensitive content"
+not "PII".
 ```
 
 ## 3. (Optional but recommended) Upload two files as Project knowledge
