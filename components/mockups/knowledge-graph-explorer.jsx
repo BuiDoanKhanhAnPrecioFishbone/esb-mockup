@@ -1,10 +1,11 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { Send, Sparkles, X, ChevronRight, Flag, Filter } from "lucide-react";
+import Link from "next/link";
+import { Send, Sparkles, X, ChevronRight, Flag, Filter, BarChart3 } from "lucide-react";
 
 /* ART-EEP Consumer Plane — Knowledge Graph Explorer
    15 decisions + HITL report + filters + 0% hide on focus
-   Middot fix: JSX text uses {"\u00b7"} expressions */
+   "View insights" button on module/dept nodes links to /knowledge-graph/insights */
 
 const NODES = [
   { id:"eng", label:"Engineering", type:"dept", depth:0, summary:"Engineering department\n7 knowledge modules\n42 entries across 3 handovers" },
@@ -192,6 +193,7 @@ export default function KnowledgeGraphExplorer({embedded=false}={}){
             {selEdges.length>0&&<div className="border-t border-gray-100 pt-2 mb-2"><p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1.5">{"Cross-links ("}{selEdges.filter(e=>e.type==="cross").length}{")"}</p>{selEdges.filter(e=>e.type==="cross").map((e,i)=>{const oid=e.from===selData.id?e.to:e.from;const o=NODES.find(n=>n.id===oid);if(!o)return null;return <button key={i} onClick={()=>{setSelected(oid);if(o.parent)setExpanded(prev=>new Set([...prev,o.parent]));setReportingNode(null);setReportText("");}} className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-violet-50 text-left cursor-pointer transition-colors"><ChevronRight className="w-3 h-3 text-gray-400"/><span className="text-[11px] text-gray-800 flex-1">{o.label}</span>{e.label&&<span className="text-[9px] text-gray-400">{e.label}</span>}</button>;})}</div>}
             <div className="border-t border-gray-100 pt-2 flex flex-col gap-1.5">
               <button onClick={()=>onAsk(selData.id)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-violet-50 border border-violet-200 text-violet-700 text-[11px] font-medium hover:bg-violet-100 transition-colors cursor-pointer"><Sparkles className="w-3 h-3"/>{"Ask about this "}{selData.type}</button>
+              {(selData.type==="module"||selData.type==="dept")&&<Link href={`/knowledge-graph/insights${selData.type==="module"?`?node=${selData.id}`:""}`} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white border border-gray-200 text-gray-600 text-[11px] font-medium hover:bg-gray-50 hover:border-gray-300 transition-colors"><BarChart3 className="w-3 h-3"/>View insights</Link>}
               {selData.type==="entry"&&!reported.has(selData.id)&&!reportingNode&&<button onClick={()=>setReportingNode(selData.id)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white border border-gray-200 text-gray-600 text-[11px] font-medium hover:bg-gray-50 hover:border-gray-300 transition-colors cursor-pointer"><Flag className="w-3 h-3"/>Report an issue</button>}
             </div>
             {reportingNode===selData.id&&<div className="mt-2 rounded-lg bg-rose-50/50 border border-rose-200 p-3"><div className="flex items-center justify-between mb-2"><span className="text-[10px] font-medium text-rose-700 flex items-center gap-1"><Flag className="w-3 h-3"/>Report an issue</span><button onClick={()=>{setReportingNode(null);setReportText("");}} className="text-gray-400 hover:text-gray-600 cursor-pointer"><X className="w-3 h-3"/></button></div><p className="text-[9px] text-gray-500 mb-1">Current content</p><div className="bg-gray-100 rounded-md px-2.5 py-2 text-[10px] text-gray-400 line-through leading-relaxed mb-2">{selData.summary}</div><p className="text-[9px] text-gray-500 mb-1">{"Your correction "}<span className="text-gray-400">(optional)</span></p><textarea value={reportText} onChange={e=>setReportText(e.target.value)} placeholder="What should it say instead?" className="w-full h-16 px-2.5 py-2 text-[11px] border border-emerald-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500/20 text-gray-700 placeholder:text-gray-400 resize-none"/><div className="flex justify-end mt-2"><button onClick={()=>onSubmitReport(selData.id)} className="px-3 py-1.5 rounded-md bg-white border border-rose-300 text-rose-700 text-[10px] font-medium hover:bg-rose-50 transition-colors cursor-pointer">Submit correction</button></div></div>}
