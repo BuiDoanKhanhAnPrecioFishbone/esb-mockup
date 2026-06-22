@@ -27,20 +27,29 @@ function calcDeadline(daysLeft) {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-export default function CreateSession({ embedded = false } = {}) {
+export default function CreateSession({ embedded = false, asSection = false } = {}) {
   const [expandedId, setExpandedId] = useState(null);
 
   const content = (
     <div className="max-w-2xl mx-auto p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Create session</h1>
-        <Link href="/" className="text-xs text-gray-500 hover:text-gray-700 transition-colors">Cancel</Link>
-      </div>
-
-      <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-3 flex items-center gap-1.5">
-        <Users className="w-3 h-3" />
-        {"Upcoming departures from HRIS \u00b7 "}{OFFBOARDERS.length}
-      </p>
+      {asSection ? (
+        <h1 className="text-xl font-semibold text-gray-900 tracking-tight mb-5 flex items-center gap-2">
+          <Users className="w-4 h-4 text-gray-400" />
+          Upcoming departures from HRIS
+          <span className="text-sm font-normal text-gray-400" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{"\u00b7 "}{OFFBOARDERS.length}</span>
+        </h1>
+      ) : (
+        <>
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Create session</h1>
+            <Link href="/" className="text-xs text-gray-500 hover:text-gray-700 transition-colors">Cancel</Link>
+          </div>
+          <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-3 flex items-center gap-1.5">
+            <Users className="w-3 h-3" />
+            {"Upcoming departures from HRIS \u00b7 "}{OFFBOARDERS.length}
+          </p>
+        </>
+      )}
 
       <div className="space-y-3">
         {OFFBOARDERS.map(person => (
