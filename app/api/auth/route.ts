@@ -2,46 +2,32 @@ import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
+const VALID_ROLES = ["manager", "offboarder", "coworker"];
+
+// No password — signing in IS picking a role. POST sets the role cookie that
+// follows the user until they log out; DELETE clears it (logout).
 export async function POST(req: Request) {
-  const { password, role } = (await req.json()) as { password?: string; role?: string };
-  const expected = process.env.MOCKUP_PASSWORD;
-  const token = process.env.MOCKUP_AUTH_TOKEN;
+  const { role } = (await req.json()) as { role?: string };
 
-  if (!expected || !token) {
-    return NextResponse.json(
-      { error: "Server is missing MOCKUP_PASSWORD or MOCKUP_AUTH_TOKEN." },
-      { status: 500 },
-    );
-  }
-
-  if (password !== expected) {
-    return NextResponse.json({ error: "Wrong password." }, { status: 401 });
+  if (!role || !VALID_ROLES.includes(role)) {
+    return NextResponse.json({ error: "Pick a role." }, { status: 400 });
   }
 
   const res = NextResponse.json({ ok: true });
-  res.cookies.set("esb_auth", token, {
-    httpOnly: true,
+  res.cookies.set("mockup_role", role, {
+    httpOnly: false, // readable by client JS so AppShell picks it up on mount
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: 60 * 60 * 24 * 7,
   });
-  // Role cookie — readable by client JS so AppShell can pick it up on mount
-  if (role && ["manager", "offboarder", "coworker"].includes(role)) {
-    res.cookies.set("mockup_role", role, {
-      httpOnly: false,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7,
-    });
-  }
   return res;
 }
 
 export async function DELETE() {
   const res = NextResponse.json({ ok: true });
-  res.cookies.delete("esb_auth");
   res.cookies.delete("mockup_role");
+  // Clear the legacy password cookie too, in case an old session still has it.
+  res.cookies.delete("esb_auth");
   return res;
 }

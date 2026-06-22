@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const PUBLIC_PREFIXES = ["/login", "/api/auth"];
+const VALID_ROLES = ["manager", "offboarder", "coworker"];
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -10,13 +11,11 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const expected = process.env.MOCKUP_AUTH_TOKEN;
-  const cookie = req.cookies.get("esb_auth")?.value;
-
-  if (!expected || cookie !== expected) {
-    const loginUrl = new URL("/login", req.url);
-    loginUrl.searchParams.set("from", pathname);
-    return NextResponse.redirect(loginUrl);
+  // No password gate — a role IS the login. You must have picked a role
+  // (mockup_role cookie) to enter; otherwise back to the role-select page.
+  const role = req.cookies.get("mockup_role")?.value;
+  if (!role || !VALID_ROLES.includes(role)) {
+    return NextResponse.redirect(new URL("/login", req.url));
   }
 
   return NextResponse.next();
