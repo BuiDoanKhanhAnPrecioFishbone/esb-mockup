@@ -22,3 +22,10 @@ Desktop) use-figma. See `design-briefs/DESIGNER-GUIDE.md`.
   screenshots need no clicking.
 - This is the **hero batch** (~10 representative archetypes), not all ~87 canonical states.
   The long tail is deferred until this batch's quality is validated in claude.ai/design.
+
+### Gotcha for regeneration — role chrome follows a cookie, not the URL
+The `?role=` URL param drives the **page content**, but the topbar **role pill + State
+switcher** read the `mockup_role` cookie (set at login / by the "View as" switcher). So when
+capturing offboarder/coworker states, set the cookie first or the chrome will still show the
+manager (Hà Vy). In Playwright: `document.cookie = "mockup_role=offboarder;path=/"` then
+navigate. The manager states need no change (manager is the default cookie).
