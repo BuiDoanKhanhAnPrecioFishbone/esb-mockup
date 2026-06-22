@@ -15,7 +15,7 @@
 
 - **Source of truth:** `components/mockups/knowledge-graph-explorer.jsx` (embedded in `components/app/AppShell.tsx`)
 - **Route / capture URL:** `/knowledge-graph` (no query params; the `?prompt=` from-session entry is *not* active in this state)
-- **Live state captured:** default load — `selected=null`, `expanded={}` (empty), `chatFocus=null`, `chatResponse=""`, all filters `all`. Side panel collapsed (canvas full-width).
+- **Live state captured:** default load — `selected=null`, `expanded={}` (empty), `chatFocus=null`, `chatResponse=""`, all filters `all`, `resolvedGaps={}`, `dismissedGaps={}`. Side panel collapsed (canvas full-width).
 - **Viewport:** 1440×900, light mode.
 
 ---
@@ -85,7 +85,7 @@ Walk top-to-bottom. All strings are exact.
 - Search box, placeholder **`Search sessions, people, or knowledge`**, trailing key hint **`{K`** (rendered from `&lcub;K`).
 - Spacer, then bell icon with a rose unread dot (`bg-rose-500`).
 - *(StateSwitcher is hidden here — `/knowledge-graph` has ≤1 view state, so it does not render.)*
-- User pill: violet circle initials **`HV`** + **`Hà Vy`** / **`Manager / HR`**, chevron. (Role label is the default `manager`.)
+- User pill: violet circle initials **`HV`** + **`Hà Vy`** / **`Manager / HR`**, chevron. (Role label is the default `manager` cookie.)
 
 ### Header row (explorer)
 - Violet rounded tile with white `Sparkles` icon.
@@ -118,12 +118,13 @@ Only depth ≤ 1 nodes are visible (no module is expanded, so no entry/system no
   - `Infrastructure as …` (full: `Infrastructure as Code`)
 - **Edges:** 7 solid thin gray hierarchy lines from hub to each module. (No dashed cross-links visible in collapsed state — they connect entry-level nodes that are hidden.)
 - **No tooltip, no selection ring** in resting state (those appear only on hover/click).
+- **Gap coloring rule (current):** a node is drawn yellow (`#fef9c3` fill / `#facc15` stroke) ONLY while it is an *active* gap — i.e. `hasGap` AND not yet resolved AND not yet dismissed. Resolved gaps and dismissed gaps both revert to the standard purple node treatment (no yellow, no badge). At depth ≤1 no entry node is visible, so all visible nodes are gray (hub) or violet (modules) — no yellow appears in this default frame, but the rule governs what the legend's `Gap` swatch maps to.
 
 ### Legend pill (bottom-left of canvas)
 Single row, 9px gray-400 text, each with a colored dot:
 - `●` gray (`bg-gray-200`) **`Structural`**
 - `●` violet (`bg-violet-100`) **`Knowledge`**
-- `●` yellow (`bg-yellow-100`) **`Gap`**
+- `●` yellow (`bg-yellow-100`) **`Gap`** — only *active* (unresolved, undismissed) gaps
 - `●` rose (`bg-rose-100`) **`Reported`**
 - `|` divider, then **`Solid = hierarchy`**  **`Dashed = cross-link`**
 
@@ -137,6 +138,13 @@ Single row, 9px gray-400 text, each with a colored dot:
   - **`Incident response`**
 - Input row: text input, placeholder **`Ask about the knowledge graph...`** (gray-50 bg, gray-200 border) + violet **`Send`** button with paper-plane (`Send`) icon (violet-600, white text).
 
+### Latent side panel — gap-resolution behavior (NOT visible in default; appears on node click)
+Not rendered in this resting state, but it is the part that changed most recently — capture it so a redesign of the selected-node panel stays faithful:
+- When an **entry node with an active gap** is selected, the panel shows the badges, then **a yellow gap-action card placed ABOVE the summary** (previously the gap buttons sat below the summary): a `border-yellow-200` card with a 2px yellow left accent, an `AlertTriangle` + copy **`AI flagged this entry as a knowledge gap. Review and take action.`**, and two buttons — emerald **`Mark as resolved`** (`CheckCircle2`) and outline **`Dismiss gap`** (`XCircle`).
+- **Resolve →** node returns to a *normal verified* entry: violet, status badge reads **`Verified`** (violet-50/violet-700), no gap badge. A brief emerald confirmation card (`Gap resolved by Hà Vy · entry is now verified.`) shows only while that node stays selected, then is gone.
+- **Dismiss →** node returns to a *normal draft* entry: status badge reads **`Draft`** (gray-50/gray-600), no gap badge, no confirmation card.
+- Net: resolved and dismissed gaps are visually indistinguishable from any other verified / draft entry — there is **no lingering "resolved" or "dismissed" badge** on the node or in the entry list.
+
 ---
 
 ## 3. Style contract
@@ -145,12 +153,12 @@ Light mode only. `bg-gray-50` canvas, `bg-white` surfaces, 1px `border-gray-200`
 
 | Token | Where it's used in this screen |
 |---|---|
-| **violet-600 / 700** | AI/Copilot signal — header logo tile, `AI Copilot` badge, active filter chips, Send button, active nav item, `+` glyph on module nodes, `Expand all`. Violet is the AI/brand accent throughout. |
-| **violet-50 / 100 / 200** | Module node fill (`#f5f3ff`) + stroke (`#c4b5fd`), active-nav background, Copilot badge background, soft chip hovers, the (latent) Copilot answer card. |
-| **gray (zinc) neutrals** | Department hub fill `#f4f4f5` / stroke `#d4d4d8`; canvas `bg-gray-50`; structural hierarchy edges; body text gray-600/700/900; inactive chips. |
-| **pastel yellow** | Knowledge **gap** signal — legend `Gap` dot, gap node fill `#fef9c3` / stroke `#facc15`. (No gap node is visible at depth ≤1, but the legend swatch and `Has gaps` filter use it.) |
+| **violet-600 / 700** | AI/Copilot signal — header logo tile, `AI Copilot` badge, active filter chips, Send button, active nav item, `+` glyph on module nodes, `Expand all`. Violet is the AI/brand accent throughout. Also: a resolved gap reverts to violet (verified) here. |
+| **violet-50 / 100 / 200** | Module node fill (`#f5f3ff`) + stroke (`#c4b5fd`), active-nav background, Copilot badge background, soft chip hovers, the (latent) Copilot answer card, the `Verified` badge on a resolved entry. |
+| **gray (zinc) neutrals** | Department hub fill `#f4f4f5` / stroke `#d4d4d8`; canvas `bg-gray-50`; structural hierarchy edges; body text gray-600/700/900; inactive chips; the `Draft` badge on a dismissed entry. |
+| **pastel yellow** | Knowledge **gap** signal — legend `Gap` dot, active-gap node fill `#fef9c3` / stroke `#facc15`, and the latent gap-action card. Yellow appears ONLY for active (unresolved, undismissed) gaps; once acted on, the node leaves yellow entirely. (No gap node is visible at depth ≤1.) |
+| **emerald** | Verified/canonical action accent — the `Mark as resolved` button and the transient `Gap resolved…` confirmation card in the latent side panel. Not surfaced in this collapsed frame. |
 | **rose** | Critical/reported signal only — topbar unread bell dot, legend `Reported` dot. Reserved for urgency/corrections. |
-| **emerald** | Verified/canonical accent (not surfaced in this collapsed state; appears in side-panel report flow). |
 | **muted blue** | Entity badges for projects/products — not present on this surface. |
 
 **Type rules:**
@@ -159,7 +167,7 @@ Light mode only. `bg-gray-50` canvas, `bg-white` surfaces, 1px `border-gray-200`
 - Sentence-case English UX writing. Named humans (`Minh Lê`, `Thanh Đức`, `Hà Vy`) — Vietnamese diacritics must be exact.
 
 **Buttons / controls:**
-- 32px control heights in chrome (`h-8`); compact `py-1`/`py-1.5` buttons inside the explorer.
+- 32px control heights in chrome (`h-8`); compact `py-1`/`py-1.5` buttons inside the explorer; latent gap-card buttons are `h-7`.
 - `rounded-md` buttons, `rounded-full` filter/Quick-Start chips, `rounded-lg` cards/canvas.
 - Explicit focus rings: `focus:ring-2 focus:ring-violet-500/20` on chrome; `focus:ring-1 focus:ring-violet-500/20` on the chat input.
 
@@ -175,6 +183,7 @@ Light mode only. `bg-gray-50` canvas, `bg-white` surfaces, 1px `border-gray-200`
 - The collapsed hub-and-spoke topology: 1 `Eng` hub + 7 named modules + 7 hierarchy edges, nothing else visible.
 - The default chip/filter states: `Status=All`, `Contributor=All`, `Has gaps` off; no Copilot answer card; no side panel.
 - Violet = AI/Copilot signal; the legend's four-color semantic mapping.
+- **Gap semantics (changed recently):** yellow means *active gap only*; resolved → normal verified (violet, no badge); dismissed → normal draft (gray, no badge). Don't invent a persistent "resolved/dismissed" pill. The latent gap-action card sits ABOVE the entry summary.
 
 **Free (visual treatment only):**
 - **Node X/Y positions are physics-driven (force-directed) and non-deterministic** — match the *region* (hub centered, modules ringed around it) and relative scale (hub bigger than modules), not exact coordinates. The screenshot shows one settled frame; don't pixel-match node placement.

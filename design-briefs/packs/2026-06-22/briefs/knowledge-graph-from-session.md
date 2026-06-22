@@ -1,6 +1,6 @@
 # Design brief — Knowledge Graph explorer · from-session entry (`?prompt=minh-le`)
 
-> **What this is:** the ART-EEP Knowledge Graph explorer as it renders when opened *from a session* via the deep-link `/knowledge-graph?prompt=minh-le`. This is **not** the default cold-start graph — on entry the copilot auto-fires Minh Lê's contributions prompt: the six modules Minh contributed to are pre-expanded, Minh's entries are focused/highlighted, the chat input is pre-filled, and a violet copilot answer is already shown above the input.
+> **What this is:** the ART-EEP Knowledge Graph explorer as it renders when opened *from a session* via the deep-link `/knowledge-graph?prompt=minh-le`. This is **not** the default cold-start graph — on entry the AI Copilot auto-fires Minh Lê's contributions prompt: the six modules Minh contributed to are pre-expanded, Minh's entries are focused/highlighted, the chat input is pre-filled, and a violet copilot answer is already shown above the input.
 >
 > **Reproduce, don't reinvent.** The screenshot is the positional ground-truth; this doc is the content + style contract. Re-render the regions in the same order, position, and proportion. Do not invent, drop, reorder, or move pieces. Re-skin visuals onto the design system below; keep every literal string exactly as written.
 
@@ -49,12 +49,12 @@
 
 **Key measurements (from Tailwind classes):**
 - **Sidebar** `w-56` = 224px, white, `border-r border-gray-200`. Logo row `h-12` (48px) with `border-b`.
-- **Topbar** `h-12` (48px), white, `border-b border-gray-200`, `px-4`, `gap-4`. Search box `h-8` (32px), `max-w-md`, `bg-gray-50` rounded with `⌘K` chip on the right; then a `flex-1` spacer, then bell, State switcher, View-as pill.
-- **Content column** vertical flex (`flex-col h-full`): graph header (`mb-2`), filter bar (`mb-2`), graph+panel row (`flex-1 min-h-0`), copilot dock (`mt-2`). Component root has `p-4` only in standalone mode; embedded under AppShell it omits the pad.
+- **Topbar** `h-12` (48px), white, `border-b border-gray-200`, `px-4`, `gap-4`. Search box `h-8` (32px), `max-w-md`, `bg-gray-50` rounded with `⌘K` chip on the right; then a `flex-1` spacer, then bell, State switcher, user pill.
+- **Content column** vertical flex (`flex-col h-full min-h-0`): graph header (`mb-2`), filter bar (`mb-2`), graph+panel row (`flex-1 min-h-0 flex gap-2`), copilot dock (`mt-2`). Component root has `p-4` only in standalone mode; embedded under AppShell it omits the pad.
 - **Graph canvas** is `w-full` here because **no node is selected** (`selected` is null). When a node *is* clicked the canvas becomes `w-3/5` and a `w-2/5` side panel opens — that panel is **absent** in this captured state.
 - **Header sparkle tile** `w-8 h-8` (32px) `rounded-lg bg-violet-600`. Header buttons `Expand all` / `Reset` are small pill buttons (`px-2.5 py-1 text-[11px]`).
 - **Filter chips** `px-2.5 py-1 text-[10px] rounded-full border`; vertical `|` dividers are `text-gray-200`.
-- **Copilot dock** white card `rounded-lg border px-3 py-2`. Answer box `rounded-md px-3 py-2`. Chip row `gap-1.5`. Input `h` ~ `py-1.5 text-[11px]`, Send button `bg-violet-600` `px-3 py-1.5`.
+- **Copilot dock** white card `rounded-lg border px-3 py-2`. Answer box `rounded-md px-3 py-2`. Chip row `gap-1.5`. Input `py-1.5 text-[11px]`, Send button `bg-violet-600` `px-3 py-1.5`.
 
 ---
 
@@ -72,13 +72,13 @@
 - Search field placeholder: **"Search sessions, people, or knowledge"** + mono **⌘K** chip (renders as `&lcub;K` literal in the snapshot — treat as the ⌘K keyboard hint).
 - Bell icon with a rose unread dot (`bg-rose-500`, top-right).
 - **State** switcher (Layers icon + "State") — present in chrome; on this route it has ≤1 state so it may not render a value. Keep the control slot.
-- User pill: violet circle initials **HV**, name **Hà Vy**, sub **Manager / HR**, chevron. *(This is the logged-in viewer's identity from the role cookie; the screenshot shows the Manager/HR role.)*
+- User pill: violet circle initials **HV**, name **Hà Vy**, sub **Manager / HR**, chevron. *(This is the logged-in viewer's identity; the screenshot shows the Manager / HR role.)*
 
 ### C. Graph header
 - Violet sparkle tile, then:
   - **Knowledge Graph** (title, `text-sm font-semibold`)
   - Sub-line, mono-feel counts: **"Engineering · 7 modules · 19 entries · 42 relationships"**
-    - *(These are computed: 7 = modules in `NODES`, 19 = `type:"entry"` nodes, 42 = `EDGES.length`. Render exactly "7 modules · 19 entries · 42 relationships".)*
+    - *(These are computed: 7 = `type:"module"` nodes, 19 = `type:"entry"` nodes, 42 = `EDGES.length`. Render exactly "7 modules · 19 entries · 42 relationships".)*
 - Right side buttons: **Expand all** (violet, `bg-violet-50 text-violet-700`) and **Reset** (gray, `bg-gray-100`).
 
 ### D. Filter bar
@@ -90,10 +90,10 @@
 ### E. Graph canvas (focused on Minh Lê)
 Force-directed graph on `bg-gray-50`. **Node positions are physics-driven and will differ run to run — do not pin exact coordinates.** What is fixed:
 - **Center hub:** one gray department node labeled **Engineering**, with **"Eng"** rendered inside the circle. `dept` radius 28px, gray fill `#f4f4f5` / gray stroke `#d4d4d8`.
-- **Module ring (the 6 Minh modules are expanded in this state):** violet circles (fill `#f5f3ff`, stroke `#c4b5fd`, radius 18px) each showing a **−** glyph (expanded) and a label below:
+- **Module ring (the 6 Minh modules are expanded in this state):** violet circles (fill `#f5f3ff`, stroke `#c4b5fd`, radius 18px) each showing a **−** glyph (expanded, violet `#6d28d9`) and a label below:
   - **Payment Processing** · **Auth & Identity** · **Database & Migrati…** · **CI/CD & Deployments** · **Monitoring** · **Rate Limiting & API**
   - The 7th module **Infrastructure as Code** is Thanh-Đức-only; not in `chatFocus`, so it is dimmed/hidden in the focused view.
-- **Entry nodes** (radius 10px) fan out from each expanded module. Verified entries are violet; **gap entries are yellow** (fill `#fef9c3`, stroke `#facc15`). Visible entry labels (truncated to ~18 chars with "…") include, around their modules:
+- **Entry nodes** (radius 10px) fan out from each expanded module. Verified/draft entries are violet; **active gap entries are yellow** (fill `#fef9c3`, stroke `#facc15`). Visible entry labels (truncated to ~18 chars with "…") include, around their modules:
   - Payment: **Kafka Event Pipeline**, **Stripe Webhook Ver…**, **Payment Retry Race…**, **PCI Compliance Scope** *(yellow gap)*, **Stripe API Pinning**
   - Auth: **OAuth2 PKCE Flow**, **Azure AD SAML SSO**, **JWT Key Rotation** *(yellow gap)*, **RBAC Permission Ma…** *(yellow gap)*
   - Database: **Cosmos DB Partitio…**, **Migration v8 to v9** *(yellow gap)*, **Flyway Migration P…**
@@ -119,11 +119,11 @@ Force-directed graph on `bg-gray-50`. **Node positions are physics-driven and wi
 |---|---|
 | **violet 600** | Brand sparkle tile, active nav (`violet-50/700`), AI Copilot chip, active filter chip fill, Send button, copilot signal, primary CTAs |
 | **violet 50 / 100 / 200** | Answer box bg+border (`violet-50`/`violet-100`), knowledge nodes (`#f5f3ff` fill, `#c4b5fd` stroke), violet pill buttons |
-| **pastel yellow** | Knowledge-gap nodes (`#fef9c3` fill / `#facc15` stroke), the "Gap" legend dot — used for the 5 gap entries (PCI, JWT, RBAC, Migration v8→v9) |
-| **rose** | Notification unread dot in topbar; "Reported" legend dot only. No reported nodes in this state |
-| **emerald** | Not present in this captured state (emerald is used on the report-correction textarea, which is closed here) |
+| **pastel yellow** | **Active** knowledge-gap nodes only (`#fef9c3` fill / `#facc15` stroke), the "Gap" legend dot — the 5 unresolved gap entries (PCI Compliance Scope, JWT Key Rotation, RBAC Permission Matrix, Migration v8→v9, + one more in the focus set). **A gap that has been resolved or dismissed reverts to standard violet — yellow signals *only* an open, un-actioned gap** (see gap-resolution behavior in Notes) |
+| **emerald** | Reserved for the gap-action panel: the **"Mark as resolved"** button and the transient post-resolve confirmation card. **Not present in this captured state** (no node selected, so no detail panel / gap-action card is open) |
+| **rose** | Notification unread dot in topbar; "Reported" legend dot. No reported nodes in this state |
 | **muted blue** | Entity badges for projects/products — none surfaced in this graph state; reserve, don't invent |
-| **gray / neutral** | Canvas `bg-gray-50`, white surfaces, `border-gray-200` hairlines, department node (`#f4f4f5`/`#d4d4d8`), structural edges |
+| **gray / neutral** | Canvas `bg-gray-50`, white surfaces, `border-gray-200` hairlines, department node (`#f4f4f5`/`#d4d4d8`), structural edges, dismissed/draft entries |
 
 **Type rules**
 - Sans-serif body (Inter / system-ui). **Monospace** for the ART-EEP wordmark, section labels (WORKSPACE/MORE), the ⌘K chip, notification timestamps, and the count sub-line feel (IDs/counts/stats).
@@ -131,7 +131,7 @@ Force-directed graph on `bg-gray-50`. **Node positions are physics-driven and wi
 
 **Section-label spec:** uppercase, `text-[10px]`, `tracking-wider`, `font-semibold`, gray-400, mono.
 
-**Buttons / controls:** 32px (`h-8`) control height for topbar search/State/pill; pill buttons `px-2.5 py-1`. Explicit focus rings `focus:ring-2 focus:ring-violet-500/20`. 1px gray-200 hairlines; 2–3px semantic left accents only on side-panel cards (not visible here).
+**Buttons / controls:** 32px (`h-8`) control height for topbar search/State/pill; pill buttons `px-2.5 py-1`; gap-action buttons (in the detail panel, not visible here) `h-7`. Explicit focus rings `focus:ring-2 focus:ring-violet-500/20`. 1px gray-200 hairlines; 2–3px semantic left accents only on side-panel cards (not visible here).
 
 **Writing rules:** sentence-case English. Named humans ("Minh Lê", "Hà Vy"), never roles in body copy. Counts read as "42 entries across 6 modules", "5 knowledge gaps remain across 3 modules". Chrome stays role-neutral ("ART-EEP" wordmark). No "playbook" / no "PII" wording anywhere.
 
@@ -143,8 +143,12 @@ Force-directed graph on `bg-gray-50`. **Node positions are physics-driven and wi
 - The four stacked regions and their order: graph header → filter bar → graph canvas (full-width, no side panel) → copilot dock at the bottom.
 - All literal copy: the count sub-line "Engineering · 7 modules · 19 entries · 42 relationships"; the filter labels and chip names; the legend; the **pre-filled input string** "Show me Minh Lê's contributions"; and the **answer-box paragraph** verbatim.
 - The from-session signature: copilot answer already shown (not empty), input pre-filled, the 6 Minh modules expanded with **−** glyphs, Minh's entries focused, no node-detail panel open.
-- The 5 gap entries render yellow (PCI Compliance Scope, JWT Key Rotation, RBAC Permission Matrix, Migration v8 to v9 + one more in the focus set) — gap = yellow, never violet.
-- Sidebar/topbar chrome from AppShell, with **Knowledge graph** as the active nav item and the **HV / Hà Vy / Manager / HR** user pill.
+- The 5 **open** gap entries render yellow (PCI Compliance Scope, JWT Key Rotation, RBAC Permission Matrix, Migration v8 to v9, + one more in the focus set) — an open gap = yellow, never violet.
+
+**Gap-resolution behavior (recently changed — reflect in any interactive redesign):**
+- Yellow is reserved strictly for an **active, un-actioned** gap. The detail-panel gap-action card offers two paths: **"Mark as resolved"** (emerald button) and **"Dismiss gap"** (neutral button). **Both** return the node to **standard purple/violet** — Resolve renders it as a normal **Verified** entry, Dismiss renders it as a normal **Draft** entry. There is no separate "resolved-but-still-tinted" color.
+- The green/emerald confirmation card ("Gap resolved by Hà Vy · entry is now verified.") is **transient selection feedback only** — it shows while that node stays selected, not a persistent state color on the node.
+- *In this captured state none of that is on screen* (no node is selected, so no gap-action card, no Resolve/Dismiss buttons, no green confirmation). The behavior note matters only if the redesign makes nodes clickable; the static screenshot shows all 5 gaps still **open and yellow**.
 
 **Free (re-skin allowed):**
 - Exact node coordinates, ring radius, and edge curvature — the layout is force-directed, so match the *gestalt* (Eng hub center, modules around it, entries fanned outward), not pixel positions.
