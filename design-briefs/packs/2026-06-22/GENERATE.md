@@ -29,6 +29,13 @@ For dense screens (e.g. the Data tab) where Mode A drifts, do them individually:
 > `design-briefs/packs/2026-06-22/screens/<id>.png`. Reproduce it exactly — same regions, order,
 > positions, and copy; restyle only the visuals on the brief's design system.
 
+## Mode C — one interactive app (not frames)
+
+Want the whole thing as a single clickable HTML that *behaves* like the mockup (login, sidebar
+nav, tabs, lifecycle CTAs, logout) instead of separate frames? Use
+**`design-briefs/INTERACTIVE-PROTOTYPE.md`** — it wires these same states into one navigable,
+restyleable app.
+
 ## Why "one at a time"
 
 Generating many screens in a single pass splits the model's attention and details drift — the

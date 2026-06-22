@@ -62,7 +62,7 @@ must trace the conditionals for the *exact* params given, not describe the compo
 | `/` | `components/mockups/ha-vy-handover-dashboard.jsx` | 4 role tabs (Manager/Offboarder/Coworker A/B) |
 | `/session/new` | `components/mockups/create-session.jsx` | departure accordion + board picker |
 | `/sessions` | `components/mockups/all-sessions.jsx` | Active / Completed / All filter |
-| `/session/[id]` | `components/mockups/session-command-view.jsx` (+ `session-deliver.jsx`) | **5 steps** (Collecting→Ready→Capture→Deliver→Complete) × **3 roles** (Manager/Offboarder/Coworker) × **3 tabs** (Overview/Data/Logs), driven by the topbar **State** switcher + role pill |
+| `/session/[id]` | `components/mockups/session-command-view.jsx` (+ `session-deliver.jsx`) | **5 steps** (Collecting→Ready→Capture→Deliver→Complete) × **3 roles** (Manager/Offboarder/Coworker) × **3 tabs** (Overview/Data/Logs), addressable via URL params `?role=&step=&tab=`; role is set at login, the topbar **State** switcher flips steps (the in-app role switcher was removed) |
 | `/knowledge-graph` | `components/mockups/knowledge-graph-explorer.jsx` | force-directed graph · `?prompt=minh-le` from-session entry |
 | `/spec/uc-ho-01/normal` | `components/mockups/uc-ho-01-normal-flow.jsx` | internal step index |
 | `/spec/uc-ho-01/edges` | `components/mockups/uc-ho-01-edge-cases.jsx` | internal step index |
@@ -102,10 +102,13 @@ Emit a markdown doc with this structure (match the depth of the format skeleton 
 
 End the brief with a request:
 
-> *"Open the deployed app, go to `<route>`, and attach a full-page screenshot here. That's the
-> positional ground-truth the layout contract is describing."*
+> *"Open the deployed app, **sign in as the role for this screen** (the login is a role-select),
+> go to `<route>`, and attach a full-page screenshot here. That's the positional ground-truth the
+> layout contract is describing."*
 
-(The app is live on the password-protected Vercel URL — navigate to the exact state, screenshot, paste.)
+(The app is live on Vercel; there's no password — the login picks a role, and the topbar chrome
+follows the role you log in as. Sign in as the right role, navigate to the exact state,
+screenshot, paste.)
 
 ## Step 5 — Hand off to claude.ai/design
 

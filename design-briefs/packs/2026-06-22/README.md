@@ -30,7 +30,8 @@ Desktop) use-figma. See `design-briefs/DESIGNER-GUIDE.md`.
 
 ### Gotcha for regeneration — role chrome follows a cookie, not the URL
 The `?role=` URL param drives the **page content**, but the topbar **role pill + State
-switcher** read the `mockup_role` cookie (set at login / by the "View as" switcher). So when
+switcher** read the `mockup_role` cookie (set at login — the in-app "View as" switcher was
+removed; role now comes only from the login role-select). So when
 capturing offboarder/coworker states, set the cookie first or the chrome will still show the
 manager (Hà Vy). In Playwright: `document.cookie = "mockup_role=offboarder;path=/"` then
 navigate. The manager states need no change (manager is the default cookie).
