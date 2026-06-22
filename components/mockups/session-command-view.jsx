@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, ArrowRight, X, CheckCircle2, Clock, AlertTriangle, Sparkles, Bell, Layers, User, FileText, ChevronDown, Plus, MessageCircle, Upload, Paperclip, Pencil, Trash2, Check } from "lucide-react";
 import { DeliverOverview, CompleteOverview } from "./session-deliver";
@@ -32,6 +32,17 @@ export const SESSION = {
 const SEED_GQ = [
   { id: "gq1", q: "What\u2019s the process for handling customer escalations?", from: "Coworker", fromType: "human", answer: "On-call engineer first. P1: page lead via PagerDuty. Engineering provides RCA within 24h.", answeredBy: "Minh L\u00ea", answeredAt: "1d ago", satisfiedBy: "H\u00e0 Vy", satisfiedAt: "3h" },
   { id: "gq2", q: "Are there any undocumented vendor agreements I should know about?", from: "H\u00e0 Vy", fromType: "human" },
+];
+// Offboarder's question queue — shared by the Overview (dashboard UI) and the Data tab
+// (flat list). Stable ids let a click in Overview scroll to + flash the matching Data row.
+const OB_QUEUE = [
+  { id: "obq1", q: "What are the undocumented rate limits on the payment API?", from: "Coworker", fromType: "human", module: "Payment Service", answered: false },
+  { id: "obq2", q: "Is there a runbook for the nightly batch job failures?", from: "Coworker", fromType: "human", module: "CI/CD Pipeline", answered: false },
+  { id: "obq3", q: "What’s the rollback procedure for the Atlas migration?", from: "Hà Vy", fromType: "human", module: "CI/CD Pipeline", answered: false },
+  { id: "obq4", q: "How does the Kafka retry logic handle poison messages?", from: "AI-generated", fromType: "ai", module: "Payment Service", answered: false },
+  { id: "obq5", q: "Who owns the vendor XYZ contract renewal?", from: "AI-generated", fromType: "ai", module: "Inventory Sync", answered: false },
+  { id: "oba1", q: "Where is the API key rotation doc?", module: "Shared Libraries", answered: true, satisfied: true, answer: "Engineering wiki at /security/api-key-rotation.md. Rotates every 90 days via GitHub Action." },
+  { id: "oba2", q: "Who should I contact about the SLA penalty terms?", module: "Inventory Sync", answered: true, satisfied: false, answer: "Talk to Linh Phạm in Procurement — she handled the last renewal. SLA doc at /vendor-contracts." },
 ];
 export const MODULES_DATA = [
   { board: "Backend Services", boardCards: 34, modules: [
@@ -88,6 +99,9 @@ function SessionPage({ role, stepId, initialTab }) {
   const [activeTab, setActiveTab] = useState(initialTab || "overview");
   const [generalQs, setGeneralQs] = useState(SEED_GQ);
   const [addedModQs, setAddedModQs] = useState([]);
+  const [focusQ, setFocusQ] = useState(null);
+  const [focusKey, setFocusKey] = useState(0);
+  const openQuestion = (id) => { setFocusQ(id); setFocusKey((k) => k + 1); setActiveTab("data"); };
   const phase = stepId==="capture"?"capture":stepId==="deliver"||stepId==="complete"?"deliver":"prepare";
   const isPrepare = phase==="prepare";
   const isReady = stepId!=="collecting";
@@ -99,7 +113,7 @@ function SessionPage({ role, stepId, initialTab }) {
   const addModQ = (text, modName) => { if (!text.trim()) return; setAddedModQs(prev => [...prev, { id: `mq${++qId}`, q: text.trim(), from: "H\u00e0 Vy", fromType: "human", module: modName }]); };
   const editModQ = (id, text) => { setAddedModQs(prev => prev.map(q => q.id === id ? { ...q, q: text } : q)); };
   const deleteModQ = (id) => { setAddedModQs(prev => prev.filter(q => q.id !== id)); };
-  return <div className="max-w-5xl mx-auto p-6"><HeroBar phase={phase} stepId={stepId}/><div className="flex gap-0 border-b border-gray-200 mb-5">{tabs.filter(t=>!t.hidden).map(t=><button key={t.id} onClick={()=>!t.disabled&&setActiveTab(t.id)} className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors cursor-pointer ${activeTab===t.id?"border-violet-600 text-gray-900":t.disabled?"border-transparent text-gray-300 cursor-not-allowed":"border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>{t.label}</button>)}</div>{activeTab==="overview"&&<OverviewContent role={role} stepId={stepId} isReady={isReady} onSwitchTab={setActiveTab}/>}{activeTab==="data"&&<DataContent role={role} stepId={stepId} isReady={isReady} canEditQs={canEditQs} generalQs={generalQs} addedModQs={addedModQs} onAddGQ={addGQ} onEditGQ={editGQ} onDeleteGQ={deleteGQ} onAddModQ={addModQ} onEditModQ={editModQ} onDeleteModQ={deleteModQ}/>}{activeTab==="logs"&&<LogsContent role={role} stepId={stepId}/>}</div>;
+  return <div className="max-w-5xl mx-auto p-6"><HeroBar phase={phase} stepId={stepId}/><div className="flex gap-0 border-b border-gray-200 mb-5">{tabs.filter(t=>!t.hidden).map(t=><button key={t.id} onClick={()=>!t.disabled&&setActiveTab(t.id)} className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors cursor-pointer ${activeTab===t.id?"border-violet-600 text-gray-900":t.disabled?"border-transparent text-gray-300 cursor-not-allowed":"border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>{t.label}</button>)}</div>{activeTab==="overview"&&<OverviewContent role={role} stepId={stepId} isReady={isReady} onSwitchTab={setActiveTab} onOpenQuestion={openQuestion}/>}{activeTab==="data"&&<DataContent role={role} stepId={stepId} isReady={isReady} canEditQs={canEditQs} generalQs={generalQs} addedModQs={addedModQs} onAddGQ={addGQ} onEditGQ={editGQ} onDeleteGQ={deleteGQ} onAddModQ={addModQ} onEditModQ={editModQ} onDeleteModQ={deleteModQ} focusQ={focusQ} focusKey={focusKey}/>}{activeTab==="logs"&&<LogsContent role={role} stepId={stepId}/>}</div>;
 }
 
 function HeroBar({ phase, stepId }) {
@@ -109,10 +123,10 @@ function HeroBar({ phase, stepId }) {
   return <div className="rounded-lg border border-gray-200 bg-white p-4 mb-5 flex items-center gap-4"><div className={`w-12 h-12 rounded-full ${stepId==="complete"?"bg-emerald-100 text-emerald-700":"bg-violet-100 text-violet-700"} text-sm font-semibold inline-flex items-center justify-center shrink-0`}>{stepId==="complete"?<CheckCircle2 className="w-5 h-5"/>:SESSION.initials}</div><div className="flex-1 min-w-0"><div className="flex items-center gap-2 mb-0.5"><h1 className="text-lg font-semibold text-gray-900">{SESSION.name}&apos;s session</h1><span className={`text-[9px] px-2 py-0.5 rounded uppercase tracking-wider font-semibold border ${cls[phase]}`}>{label}</span></div><p className="text-[12px] text-gray-500">{SESSION.role}{" \u00b7 "}{SESSION.dept}</p><p className="text-[11px] text-gray-500 mt-0.5" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{stepId!=="complete"?`${SESSION.daysLeft}d left \u00b7 `:""}{metrics}</p></div></div>;
 }
 
-function OverviewContent({ role, stepId, isReady, onSwitchTab }) {
+function OverviewContent({ role, stepId, isReady, onSwitchTab, onOpenQuestion }) {
   if (stepId==="complete") return <CompleteOverview role={role} S={SESSION} MC={MC}/>;
   if (stepId==="deliver") return <DeliverOverview role={role} onSwitchTab={onSwitchTab} S={SESSION} MD={MODULES_DATA} modProgress={modProgress} MC={MC} ProgressBar={ProgressBar}/>;
-  if (role==="offboarder") return <OffboarderOverview stepId={stepId}/>;
+  if (role==="offboarder") return <OffboarderOverview stepId={stepId} onSwitchTab={onSwitchTab} onOpenQuestion={onOpenQuestion}/>;
   if (role==="coworker") return <CoworkerOverview stepId={stepId} isReady={isReady} onSwitchTab={onSwitchTab}/>;
   return <ManagerOverview stepId={stepId} isReady={isReady} onSwitchTab={onSwitchTab}/>;
 }
@@ -123,9 +137,28 @@ function ManagerOverview({ stepId, isReady, onSwitchTab }) {
   return <div className="space-y-4"><div className="rounded-lg border border-gray-200 bg-white p-5"><h3 className="text-sm font-semibold text-gray-900 mb-3">Data collection complete</h3><div className="grid grid-cols-4 gap-3 mb-4"><MC l="Boards" v={SESSION.boards}/><MC l="Cards" v={SESSION.cards}/><MC l="Areas" v={SESSION.modules}/><MC l="Questions" v={SESSION.questions}/></div><div className="pt-3 border-t border-gray-100 space-y-2"><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Knowledge areas</p><div className="flex flex-wrap gap-1.5">{["Payment Service","CI/CD Pipeline","Shared Libraries","Monitoring & Alerts","Infrastructure as Code"].map(m=><span key={m} className="text-[11px] px-2 py-1 rounded-md bg-gray-50 border border-gray-200 text-gray-700">{m}</span>)}</div></div><div className="pt-3 mt-3 border-t border-gray-100 grid grid-cols-2 gap-3"><div><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">Coworker engagement</p><p className="text-[12px] text-gray-700">2 of 3 have asked questions</p></div><div><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">Knowledge gaps</p><p className="text-[12px] text-gray-700">6 gaps (3 card + 3 AI)</p></div></div></div><div className="flex items-center gap-3"><button onClick={()=>onSwitchTab("data")} className="h-9 px-4 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer">Review in Data tab</button><Link href={`/session/${SESSION.id}`} className="h-9 px-4 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center gap-2">{"Start Capture"}<ArrowRight className="w-3.5 h-3.5"/></Link></div></div>;
 }
 
-function OffboarderOverview({ stepId }) {
-  if (stepId==="capture") return <div className="rounded-lg border border-violet-200 bg-violet-50/30 p-5"><div className="flex items-center gap-2 mb-3"><Sparkles className="w-4 h-4 text-violet-600"/><h3 className="text-sm font-semibold text-gray-900">Your question queue</h3></div><ProgressBar/><p className="text-[12px] text-gray-500 mb-3">{SESSION.questions-SESSION.answered}{" remaining"}</p><Link href={`/session/${SESSION.id}?tab=data`} className="h-8 px-4 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium inline-flex items-center gap-1.5">Open question queue<ArrowRight className="w-3 h-3"/></Link></div>;
-  return <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center"><div className="w-12 h-12 rounded-full bg-gray-100 inline-flex items-center justify-center mb-3 mx-auto"><Clock className="w-5 h-5 text-gray-400" strokeWidth={1.5}/></div><h3 className="text-sm font-medium text-gray-700 mb-1">Your session is being prepared</h3><p className="text-xs text-gray-500">{"You\u2019ll be notified when ready."}</p></div>;
+function OffboarderOverview({ stepId, onSwitchTab, onOpenQuestion }) {
+  if (stepId!=="capture") return <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center"><div className="w-12 h-12 rounded-full bg-gray-100 inline-flex items-center justify-center mb-3 mx-auto"><Clock className="w-5 h-5 text-gray-400" strokeWidth={1.5}/></div><h3 className="text-sm font-medium text-gray-700 mb-1">Your session is being prepared</h3><p className="text-xs text-gray-500">{"You\u2019ll be notified when your question queue is ready."}</p></div>;
+  const waiting = OB_QUEUE.filter(q=>!q.answered); const answered = OB_QUEUE.filter(q=>q.answered);
+  const QCard = ({ q, done }) => (<button onClick={()=>onOpenQuestion(q.id)} className="w-full text-left block rounded-lg border border-gray-200 bg-white px-4 py-3 hover:border-violet-300 hover:shadow-sm transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-violet-500/20"><div className="text-[13px] text-gray-900 mb-1">{q.q}</div><div className="text-[11px] text-gray-500 flex items-center gap-1.5">{done?<CheckCircle2 className="w-3 h-3 text-emerald-500"/>:q.fromType==="ai"?<Sparkles className="w-3 h-3 text-violet-500"/>:<User className="w-3 h-3"/>}<span>{done?"Answered":q.from}</span>{done&&(q.satisfied?<span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">{"\u2713 Satisfied"}</span>:<span className="text-[9px] text-gray-400">waiting for review</span>)}<span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 ml-1">{q.module}</span></div>{done&&q.answer&&<p className="text-[11px] text-gray-500 mt-1.5 italic leading-relaxed">&quot;{q.answer}&quot;</p>}</button>);
+  return <div className="max-w-2xl">
+    <div className="rounded-lg border border-emerald-200 bg-emerald-50/40 text-emerald-800 px-4 py-2.5 mb-4 text-[12px] flex items-center gap-2"><Clock className="w-3.5 h-3.5 shrink-0"/><span><span className="font-semibold">{SESSION.daysLeft}{" days"}</span>{" until your last day \u00b7 July 4, 2026"}</span></div>
+    <div className="grid grid-cols-3 gap-3 mb-4"><QTile label="To answer" value={SESSION.questions-SESSION.answered} tone="urgent"/><QTile label="Answered" value={SESSION.answered} tone="good"/><QTile label="Files uploaded" value={2} tone="normal"/></div>
+    <div className="flex items-center gap-3 mb-4"><div className="flex-1 h-[5px] rounded-full bg-gray-200 overflow-hidden"><div className="h-full rounded-full bg-violet-500" style={{width:`${Math.round(SESSION.answered/SESSION.questions*100)}%`}}/></div><span className="text-[11px] text-gray-500" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{SESSION.answered}{" / "}{SESSION.questions}</span></div>
+    <p className="text-[10px] text-gray-500 uppercase tracking-[0.2em] font-medium">Questions waiting for you <span className="text-gray-400" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{"\u00b7 "}{waiting.length}</span></p>
+    <div className="space-y-2 mt-2">{waiting.map(q=><QCard key={q.id} q={q}/>)}</div>
+    <div className="mt-3"><button onClick={()=>onSwitchTab("data")} className="h-8 px-4 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer">Open question queue<ArrowRight className="w-3 h-3"/></button><p className="text-[10px] text-gray-400 mt-1.5">Opens in Data tab</p></div>
+    <div className="mt-6"><p className="text-[10px] text-gray-500 uppercase tracking-[0.2em] font-medium">Recently answered <span className="text-gray-400" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{"\u00b7 "}{SESSION.answered}</span></p><div className="space-y-2 mt-2">{answered.map(q=><QCard key={q.id} q={q} done/>)}</div></div>
+  </div>;
+}
+function QTile({ label, value, tone }) { const c = { urgent: "text-rose-600", good: "text-emerald-600", normal: "text-gray-900" }[tone]; return <div className="rounded-lg border border-gray-200 bg-white p-3"><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">{label}</p><p className={`text-xl font-semibold ${c}`} style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{value}</p></div>; }
+function OffboarderQueue({ focusQ, focusKey }) {
+  const refs = useRef({}); const [flash, setFlash] = useState(null);
+  useEffect(()=>{ if(!focusQ) return; const el = refs.current[focusQ]; if(el) el.scrollIntoView({behavior:"smooth", block:"center"}); setFlash(focusQ); const t = setTimeout(()=>setFlash(null), 1600); return ()=>clearTimeout(t); }, [focusKey, focusQ]);
+  return <div className="space-y-2">
+    <style>{"@keyframes qflash{0%{box-shadow:0 0 0 2px #a78bfa;background:#f5f3ff}100%{box-shadow:0 0 0 0 rgba(0,0,0,0);background:#ffffff}}"}</style>
+    {OB_QUEUE.map(q=><div key={q.id} ref={el=>{refs.current[q.id]=el;}} style={flash===q.id?{animation:"qflash 1.6s ease-out"}:undefined} className="rounded-lg border border-gray-200 bg-white px-4 py-3"><div className="text-[13px] text-gray-900 mb-1">{q.q}</div><div className="text-[11px] text-gray-500 flex items-center gap-1.5">{q.answered?<CheckCircle2 className="w-3 h-3 text-emerald-500"/>:q.fromType==="ai"?<Sparkles className="w-3 h-3 text-violet-500"/>:<User className="w-3 h-3"/>}<span>{q.answered?"Answered":q.from}</span>{q.answered&&(q.satisfied?<span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">{"\u2713 Satisfied"}</span>:<span className="text-[9px] text-gray-400">waiting for review</span>)}<span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 ml-1">{q.module}</span></div>{q.answered?<div className="mt-2 rounded-md px-3 py-2 bg-gray-50 border-l-2 border-emerald-400"><p className="text-[11px] text-gray-800 leading-relaxed">{q.answer}</p></div>:<AnswerInput/>}</div>)}
+  </div>;
 }
 
 function CoworkerOverview({ stepId, isReady, onSwitchTab }) {
@@ -142,12 +175,13 @@ function EditableQuestion({ q, onEdit, onDelete, canEdit }) {
   return <div className="flex items-start gap-2 group"><div className="flex-1"><div className="text-[12px] text-gray-900">{q.q}</div><div className="text-[10px] text-gray-500 flex items-center gap-1 mt-0.5">{q.fromType==="ai"||q.from==="AI-generated"?<Sparkles className="w-2.5 h-2.5 text-violet-500"/>:<User className="w-2.5 h-2.5"/>}<span>{q.from}</span></div></div>{canEdit&&<div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"><button onClick={()=>setEditing(true)} className="w-6 h-6 rounded hover:bg-gray-100 inline-flex items-center justify-center text-gray-400 hover:text-gray-600 cursor-pointer" title="Edit"><Pencil className="w-3 h-3"/></button><button onClick={()=>onDelete(q.id)} className="w-6 h-6 rounded hover:bg-rose-50 inline-flex items-center justify-center text-gray-400 hover:text-rose-600 cursor-pointer" title="Delete"><Trash2 className="w-3 h-3"/></button></div>}</div>;
 }
 
-function DataContent({ role, stepId, isReady, canEditQs, generalQs, addedModQs, onAddGQ, onEditGQ, onDeleteGQ, onAddModQ, onEditModQ, onDeleteModQ }) {
+function DataContent({ role, stepId, isReady, canEditQs, generalQs, addedModQs, onAddGQ, onEditGQ, onDeleteGQ, onAddModQ, onEditModQ, onDeleteModQ, focusQ, focusKey }) {
   const [selectedCard, setSelectedCard] = useState(null);
   const [gqInput, setGqInput] = useState("");
   const isCapture = stepId==="capture"; const isDeliver = stepId==="deliver"||stepId==="complete"; const isComplete = stepId==="complete"; const readOnly = isDeliver;
   if (role==="offboarder"&&!isCapture&&!isDeliver) return <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center"><h3 className="text-sm font-medium text-gray-700 mb-1">Questions are being collected</h3><p className="text-xs text-gray-500">{"You\u2019ll see them when Capture starts."}</p></div>;
   if (!isReady) return <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center"><div className="w-10 h-10 rounded-full bg-violet-50 inline-flex items-center justify-center mb-3 mx-auto"><div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-violet-500 animate-spin"/></div><h3 className="text-sm font-medium text-gray-700 mb-1">Data is being collected...</h3></div>;
+  if (role==="offboarder" && isCapture) return <OffboarderQueue focusQ={focusQ} focusKey={focusKey}/>;
   const showAnswers = isCapture||isDeliver;
   const handleGQAsk = () => { if(gqInput.trim()){ onAddGQ(gqInput); setGqInput(""); } };
   return <div className="relative"><div>

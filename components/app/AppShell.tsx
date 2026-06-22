@@ -121,7 +121,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif',
         }}
       >
-        <Sidebar pathname={pathname} />
+        <Sidebar pathname={pathname} role={role} />
         <div className="flex-1 min-w-0 flex flex-col">
           <TopBar
             role={role}
@@ -136,7 +136,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Sidebar({ pathname }: { pathname: string }) {
+function Sidebar({ pathname, role }: { pathname: string; role: string }) {
+  // Offboarder gets a minimal nav — just their Dashboard (which is their session view).
+  const primary = role === "offboarder" ? PRIMARY_NAV.filter((i) => i.label === "Dashboard") : PRIMARY_NAV;
   return (
     <aside className="hidden md:flex flex-col w-56 shrink-0 border-r border-gray-200 bg-white">
       <div className="h-12 px-4 flex items-center gap-2 border-b border-gray-200">
@@ -151,7 +153,7 @@ function Sidebar({ pathname }: { pathname: string }) {
 
       <nav className="flex-1 px-2 py-3 flex flex-col gap-0.5">
         <NavSectionLabel>Workspace</NavSectionLabel>
-        {PRIMARY_NAV.map((item) => (
+        {primary.map((item) => (
           <NavLink key={item.label} item={item} pathname={pathname} />
         ))}
 
