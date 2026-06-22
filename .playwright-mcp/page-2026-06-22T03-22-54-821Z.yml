@@ -1,0 +1,159 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e6]: ART-EEP
+      - navigation [ref=e7]:
+        - paragraph [ref=e8]: Workspace
+        - link "Dashboard" [ref=e9] [cursor=pointer]:
+          - /url: /
+          - img [ref=e10]
+          - generic [ref=e15]: Dashboard
+        - link "Sessions" [ref=e16] [cursor=pointer]:
+          - /url: /sessions
+          - img [ref=e17]
+          - generic [ref=e20]: Sessions
+        - link "Knowledge graph" [ref=e21] [cursor=pointer]:
+          - /url: /knowledge-graph
+          - img [ref=e22]
+          - generic [ref=e27]: Knowledge graph
+        - link "Settings" [ref=e28] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e29]
+          - generic [ref=e32]: Settings
+        - paragraph [ref=e33]: More
+        - link "Design states" [ref=e34] [cursor=pointer]:
+          - /url: /states
+          - img [ref=e35]
+          - generic [ref=e40]: Design states
+      - generic [ref=e41]:
+        - paragraph [ref=e42]: Mockup playground
+        - paragraph [ref=e43]: Live preview of ART-EEP surfaces. Changes ship via Claude → main → Vercel.
+    - generic [ref=e44]:
+      - banner [ref=e45]:
+        - generic [ref=e46]:
+          - img [ref=e47]
+          - textbox "Search sessions, people, or knowledge" [ref=e50]
+          - generic [ref=e51]: "&lcub;K"
+        - button "Notifications" [ref=e53]:
+          - img [ref=e54]
+        - button "HV Hà Vy Manager / HR" [ref=e59]:
+          - generic [ref=e60]: HV
+          - generic [ref=e61]:
+            - generic [ref=e62]: Hà Vy
+            - generic [ref=e63]: Manager / HR
+          - img [ref=e64]
+      - main [ref=e66]:
+        - generic [ref=e67]:
+          - generic [ref=e68]:
+            - generic [ref=e69]:
+              - img [ref=e71]
+              - generic [ref=e73]:
+                - heading "Knowledge Graph" [level=2] [ref=e74]
+                - paragraph [ref=e75]: Engineering · 7 modules · 19 entries · 42 relationships
+            - generic [ref=e76]:
+              - button "Expand all" [ref=e77] [cursor=pointer]
+              - button "Reset" [ref=e78] [cursor=pointer]
+          - generic [ref=e79]:
+            - generic [ref=e80]:
+              - img [ref=e81]
+              - generic [ref=e83]: Status
+              - button "All" [ref=e84] [cursor=pointer]
+              - button "Verified" [ref=e85] [cursor=pointer]
+              - button "Draft" [ref=e86] [cursor=pointer]
+            - generic [ref=e87]: "|"
+            - generic [ref=e88]:
+              - generic [ref=e89]: Contributor
+              - button "All" [ref=e90] [cursor=pointer]
+              - button "Minh Lê" [ref=e91] [cursor=pointer]
+              - button "Thanh Đức" [ref=e92] [cursor=pointer]
+            - generic [ref=e93]: "|"
+            - button "Has gaps" [ref=e95] [cursor=pointer]
+          - generic [ref=e97]:
+            - img [ref=e98]:
+              - generic [ref=e127]:
+                - generic [ref=e162] [cursor=pointer]:
+                  - generic: Eng
+                  - generic: Engineering
+                - generic [ref=e164] [cursor=pointer]:
+                  - generic: −
+                  - generic: Payment Processing
+                - generic [ref=e166] [cursor=pointer]:
+                  - generic: −
+                  - generic: Auth & Identity
+                - generic [ref=e168] [cursor=pointer]:
+                  - generic: −
+                  - generic: Database & Migrati…
+                - generic [ref=e170] [cursor=pointer]:
+                  - generic: −
+                  - generic: CI/CD & Deployments
+                - generic [ref=e172] [cursor=pointer]:
+                  - generic: −
+                  - generic: Monitoring
+                - generic [ref=e174] [cursor=pointer]:
+                  - generic: −
+                  - generic: Rate Limiting & API
+                - generic [ref=e176] [cursor=pointer]:
+                  - generic: Kafka Event Pipeline
+                - generic [ref=e178] [cursor=pointer]:
+                  - generic: Stripe Webhook Ver…
+                - generic [ref=e180] [cursor=pointer]:
+                  - generic: Payment Retry Race…
+                - generic [ref=e182] [cursor=pointer]:
+                  - generic: PCI Compliance Scope
+                - generic [ref=e184] [cursor=pointer]:
+                  - generic: Stripe API Pinning
+                - generic [ref=e186] [cursor=pointer]:
+                  - generic: OAuth2 PKCE Flow
+                - generic [ref=e188] [cursor=pointer]:
+                  - generic: Azure AD SAML SSO
+                - generic [ref=e190] [cursor=pointer]:
+                  - generic: JWT Key Rotation
+                - generic [ref=e192] [cursor=pointer]:
+                  - generic: RBAC Permission Ma…
+                - generic [ref=e194] [cursor=pointer]:
+                  - generic: Cosmos DB Partitio…
+                - generic [ref=e196] [cursor=pointer]:
+                  - generic: Migration v8 to v9
+                - generic [ref=e198] [cursor=pointer]:
+                  - generic: Flyway Migration P…
+                - generic [ref=e200] [cursor=pointer]:
+                  - generic: GitHub Actions Mat…
+                - generic [ref=e202] [cursor=pointer]:
+                  - generic: Helm Rollback Proc…
+                - generic [ref=e204] [cursor=pointer]:
+                  - generic: Grafana Dashboard …
+                - generic [ref=e206] [cursor=pointer]:
+                  - generic: SLA & Escalation P…
+                - generic [ref=e208] [cursor=pointer]:
+                  - generic: Token Bucket Rate …
+                - generic [ref=e210] [cursor=pointer]:
+                  - generic: API Versioning & S…
+            - generic [ref=e99]:
+              - generic [ref=e100]: Structural
+              - generic [ref=e102]: Knowledge
+              - generic [ref=e104]: Gap
+              - generic [ref=e106]: Reported
+              - generic [ref=e108]: "|"
+              - generic [ref=e109]: Solid = hierarchy
+              - generic [ref=e110]: Dashed = cross-link
+          - generic [ref=e111]:
+            - generic [ref=e212]:
+              - paragraph [ref=e213]: Minh Lê contributed 42 entries across 6 modules (Payment, Auth, Database, CI/CD, Monitoring, Rate Limiting). 5 knowledge gaps remain across 3 modules.
+              - button "Clear" [ref=e214] [cursor=pointer]
+            - generic [ref=e112]:
+              - generic [ref=e113]:
+                - img [ref=e114]
+                - text: AI Copilot
+              - button "Show risks" [ref=e116] [cursor=pointer]
+              - button "Critical paths" [ref=e117] [cursor=pointer]
+              - button "Auth flow" [ref=e118] [cursor=pointer]
+              - button "Deploy pipeline" [ref=e119] [cursor=pointer]
+              - button "Incident response" [ref=e120] [cursor=pointer]
+            - generic [ref=e121]:
+              - textbox "Ask about the knowledge graph..." [ref=e122]: Show me Minh Lê's contributions
+              - button "Send" [ref=e123] [cursor=pointer]:
+                - img [ref=e124]
+                - text: Send
+  - button "Open Next.js Dev Tools" [ref=e220] [cursor=pointer]:
+    - img [ref=e221]
+  - alert [ref=e224]
