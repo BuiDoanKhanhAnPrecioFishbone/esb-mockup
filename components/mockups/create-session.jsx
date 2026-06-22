@@ -140,9 +140,15 @@ function DepartureCard({ person, isExpanded, onToggle }) {
 
             <div className="flex items-center justify-between pt-4 border-t border-gray-200">
               <button onClick={() => {}} className="text-sm text-gray-500 hover:text-gray-700 transition-colors">Cancel</button>
-              <Link href={`/session/${person.id}`} className={`h-10 px-5 rounded-lg text-sm font-medium inline-flex items-center gap-2 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30 ${selectedCount > 0 ? "bg-violet-600 hover:bg-violet-700 text-white" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}>
-                Start session<ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+              {selectedCount > 0 ? (
+                <Link href={`/session/${person.id}`} className="h-10 px-5 rounded-lg text-sm font-medium inline-flex items-center gap-2 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30 bg-violet-600 hover:bg-violet-700 text-white">
+                  Start session<ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              ) : (
+                <span aria-disabled="true" className="h-10 px-5 rounded-lg text-sm font-medium inline-flex items-center gap-2 bg-gray-100 text-gray-400 cursor-not-allowed select-none">
+                  Start session<ArrowRight className="w-3.5 h-3.5" />
+                </span>
+              )}
             </div>
           </div>
         </div>

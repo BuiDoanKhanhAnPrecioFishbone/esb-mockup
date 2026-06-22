@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { ComponentType } from "react";
 import { AppShell } from "@/components/app/AppShell";
 import SessionCommandViewImpl from "@/components/mockups/session-command-view.jsx";
@@ -17,11 +17,16 @@ const SessionThanhTung = SessionThanhTungImpl as unknown as ComponentType<{ embe
 
 type TabId = "overview" | "scope" | "data" | "logs";
 
-const SESSIONS: Record<string, { initials: string; title: string; component?: string }> = {
+const SESSIONS: Record<
+  string,
+  { initials: string; title: string; component?: string; completed?: boolean }
+> = {
   "minh-le": { initials: "ml", title: "Minh L\u00ea \u00b7 session command view" },
   "thanh-tung": { initials: "tt", title: "Thanh T\u00f9ng \u00b7 session command view", component: "thanh-tung" },
-  "thanh-duc": { initials: "td", title: "Thanh \u0110\u1ee9c \u00b7 session command view" },
-  "anh-thu": { initials: "at", title: "Anh Th\u01b0 \u00b7 session command view" },
+  // Completed sessions don't open the live command view \u2014 their knowledge lives in the
+  // Knowledge Graph (matches the All Sessions list, which links completed rows to KG).
+  "thanh-duc": { initials: "td", title: "Thanh \u0110\u1ee9c \u00b7 session command view", completed: true },
+  "anh-thu": { initials: "at", title: "Anh Th\u01b0 \u00b7 session command view", completed: true },
 };
 
 const VALID_TABS: TabId[] = ["overview", "scope", "data", "logs"];
@@ -42,6 +47,9 @@ export default async function SessionPage({
   const { id } = await params;
   const session = SESSIONS[id];
   if (!session) notFound();
+
+  // Completed sessions live in the Knowledge Graph, not the live command view.
+  if (session.completed) redirect(`/knowledge-graph?prompt=${id}`);
 
   // Thanh T\u00f9ng has a dedicated component showing "Waiting on you" Prepare state
   if (session.component === "thanh-tung") {
