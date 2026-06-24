@@ -152,7 +152,6 @@ function DataTab({ questions, onAdd, onEdit, onDelete, uploads, onAddUpload, onD
     <div>
       <TTUploadBar generalInput={generalInput} setGeneralInput={setGeneralInput} handleGeneralAsk={handleGeneralAsk} uploads={uploads} onAddUpload={onAddUpload} onDeleteUpload={onDeleteUpload} />
 
-      {/* General questions (not attached to a module) */}
       {questions.filter(q => q.module === "General").length > 0 && (
         <div className="rounded-lg border border-violet-200 bg-violet-50/20 mb-3 overflow-hidden">
           <div className="px-4 py-2.5 bg-violet-50/40 border-b border-violet-200 flex items-center gap-2">
@@ -181,10 +180,8 @@ function DataTab({ questions, onAdd, onEdit, onDelete, uploads, onAddUpload, onD
 function QuestionRow({ q, onEdit, onDelete }) {
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(q.text);
-
   const handleSave = () => { if (editText.trim()) { onEdit(q.id, editText.trim()); setEditing(false); } };
   const handleCancel = () => { setEditText(q.text); setEditing(false); };
-
   return (
     <div className="px-4 py-2.5 border-b border-violet-100 last:border-b-0 group">
       {editing ? (
@@ -246,7 +243,6 @@ function ModuleSection({ mod, questions, onAdd, onEdit, onDelete }) {
             {card.gaps && card.gaps.length > 0 && <span className="text-[8px] px-1 py-0.5 rounded bg-yellow-50 text-yellow-700">gap</span>}
           </div>
         ))}
-        {/* Questions added to this module */}
         {questions.length > 0 && (
           <div className="px-4 py-2 pl-10 border-t border-gray-100 space-y-0">
             <p className="text-[9px] text-violet-600 uppercase tracking-wider font-medium mb-1">{"Questions ("}{questions.length}{")"}</p>
@@ -255,12 +251,13 @@ function ModuleSection({ mod, questions, onAdd, onEdit, onDelete }) {
         )}
         <div className="px-4 py-1.5 pl-10 border-t border-gray-50">
           <button onClick={e => { e.stopPropagation(); setShowModQ(!showModQ); }} className="text-[10px] text-violet-600 inline-flex items-center gap-1 hover:text-violet-700 cursor-pointer"><Plus className="w-2.5 h-2.5" />Ask about this module</button>
-          {showModQ && <div className="flex gap-1.5 mt-1.5"><input value={modInput} onChange={e => setModInput(e.target.value)} onKeyDown={e => e.key === "Enter" && handleModAsk()} placeholder={`Question about ${mod.name}...`} className="flex-1 h-7 px-2 rounded border border-gray-200 text-[10px] focus:outline-none focus:ring-2 focus:ring-violet-500/20" /><button onClick={handleModAsk} className="h-7 px-2 rounded bg-violet-600 text-white text-[9px] cursor-pointer">Ask</button></div>}
+          {showModQ && <div className="flex gap-1.5 mt-1.5"><input value={modInput} onChange={e => setModInput(e.target.value)} onKeyDown={e => e.key === "Enter" && handleModAsk()} placeholder={`Question about ${mod.name}...`} className="flex-1 h-7 px-2 rounded border border-gray-200 text-[10px] focus:outline-none focus:ring-2 focus:ring-violet-500/20" /><button className="h-7 w-7 rounded border border-gray-200 text-gray-400 hover:text-violet-600 inline-flex items-center justify-center cursor-pointer" title="Attach file"><Paperclip className="w-2.5 h-2.5"/></button><button onClick={handleModAsk} className="h-7 px-2 rounded bg-violet-600 text-white text-[9px] cursor-pointer">Ask</button></div>}
         </div>
       </>}
     </div>
   );
 }
+
 function TTUploadBar({ generalInput, setGeneralInput, handleGeneralAsk, uploads, onAddUpload, onDeleteUpload }) {
   const [showForm, setShowForm] = useState(false);
   const [upDesc, setUpDesc] = useState("");
@@ -269,6 +266,7 @@ function TTUploadBar({ generalInput, setGeneralInput, handleGeneralAsk, uploads,
   return <div className="mb-4">
     <div className="flex items-center gap-2 mb-2">
       <input value={generalInput} onChange={e=>setGeneralInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleGeneralAsk()} placeholder="Ask a general question..." className="flex-1 h-9 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20"/>
+      <button className="h-9 w-9 rounded-lg border border-gray-200 text-gray-400 hover:text-violet-600 hover:border-gray-300 inline-flex items-center justify-center cursor-pointer" title="Attach file"><Paperclip className="w-3.5 h-3.5"/></button>
       <button onClick={handleGeneralAsk} className="h-9 px-3 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium cursor-pointer">Ask</button>
       <span className="text-gray-200">|</span>
       <button onClick={()=>setShowForm(!showForm)} className={`h-9 px-3 rounded-lg border text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer transition-colors ${showForm?"border-violet-300 text-violet-700 bg-violet-50":"border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"}`}><Upload className="w-3 h-3"/>Upload file</button>
