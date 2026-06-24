@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { CheckCircle2, Clock, AlertTriangle, ArrowRight, Plus, ChevronDown, FileText, Sparkles, Layers, Upload, Paperclip, Pencil, Trash2, Check, X } from "lucide-react";
+import { CheckCircle2, Clock, AlertTriangle, ArrowRight, Plus, ChevronDown, FileText, Sparkles, Layers, Pencil, Trash2, Check, X } from "lucide-react";
 
 /* Session command view for Thanh Tùng — Prepare (ready) state.
    Mirrors session-command-view.jsx layout: HeroBar + 3 tabs.
@@ -83,9 +83,6 @@ export default function SessionThanhTung({ embedded = false } = {}) {
   };
   const editQuestion = (id, newText) => { setQuestions(prev => prev.map(q => q.id === id ? { ...q, text: newText } : q)); };
   const deleteQuestion = (id) => { setQuestions(prev => prev.filter(q => q.id !== id)); };
-  const [uploads, setUploads] = useState([]);
-  const addUpload = (name, desc) => { setUploads(prev => [...prev, { id: `up${Date.now()}`, name, size: "\u223c", desc, by: "H\u00e0 Vy", time: "just now" }]); };
-  const deleteUpload = (id) => { setUploads(prev => prev.filter(u => u.id !== id)); };
 
   return (
     <div className="max-w-5xl mx-auto p-6">
@@ -94,7 +91,7 @@ export default function SessionThanhTung({ embedded = false } = {}) {
         {tabs.map(t => <button key={t.id} onClick={() => setActiveTab(t.id)} className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors cursor-pointer ${activeTab === t.id ? "border-violet-600 text-gray-900" : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>{t.label}</button>)}
       </div>
       {activeTab === "overview" && <OverviewTab qCount={questions.length} onSwitchTab={() => setActiveTab("data")} />}
-      {activeTab === "data" && <DataTab questions={questions} onAdd={addQuestion} onEdit={editQuestion} onDelete={deleteQuestion} uploads={uploads} onAddUpload={addUpload} onDeleteUpload={deleteUpload} />}
+      {activeTab === "data" && <DataTab questions={questions} onAdd={addQuestion} onEdit={editQuestion} onDelete={deleteQuestion} />}
       {activeTab === "logs" && <LogsTab />}
     </div>
   );
@@ -144,13 +141,16 @@ function OverviewTab({ qCount, onSwitchTab }) {
   );
 }
 
-function DataTab({ questions, onAdd, onEdit, onDelete, uploads, onAddUpload, onDeleteUpload }) {
+function DataTab({ questions, onAdd, onEdit, onDelete }) {
   const [generalInput, setGeneralInput] = useState("");
   const handleGeneralAsk = () => { if (generalInput.trim()) { onAdd(generalInput, "General"); setGeneralInput(""); } };
 
   return (
     <div>
-      <TTUploadBar generalInput={generalInput} setGeneralInput={setGeneralInput} handleGeneralAsk={handleGeneralAsk} uploads={uploads} onAddUpload={onAddUpload} onDeleteUpload={onDeleteUpload} />
+      <div className="mb-4 flex items-center gap-2">
+        <input value={generalInput} onChange={e => setGeneralInput(e.target.value)} onKeyDown={e => e.key === "Enter" && handleGeneralAsk()} placeholder="Ask a general question..." className="flex-1 h-9 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20" />
+        <button onClick={handleGeneralAsk} className="h-9 px-3 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium cursor-pointer">Ask</button>
+      </div>
 
       {questions.filter(q => q.module === "General").length > 0 && (
         <div className="rounded-lg border border-violet-200 bg-violet-50/20 mb-3 overflow-hidden">
@@ -251,32 +251,11 @@ function ModuleSection({ mod, questions, onAdd, onEdit, onDelete }) {
         )}
         <div className="px-4 py-1.5 pl-10 border-t border-gray-50">
           <button onClick={e => { e.stopPropagation(); setShowModQ(!showModQ); }} className="text-[10px] text-violet-600 inline-flex items-center gap-1 hover:text-violet-700 cursor-pointer"><Plus className="w-2.5 h-2.5" />Ask about this module</button>
-          {showModQ && <div className="flex gap-1.5 mt-1.5"><input value={modInput} onChange={e => setModInput(e.target.value)} onKeyDown={e => e.key === "Enter" && handleModAsk()} placeholder={`Question about ${mod.name}...`} className="flex-1 h-7 px-2 rounded border border-gray-200 text-[10px] focus:outline-none focus:ring-2 focus:ring-violet-500/20" /><button className="h-7 w-7 rounded border border-gray-200 text-gray-400 hover:text-violet-600 inline-flex items-center justify-center cursor-pointer" title="Attach file"><Paperclip className="w-2.5 h-2.5"/></button><button onClick={handleModAsk} className="h-7 px-2 rounded bg-violet-600 text-white text-[9px] cursor-pointer">Ask</button></div>}
+          {showModQ && <div className="flex gap-1.5 mt-1.5"><input value={modInput} onChange={e => setModInput(e.target.value)} onKeyDown={e => e.key === "Enter" && handleModAsk()} placeholder={`Question about ${mod.name}...`} className="flex-1 h-7 px-2 rounded border border-gray-200 text-[10px] focus:outline-none focus:ring-2 focus:ring-violet-500/20" /><button onClick={handleModAsk} className="h-7 px-2 rounded bg-violet-600 text-white text-[9px] cursor-pointer">Ask</button></div>}
         </div>
       </>}
     </div>
   );
-}
-
-function TTUploadBar({ generalInput, setGeneralInput, handleGeneralAsk, uploads, onAddUpload, onDeleteUpload }) {
-  const [showForm, setShowForm] = useState(false);
-  const [upDesc, setUpDesc] = useState("");
-  const [upFile, setUpFile] = useState("");
-  const doUpload = () => { if (upFile.trim()) { onAddUpload(upFile.trim(), upDesc.trim()); setUpFile(""); setUpDesc(""); setShowForm(false); } };
-  return <div className="mb-4">
-    <div className="flex items-center gap-2 mb-2">
-      <input value={generalInput} onChange={e=>setGeneralInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleGeneralAsk()} placeholder="Ask a general question..." className="flex-1 h-9 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20"/>
-      <button className="h-9 w-9 rounded-lg border border-gray-200 text-gray-400 hover:text-violet-600 hover:border-gray-300 inline-flex items-center justify-center cursor-pointer" title="Attach file"><Paperclip className="w-3.5 h-3.5"/></button>
-      <button onClick={handleGeneralAsk} className="h-9 px-3 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium cursor-pointer">Ask</button>
-      <span className="text-gray-200">|</span>
-      <button onClick={()=>setShowForm(!showForm)} className={`h-9 px-3 rounded-lg border text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer transition-colors ${showForm?"border-violet-300 text-violet-700 bg-violet-50":"border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"}`}><Upload className="w-3 h-3"/>Upload file</button>
-    </div>
-    {showForm&&<div className="rounded-lg border border-violet-200 bg-white p-3 mb-2">
-      <div className="flex items-center gap-2 mb-2"><input value={upFile} onChange={e=>setUpFile(e.target.value)} placeholder="Filename (e.g. architecture-diagram.pdf)" className="flex-1 h-8 px-2.5 rounded-md border border-gray-200 text-[11px] focus:outline-none focus:ring-2 focus:ring-violet-500/20"/></div>
-      <div className="flex items-center gap-2"><input value={upDesc} onChange={e=>setUpDesc(e.target.value)} onKeyDown={e=>e.key==="Enter"&&doUpload()} placeholder="What is this file about? (optional)" className="flex-1 h-8 px-2.5 rounded-md border border-gray-200 text-[11px] focus:outline-none focus:ring-2 focus:ring-violet-500/20"/><button onClick={doUpload} className="h-8 px-3 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-[11px] font-medium cursor-pointer">Upload</button><button onClick={()=>{setShowForm(false);setUpFile("");setUpDesc("");}} className="h-8 px-2 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 cursor-pointer"><X className="w-3 h-3"/></button></div>
-    </div>}
-    {uploads&&uploads.length>0&&<div className="rounded-lg border border-gray-200 bg-white mb-2 overflow-hidden"><div className="px-4 py-2 bg-gray-50 border-b border-gray-200 flex items-center gap-2"><Upload className="w-3 h-3 text-gray-400"/><span className="text-[12px] font-semibold text-gray-900">Uploads</span><span className="text-[10px] text-gray-500">{uploads.length}</span><span className="text-[8px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 border border-gray-200">Draft</span></div>{uploads.map(u=><div key={u.id} className="px-4 py-2 border-b border-gray-100 last:border-b-0 flex items-center gap-2 group"><Paperclip className="w-3 h-3 text-gray-400 shrink-0"/><div className="flex-1 min-w-0"><div className="flex items-center gap-1.5"><span className="text-[11px] font-medium text-gray-900">{u.name}</span><span className="text-[9px] text-gray-400">{u.size}</span></div>{u.desc&&<p className="text-[9px] text-gray-500 mt-0.5">{u.desc}</p>}<p className="text-[9px] text-gray-400 mt-0.5">{u.by}{" \u00b7 "}{u.time}</p></div><button onClick={()=>onDeleteUpload(u.id)} className="w-5 h-5 rounded hover:bg-rose-50 inline-flex items-center justify-center text-gray-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"><Trash2 className="w-2.5 h-2.5"/></button></div>)}</div>}
-  </div>;
 }
 
 function LogsTab() {
