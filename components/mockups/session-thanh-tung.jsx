@@ -56,6 +56,11 @@ const SEED_QUESTIONS = [
   { id: "q2", text: "What are the rollback criteria for a failed release?", from: "H\u00e0 Vy", fromType: "human", module: "Release Testing" },
 ];
 
+const TT_COWORKERS = [
+  { id: "cw1", name: "Linh Tr\u1ea7n", initials: "LT", modules: ["Test Automation Framework", "Bug Triage & Escalation"], sharedCards: 22, source: "trello", status: "joined" },
+  { id: "cw2", name: "B\u1ea3o Nguy\u1ec5n", initials: "BN", modules: ["Release Testing"], sharedCards: 9, source: "trello", status: "pending" },
+];
+
 const LOGS = [
   { time: "2h ago", actor: "System", text: "Knowledge map ready \u2014 4 modules derived from 127 cards" },
   { time: "3h ago", actor: "System", text: "Crawl complete \u2014 3 boards, 127 cards" },
@@ -83,6 +88,9 @@ export default function SessionThanhTung({ embedded = false } = {}) {
   };
   const editQuestion = (id, newText) => { setQuestions(prev => prev.map(q => q.id === id ? { ...q, text: newText } : q)); };
   const deleteQuestion = (id) => { setQuestions(prev => prev.filter(q => q.id !== id)); };
+  const [coworkers, setCoworkers] = useState(TT_COWORKERS);
+  const addCoworker = (name) => { if (!name.trim()) return; const initials = name.trim().split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase(); setCoworkers(prev => [...prev, { id: `cw${Date.now()}`, name: name.trim(), initials, modules: [], sharedCards: 0, source: "manual", status: "pending" }]); };
+  const removeCoworker = (id) => { setCoworkers(prev => prev.filter(cw => cw.id !== id)); };
 
   return (
     <div className="max-w-5xl mx-auto p-6">
@@ -90,7 +98,7 @@ export default function SessionThanhTung({ embedded = false } = {}) {
       <div className="flex gap-0 border-b border-gray-200 mb-5">
         {tabs.map(t => <button key={t.id} onClick={() => setActiveTab(t.id)} className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors cursor-pointer ${activeTab === t.id ? "border-violet-600 text-gray-900" : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}>{t.label}</button>)}
       </div>
-      {activeTab === "overview" && <OverviewTab qCount={questions.length} onSwitchTab={() => setActiveTab("data")} />}
+      {activeTab === "overview" && <OverviewTab qCount={questions.length} onSwitchTab={() => setActiveTab("data")} coworkers={coworkers} onAddCoworker={addCoworker} onRemoveCoworker={removeCoworker} />}
       {activeTab === "data" && <DataTab questions={questions} onAdd={addQuestion} onEdit={editQuestion} onDelete={deleteQuestion} />}
       {activeTab === "logs" && <LogsTab />}
     </div>
@@ -114,7 +122,7 @@ function HeroBar({ qCount }) {
   );
 }
 
-function OverviewTab({ qCount, onSwitchTab }) {
+function OverviewTab({ qCount, onSwitchTab, coworkers, onAddCoworker, onRemoveCoworker }) {
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-gray-200 bg-white p-5">
@@ -133,6 +141,7 @@ function OverviewTab({ qCount, onSwitchTab }) {
           <div><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">Knowledge gaps</p><p className="text-[12px] text-yellow-700">{BASE.gaps}{" gaps (card-level)"}</p></div>
         </div>
       </div>
+      <TTCoworkerNetwork coworkers={coworkers} onAdd={onAddCoworker} onRemove={onRemoveCoworker}/>
       <div className="flex items-center gap-3">
         <button onClick={onSwitchTab} className="h-9 px-4 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer">Review in Data tab</button>
         <button className="h-9 px-4 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center gap-2 cursor-pointer transition-colors">{"Start Capture"}<ArrowRight className="w-3.5 h-3.5" /></button>
@@ -256,6 +265,28 @@ function ModuleSection({ mod, questions, onAdd, onEdit, onDelete }) {
       </>}
     </div>
   );
+}
+
+function TTCoworkerNetwork({ coworkers=[], onAdd, onRemove }) {
+  const [showAdd, setShowAdd] = useState(false);
+  const [addInput, setAddInput] = useState("");
+  const handleAdd = () => { if (addInput.trim() && onAdd) { onAdd(addInput); setAddInput(""); setShowAdd(false); } };
+  return <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+    <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+      <div className="flex items-center gap-2"><span className="text-sm font-semibold text-gray-900">Coworker network</span><span className="text-[11px] text-gray-500" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{coworkers.length}</span></div>
+      {onAdd&&<button onClick={()=>setShowAdd(!showAdd)} className="text-[10px] px-2 py-1 rounded-md border border-violet-200 text-violet-700 bg-violet-50 hover:bg-violet-100 cursor-pointer font-medium">+ Add</button>}
+    </div>
+    {coworkers.map(cw=><div key={cw.id} className="px-4 py-2.5 border-b border-gray-100 last:border-b-0 flex items-center gap-3">
+      <div className={`w-8 h-8 rounded-full text-[10px] font-semibold inline-flex items-center justify-center shrink-0 ${cw.source==="manual"?"bg-yellow-50 text-yellow-700 border border-yellow-200":"bg-violet-50 text-violet-700 border border-violet-200"}`}>{cw.initials}</div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5"><span className="text-[12px] font-medium text-gray-900">{cw.name}</span><span className={`text-[8px] px-1.5 py-0.5 rounded border ${cw.status==="joined"?"bg-emerald-50 text-emerald-700 border-emerald-200":"bg-yellow-50 text-yellow-700 border-yellow-200"}`}>{cw.status==="joined"?"Joined":"Pending"}</span></div>
+        <p className="text-[10px] text-gray-500 mt-0.5">{cw.modules.length>0?cw.modules.join(", "):"No module overlap"}</p>
+        <p className="text-[9px] text-gray-400 mt-0.5">{cw.source==="trello"?`From Trello \u00b7 ${cw.sharedCards} shared cards`:"Added by H\u00e0 Vy"}</p>
+      </div>
+      {cw.source==="manual"&&onRemove&&<button onClick={()=>onRemove(cw.id)} className="w-5 h-5 rounded hover:bg-rose-50 inline-flex items-center justify-center text-gray-300 hover:text-rose-500 cursor-pointer shrink-0 text-[14px]">\u00d7</button>}
+    </div>)}
+    {showAdd&&<div className="px-4 py-2.5 border-t border-violet-200 bg-violet-50/30"><div className="flex gap-1.5"><input value={addInput} onChange={e=>setAddInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleAdd()} placeholder="Search by name..." className="flex-1 h-8 px-2.5 rounded-md border border-gray-200 text-[11px] bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20"/><button onClick={handleAdd} className="h-8 px-3 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-[11px] font-medium cursor-pointer">Add</button><button onClick={()=>{setShowAdd(false);setAddInput("");}} className="h-8 px-2 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 cursor-pointer"><X className="w-3 h-3"/></button></div></div>}
+  </div>;
 }
 
 function LogsTab() {
