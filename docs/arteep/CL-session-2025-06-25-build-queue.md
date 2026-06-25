@@ -164,12 +164,6 @@
 - Transitions to real Data tab with organized modules
 - Plays **once** in the real product (loops in demo mode)
 
-### Design references
-- Colored module buckets (purple/blue/pink pills)
-- Cards as simple rounded pills with single letters
-- Bounce/pop animations for card landing
-- Shake animation for "no match" rejection
-
 ---
 
 ## 7. KG Explorer chat redesign — BUILT ✅ (via Claude Code)
@@ -223,7 +217,6 @@
 #### Bridge between panels
 - Node detail drawer has "Ask about this" button at bottom
 - Clicking sends node context to the chat panel
-- Chat can reference specific nodes; graph can be navigated via chat
 
 ### Entry from session
 - `?prompt=minh-le` pre-fills chat on Deliver Complete (existing decision, unchanged)
@@ -236,7 +229,7 @@
 
 ### 8.1a — Graph filter: REMOVED for POC ✅
 
-Filter button removed from the KG Explorer graph toolbar. All filtering goes through the chat copilot. Graph toolbar becomes: title + entry count + zoom only. Filter may return in production as a power-user shortcut.
+Filter button removed from the KG Explorer graph toolbar. All filtering goes through the chat copilot. Graph toolbar becomes: title + entry count + zoom only.
 
 ### 8.1b — Graph header padding ✅
 
@@ -259,7 +252,7 @@ Review and adjust padding/spacing of graph toolbar after filter removal. To be d
 | Edit interaction | Same as human questions: hover → pencil → inline edit |
 | Delete interaction | Same as human questions: hover → trash → removed |
 | Regeneration | Deleted AI questions are NOT regenerated |
-| Gap relationship | Deleting a gap's question does NOT dismiss the gap — gap stays visible with zero questions. Manager can add new questions or dismiss the gap separately |
+| Gap relationship | Deleting a gap's question does NOT dismiss the gap — gap stays visible with zero questions |
 | Dismiss gap | Removes the gap row AND all its generated questions |
 
 ### 8.3 — Offboarder Capture view: HYBRID (Option C) ✅
@@ -268,16 +261,194 @@ Review and adjust padding/spacing of graph toolbar after filter removal. To be d
 |---|---|
 | Default view | Flat question queue — no module tree, no card list |
 | What Offboarder sees | Question text, who asked, module tag (light context), answer input |
-| What Offboarder does NOT see | Module → card tree, card counts, board headers, gap rows, flag badges, drag handles, "Move to", rename |
-| "See in context" link | Each question has a link that opens the side panel showing the source card (description, checklist, gap, files, other questions) |
+| What Offboarder does NOT see | Module → card tree, card counts, gap rows, flag badges, drag handles, "Move to", rename |
+| "See in context" link | Opens side panel showing source card (description, checklist, gap, files, other questions) |
 | Active question | Highlighted with violet border when its context panel is open |
-| Deliver/Complete | Offboarder sees read-only summary (contribution stats, thank-you, timeline) — not full Data tab |
+| Deliver/Complete | Read-only summary (contribution stats, thank-you, timeline) — not full Data tab |
 
 ---
 
-## All items complete ✅
+## 9. Dashboard redesign — NOT BUILT 🔒
 
-All 7 features + 5 discussion items from this session are now built and resolved.
+**Decision:** Replace weak KPI tiles with meaningful knowledge-at-risk cards. Different treatment per role.
+
+### 9.1 Manager dashboard
+
+**File:** `components/mockups/ha-vy-handover-dashboard.jsx` — `ManagerActive` function
+
+#### What's removed
+- 4 KPI tiles ("Needs your action", "Deadline ≤ 7 days", "Active sessions", "Open gaps")
+- "Needs your action" / "Waiting on you" tags and `blockedOnManager` logic
+- All references to "Next actions" (explored and rejected)
+
+#### What's added / changed
+
+**Greeting banner:**
+- Gradient background (`#f5f3ff` → `#ede9fe` → `#faf5ff`)
+- "Good afternoon, Hà Vy" + "2 active handovers" subtitle
+- Faint decorative graph nodes in the background corner (very low opacity)
+
+**Session cards (under section title "Active sessions"):**
+- Section title stays **"Active sessions"** (not "Knowledge at risk")
+- Days left stays as **text** (no countdown ring)
+- **No urgency left border**
+- Phase progress bar kept (3 segments: Prepare / Capture / Deliver, with sub-stage fill)
+- **Inline knowledge metrics** replacing old metrics line: `✨ 4/6 gaps resolved · 💬 9/14 answered`
+- One compact row, text only — no full-width bars
+
+**Dashed "+ Create session" card** below session cards
+
+**Activity feed:** kept, compact, same position
+
+**Empty state (zero active sessions):**
+- **Orbital illustration:** central AI node with gradient fill, 3 elliptical orbital rings, smaller knowledge nodes orbiting slowly (CSS animation)
+- "No departures on the horizon"
+- "When someone's leaving, their knowledge graph starts building here."
+- "+ Create session" CTA button with gradient background
+
+#### Completed session banner
+- Keep existing emerald completion banner ("Minh Lê's session is complete")
+- No change needed
+
+### 9.2 Offboarder dashboard
+
+**File:** `components/mockups/ha-vy-handover-dashboard.jsx` — `OBActiveQueue` function
+
+#### Changes
+- **Remove** "Files uploaded" KPI tile (upload removed from POC)
+- **Keep** "To answer" and "Answered" tiles — they're actionable for this role
+- **Add greeting banner:** "Good afternoon, Minh Lê" · "5 questions waiting for you"
+- Same gradient background as Manager banner
+- **Completion state** ("You're all caught up"): keep existing green checkmark celebration, optionally add a small illustration (connected graph nodes — knowledge preserved)
+
+### 9.3 Coworker dashboard
+
+**File:** `components/mockups/ha-vy-handover-dashboard.jsx` — `CoworkerActive` function
+
+#### Changes
+- **Keep** existing KPI tiles ("Answers to review", "Waiting for answer", "Active sessions") — they're functional for this role
+- **Add greeting banner:** "Good afternoon" · "3 answers to review across 2 sessions"
+- Same gradient background as Manager/Offboarder banners
+- **Completion state** ("All satisfied"): keep existing structure, optionally add matching celebration illustration
+
+### 9.4 Artwork summary across roles
+
+| Artwork | Manager | Offboarder | Coworker |
+|---|---|---|---|
+| Greeting banner | ✅ personalized | ✅ personalized | ✅ generic |
+| Empty state orbital | ✅ (no sessions) | ❌ (n/a) | ❌ (n/a) |
+| Completion celebration | ✅ (emerald banner) | ✅ (all caught up) | ✅ (all satisfied) |
+
+---
+
+## 10. Chat-to-graph interactive node references — NOT BUILT 🔒
+
+**Decision:** AI chat responses in the KG Explorer contain clickable node references that bridge text and graph.
+
+### Visual style
+
+| Property | Value |
+|---|---|
+| Text color | Violet (`#5b21b6`) |
+| Background | Subtle violet (`#f5f3ff`) |
+| Underline | `text-decoration: underline`, `text-decoration-color: #c4b5fd`, offset 2px |
+| Border radius | 3px (inline pill shape) |
+| Cursor | Pointer |
+
+### Interactions
+
+| Action | What happens |
+|---|---|
+| **Hover** reference in chat | Graph highlights that specific node (violet glow ring, others dim to ~20%). "Node name · from chat" indicator appears on graph |
+| **Click** reference in chat | Graph zooms to that node + node detail drawer opens from the right |
+| **Multiple references** in one response | Each highlights independently on hover. Example: "Auth spans **OAuth2 PKCE**, **Azure AD SAML**, **JWT Rotation**, and **RBAC matrix**" — four separate hover targets |
+| **Mouse leave** reference | Graph returns to normal (all nodes visible, no highlighting) |
+
+### Example AI response with references
+
+```
+"Based on the knowledge graph, the successor should focus on:
+1. Start with [Kafka retry config] — incomplete checklist, DLQ undocumented
+2. Then review [Stripe webhook handler] since it depends on retry logic
+3. [JWT Key Rotation] is separate but has a critical gap — emergency procedure is tacit only"
+```
+
+Each `[bracketed term]` renders as an inline violet reference linked to an existing graph node.
+
+### Rules
+- **Only existing nodes** — references never create new nodes
+- Node matching is by `id` or `label` in the graph data
+- If a referenced node doesn't exist in the graph, render as plain text (no link)
+- References work alongside dynamic recommendation chips — they're complementary
+
+### File to change
+- `components/mockups/knowledge-graph-explorer.jsx`
+
+---
+
+## 11. Consistency audit — changes needed across mockup files
+
+*Cross-file inconsistencies identified by scanning all mockup files against locked decisions.*
+
+### 11.1 `ha-vy-handover-dashboard.jsx` — NEEDS FULL REDESIGN 🔴
+
+| Issue | Current | Should be |
+|---|---|---|
+| 4 KPI tiles | Present (Needs action, Deadline, Active, Gaps) | Removed (Manager only) |
+| "Needs your action" label | Present with `blockedOnManager` | Removed |
+| Section title | "Active sessions" | Keep "Active sessions" ✅ |
+| Days left | Text "22 days" | Keep as text ✅ |
+| Knowledge metrics | "9 of 14 answered · 7 satisfied" + "2 gaps open" | Inline: "✨ 4/6 gaps resolved · 💬 9/14 answered" |
+| Greeting banner | Not present | Add gradient banner with personalized greeting |
+| Empty state | Not present | Add orbital illustration |
+| Offboarder "Files uploaded" tile | Present | Remove (upload gone from POC) |
+
+### 11.2 `knowledge-graph-explorer.jsx` — NEEDS CLEANUP 🟡
+
+| Issue | Current | Should be |
+|---|---|---|
+| 5 fixed `CHIPS` array | Present (Show risks, Auth flow, etc.) | Remove — replaced by dynamic contextual chips in chat |
+| `FilterChip` component | Present (line ~94) | Remove — filtering goes through chat only |
+| Chat location | Mixed (has conversation data but layout unclear) | Verify left-panel layout matches §7 spec |
+| Interactive node references | Not present | Add hover/click node references per §10 |
+
+### 11.3 `session-command-view.jsx` — MOSTLY CONSISTENT ✅
+
+| Item | Status |
+|---|---|
+| "See in context" link on Offboarder queue | ✅ Built |
+| AI question editing (pencil + trash) | ✅ Built — `canEdit` applies to all questions |
+| Upload removed from inputs | ✅ Done |
+| Gap vs flag distinction | ✅ Yellow gap rows + gray flag badges |
+| 1:N card-to-module | ✅ Primary + linked card rows |
+
+### 11.4 `session-thanh-tung.jsx` — MOSTLY CONSISTENT ✅
+
+| Item | Status |
+|---|---|
+| Coworker network | ✅ Built |
+| Module rename | ✅ Built |
+| Upload removed | ✅ Done |
+
+### 11.5 Orphaned files — DELETE 🟢
+
+| File | Why |
+|---|---|
+| `prepare-stage.jsx` | Replaced by Prepare steps inside `session-command-view.jsx`. Has stale "Successor: Trần Hữu Nam" row |
+| `uc-ho-01-quick-initiate.jsx` | Replaced by `create-session.jsx` |
+
+---
+
+## Build order recommendation
+
+| Priority | Item | Scope | File |
+|---|---|---|---|
+| 🔴 1 | Dashboard redesign (§9) | Full rewrite of Manager view, minor fixes to Offboarder/Coworker | `ha-vy-handover-dashboard.jsx` |
+| 🟡 2 | KG Explorer cleanup (§11.2) | Remove fixed chips, FilterChip; verify chat layout | `knowledge-graph-explorer.jsx` |
+| 🟡 3 | Chat node references (§10) | Add interactive hover/click references in AI responses | `knowledge-graph-explorer.jsx` |
+| 🟢 4 | Delete orphaned files (§11.5) | Remove `prepare-stage.jsx` + `uc-ho-01-quick-initiate.jsx` | — |
+
+Dashboard is highest priority — it's the landing page and the first thing the demo audience sees.
 
 ---
 
@@ -286,11 +457,10 @@ All 7 features + 5 discussion items from this session are now built and resolved
 - [ ] CL entries to be logged for all decisions above
 - [ ] Context snapshot update (`ARTEEP-context-snapshot.md`)
 - [ ] CL-121/122 patch merge into main design change log
-- [ ] CL-114 cleanup in `prepare-stage.jsx` (remove stale Successor row)
+- [ ] CL-114 cleanup in `prepare-stage.jsx` (moot if file is deleted)
 - [ ] CL-107 labels-only style
-- [ ] Delete orphaned `prepare-stage.jsx` and `uc-ho-01-quick-initiate.jsx`
 - [ ] Manager-confirm gate between Prepare Step 2 and Step 3
 
 ---
 
-*End of build queue. All items from this session are complete. Remaining work is from previous sessions.*
+*End of build queue. Reference this document when starting any of the NOT BUILT items.*
