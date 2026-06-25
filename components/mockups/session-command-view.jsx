@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, ArrowRight, ArrowUpRight, X, CheckCircle2, Clock, AlertTriangle, Sparkles, Bell, Layers, User, FileText, ChevronDown, Plus, MessageCircle, Paperclip, Pencil, Trash2, Check, GripVertical, HelpCircle, Inbox } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowRight, ArrowUpRight, X, CheckCircle2, Clock, AlertTriangle, Sparkles, Bell, Layers, User, FileText, ChevronDown, Plus, MessageCircle, Paperclip, Pencil, Trash2, Check, GripVertical, HelpCircle, Inbox, ExternalLink } from "lucide-react";
 import { DeliverOverview, CompleteOverview } from "./session-deliver";
 import { useViewAs } from "@/lib/view-as";
 
@@ -167,12 +167,16 @@ function OffboarderOverview({ stepId, onSwitchTab, onOpenQuestion }) {
   </div>;
 }
 function QTile({ label, value, tone }) { const c = { urgent: "text-rose-600", good: "text-emerald-600", normal: "text-gray-900" }[tone]; return <div className="rounded-lg border border-gray-200 bg-white p-3"><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">{label}</p><p className={`text-xl font-semibold ${c}`} style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{value}</p></div>; }
-function OffboarderQueue({ focusQ, focusKey }) {
-  const refs = useRef({}); const [flash, setFlash] = useState(null);
+// Offboarder hybrid queue (\u00a78.3): a flat list \u2014 no module tree, headers, card counts, gaps, flags, drag, or rename.
+// Each question carries a light module tag + a "See in context" link that opens the source card in the Side Panel.
+function OffboarderQueue({ focusQ, focusKey, onSelectCard, selectedCard }) {
+  const refs = useRef({}); const [flash, setFlash] = useState(null); const [activeQ, setActiveQ] = useState(null);
   useEffect(()=>{ if(!focusQ) return; const el = refs.current[focusQ]; if(el) el.scrollIntoView({behavior:"smooth", block:"center"}); setFlash(focusQ); const t = setTimeout(()=>setFlash(null), 1600); return ()=>clearTimeout(t); }, [focusKey, focusQ]);
+  useEffect(()=>{ if(!selectedCard) setActiveQ(null); }, [selectedCard]);
+  const openContext = (q) => { const card = findCardForQuestion(q); if(card&&onSelectCard){ setActiveQ(q.id); onSelectCard(card); } };
   return <div className="space-y-2">
     <style>{"@keyframes qflash{0%{box-shadow:0 0 0 2px #a78bfa;background:#f5f3ff}100%{box-shadow:0 0 0 0 rgba(0,0,0,0);background:#ffffff}}"}</style>
-    {OB_QUEUE.map(q=><div key={q.id} ref={el=>{refs.current[q.id]=el;}} style={flash===q.id?{animation:"qflash 1.6s ease-out"}:undefined} className="rounded-lg border border-gray-200 bg-white px-4 py-3"><div className="text-[13px] text-gray-900 mb-1">{q.q}</div><div className="text-[11px] text-gray-500 flex items-center gap-1.5">{q.answered?<CheckCircle2 className="w-3 h-3 text-emerald-500"/>:q.fromType==="ai"?<Sparkles className="w-3 h-3 text-violet-500"/>:<User className="w-3 h-3"/>}<span>{q.answered?"Answered":q.from}</span>{q.answered&&(q.satisfied?<span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">{"\u2713 Satisfied"}</span>:<span className="text-[9px] text-gray-400">waiting for review</span>)}<span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 ml-1">{q.module}</span></div>{q.answered?<div className="mt-2 rounded-md px-3 py-2 bg-gray-50 border-l-2 border-emerald-400"><p className="text-[11px] text-gray-800 leading-relaxed">{q.answer}</p></div>:<AnswerInput/>}</div>)}
+    {OB_QUEUE.map(q=>{const isActive=activeQ===q.id&&!!selectedCard;return <div key={q.id} ref={el=>{refs.current[q.id]=el;}} style={flash===q.id?{animation:"qflash 1.6s ease-out"}:undefined} className={`rounded-lg border bg-white px-4 py-3 ${isActive?"border-violet-500 ring-2 ring-violet-500/15":"border-gray-200"}`}><div className="flex items-start gap-2"><div className="text-[13px] text-gray-900 mb-1 flex-1">{q.q}</div>{onSelectCard&&<button onClick={()=>openContext(q)} className="text-[9px] text-violet-600 hover:text-violet-700 cursor-pointer inline-flex items-center gap-1 shrink-0 mt-0.5" title="Open the source card"><ExternalLink className="w-2.5 h-2.5"/>See in context</button>}</div><div className="text-[11px] text-gray-500 flex items-center gap-1.5">{q.answered?<CheckCircle2 className="w-3 h-3 text-emerald-500"/>:q.fromType==="ai"?<Sparkles className="w-3 h-3 text-violet-500"/>:<User className="w-3 h-3"/>}<span>{q.answered?"Answered":q.from}</span>{q.answered&&(q.satisfied?<span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">{"\u2713 Satisfied"}</span>:<span className="text-[9px] text-gray-400">waiting for review</span>)}<span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 ml-1">{q.module}</span></div>{q.answered?<div className="mt-2 rounded-md px-3 py-2 bg-gray-50 border-l-2 border-emerald-400"><p className="text-[11px] text-gray-800 leading-relaxed">{q.answer}</p></div>:<AnswerInput/>}</div>})}
   </div>;
 }
 
@@ -206,6 +210,13 @@ const ALL_CARDS = [
   ...MODULES_DATA.flatMap(b=>b.modules.flatMap(m=>(m.items||[]).map(c=>({card:c,home:m.name})))),
   ...UNCATEGORIZED.map(c=>({card:c,home:"__uncat__"})),
 ];
+// Resolve the source card a queue question belongs to, so the Offboarder can open it "in context" (§8.3).
+function findCardForQuestion(q) {
+  for (const b of MODULES_DATA) for (const m of b.modules) for (const c of (m.items||[])) { if ((c.qs||[]).some(cq=>cq.q===q.q)) return c; }
+  if (q.module) { for (const b of MODULES_DATA) for (const m of b.modules) if (m.name===q.module && (m.items||[]).length) return m.items[0]; }
+  for (const b of MODULES_DATA) for (const m of b.modules) if ((m.items||[]).length) return m.items[0];
+  return null;
+}
 
 function DataContent({ role, stepId, isReady, canEditQs, generalQs, addedModQs, onAddGQ, onEditGQ, onDeleteGQ, onAddModQ, onEditModQ, onDeleteModQ, focusQ, focusKey }) {
   const [selectedCard, setSelectedCard] = useState(null);
@@ -224,7 +235,8 @@ function DataContent({ role, stepId, isReady, canEditQs, generalQs, addedModQs, 
   const cardProps = { canManage, dismissedFlags, onDismissFlag:dismissFlag, onMoveCard:moveCard, primaryModuleOf, selectedCard, onSelectCard:setSelectedCard };
   if (role==="offboarder"&&!isCapture&&!isDeliver) return <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center"><h3 className="text-sm font-medium text-gray-700 mb-1">Questions are being collected</h3><p className="text-xs text-gray-500">{"You\u2019ll see them when Capture starts."}</p></div>;
   if (!isReady) return <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center"><div className="w-10 h-10 rounded-full bg-violet-50 inline-flex items-center justify-center mb-3 mx-auto"><div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-violet-500 animate-spin"/></div><h3 className="text-sm font-medium text-gray-700 mb-1">Data is being collected...</h3></div>;
-  if (role==="offboarder" && isCapture) return <OffboarderQueue focusQ={focusQ} focusKey={focusKey}/>;
+  const drawer = selectedCard&&<><div className="fixed inset-0 bg-black/10 z-30" onClick={()=>setSelectedCard(null)}/><div className="fixed top-0 right-0 h-full w-[480px] bg-white border-l border-gray-200 shadow-xl z-40 overflow-y-auto"><SidePanel key={selectedCard.name} card={selectedCard} role={role} onClose={()=>setSelectedCard(null)} isCapture={isCapture} isDeliver={isDeliver} isComplete={isComplete} primaryModule={primaryModuleOf(selectedCard)}/></div></>;
+  if (role==="offboarder" && isCapture) return <div className="relative"><OffboarderQueue focusQ={focusQ} focusKey={focusKey} onSelectCard={setSelectedCard} selectedCard={selectedCard}/>{drawer}</div>;
   const showAnswers = isCapture||isDeliver; const showProgress = isCapture||isDeliver;
   const handleGQAsk = () => { if(gqInput.trim()){ onAddGQ(gqInput); setGqInput(""); } };
   return <div className="relative"><div>
@@ -233,7 +245,7 @@ function DataContent({ role, stepId, isReady, canEditQs, generalQs, addedModQs, 
     {MODULES_DATA.map((board,bi)=><div key={bi} className="rounded-lg border border-gray-200 bg-white mb-3 overflow-hidden"><div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center gap-2"><Layers className="w-3.5 h-3.5 text-gray-400"/><span className="text-sm font-semibold text-gray-900">{board.board}</span><span className="text-[11px] text-gray-500">{board.boardCards}c</span></div>{board.modules.map((mod,mi)=><ModuleSection key={mi} mod={mod} role={role} isCapture={isCapture} isDeliver={isDeliver} isComplete={isComplete} canEditQs={canEditQs} primaryCards={primaryFor(mod.name)} linkedCards={linkedFor(mod.name)} showProgress={showProgress} addedQs={addedModQs.filter(q=>q.module===mod.name)} onAddModQ={onAddModQ} onEditModQ={onEditModQ} onDeleteModQ={onDeleteModQ} {...cardProps}/>)}</div>)}
     {/* Uncategorized \u2014 AI couldn't confidently assign (1:N \u00a75). */}
     {uncats.length>0&&<div className="rounded-lg border-2 border-dashed border-gray-300 bg-gray-50/60 mb-3 overflow-hidden"><div className="px-4 py-2.5 border-b border-dashed border-gray-300 flex items-center gap-2"><Inbox className="w-3.5 h-3.5 text-gray-400"/><span className="text-sm font-semibold text-gray-700">Uncategorized</span><span className="text-[11px] text-gray-500">{uncats.length}</span><span className="text-[10px] text-gray-400 ml-1">AI couldn&apos;t confidently assign these</span></div>{uncats.map((card,ci)=><CardRow key={ci} card={card} linked={false} showProgress={showProgress} moveTargets={ALL_MOD_NAMES.map(n=>({value:n,label:n}))} {...cardProps}/>)}</div>}
-  </div>{selectedCard&&<><div className="fixed inset-0 bg-black/10 z-30" onClick={()=>setSelectedCard(null)}/><div className="fixed top-0 right-0 h-full w-[480px] bg-white border-l border-gray-200 shadow-xl z-40 overflow-y-auto"><SidePanel card={selectedCard} role={role} onClose={()=>setSelectedCard(null)} isCapture={isCapture} isDeliver={isDeliver} isComplete={isComplete} primaryModule={primaryModuleOf(selectedCard)}/></div></>}</div>;
+  </div>{drawer}</div>;
 }
 
 function CardRow({ card, linked, showProgress, moveTargets=[], canManage, dismissedFlags, onDismissFlag, onMoveCard, primaryModuleOf, selectedCard, onSelectCard }) {
@@ -290,6 +302,11 @@ function SidePanel({ card, role, onClose, isCapture, isDeliver, isComplete, prim
   const [followUp, setFollowUp] = useState(""); const showAnswers = isCapture||isDeliver; const readOnly = isDeliver;
   const flags = cardFlags(card);
   const linkedMods = (card.linkedIn||[]); const isUncat = primaryModule==="__uncat__";
+  // §8.2 — card questions (incl. AI-generated) are editable/deletable by Manager + Coworker in Prepare. Keyed remount gives fresh state per card.
+  const isPrepare = !isCapture && !isDeliver; const canEditQ = isPrepare && role!=="offboarder";
+  const [qs, setQs] = useState(()=>card.qs.map((q,i)=>({ ...q, id: q.id||`cq${i}` })));
+  const editQ = (id,t)=>setQs(p=>p.map(x=>x.id===id?{...x,q:t}:x));
+  const delQ = (id)=>setQs(p=>p.filter(x=>x.id!==id));
   return <div className="p-5">
     <div className="flex items-center justify-between mb-3"><h3 className="text-[15px] font-semibold text-gray-900">{card.name}</h3><button onClick={onClose} className="w-7 h-7 rounded-md hover:bg-gray-100 inline-flex items-center justify-center text-gray-400 cursor-pointer"><X className="w-4 h-4"/></button></div>
     {/* Modules — a card can belong to several; primary marked. No percentages (§5). */}
@@ -301,8 +318,8 @@ function SidePanel({ card, role, onClose, isCapture, isDeliver, isComplete, prim
     {flags.length>0&&<><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mt-3 mb-1.5 pt-2 border-t border-gray-100">{"Flags ("}{flags.length}{")"}</p><div className="flex flex-wrap gap-1.5 mb-1">{flags.map((f,i)=><span key={i} className="text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-600 border border-gray-200">{f}</span>)}</div><p className="text-[9px] text-gray-400 mb-1">Automated metadata checks — informational, not knowledge gaps.</p></>}
     <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mt-3 mb-1 pt-2 border-t border-gray-100">{"Files ("}{(card.files||[]).length}{")"}</p>
     {(card.files||[]).length>0?(card.files||[]).map((f,i)=><div key={i} className="flex items-center gap-2 text-[11px] py-1.5 px-2.5 rounded-md bg-gray-50 mb-1"><Paperclip className="w-3 h-3 text-gray-400 shrink-0"/><span className="text-gray-800 flex-1">{f.name}</span><span className="text-[10px] text-gray-400">{f.size}</span></div>):<p className="text-[11px] text-gray-400 mb-1">No files yet</p>}
-    <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mt-3 mb-1 pt-2 border-t border-gray-100">{"Questions ("}{card.qs.length}{")"}</p>
-    {card.qs.length>0?card.qs.map((q,i)=><div key={i} className="text-[11px] bg-gray-50 rounded-md px-2.5 py-2 mb-1.5"><p className="text-gray-900 mb-0.5">{q.q}</p><p className="text-[10px] text-gray-500 flex items-center gap-1">{q.from==="AI-generated"?<><Sparkles className="w-2.5 h-2.5 text-violet-500"/>{q.from}</>:<><User className="w-2.5 h-2.5"/>{q.from}</>}</p>{showAnswers&&q.answer&&<AnswerBlock q={q} role={role} committed={isComplete} readOnly={readOnly}/>}{isCapture&&!q.answer&&role==="offboarder"&&<AnswerInput/>}</div>):<p className="text-[11px] text-gray-400 mb-1">No questions yet</p>}
+    <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mt-3 mb-1 pt-2 border-t border-gray-100">{"Questions ("}{qs.length}{")"}</p>
+    {qs.length>0?qs.map((q,i)=>canEditQ?<div key={q.id} className="bg-gray-50 rounded-md px-2.5 py-2 mb-1.5"><EditableQuestion q={q} onEdit={editQ} onDelete={delQ} canEdit/></div>:<div key={q.id} className="text-[11px] bg-gray-50 rounded-md px-2.5 py-2 mb-1.5"><p className="text-gray-900 mb-0.5">{q.q}</p><p className="text-[10px] text-gray-500 flex items-center gap-1">{q.from==="AI-generated"?<><Sparkles className="w-2.5 h-2.5 text-violet-500"/>{q.from}</>:<><User className="w-2.5 h-2.5"/>{q.from}</>}</p>{showAnswers&&q.answer&&<AnswerBlock q={q} role={role} committed={isComplete} readOnly={readOnly}/>}{isCapture&&!q.answer&&role==="offboarder"&&<AnswerInput/>}</div>):<p className="text-[11px] text-gray-400 mb-1">No questions yet</p>}
     {role!=="offboarder"&&!readOnly&&<><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mt-3 mb-1 pt-2 border-t border-gray-100">Ask a question</p><div className="flex gap-1.5"><input value={followUp} onChange={e=>setFollowUp(e.target.value)} placeholder="Your question..." className="flex-1 h-8 px-2.5 rounded-md border border-gray-200 text-[11px] focus:outline-none focus:ring-2 focus:ring-violet-500/20"/><button className="h-8 px-2.5 rounded-md bg-violet-600 text-white text-[10px] font-medium cursor-pointer">Ask</button></div></>}
   </div>;
 }
