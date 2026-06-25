@@ -985,6 +985,60 @@
 
 ---
 
+## Session 2025-06-25 Build · Data-tab semantics + KG chat (2026-06-25)
+
+*Companion doc: `docs/arteep/CL-session-2025-06-25-build-queue.md` (full design detail + build order). All four built and pushed this session.*
+
+### CL-130 — Gap vs flag are distinct concepts with distinct visual treatments (BUILT)
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-25 |
+| Sprint | POC build · Management plane |
+| Change | The Data tab now separates two things that were previously conflated under "gap". **Gaps** are AI-detected *missing knowledge* at the **module level** — the AI analyzes the whole module and identifies what should exist but doesn't. They render as a yellow row under the module header with the AI sparkle (✨), they **generate questions** (each gap shows the AI-authored question it spawned to fill it), they appear as yellow nodes in the KG Explorer, and they are **not dismissable** — they close only when answered through Q&A. **Flags** are mechanical, card-level metadata checks (e.g. `no desc`, `checklist 1/3`) computed by automated rule. They render as small gray badges inline on the card row, are **informational only**, **dismissable** by the Manager (× on hover), and generate nothing. In the Side Panel the card's section is retitled "Flags" with a "mechanical metadata checks — not knowledge gaps" caption. Built in `session-command-view.jsx` (`cardFlags()` helper · `moduleGapQs` data · CardRow gray flag badges · module-gap question sub-rows). |
+| UC Reference | UC-HO-01 status surface · Data tab · extends CL-120 (4 metadata + 2 AI gap detection) by giving the two detection types separate UI semantics |
+| Why | Lumping a mechanical "checklist 2/3 incomplete" in with an AI "no disaster-recovery procedure documented" made every yellow mark read as equally urgent and equally actionable, when only the latter drives the question queue. Splitting them tells the Manager at a glance which marks are AI knowledge gaps (act on these) versus bookkeeping (ignore or dismiss). |
+| Decided By | PO (Tram) |
+| Category | UX Refinement (significant) · Visual System (gap = yellow+sparkle+questions · flag = gray+dismissable) · extends CL-120 |
+
+### CL-131 — One card can belong to multiple modules (1:N); primary + linked + uncategorized (BUILT)
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-25 |
+| Sprint | POC build · Management plane |
+| Change | The AI agent evaluates each card against **all** modules, not one. Each card-module pair gets an internal confidence score; **≥80% = a match** (threshold and all percentages are **hidden from every user** — internal metric only). The highest match is the card's **primary** module; other matches above threshold are **linked** modules; cards below threshold for every module fall to **Uncategorized**. Visual treatment in the Data tab: **primary** = normal row; **linked** = dashed violet left border, muted text, violet file icon, and a `↗ Primary Module` chip; **uncategorized** = a dashed-border section at the bottom ("AI couldn't confidently assign these"). The Side Panel lists all of a card's modules with the primary marked, no percentages. Manager hover affordances on every card row: a drag handle and a "Move to" dropdown (any module or Uncategorized). Data-model rules: **Q&A belongs to the card** (visible from any module it appears in), **gaps stay module-level**, **flags stay card-level** (show in every module the card appears in), and a module's card count = primary + linked. Built in `session-command-view.jsx` (`linkedIn` card data · `UNCATEGORIZED` · `ALL_CARDS` index · assignments state · CardRow). |
+| UC Reference | UC-HO-01 · Data tab · builds on CL-120 Board→Module→Card model (cards were 1:1 with modules; now 1:N) |
+| Why | Real Trello cards routinely touch several areas (a Kafka card is both Payment and CI/CD). Forcing one module hid those relationships and pushed borderline cards into a wrong bucket. Showing primary + linked keeps each module complete without duplicating knowledge, and the Uncategorized tray makes the AI's uncertainty honest and fixable instead of silently mis-filing. Hiding the confidence number avoids users arguing with a percentage. |
+| Decided By | PO (Tram) |
+| Category | Architectural Decision (card-to-module cardinality 1:1 → 1:N) · UX Refinement (linked row treatment · uncategorized section · drag + Move-to) · extends CL-120 |
+
+### CL-132 — AI categorization animation: cartoon explainer in the Prepare phase (BUILT)
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-25 |
+| Sprint | POC build · Management plane |
+| Change | A short cartoon-style explainer animation plays in the Manager's **Collecting** state (between "crawl complete" and "knowledge map ready"). It shows the **mechanism** of how the AI sorts cards using simple placeholder data (Card A, B, C, D — never real session data), not the actual sort. It auto-plays and loops through 4 scenes: (1) a card floats in toward an AI sparkle hub while module buckets wait; (2) a simple match — the card pops into one module; (3) a 1:N multi-match — the card splits, ★ primary flies to one module and ↗ linked flies to another (visualizing CL-131); (4) no match — the card wiggles and drops to Uncategorized. Colored module buckets (violet/blue/pink pills per the §6 reference), rounded card pills with single letters, bounce/pop on landing, shake on rejection. A fast-forward counter line ("12 · 28 · 47 · 64 ✓") sits below. Loops in the demo; plays once in the real product. Honors `prefers-reduced-motion`. Built as `CategorizeAnimation` (pure-CSS keyframes) in `session-command-view.jsx`. |
+| UC Reference | UC-HO-01 · Prepare phase · explains CL-120 module derivation + CL-131 1:N assignment |
+| Why | The jump from "collecting" to a fully organized module map looked like magic and invited distrust ("why is my card in that module?"). A 10-second cartoon of the mechanism builds intuition for how the AI decides — including the 1:N split and the no-match case — so the organized result reads as explainable rather than arbitrary. Placeholder data keeps it an explainer, not a fake preview of the user's real cards. |
+| Decided By | PO (Tram) |
+| Category | Visual System (new primitive: Prepare-phase explainer animation) · supports CL-131 |
+
+### CL-133 — KG Explorer chat redesign: conversation panel replaces fixed chips + footer bar (BUILT)
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-25 |
+| Sprint | S-KG · Consumer plane |
+| Change | The Knowledge Graph Explorer (`/knowledge-graph`) drops the 5 fixed AI chips and the small footer chat bar in favor of a proper chat experience laid out left→right: (1) a collapsible **conversation-history sidebar** (~124px) — saved threads with title + timestamp, **renamable** inline (hover → pencil → Enter saves / Escape cancels), "+ New chat", and a hide/show toggle; (2) an always-visible **active chat panel** (~220px) — thread title + AI sparkle, user (violet, right) / AI (gray, left) message bubbles, and **dynamic recommendation chips** below the latest AI response (contextual, variable count, each with a Tabler/lucide icon — e.g. "Show the gap", "Connected entries", "Who contributed?", "Zoom to node"); (3) the **graph canvas** stays primary and full-width; (4) the **node detail drawer** now slides in as a right-side overlay (~440px) instead of shrinking the graph. Asking a question or picking a recommendation yields free text in chat, **graph highlighting** (focused nodes light up, others dim to ~20% opacity instead of disappearing), or both; a "Focusing: ‹cluster› ×" chip appears on the graph to clear focus. The chatbot only ever **highlights existing nodes — never creates new ones**. The node drawer's "Ask about this" button bridges node context into the chat thread. The `?prompt=minh-le` from-session entry point still pre-fills a thread (unchanged behavior, CL-121). Built in `knowledge-graph-explorer.jsx`. |
+| UC Reference | UC-HO-01 / UC-ON-02 Consumer plane · `/knowledge-graph` · supersedes the fixed-chip + footer-bar chat from CL-121 |
+| Why | Five hard-coded chips and a one-line footer couldn't hold a real exploration — no history, no follow-ups, no sense of a conversation. A persistent chat with saved threads and contextual recommendations matches how people actually interrogate a graph (ask, refine, branch), while keeping the graph itself primary. Dimming instead of hiding non-focused nodes preserves spatial context during a highlight. The "never creates nodes" rule keeps the graph a trustworthy record, not a chat scratchpad. |
+| Decided By | PO (Tram) |
+| Category | UX Refinement (significant · chat surface redesign) · Visual System (history sidebar · chat thread · dynamic reco chips · overlay drawer · graph dimming) · supersedes CL-121 chat affordances |
+
+---
+
 ## Pending Decisions (Need Stakeholder Input)
 
 The defaults in CL-003, CL-004, and CL-005 are working assumptions. The following decisions remain open and should be confirmed before their respective sprints begin:

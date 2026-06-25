@@ -75,7 +75,7 @@
 
 ---
 
-## 4. Gap vs flag distinction — NOT BUILT 🔒
+## 4. Gap vs flag distinction — BUILT ✅ (CL-130)
 
 **Decision:** Gaps and flags are fundamentally different concepts with distinct visual treatments.
 
@@ -98,7 +98,7 @@
 
 ---
 
-## 5. 1:N card-to-module relationship — NOT BUILT 🔒
+## 5. 1:N card-to-module relationship — BUILT ✅ (CL-131)
 
 **Decision:** One card can belong to multiple modules. The AI agent evaluates each card against ALL modules.
 
@@ -141,7 +141,7 @@
 
 ---
 
-## 6. AI categorization animation — NOT BUILT 🔒
+## 6. AI categorization animation — BUILT ✅ (CL-132)
 
 **Decision:** A short cartoon-style explainer animation plays during Prepare, between "Crawl complete" and "Knowledge map ready."
 
@@ -172,7 +172,7 @@
 
 ---
 
-## 7. KG Explorer chat redesign — NOT BUILT 🔒
+## 7. KG Explorer chat redesign — BUILT ✅ (CL-133)
 
 **Decision:** Remove the 5 fixed AI chips and footer chat bar. Replace with a proper chat panel on the left with conversation history.
 
@@ -242,7 +242,7 @@ Item 4 is a standalone page redesign at `/knowledge-graph`.
 
 ## Pending from previous sessions (not addressed here)
 
-- [ ] CL entries to be logged for all decisions above
+- [x] CL entries logged — CL-130 (§4) · CL-131 (§5) · CL-132 (§6) · CL-133 (§7), 2026-06-25
 - [ ] Context snapshot update (`ARTEEP-context-snapshot.md`)
 - [ ] CL-121/122 patch merge into main design change log
 - [ ] CL-114 cleanup in `prepare-stage.jsx` (remove stale Successor row)

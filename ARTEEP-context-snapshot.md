@@ -298,7 +298,7 @@ The Consumption plane is the **single artifact** for all four reader archetypes 
 
 ---
 
-## 10. Design Change Log Summary (CL-001 through CL-120)
+## 10. Design Change Log Summary (CL-001 through CL-133 · see change log for full entries)
 
 118 entries across these major themes. Sections CL-001 through CL-101 are unchanged — see prior commits of this file or the change-log itself for theme summaries.
 
@@ -389,6 +389,12 @@ The Consumption plane is the **single artifact** for all four reader archetypes 
 - CL-109 (Phương Anh Manager review surface) superseded; CL-063 (3 concurrent sessions) partially superseded (now 2)
 - CL-087 Sales source mix (Salesforce + shared Calendar + SharePoint) remains documented per CL-091; no longer demoed end-to-end
 - Surface application pending: dashboard `SESSIONS_ACTIVE` 3 → 2 + activity-feed entry; session-command-view `phuong-anh` slug branch + `PhuongAnhReview` + `PA_SECTIONS` removal; `app/session/[id]/page.tsx` slug allow-list
+
+### Session 2025-06-25 build · Data-tab semantics + KG chat (CL-130 to CL-133, 2026-06-25 · all BUILT)
+- **CL-130 — Gap vs flag:** module-level AI *gaps* (yellow + sparkle · generate questions · not dismissable · yellow KG node) are now distinct from card-level mechanical *flags* (gray badge e.g. `no desc` / `checklist 1/3` · informational · dismissable). `/session/minh-le` Data tab.
+- **CL-131 — 1:N card-to-module:** one card can belong to several modules. ≥80% confidence = match (all % hidden); highest = primary, others = linked (dashed violet + `↗ Primary` chip), below-threshold = Uncategorized section. Manager drag handle + "Move to". Q&A is card-level, gaps module-level, flags card-level. `/session/minh-le` Data tab.
+- **CL-132 — AI categorization animation:** looping cartoon explainer in the Manager Collecting state — 4 scenes (match · match · 1:N split ★/↗ · no-match → Uncategorized), placeholder cards, `prefers-reduced-motion` aware. `/session/minh-le` Prepare.
+- **CL-133 — KG Explorer chat redesign:** removed 5 fixed chips + footer bar; added collapsible history sidebar (renamable threads · + New chat), always-on active chat (bubbles + dynamic reco chips), full-width graph, overlay node drawer, graph dimming (non-focused → ~20%), "Focusing: X ×" chip, "Ask about this" bridge. Supersedes CL-121 chat affordances. `/knowledge-graph`.
 
 ---
 
