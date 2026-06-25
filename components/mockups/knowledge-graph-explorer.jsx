@@ -133,6 +133,8 @@ export default function KnowledgeGraphExplorer({embedded=false}={}){
 
   useEffect(()=>{const copies=visNodes.map(n=>{const o=nodesRef.current.find(x=>x.id===n.id);return{...n,x:o?.x??0,y:o?.y??0,vx:0,vy:0};});if(copies.some(n=>n.x===0&&n.y===0))initPos(copies,dim.w,dim.h);nodesRef.current=copies;let run=true;const step=()=>{if(!run)return;sim(nodesRef.current,visEdges,dim.w,dim.h);setTick(t=>t+1);animRef.current=requestAnimationFrame(step);};animRef.current=requestAnimationFrame(step);return()=>{run=false;cancelAnimationFrame(animRef.current);};},[visNodes,visEdges,dim]);
   useEffect(()=>{const el=boxRef.current;if(!el)return;const ro=new ResizeObserver(([e])=>{const{width,height}=e.contentRect;if(width>0)setDim({w:width,h:height});});ro.observe(el);return()=>ro.disconnect();},[]);
+  // Non-passive wheel listener: zoom the graph and block the browser's own zoom/scroll (incl. ctrl+wheel / trackpad pinch).
+  useEffect(()=>{const el=boxRef.current;if(!el)return;const handler=(e)=>{e.preventDefault();const f=e.deltaY>0?0.93:1.07;setPan(p=>{const ns=Math.max(0.3,Math.min(3,p.s*f));const r=el.getBoundingClientRect();const mx=e.clientX-r.left,my=e.clientY-r.top;return{s:ns,x:mx-(mx-p.x)*(ns/p.s),y:my-(my-p.y)*(ns/p.s)};});};el.addEventListener("wheel",handler,{passive:false});return()=>el.removeEventListener("wheel",handler);},[]);
   useEffect(()=>{const params=new URLSearchParams(window.location.search);const prompt=params.get("prompt");if(!prompt)return;const cfg=PROMPTS[prompt];if(cfg){const mods=NODES.filter(n=>n.type==="module"&&cfg.filter(n)).map(n=>n.id);const entries=NODES.filter(n=>n.depth===2&&n.type==="entry"&&mods.includes(n.parent)).map(n=>n.id);const focus=[...mods,...entries];if(mods.length){setExpanded(new Set(mods));setChatFocus(focus);}setChatResponse(cfg.response);
     // Pre-fill the active chat thread with the from-session prompt + AI answer.
     const id="t-session";setThreads(prev=>[{id,title:cfg.input,ts:"now",messages:[{role:"user",text:cfg.input},{role:"ai",text:cfg.response,focus:focus.length?focus:null,chips:[{icon:"Eye",label:"Show the gaps",focus:entries.filter(e=>{const nd=NODES.find(n=>n.id===e);return nd?.hasGap;})},{icon:"Network",label:"Connected entries",focus:focus}]}]},...prev.filter(t=>t.id!==id)]);setActiveThread(id);}
@@ -144,7 +146,8 @@ export default function KnowledgeGraphExplorer({embedded=false}={}){
   const onMove=useCallback((e)=>{if(dragId){const n=nodesRef.current.find(x=>x.id===dragId);if(n&&svgRef.current){const r=svgRef.current.getBoundingClientRect();n.x=(e.clientX-r.left-pan.x)/pan.s;n.y=(e.clientY-r.top-pan.y)/pan.s;n.vx=0;n.vy=0;setTick(t=>t+1);}}else if(panning){setPan(p=>({...p,x:panRef.current.px+e.clientX-panRef.current.x,y:panRef.current.py+e.clientY-panRef.current.y}));}if(hovered)setTipPos({x:e.clientX,y:e.clientY});},[dragId,panning,hovered,pan]);
   const onUp=useCallback(()=>{if(dragId){const n=nodesRef.current.find(x=>x.id===dragId);if(n)n._d=false;setDragId(null);}setPanning(false);},[dragId]);
   const onBgDown=useCallback((e)=>{if(e.target===svgRef.current||e.target.tagName==="rect"){setPanning(true);panRef.current={x:e.clientX,y:e.clientY,px:pan.x,py:pan.y};}},[pan]);
-  const onWheel=useCallback((e)=>{e.preventDefault();const f=e.deltaY>0?0.93:1.07;setPan(p=>{const ns=Math.max(0.3,Math.min(3,p.s*f));const r=svgRef.current.getBoundingClientRect();const mx=e.clientX-r.left,my=e.clientY-r.top;return{s:ns,x:mx-(mx-p.x)*(ns/p.s),y:my-(my-p.y)*(ns/p.s)};});},[]);
+  // Wheel/trackpad zoom is wired as a NON-passive native listener (see effect below) so preventDefault()
+  // actually fires — React's synthetic onWheel is passive and can't stop browser zoom / page scroll.
   const onClickNode=useCallback((node)=>{if(node.type==="module"){setExpanded(prev=>{const n=new Set(prev);n.has(node.id)?n.delete(node.id):n.add(node.id);return n;});}setSelected(s=>s===node.id?null:node.id);setReportingNode(null);setReportText("");},[]);
   // Apply a focus array to the graph: expand parent modules + highlight nodes.
   const applyFocus=useCallback((focus)=>{if(!focus||!focus.length){return;}const mods=new Set();focus.forEach(id=>{const nd=NODES.find(n=>n.id===id);if(nd?.parent)mods.add(nd.parent);if(nd?.type==="module")mods.add(nd.id);});setExpanded(prev=>new Set([...prev,...mods]));setChatFocus(focus);},[]);
@@ -178,7 +181,7 @@ export default function KnowledgeGraphExplorer({embedded=false}={}){
   const selIsGap=selData?isGap(selData.id):false;
 
   return(
-    <div className={`${embedded?'px-5 py-4':'p-4'} flex flex-col h-full min-h-0`} style={{fontFamily:"'Inter',system-ui,sans-serif"}}>
+    <div className={`${embedded?'px-5 py-4 h-[calc(100vh-3rem)]':'p-4 h-full'} flex flex-col min-h-0`} style={{fontFamily:"'Inter',system-ui,sans-serif"}}>
       <div className="flex items-center justify-between mb-2 flex-shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-violet-600 flex items-center justify-center"><Sparkles className="w-4 h-4 text-white" strokeWidth={1.75}/></div>
@@ -240,7 +243,7 @@ export default function KnowledgeGraphExplorer({embedded=false}={}){
 
         {/* 3. Graph canvas — always primary, fills remaining space; drawer overlays it */}
         <div ref={boxRef} className="flex-1 min-w-0 bg-gray-50 rounded-lg border border-gray-200 relative overflow-hidden" style={{cursor:panning?'grabbing':dragId?'grabbing':'grab'}}>
-          <svg ref={svgRef} width={dim.w} height={dim.h} className="w-full h-full" style={{touchAction:'none'}} onPointerMove={onMove} onPointerUp={onUp} onPointerDown={onBgDown} onWheel={onWheel}>
+          <svg ref={svgRef} width={dim.w} height={dim.h} className="w-full h-full" style={{touchAction:'none'}} onPointerMove={onMove} onPointerUp={onUp} onPointerDown={onBgDown}>
             <g transform={`translate(${pan.x},${pan.y}) scale(${pan.s})`}>
               {visEdges.map((e,i)=>{const s=nm[e.from],t=nm[e.to];if(!s||!t)return null;const sn=NODES.find(n=>n.id===e.from),tn=NODES.find(n=>n.id===e.to);const sr=nodeR(sn||{}),tr=nodeR(tn||{});const dx=t.x-s.x,dy=t.y-s.y,d=Math.sqrt(dx*dx+dy*dy)||1;const x1=s.x+(dx/d)*sr,y1=s.y+(dy/d)*sr,x2=t.x-(dx/d)*tr,y2=t.y-(dy/d)*tr;const hi=isHi(e.from)&&isHi(e.to);
                 /* When a focus/selection is active, dim non-highlighted edges to ~20% instead of removing them. */
