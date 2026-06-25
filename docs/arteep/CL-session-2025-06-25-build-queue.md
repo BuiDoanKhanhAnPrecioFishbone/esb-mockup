@@ -87,7 +87,7 @@
 | Source | AI analyzes the full module, identifies what SHOULD exist but DOESN'T | Automated rule: "no desc", "checklist 1/3", etc. |
 | Visual | Yellow background, AI sparkle icon (✨) | Gray badge, inline on card row |
 | Generates questions? | Yes — AI auto-generates questions from gaps | No |
-| Shows in KG Explorer? | Yes — yellow node in graph | No |
+| Shows in KG Explorer? | Yes — yellow node in graph (session-scoped only, not after commit) | No |
 | Dismissable? | No — filled through Q&A only | Yes — Manager can dismiss irrelevant flags |
 | Resolution | Offboarder answers AI-generated questions → knowledge fills the gap | Informational only |
 
@@ -150,7 +150,7 @@
 - Shows the **mechanism** of how AI sorts cards, not the actual sorting
 - **Auto-plays continuously** — no clicks needed
 
-### Animation flow (4 scenes, loops)
+### Animation flow (4 scenes, auto-plays)
 
 | Scene | What happens | Duration |
 |---|---|---|
@@ -188,6 +188,11 @@
 ### What's removed
 - 5 fixed AI chips ("Show risks", "Key dependencies", etc.)
 - Small footer chat bar
+- Filter button from graph toolbar (POC only — all filtering through chat)
+
+### Graph toolbar (after filter removal)
+- Title + entry count badge + zoom button only
+- Review padding/spacing for visual balance
 
 ### What's added
 
@@ -225,66 +230,48 @@
 
 ---
 
-## 8. Open discussion items — NEEDS DECISION ❓
+## 8. Resolved discussion items — LOCKED ✅
 
-*These items are under discussion and have NOT been decided yet. Resolve before building.*
+*All items resolved during the Jun 25 session.*
 
-### 8.1 Graph adjustments
+### 8.1a — Graph filter: REMOVED for POC ✅
 
-**8.1a — Graph filter: keep or remove?**
+Filter button removed from the KG Explorer graph toolbar. All filtering goes through the chat copilot. Graph toolbar becomes: title + entry count + zoom only. Filter may return in production as a power-user shortcut.
 
-The current KG Explorer mockup includes a "Filter" button in the graph header toolbar. With the new chat-based interaction model (§7), filtering may be handled entirely through the chatbot (e.g., "Show only gaps" → graph highlights gap nodes). If so, the explicit Filter button may be redundant.
+### 8.1b — Graph header padding ✅
 
-- **Option A:** Keep the filter button — direct manipulation for users who prefer clicking over chatting
-- **Option B:** Remove it — all filtering goes through the chat copilot, keeps the graph toolbar minimal
-- **Decision:** TBD
+Review and adjust padding/spacing of graph toolbar after filter removal. To be done when building §7.
 
-**8.1b — Graph header padding**
+### 8.1c — Gap → normal node on commit ✅
 
-Review the padding/spacing of the graph header toolbar (title, entry count badge, filter/zoom buttons). Current mockup may need adjustment for visual balance once filter decision is made.
+| Rule | Value |
+|---|---|
+| On KG commit | Gap nodes lose yellow status, become normal purple knowledge nodes |
+| Unanswered gaps at commit | Must be resolved or dismissed before commit (blocked) |
+| Gap resolution criteria | ALL generated questions must be satisfied or dismissed |
+| KG Explorer | Only shows committed entries — no gap nodes (gaps are session-scoped) |
 
-- **Action:** Check and adjust after 8.1a is resolved
+### 8.2 — AI question editing ✅
 
-**8.1c — Gap → normal node on commit**
+| Rule | Value |
+|---|---|
+| AI-generated questions | Now editable AND deletable by Manager and Coworker |
+| Edit interaction | Same as human questions: hover → pencil → inline edit |
+| Delete interaction | Same as human questions: hover → trash → removed |
+| Regeneration | Deleted AI questions are NOT regenerated |
+| Gap relationship | Deleting a gap's question does NOT dismiss the gap — gap stays visible with zero questions. Manager can add new questions or dismiss the gap separately |
+| Dismiss gap | Removes the gap row AND all its generated questions |
 
-When data is committed to the Knowledge Graph (Deliver Complete), all gap nodes lose their "gap" status and become normal knowledge nodes. The yellow color disappears — they're now filled knowledge, not missing knowledge.
+### 8.3 — Offboarder Capture view: HYBRID (Option C) ✅
 
-- **Current behavior:** Gap nodes stay yellow in the KG Explorer regardless of session status
-- **Expected behavior:** Once committed, former gaps become normal purple nodes (same as any other verified entry)
-- **Decision:** Locked ✅ — gaps transition to normal nodes on KG commit. Needs implementation in the KG Explorer.
-
-### 8.2 Session mechanics — AI question editing
-
-**Feature request:** Users (Manager, Coworker) should be able to edit AI-generated questions, not just human-added ones.
-
-Current state:
-- Human-added questions: editable (inline edit) + deletable ✅
-- AI-generated questions: read-only ❌
-
-Proposed change:
-- AI-generated questions become **editable and deletable** by Manager and Coworker
-- Works the same as human questions: hover → pencil (edit) + trash (delete)
-- Deleting an AI-generated question works similarly to "dismiss gap" — the question is removed, the system doesn't regenerate it
-- If the question came from a gap, deleting the question does NOT resolve the gap — the gap remains, the Manager can ask a different question or dismiss the gap separately
-
-- **Decision:** TBD — confirm whether edit and delete should both be available, or just delete
-
-### 8.3 Offboarder UI / permissions
-
-**Clarification needed:** What should the Offboarder see in the Data tab?
-
-Current behavior:
-- **Prepare:** Offboarder cannot access the Data tab (disabled, "Your session is being prepared")
-- **Capture:** Offboarder sees a flat question queue (all questions listed, answerable, no module/card tree)
-- **Deliver/Complete:** Offboarder sees the full Data tab (read-only, same view as Manager)
-
-Open question: should the Capture-state Offboarder view change?
-
-- **Option A (current):** Simple question queue only — Offboarder just answers questions without seeing the module/card structure. Clean, focused, low cognitive load.
-- **Option B:** Full Data tab access — Offboarder sees the module/card tree with their questions embedded. More context about where their knowledge fits, but potentially overwhelming.
-- **Option C:** Hybrid — question queue as the default view, with a "See in context" link on each question that scrolls/expands to show it within the module tree. Best of both worlds but more complex to build.
-
-- **Decision:** TBD
+| Rule | Value |
+|---|---|
+| Default view | Flat question queue — no module tree, no card list |
+| What Offboarder sees | Question text, who asked, module tag (light context), answer input |
+| What Offboarder does NOT see | Module → card tree, card counts, board headers, gap rows, flag badges, drag handles, "Move to", rename |
+| "See in context" link | Each question has a link that opens the side panel showing the source card (description, checklist, gap, files, other questions) |
+| Active question | Highlighted with violet border when its context panel is open |
+| Deliver/Complete | Offboarder sees read-only summary (contribution stats, thank-you, timeline) — not full Data tab |
 
 ---
 
@@ -301,7 +288,7 @@ Items 1–2 affect the session Data tab directly and are prerequisites for the d
 Item 3 is a standalone animation component in Prepare.
 Item 4 is a standalone page redesign at `/knowledge-graph`.
 
-**Resolve §8 discussion items before building §4, §5, and §7** — they affect the Data tab, question management, and graph behavior respectively.
+**§8 items are all resolved** — no blockers remaining from discussion.
 
 ---
 
