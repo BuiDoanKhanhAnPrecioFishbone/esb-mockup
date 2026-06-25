@@ -259,10 +259,10 @@ function TopBar({
           className="bg-transparent outline-none text-[12px] text-gray-700 placeholder:text-gray-400 flex-1 min-w-0"
         />
         <span
-          className="text-[10px] text-gray-400 border border-gray-200 rounded px-1 py-0.5"
+          className="shrink-0 text-[10px] leading-none text-gray-400 border border-gray-200 rounded px-1.5 py-1"
           style={{ fontFamily: "ui-monospace, Menlo, monospace" }}
         >
-          &lcub;K
+          {"⌘K"}
         </span>
       </div>
 
