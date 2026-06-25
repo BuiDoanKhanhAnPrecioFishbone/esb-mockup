@@ -75,7 +75,7 @@
 
 ---
 
-## 4. Gap vs flag distinction — BUILT ✅ (CL-130)
+## 4. Gap vs flag distinction — NOT BUILT 🔒
 
 **Decision:** Gaps and flags are fundamentally different concepts with distinct visual treatments.
 
@@ -98,7 +98,7 @@
 
 ---
 
-## 5. 1:N card-to-module relationship — BUILT ✅ (CL-131)
+## 5. 1:N card-to-module relationship — NOT BUILT 🔒
 
 **Decision:** One card can belong to multiple modules. The AI agent evaluates each card against ALL modules.
 
@@ -129,7 +129,7 @@
 
 | Action | Location | Behavior |
 |---|---|---|
-| Drag handle (⠀⠀⠀) | Left side of card row, hover-only | Drag card between modules or to uncategorized |
+| Drag handle (⠿) | Left side of card row, hover-only | Drag card between modules or to uncategorized |
 | "Move to" dropdown | Right side of card row, hover-only | Pick destination module or "Uncategorized" |
 | Remove from module | Via "Move to → Uncategorized" | Card moves back to uncategorized section |
 
@@ -141,7 +141,7 @@
 
 ---
 
-## 6. AI categorization animation — BUILT ✅ (CL-132)
+## 6. AI categorization animation — NOT BUILT 🔒
 
 **Decision:** A short cartoon-style explainer animation plays during Prepare, between "Crawl complete" and "Knowledge map ready."
 
@@ -172,7 +172,7 @@
 
 ---
 
-## 7. KG Explorer chat redesign — BUILT ✅ (CL-133)
+## 7. KG Explorer chat redesign — NOT BUILT 🔒
 
 **Decision:** Remove the 5 fixed AI chips and footer chat bar. Replace with a proper chat panel on the left with conversation history.
 
@@ -225,24 +225,89 @@
 
 ---
 
+## 8. Open discussion items — NEEDS DECISION ❓
+
+*These items are under discussion and have NOT been decided yet. Resolve before building.*
+
+### 8.1 Graph adjustments
+
+**8.1a — Graph filter: keep or remove?**
+
+The current KG Explorer mockup includes a "Filter" button in the graph header toolbar. With the new chat-based interaction model (§7), filtering may be handled entirely through the chatbot (e.g., "Show only gaps" → graph highlights gap nodes). If so, the explicit Filter button may be redundant.
+
+- **Option A:** Keep the filter button — direct manipulation for users who prefer clicking over chatting
+- **Option B:** Remove it — all filtering goes through the chat copilot, keeps the graph toolbar minimal
+- **Decision:** TBD
+
+**8.1b — Graph header padding**
+
+Review the padding/spacing of the graph header toolbar (title, entry count badge, filter/zoom buttons). Current mockup may need adjustment for visual balance once filter decision is made.
+
+- **Action:** Check and adjust after 8.1a is resolved
+
+**8.1c — Gap → normal node on commit**
+
+When data is committed to the Knowledge Graph (Deliver Complete), all gap nodes lose their "gap" status and become normal knowledge nodes. The yellow color disappears — they're now filled knowledge, not missing knowledge.
+
+- **Current behavior:** Gap nodes stay yellow in the KG Explorer regardless of session status
+- **Expected behavior:** Once committed, former gaps become normal purple nodes (same as any other verified entry)
+- **Decision:** Locked ✅ — gaps transition to normal nodes on KG commit. Needs implementation in the KG Explorer.
+
+### 8.2 Session mechanics — AI question editing
+
+**Feature request:** Users (Manager, Coworker) should be able to edit AI-generated questions, not just human-added ones.
+
+Current state:
+- Human-added questions: editable (inline edit) + deletable ✅
+- AI-generated questions: read-only ❌
+
+Proposed change:
+- AI-generated questions become **editable and deletable** by Manager and Coworker
+- Works the same as human questions: hover → pencil (edit) + trash (delete)
+- Deleting an AI-generated question works similarly to "dismiss gap" — the question is removed, the system doesn't regenerate it
+- If the question came from a gap, deleting the question does NOT resolve the gap — the gap remains, the Manager can ask a different question or dismiss the gap separately
+
+- **Decision:** TBD — confirm whether edit and delete should both be available, or just delete
+
+### 8.3 Offboarder UI / permissions
+
+**Clarification needed:** What should the Offboarder see in the Data tab?
+
+Current behavior:
+- **Prepare:** Offboarder cannot access the Data tab (disabled, "Your session is being prepared")
+- **Capture:** Offboarder sees a flat question queue (all questions listed, answerable, no module/card tree)
+- **Deliver/Complete:** Offboarder sees the full Data tab (read-only, same view as Manager)
+
+Open question: should the Capture-state Offboarder view change?
+
+- **Option A (current):** Simple question queue only — Offboarder just answers questions without seeing the module/card structure. Clean, focused, low cognitive load.
+- **Option B:** Full Data tab access — Offboarder sees the module/card tree with their questions embedded. More context about where their knowledge fits, but potentially overwhelming.
+- **Option C:** Hybrid — question queue as the default view, with a "See in context" link on each question that scrolls/expands to show it within the module tree. Best of both worlds but more complex to build.
+
+- **Decision:** TBD
+
+---
+
 ## Build order recommendation
 
 Features are ordered by dependency and demo impact:
 
-1. **Gap vs flag distinction** (foundation for Data tab visual clarity)
-2. **1:N card-to-module UI** (linked card rows, uncategorized section, drag handle, "Move to")
-3. **AI categorization animation** (cartoon explainer for Prepare phase)
-4. **KG Explorer chat redesign** (left panel chat, conversation history, dynamic chips, graph highlighting)
+1. **Gap vs flag distinction** (§4 — foundation for Data tab visual clarity)
+2. **1:N card-to-module UI** (§5 — linked card rows, uncategorized section, drag handle, "Move to")
+3. **AI categorization animation** (§6 — cartoon explainer for Prepare phase)
+4. **KG Explorer chat redesign** (§7 — left panel chat, conversation history, dynamic chips, graph highlighting)
 
 Items 1–2 affect the session Data tab directly and are prerequisites for the demo flow.
 Item 3 is a standalone animation component in Prepare.
 Item 4 is a standalone page redesign at `/knowledge-graph`.
 
+**Resolve §8 discussion items before building §4, §5, and §7** — they affect the Data tab, question management, and graph behavior respectively.
+
 ---
 
 ## Pending from previous sessions (not addressed here)
 
-- [x] CL entries logged — CL-130 (§4) · CL-131 (§5) · CL-132 (§6) · CL-133 (§7), 2026-06-25
+- [ ] CL entries to be logged for all decisions above
 - [ ] Context snapshot update (`ARTEEP-context-snapshot.md`)
 - [ ] CL-121/122 patch merge into main design change log
 - [ ] CL-114 cleanup in `prepare-stage.jsx` (remove stale Successor row)
