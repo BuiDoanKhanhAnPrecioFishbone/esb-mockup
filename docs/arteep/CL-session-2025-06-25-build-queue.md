@@ -75,7 +75,7 @@
 
 ---
 
-## 4. Gap vs flag distinction — NOT BUILT 🔒
+## 4. Gap vs flag distinction — BUILT ✅ (via Claude Code)
 
 **Decision:** Gaps and flags are fundamentally different concepts with distinct visual treatments.
 
@@ -91,14 +91,14 @@
 | Dismissable? | No — filled through Q&A only | Yes — Manager can dismiss irrelevant flags |
 | Resolution | Offboarder answers AI-generated questions → knowledge fills the gap | Informational only |
 
-### Visual treatment (to build)
+### Visual treatment
 - **Gaps:** yellow background row under module header, sparkle icon, generates question sub-rows
 - **Flags:** small gray badge on the card row (e.g., `no desc`, `checklist 1/3`), × dismiss on hover
 - When a gap is resolved (questions answered), the gap row returns to normal (purple/no highlight)
 
 ---
 
-## 5. 1:N card-to-module relationship — NOT BUILT 🔒
+## 5. 1:N card-to-module relationship — BUILT ✅ (via Claude Code)
 
 **Decision:** One card can belong to multiple modules. The AI agent evaluates each card against ALL modules.
 
@@ -141,7 +141,7 @@
 
 ---
 
-## 6. AI categorization animation — NOT BUILT 🔒
+## 6. AI categorization animation — BUILT ✅ (via Claude Code)
 
 **Decision:** A short cartoon-style explainer animation plays during Prepare, between "Crawl complete" and "Knowledge map ready."
 
@@ -172,7 +172,7 @@
 
 ---
 
-## 7. KG Explorer chat redesign — NOT BUILT 🔒
+## 7. KG Explorer chat redesign — BUILT ✅ (via Claude Code)
 
 **Decision:** Remove the 5 fixed AI chips and footer chat bar. Replace with a proper chat panel on the left with conversation history.
 
@@ -275,20 +275,9 @@ Review and adjust padding/spacing of graph toolbar after filter removal. To be d
 
 ---
 
-## Build order recommendation
+## All items complete ✅
 
-Features are ordered by dependency and demo impact:
-
-1. **Gap vs flag distinction** (§4 — foundation for Data tab visual clarity)
-2. **1:N card-to-module UI** (§5 — linked card rows, uncategorized section, drag handle, "Move to")
-3. **AI categorization animation** (§6 — cartoon explainer for Prepare phase)
-4. **KG Explorer chat redesign** (§7 — left panel chat, conversation history, dynamic chips, graph highlighting)
-
-Items 1–2 affect the session Data tab directly and are prerequisites for the demo flow.
-Item 3 is a standalone animation component in Prepare.
-Item 4 is a standalone page redesign at `/knowledge-graph`.
-
-**§8 items are all resolved** — no blockers remaining from discussion.
+All 7 features + 5 discussion items from this session are now built and resolved.
 
 ---
 
@@ -304,4 +293,4 @@ Item 4 is a standalone page redesign at `/knowledge-graph`.
 
 ---
 
-*End of build queue. Reference this document when starting any of the NOT BUILT items.*
+*End of build queue. All items from this session are complete. Remaining work is from previous sessions.*
