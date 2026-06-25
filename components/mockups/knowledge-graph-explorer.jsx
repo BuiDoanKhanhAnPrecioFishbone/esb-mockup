@@ -178,7 +178,7 @@ export default function KnowledgeGraphExplorer({embedded=false}={}){
   const selIsGap=selData?isGap(selData.id):false;
 
   return(
-    <div className={`${embedded?'':'p-4'} flex flex-col h-full min-h-0`} style={{fontFamily:"'Inter',system-ui,sans-serif"}}>
+    <div className={`${embedded?'px-5 py-4':'p-4'} flex flex-col h-full min-h-0`} style={{fontFamily:"'Inter',system-ui,sans-serif"}}>
       <div className="flex items-center justify-between mb-2 flex-shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-violet-600 flex items-center justify-center"><Sparkles className="w-4 h-4 text-white" strokeWidth={1.75}/></div>
