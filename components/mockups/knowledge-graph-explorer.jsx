@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Link from "next/link";
-import { Send, Sparkles, X, ChevronRight, Flag, Filter, BarChart3, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { Send, Sparkles, X, ChevronRight, Flag, Filter, BarChart3, CheckCircle2, XCircle, AlertTriangle, Pencil, Check, Plus, PanelLeftClose, PanelLeftOpen, Eye, Network, Users, Crosshair, Search } from "lucide-react";
 
 /* ART-EEP Consumer Plane — Knowledge Graph Explorer
    Gap resolution: both "Resolve" and "Dismiss" return nodes to normal state.
@@ -65,6 +65,27 @@ const PROMPTS = {
   "thanh-duc": { filter: n => n.provenance?.some(p => p.name.includes("Thanh")), input: "Show me Thanh \u0110\u1ee9c's contributions", response: "Thanh \u0110\u1ee9c contributed 9 entries across 4 modules (Payment, Database, Monitoring, Infrastructure as Code). All entries are verified. Completed Mar 2026." },
 };
 
+/* Recommendation chips: each has an icon, a label, and either a focus array (graph highlight)
+   and/or a canned AI response. The chatbot never creates new nodes — focus only highlights existing ones. */
+const RECO_ICONS = { Eye, Network, Users, Crosshair, Search, Sparkles };
+const SEED_THREADS = [
+  { id:"t-risks", title:"Knowledge gaps & risks", ts:"2h", messages:[
+    { role:"user", text:"Where are the biggest knowledge risks?" },
+    { role:"ai", text:"Found 5 knowledge gaps across 3 modules. JWT Key Rotation and Migration v8–v9 are the highest priority — both contain tacit knowledge that was only partially captured during Minh Lê's handover.", focus:["e-jwt","e-migv8","e-pci","e-rbac","e-stripe-pin"],
+      chips:[ {icon:"Eye",label:"Show the gaps",focus:["e-jwt","e-migv8","e-pci","e-rbac"]}, {icon:"Users",label:"Who contributed?",response:"All 5 gap entries trace back to Minh Lê's handover (Jun 2026). Thanh Đức's older entries are all verified."}, {icon:"Crosshair",label:"Zoom to JWT rotation",focus:["e-jwt","auth"]} ] },
+  ] },
+  { id:"t-deploy", title:"Deploy pipeline walkthrough", ts:"Yesterday", messages:[
+    { role:"user", text:"How does deployment work end to end?" },
+    { role:"ai", text:"Deployment flows through GitHub Actions (4 workflows, 8min avg) into Helm charts on AKS. The rollback procedure was tacit knowledge from Minh Lê — now documented as a 7-step runbook.", focus:["e-gha","e-helm","e-flyway","e-terraform","cicd"],
+      chips:[ {icon:"Network",label:"Connected entries",focus:["e-gha","e-helm","e-flyway","e-terraform"]}, {icon:"Search",label:"Helm rollback details",focus:["e-helm"]} ] },
+  ] },
+  { id:"t-auth", title:"Auth & identity overview", ts:"3d", messages:[
+    { role:"user", text:"Walk me through the auth flow." },
+    { role:"ai", text:"Authentication spans 4 entries: OAuth2 PKCE for mobile, Azure AD SAML for enterprise SSO, JWT rotation for tokens, and RBAC for authorization. JWT rotation has an unresolved gap — the emergency procedure.", focus:["e-oauth","e-saml","e-jwt","e-rbac","auth"],
+      chips:[ {icon:"Eye",label:"Show the gap",focus:["e-jwt"]}, {icon:"Network",label:"Connected entries",focus:["e-oauth","e-saml","e-jwt","e-rbac"]}, {icon:"Search",label:"SAML SSO details",focus:["e-saml"]} ] },
+  ] },
+];
+
 const nodeR = (n) => n.type==="dept"?28:n.type==="module"?18:n.type==="system"?10:10;
 /* Both resolved and dismissed return to normal purple. Only active gaps are yellow. */
 const nodeFillBase = (n) => n.type==="dept"||n.type==="system"?"#f4f4f5":"#f5f3ff";
@@ -84,6 +105,12 @@ export default function KnowledgeGraphExplorer({embedded=false}={}){
   const [tipPos,setTipPos]=useState({x:0,y:0});const [pan,setPan]=useState({x:0,y:0,s:1});
   const [panning,setPanning]=useState(false);const panRef=useRef({x:0,y:0,px:0,py:0});
   const [chatFocus,setChatFocus]=useState(null);const [chatResponse,setChatResponse]=useState("");const [chatInput,setChatInput]=useState("");
+  // Chat threads (conversation history). Local-only mock state.
+  const [threads,setThreads]=useState(SEED_THREADS);
+  const [activeThread,setActiveThread]=useState(SEED_THREADS[0].id);
+  const [historyOpen,setHistoryOpen]=useState(true);
+  const [renamingThread,setRenamingThread]=useState(null);const [renameInput,setRenameInput]=useState("");
+  const chatEndRef=useRef(null);
   const [reportingNode,setReportingNode]=useState(null);const [reportText,setReportText]=useState("");
   const [reported,setReported]=useState(new Map());
   const [fStatus,setFStatus]=useState("all");const [fContrib,setFContrib]=useState("all");const [fGaps,setFGaps]=useState("all");
@@ -106,7 +133,12 @@ export default function KnowledgeGraphExplorer({embedded=false}={}){
 
   useEffect(()=>{const copies=visNodes.map(n=>{const o=nodesRef.current.find(x=>x.id===n.id);return{...n,x:o?.x??0,y:o?.y??0,vx:0,vy:0};});if(copies.some(n=>n.x===0&&n.y===0))initPos(copies,dim.w,dim.h);nodesRef.current=copies;let run=true;const step=()=>{if(!run)return;sim(nodesRef.current,visEdges,dim.w,dim.h);setTick(t=>t+1);animRef.current=requestAnimationFrame(step);};animRef.current=requestAnimationFrame(step);return()=>{run=false;cancelAnimationFrame(animRef.current);};},[visNodes,visEdges,dim]);
   useEffect(()=>{const el=boxRef.current;if(!el)return;const ro=new ResizeObserver(([e])=>{const{width,height}=e.contentRect;if(width>0)setDim({w:width,h:height});});ro.observe(el);return()=>ro.disconnect();},[]);
-  useEffect(()=>{const params=new URLSearchParams(window.location.search);const prompt=params.get("prompt");if(!prompt)return;const cfg=PROMPTS[prompt];if(cfg){const mods=NODES.filter(n=>n.type==="module"&&cfg.filter(n)).map(n=>n.id);const entries=NODES.filter(n=>n.depth===2&&n.type==="entry"&&mods.includes(n.parent)).map(n=>n.id);if(mods.length){setExpanded(new Set(mods));setChatFocus([...mods,...entries]);}setChatInput(cfg.input);setChatResponse(cfg.response);}else{setChatResponse("Showing the full knowledge graph.");}window.history.replaceState({},"","/knowledge-graph");},[]);
+  useEffect(()=>{const params=new URLSearchParams(window.location.search);const prompt=params.get("prompt");if(!prompt)return;const cfg=PROMPTS[prompt];if(cfg){const mods=NODES.filter(n=>n.type==="module"&&cfg.filter(n)).map(n=>n.id);const entries=NODES.filter(n=>n.depth===2&&n.type==="entry"&&mods.includes(n.parent)).map(n=>n.id);const focus=[...mods,...entries];if(mods.length){setExpanded(new Set(mods));setChatFocus(focus);}setChatResponse(cfg.response);
+    // Pre-fill the active chat thread with the from-session prompt + AI answer.
+    const id="t-session";setThreads(prev=>[{id,title:cfg.input,ts:"now",messages:[{role:"user",text:cfg.input},{role:"ai",text:cfg.response,focus:focus.length?focus:null,chips:[{icon:"Eye",label:"Show the gaps",focus:entries.filter(e=>{const nd=NODES.find(n=>n.id===e);return nd?.hasGap;})},{icon:"Network",label:"Connected entries",focus:focus}]}]},...prev.filter(t=>t.id!==id)]);setActiveThread(id);}
+    else{setChatResponse("Showing the full knowledge graph.");}window.history.replaceState({},"","/knowledge-graph");},[]);
+  // Auto-scroll chat thread to bottom when messages change.
+  useEffect(()=>{chatEndRef.current?.scrollIntoView({behavior:"smooth",block:"end"});},[threads,activeThread]);
 
   const onDown=useCallback((e,id)=>{e.stopPropagation();e.preventDefault();const n=nodesRef.current.find(x=>x.id===id);if(n){n._d=true;setDragId(id);}},[]);
   const onMove=useCallback((e)=>{if(dragId){const n=nodesRef.current.find(x=>x.id===dragId);if(n&&svgRef.current){const r=svgRef.current.getBoundingClientRect();n.x=(e.clientX-r.left-pan.x)/pan.s;n.y=(e.clientY-r.top-pan.y)/pan.s;n.vx=0;n.vy=0;setTick(t=>t+1);}}else if(panning){setPan(p=>({...p,x:panRef.current.px+e.clientX-panRef.current.x,y:panRef.current.py+e.clientY-panRef.current.y}));}if(hovered)setTipPos({x:e.clientX,y:e.clientY});},[dragId,panning,hovered,pan]);
@@ -114,8 +146,18 @@ export default function KnowledgeGraphExplorer({embedded=false}={}){
   const onBgDown=useCallback((e)=>{if(e.target===svgRef.current||e.target.tagName==="rect"){setPanning(true);panRef.current={x:e.clientX,y:e.clientY,px:pan.x,py:pan.y};}},[pan]);
   const onWheel=useCallback((e)=>{e.preventDefault();const f=e.deltaY>0?0.93:1.07;setPan(p=>{const ns=Math.max(0.3,Math.min(3,p.s*f));const r=svgRef.current.getBoundingClientRect();const mx=e.clientX-r.left,my=e.clientY-r.top;return{s:ns,x:mx-(mx-p.x)*(ns/p.s),y:my-(my-p.y)*(ns/p.s)};});},[]);
   const onClickNode=useCallback((node)=>{if(node.type==="module"){setExpanded(prev=>{const n=new Set(prev);n.has(node.id)?n.delete(node.id):n.add(node.id);return n;});}setSelected(s=>s===node.id?null:node.id);setReportingNode(null);setReportText("");},[]);
-  const onChip=useCallback((chip)=>{const mods=new Set();chip.focus.forEach(id=>{const nd=NODES.find(n=>n.id===id);if(nd?.parent){mods.add(nd.parent);}});setExpanded(prev=>new Set([...prev,...mods]));setChatFocus(chip.focus);setChatResponse(chip.response);setSelected(null);},[]);
-  const onAsk=(nodeId)=>{const nd=NODES.find(n=>n.id===nodeId);if(!nd)return;const q=nd.type==="module"?`What are the risks in ${nd.label}?`:`Tell me about ${nd.label}`;setChatInput(q);const rel=NODES.filter(n=>n.parent===nodeId).map(n=>n.id);if(rel.length>0){setChatFocus(rel);setChatResponse(`${nd.label} contains ${nd.entries||rel.length} entries. ${nd.gaps>0?`${nd.gaps} knowledge gap${nd.gaps>1?"s":""} need attention.`:""} ${nd.summary||""}`);}else{setChatFocus([nodeId]);setChatResponse(nd.summary||"No additional details available.");}};
+  // Apply a focus array to the graph: expand parent modules + highlight nodes.
+  const applyFocus=useCallback((focus)=>{if(!focus||!focus.length){return;}const mods=new Set();focus.forEach(id=>{const nd=NODES.find(n=>n.id===id);if(nd?.parent)mods.add(nd.parent);if(nd?.type==="module")mods.add(nd.id);});setExpanded(prev=>new Set([...prev,...mods]));setChatFocus(focus);},[]);
+  // Append a user message + an AI reply to the active thread, and optionally focus the graph.
+  const pushToThread=useCallback((userText,ai)=>{setThreads(prev=>prev.map(t=>t.id!==activeThread?t:{...t,messages:[...t.messages,{role:"user",text:userText},{role:"ai",text:ai.text,focus:ai.focus,chips:ai.chips}]}));if(ai.focus&&ai.focus.length){applyFocus(ai.focus);setChatResponse(ai.text);}},[activeThread,applyFocus]);
+  // Recommendation chip inside the chat thread.
+  const onRecoChip=useCallback((chip)=>{const ai={text:chip.response||`Highlighting ${chip.label.toLowerCase()} in the graph.`,focus:chip.focus,chips:chip.followups};pushToThread(chip.label,ai);},[pushToThread]);
+  // Free-text send: match a canned CHIPS/PROMPTS response by keyword, else generic.
+  const onSendChat=useCallback(()=>{const q=chatInput.trim();if(!q)return;const ql=q.toLowerCase();let match=CHIPS.find(c=>ql.includes(c.label.toLowerCase().split(" ")[0]));let ai;if(match){ai={text:match.response,focus:match.focus};}else{const node=NODES.find(n=>ql.includes(n.label.toLowerCase().slice(0,8)));if(node){const rel=NODES.filter(n=>n.parent===node.id).map(n=>n.id);ai={text:`${node.label}: ${(node.summary||"").split("\n")[0]}`,focus:rel.length?rel:[node.id]};}else{ai={text:"I searched the Engineering knowledge graph. Try asking about a specific module — Payment, Auth, Database, CI/CD — or about knowledge gaps and risks.",focus:null};}}pushToThread(q,ai);setChatInput("");},[chatInput,pushToThread]);
+  // Create / select / rename threads.
+  const onNewChat=useCallback(()=>{const id="t-"+Date.now();setThreads(prev=>[{id,title:"New chat",ts:"now",messages:[]},...prev]);setActiveThread(id);setChatFocus(null);setChatResponse("");},[]);
+  const onRenameThread=(id)=>{const t=threads.find(x=>x.id===id);if(t&&renameInput.trim()){setThreads(prev=>prev.map(x=>x.id===id?{...x,title:renameInput.trim()}:x));}setRenamingThread(null);};
+  const onAsk=(nodeId)=>{const nd=NODES.find(n=>n.id===nodeId);if(!nd)return;const q=nd.type==="module"?`What are the risks in ${nd.label}?`:`Tell me about ${nd.label}`;const rel=NODES.filter(n=>n.parent===nodeId).map(n=>n.id);let ai;if(rel.length>0){ai={text:`${nd.label} contains ${nd.entries||rel.length} entries. ${nd.gaps>0?`${nd.gaps} knowledge gap${nd.gaps>1?"s":""} need attention.`:""} ${nd.summary||""}`.trim(),focus:rel,chips:[{icon:"Network",label:"Connected entries",focus:rel},{icon:"Users",label:"Who contributed?",response:nd.provenance?nd.provenance.map(p=>`${p.name} (${p.count})`).join(", ")+".":"Contributor data unavailable."}]};}else{ai={text:nd.summary||"No additional details available.",focus:[nodeId],chips:[{icon:"Crosshair",label:"Zoom to node",focus:[nodeId]}]};}pushToThread(q,ai);};
   const onSubmitReport=(nodeId)=>{if(!nodeId)return;setReported(prev=>{const n=new Map(prev);n.set(nodeId,{text:reportText,time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})});return n;});setReportingNode(null);setReportText("");};
   const onResolveGap=(id)=>setResolvedGaps(prev=>new Set([...prev,id]));
   const onDismissGap=(id)=>setDismissedGaps(prev=>new Set([...prev,id]));
@@ -126,6 +168,9 @@ export default function KnowledgeGraphExplorer({embedded=false}={}){
   const isHi=(id)=>{const nd=NODES.find(n=>n.id===id);if(nd?.type==="dept")return true;if(hasActiveFilter&&!passesFilter(id))return false;if(chatFocus)return chatFocus.includes(id);if(!selected)return true;if(id===selected)return true;return visEdges.some(e=>(e.from===selected&&e.to===id)||(e.to===selected&&e.from===id));};
 
   const nodes=nodesRef.current;const nm={};nodes.forEach(n=>{nm[n.id]=n;});
+  const activeThreadData=threads.find(t=>t.id===activeThread)||threads[0];
+  // Latest AI message in the active thread carries the contextual recommendation chips.
+  const latestAi=activeThreadData?[...activeThreadData.messages].reverse().find(m=>m.role==="ai"):null;
   const selData=selected?NODES.find(n=>n.id===selected):null;
   const selEdges=selected?EDGES.filter(e=>e.from===selected||e.to===selected):[];
   const childEntries=selData?.type==="module"?NODES.filter(n=>n.parent===selData.id&&n.depth===2):[];
@@ -154,14 +199,64 @@ export default function KnowledgeGraphExplorer({embedded=false}={}){
         {hasActiveFilter&&<button type="button" onClick={()=>{setFStatus("all");setFContrib("all");setFGaps("all");}} className="text-[10px] text-violet-600 hover:text-violet-800 cursor-pointer ml-1">Clear filters</button>}
       </div>
       <div className="flex-1 min-h-0 flex gap-2">
-        <div ref={boxRef} className={`${selected?'w-3/5':'w-full'} bg-gray-50 rounded-lg border border-gray-200 relative overflow-hidden transition-all duration-200`} style={{cursor:panning?'grabbing':dragId?'grabbing':'grab'}}>
+        {/* 1. Chat history sidebar — collapsible */}
+        {historyOpen?
+          <div className="w-[124px] flex-shrink-0 bg-white border border-gray-200 rounded-lg flex flex-col overflow-hidden">
+            <div className="px-2 py-2 border-b border-gray-100 flex items-center justify-between">
+              <button onClick={onNewChat} className="flex items-center gap-1 text-[10px] font-medium text-violet-700 hover:text-violet-900 cursor-pointer"><Plus className="w-3 h-3"/>New chat</button>
+              <button onClick={()=>setHistoryOpen(false)} title="Hide history" className="text-gray-400 hover:text-gray-600 cursor-pointer"><PanelLeftClose className="w-3.5 h-3.5"/></button>
+            </div>
+            <div className="flex-1 overflow-y-auto py-1">
+              {threads.map(t=>{const isActive=t.id===activeThread;const isRen=renamingThread===t.id;return <div key={t.id} className={`group mx-1 mb-0.5 rounded-md px-2 py-1.5 cursor-pointer ${isActive?"bg-violet-50 border border-violet-200":"hover:bg-gray-50 border border-transparent"}`} onClick={()=>{if(!isRen){setActiveThread(t.id);setChatFocus(null);setChatResponse("");}}}>
+                {isRen?
+                  <input value={renameInput} autoFocus onClick={e=>e.stopPropagation()} onChange={e=>setRenameInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")onRenameThread(t.id);if(e.key==="Escape")setRenamingThread(null);}} onBlur={()=>onRenameThread(t.id)} className="w-full text-[10px] px-1 py-0.5 rounded border border-violet-300 focus:outline-none focus:ring-1 focus:ring-violet-500/30"/>
+                  :<div className="flex items-start gap-1">
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-[10px] leading-tight font-medium truncate ${isActive?"text-violet-800":"text-gray-700"}`}>{t.title}</p>
+                      <p className="text-[9px] text-gray-400 font-mono mt-0.5">{t.ts}</p>
+                    </div>
+                    <button onClick={e=>{e.stopPropagation();setRenamingThread(t.id);setRenameInput(t.title);}} title="Rename" className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-violet-600 cursor-pointer shrink-0"><Pencil className="w-2.5 h-2.5"/></button>
+                  </div>}
+              </div>;})}
+            </div>
+          </div>
+          :<button onClick={()=>setHistoryOpen(true)} title="Show history" className="w-8 flex-shrink-0 bg-white border border-gray-200 rounded-lg flex flex-col items-center justify-start pt-2 text-gray-400 hover:text-violet-600 cursor-pointer"><PanelLeftOpen className="w-4 h-4"/></button>
+        }
+
+        {/* 2. Active chat panel — always visible */}
+        <div className="w-[220px] flex-shrink-0 bg-white border border-gray-200 rounded-lg flex flex-col overflow-hidden">
+          <div className="px-3 py-2 border-b border-gray-100 flex items-center gap-1.5">
+            <span className="flex items-center gap-1 px-1.5 py-0.5 bg-violet-50 rounded border border-violet-100 text-[9px] font-medium text-violet-700 shrink-0"><Sparkles className="w-2.5 h-2.5"/>AI</span>
+            <p className="text-[11px] font-medium text-gray-800 truncate">{activeThreadData?.title||"New chat"}</p>
+          </div>
+          <div className="flex-1 overflow-y-auto px-2.5 py-2 space-y-2">
+            {(!activeThreadData||activeThreadData.messages.length===0)&&<p className="text-[10px] text-gray-400 text-center mt-4">Ask about the knowledge graph to get started.</p>}
+            {activeThreadData?.messages.map((m,mi)=>m.role==="user"
+              ?<div key={mi} className="flex justify-end"><div className="max-w-[85%] bg-violet-600 text-white rounded-lg rounded-br-sm px-2.5 py-1.5 text-[10px] leading-snug">{m.text}</div></div>
+              :<div key={mi} className="flex flex-col gap-1.5"><div className="max-w-[90%] bg-gray-100 text-gray-700 rounded-lg rounded-bl-sm px-2.5 py-1.5 text-[10px] leading-snug">{m.text}</div></div>
+            )}
+            {/* Dynamic recommendation chips below the latest AI message */}
+            {latestAi?.chips?.length>0&&<div className="flex flex-wrap gap-1">{latestAi.chips.map((c,ci)=>{const Icon=RECO_ICONS[c.icon]||Sparkles;return <button key={ci} onClick={()=>onRecoChip(c)} className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-medium rounded-full border border-violet-200 bg-white text-violet-700 hover:bg-violet-50 cursor-pointer transition-colors"><Icon className="w-2.5 h-2.5"/>{c.label}</button>;})}</div>}
+            <div ref={chatEndRef}/>
+          </div>
+          <div className="px-2 py-2 border-t border-gray-100 flex items-center gap-1.5">
+            <input type="text" value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&onSendChat()} placeholder="Ask about the graph..." className="flex-1 min-w-0 px-2 py-1.5 text-[10px] border border-gray-200 rounded-md bg-gray-50 focus:outline-none focus:ring-1 focus:ring-violet-500/20 focus:border-violet-300 text-gray-700 placeholder:text-gray-400"/>
+            <button onClick={onSendChat} className="px-2 py-1.5 bg-violet-600 text-white rounded-md hover:bg-violet-700 transition-colors cursor-pointer shrink-0"><Send className="w-3 h-3"/></button>
+          </div>
+        </div>
+
+        {/* 3. Graph canvas — always primary, fills remaining space; drawer overlays it */}
+        <div ref={boxRef} className="flex-1 min-w-0 bg-gray-50 rounded-lg border border-gray-200 relative overflow-hidden" style={{cursor:panning?'grabbing':dragId?'grabbing':'grab'}}>
           <svg ref={svgRef} width={dim.w} height={dim.h} className="w-full h-full" style={{touchAction:'none'}} onPointerMove={onMove} onPointerUp={onUp} onPointerDown={onBgDown} onWheel={onWheel}>
             <g transform={`translate(${pan.x},${pan.y}) scale(${pan.s})`}>
-              {visEdges.map((e,i)=>{const s=nm[e.from],t=nm[e.to];if(!s||!t)return null;const sn=NODES.find(n=>n.id===e.from),tn=NODES.find(n=>n.id===e.to);const sr=nodeR(sn||{}),tr=nodeR(tn||{});const dx=t.x-s.x,dy=t.y-s.y,d=Math.sqrt(dx*dx+dy*dy)||1;const x1=s.x+(dx/d)*sr,y1=s.y+(dy/d)*sr,x2=t.x-(dx/d)*tr,y2=t.y-(dy/d)*tr;const hi=isHi(e.from)&&isHi(e.to);if(!hi)return null;return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={e.type==="cross"?"#c4b5fd":"#d4d4d8"} strokeWidth={e.type==="cross"?0.8:0.6} strokeDasharray={e.type==="cross"?"4,3":"none"} opacity={0.4} style={{transition:'opacity 0.15s'}}/>;
+              {visEdges.map((e,i)=>{const s=nm[e.from],t=nm[e.to];if(!s||!t)return null;const sn=NODES.find(n=>n.id===e.from),tn=NODES.find(n=>n.id===e.to);const sr=nodeR(sn||{}),tr=nodeR(tn||{});const dx=t.x-s.x,dy=t.y-s.y,d=Math.sqrt(dx*dx+dy*dy)||1;const x1=s.x+(dx/d)*sr,y1=s.y+(dy/d)*sr,x2=t.x-(dx/d)*tr,y2=t.y-(dy/d)*tr;const hi=isHi(e.from)&&isHi(e.to);
+                /* When a focus/selection is active, dim non-highlighted edges to ~20% instead of removing them. */
+                const eOp=hi?0.4:(chatFocus||selected||hasActiveFilter)?0.08:0.4;return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={e.type==="cross"?"#c4b5fd":"#d4d4d8"} strokeWidth={e.type==="cross"?0.8:0.6} strokeDasharray={e.type==="cross"?"4,3":"none"} opacity={eOp} style={{transition:'opacity 0.15s'}}/>;
               })}
               {nodes.map(node=>{const r=nodeR(node),hi=isHi(node.id),isSel=selected===node.id,isHov=hovered===node.id,isMod=node.type==="module",isExp=expanded.has(node.id),isReported=reported.has(node.id);const nf=nodeFill(node);const ns=nodeStroke(node);
-                if(!hi)return null;
-                return <g key={node.id} transform={`translate(${node.x||0},${node.y||0})`} style={{cursor:'pointer'}} onPointerDown={e=>onDown(e,node.id)} onPointerEnter={e=>{setHovered(node.id);setTipPos({x:e.clientX,y:e.clientY});}} onPointerLeave={()=>setHovered(null)} onClick={()=>onClickNode(node)}>
+                /* Dim non-highlighted nodes to ~20% instead of removing them, so the graph stays whole. */
+                const gOp=hi?1:(chatFocus||selected||hasActiveFilter)?0.2:1;
+                return <g key={node.id} opacity={gOp} transform={`translate(${node.x||0},${node.y||0})`} style={{cursor:'pointer',transition:'opacity 0.15s'}} onPointerDown={e=>onDown(e,node.id)} onPointerEnter={e=>{setHovered(node.id);setTipPos({x:e.clientX,y:e.clientY});}} onPointerLeave={()=>setHovered(null)} onClick={()=>onClickNode(node)}>
                   {(isHov||isSel)&&<circle r={r+4} fill="none" stroke={ns} strokeWidth="1.5" opacity="0.3"/>}
                   <circle r={r} fill={nf} stroke={ns} strokeWidth={isSel?2:0.8}/>
                   {isMod&&<text textAnchor="middle" dominantBaseline="central" fontSize="10" fontWeight="500" fill="#6d28d9" style={{pointerEvents:'none'}}>{isExp?"\u2212":"+"}</text>}
@@ -171,11 +266,13 @@ export default function KnowledgeGraphExplorer({embedded=false}={}){
                 </g>;})}
             </g>
           </svg>
+          {/* Focusing chip — top-left, clears chat focus */}
+          {chatFocus&&chatFocus.length>0&&(()=>{const first=NODES.find(n=>n.id===chatFocus[0]);const par=first?.parent?NODES.find(n=>n.id===first.parent):null;const label=par?.label||first?.label||"selection";return <div className="absolute top-2 left-2 z-40 flex items-center gap-1.5 bg-violet-600 text-white rounded-full pl-2.5 pr-1.5 py-1 shadow-sm"><Crosshair className="w-3 h-3"/><span className="text-[10px] font-medium">Focusing: {label}</span><button onClick={()=>{setChatFocus(null);setChatResponse("");}} className="hover:bg-violet-700 rounded-full p-0.5 cursor-pointer"><X className="w-3 h-3"/></button></div>;})()}
           {hovered&&(()=>{const node=NODES.find(n=>n.id===hovered);if(!node)return null;const rect=boxRef.current?.getBoundingClientRect();if(!rect)return null;const tx=tipPos.x-rect.left+14,ty=tipPos.y-rect.top-8,flip=tx+240>rect.width;const nf=nodeFill(node);const ns=nodeStroke(node);const gs=gapStatus(node.id);
             return <div className="absolute pointer-events-none z-50" style={{left:flip?tx-254:tx,top:Math.max(4,Math.min(ty,rect.height-120))}}><div className="bg-white border border-gray-200 rounded-lg shadow-md p-2.5 w-[230px]" style={{borderLeft:`3px solid ${ns}`}}><div className="flex items-center gap-1.5 mb-1"><span className="text-[10px] font-medium px-1.5 py-0.5 rounded" style={{background:nf,border:`1px solid ${ns}`,color:isGap(node.id)?"#854d0e":node.type==="dept"||node.type==="system"?"#52525b":"#5b21b6"}}>{node.type==="dept"?"Department":node.type==="module"?"Module":node.type==="system"?"System":isGap(node.id)?"Entry (gap)":"Entry"}</span>{reported.has(node.id)&&!gs&&<span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">Reported</span>}</div><p className="text-xs font-medium text-gray-900 mb-0.5">{node.label}</p>{node.type==="module"&&<p className="text-[10px] text-gray-500">{node.entries}{" entries \u00b7 "}{node.verified}{" verified \u00b7 "}{node.draft}{" draft"}{node.gaps>0?` \u00b7 ${node.gaps} gaps`:""}</p>}{node.type==="entry"&&<p className="text-[10px] text-gray-500">{gs==="resolved"?"Verified":gs==="dismissed"?"Draft":node.status}{isGap(node.id)?" \u00b7 has gap":""}</p>}{node.type==="module"&&<p className="text-[10px] text-violet-600 mt-1">{"Click to "}{expanded.has(node.id)?"collapse":"expand"}</p>}</div></div>;})()}
           <div className="absolute bottom-2 left-2 flex items-center gap-3 bg-white/80 backdrop-blur-sm rounded px-2 py-1"><span className="flex items-center gap-1 text-[9px] text-gray-400"><span className="w-2 h-2 rounded-full bg-gray-200 border border-gray-300 inline-block"></span>Structural</span><span className="flex items-center gap-1 text-[9px] text-gray-400"><span className="w-2 h-2 rounded-full bg-violet-100 border border-violet-300 inline-block"></span>Knowledge</span><span className="flex items-center gap-1 text-[9px] text-gray-400"><span className="w-2 h-2 rounded-full bg-yellow-100 border border-yellow-400 inline-block"></span>Gap</span><span className="flex items-center gap-1 text-[9px] text-gray-400"><span className="w-2 h-2 rounded-full bg-rose-100 border border-rose-400 inline-block"></span>Reported</span><span className="text-[9px] text-gray-300">|</span><span className="text-[9px] text-gray-400">Solid = hierarchy</span><span className="text-[9px] text-gray-400">Dashed = cross-link</span></div>
-        </div>
-        {selData&&<div className="w-2/5 bg-white border border-gray-200 rounded-lg overflow-y-auto" style={{borderLeft:`3px solid ${reported.has(selData.id)&&!selGapStatus?"#f87171":nodeStroke(selData)}`}}><div className="p-3"><div className="flex items-start justify-between mb-2"><div><div className="flex items-center gap-1.5 mb-1"><span className="text-[10px] font-medium px-1.5 py-0.5 rounded" style={{background:nodeFill(selData),border:`1px solid ${nodeStroke(selData)}`,color:selIsGap?"#854d0e":"#5b21b6"}}>{selData.type==="dept"?"Department":selData.type==="module"?"Module":selData.type==="system"?"System":selIsGap?"Entry (gap)":"Entry"}</span>{reported.has(selData.id)&&!selGapStatus&&<span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">1 pending correction</span>}</div><h3 className="text-sm font-semibold text-gray-900">{selData.label}</h3></div><button onClick={()=>{setSelected(null);setReportingNode(null);setReportText("");}} className="text-gray-400 hover:text-gray-600 cursor-pointer"><X className="w-4 h-4"/></button></div>
+        {/* 4. Node detail drawer — slides in as an overlay on the right, graph stays full underneath */}
+        {selData&&<div className="absolute top-0 right-0 bottom-0 w-[440px] max-w-full bg-white border-l border-gray-200 shadow-xl overflow-y-auto z-30" style={{borderLeft:`3px solid ${reported.has(selData.id)&&!selGapStatus?"#f87171":nodeStroke(selData)}`}}><div className="p-3"><div className="flex items-start justify-between mb-2"><div><div className="flex items-center gap-1.5 mb-1"><span className="text-[10px] font-medium px-1.5 py-0.5 rounded" style={{background:nodeFill(selData),border:`1px solid ${nodeStroke(selData)}`,color:selIsGap?"#854d0e":"#5b21b6"}}>{selData.type==="dept"?"Department":selData.type==="module"?"Module":selData.type==="system"?"System":selIsGap?"Entry (gap)":"Entry"}</span>{reported.has(selData.id)&&!selGapStatus&&<span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">1 pending correction</span>}</div><h3 className="text-sm font-semibold text-gray-900">{selData.label}</h3></div><button onClick={()=>{setSelected(null);setReportingNode(null);setReportText("");}} className="text-gray-400 hover:text-gray-600 cursor-pointer"><X className="w-4 h-4"/></button></div>
             {/* Status badges — resolved shows "Verified" (standard violet), dismissed shows "Draft" */}
             {selData.type==="entry"&&<div className="flex items-center gap-1.5 mb-2">{selGapStatus==="resolved"?<span className="text-[10px] px-1.5 py-0.5 rounded border bg-violet-50 text-violet-700 border-violet-200">Verified</span>:selGapStatus==="dismissed"?<span className="text-[10px] px-1.5 py-0.5 rounded border bg-gray-50 text-gray-600 border-gray-200">Draft</span>:<><span className={`text-[10px] px-1.5 py-0.5 rounded border ${selData.status==="verified"?"bg-violet-50 text-violet-700 border-violet-200":"bg-gray-50 text-gray-600 border-gray-200"}`}>{selData.status==="verified"?"Verified":"Draft"}</span>{selIsGap&&<span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-50 text-yellow-700 border border-yellow-200">Has gap</span>}</>}</div>}
             {/* GAP ACTION CARD — right after badges, before summary */}
@@ -195,11 +292,7 @@ export default function KnowledgeGraphExplorer({embedded=false}={}){
             </div>
             {reportingNode===selData.id&&<div className="mt-2 rounded-lg bg-rose-50/50 border border-rose-200 p-3"><div className="flex items-center justify-between mb-2"><span className="text-[10px] font-medium text-rose-700 flex items-center gap-1"><Flag className="w-3 h-3"/>Report an issue</span><button onClick={()=>{setReportingNode(null);setReportText("");}} className="text-gray-400 hover:text-gray-600 cursor-pointer"><X className="w-3 h-3"/></button></div><p className="text-[9px] text-gray-500 mb-1">Current content</p><div className="bg-gray-100 rounded-md px-2.5 py-2 text-[10px] text-gray-400 line-through leading-relaxed mb-2">{selData.summary}</div><p className="text-[9px] text-gray-500 mb-1">{"Your correction "}<span className="text-gray-400">(optional)</span></p><textarea value={reportText} onChange={e=>setReportText(e.target.value)} placeholder="What should it say instead?" className="w-full h-16 px-2.5 py-2 text-[11px] border border-emerald-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500/20 text-gray-700 placeholder:text-gray-400 resize-none"/><div className="flex justify-end mt-2"><button onClick={()=>onSubmitReport(selData.id)} className="px-3 py-1.5 rounded-md bg-white border border-rose-300 text-rose-700 text-[10px] font-medium hover:bg-rose-50 transition-colors cursor-pointer">Submit correction</button></div></div>}
           </div></div>}
-      </div>
-      <div className="mt-2 flex-shrink-0 bg-white border border-gray-200 rounded-lg px-3 py-2">
-        {chatResponse&&<div className="mb-2 bg-violet-50 border border-violet-100 rounded-md px-3 py-2"><p className="text-[11px] text-violet-800 leading-relaxed">{chatResponse}</p><button onClick={()=>{setChatFocus(null);setChatResponse("");}} className="text-[10px] text-violet-500 hover:text-violet-700 mt-1 cursor-pointer">Clear</button></div>}
-        <div className="flex items-center gap-1.5 mb-1.5"><span className="flex items-center gap-1 px-2 py-0.5 bg-violet-50 rounded border border-violet-100 text-[10px] font-medium text-violet-700"><Sparkles className="w-2.5 h-2.5"/>AI Copilot</span>{CHIPS.map((c,i)=><button key={i} onClick={()=>onChip(c)} className={`px-2 py-0.5 text-[10px] font-medium rounded-full border transition-colors cursor-pointer ${chatFocus&&chatResponse===c.response?"bg-violet-600 text-white border-violet-600":"bg-white text-gray-600 border-gray-200 hover:border-violet-300 hover:text-violet-700"}`}>{c.label}</button>)}</div>
-        <div className="flex items-center gap-2"><input type="text" value={chatInput} onChange={e=>setChatInput(e.target.value)} placeholder="Ask about the knowledge graph..." className="flex-1 px-2.5 py-1.5 text-[11px] border border-gray-200 rounded-md bg-gray-50 focus:outline-none focus:ring-1 focus:ring-violet-500/20 focus:border-violet-300 text-gray-700 placeholder:text-gray-400"/><button className="px-3 py-1.5 bg-violet-600 text-white rounded-md text-[11px] font-medium hover:bg-violet-700 transition-colors cursor-pointer flex items-center gap-1"><Send className="w-3 h-3"/>Send</button></div>
+        </div>
       </div>
     </div>
   );
