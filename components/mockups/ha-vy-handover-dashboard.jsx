@@ -4,12 +4,11 @@ import React, { useState } from "react";
 import Link from "next/link";
 import {
   ChevronLeft, ChevronRight, Plus, ArrowRight, X,
-  AlertTriangle, CheckCircle2, Clock,
+  AlertTriangle, CheckCircle2, Clock, RefreshCw,
   Database, Network, Sparkles, Users, FileText,
   Bell, Layers, ClipboardList, User, MessageCircle
 } from "lucide-react";
 import { useViewAs } from "@/lib/view-as";
-import CreateSession from "./create-session";
 import SessionCommandView from "./session-command-view";
 
 const ROLES = [
@@ -99,12 +98,11 @@ export default function HaVyHandoverDashboard({ embedded = false, role: roleProp
 
 function RoleRenderer({ role, stepId }) { if (role === "manager") return <ManagerStep id={stepId} />; if (role === "offboarder") return <OffboarderStep id={stepId} />; if (role === "coworker") return <CoworkerStep id={stepId} />; return null; }
 
-function ManagerStep({ id }) { if (id === "departures") return <ManagerDepartures />; if (id === "active") return <ManagerActive />; if (id === "completed") return <ManagerCompleted />; return null; }
-// "Departures pending" state IS the create-session view (HRIS departures → Configure & start).
-function ManagerDepartures() { return <CreateSession embedded asSection />; }
+function ManagerStep({ id }) { if (id === "departures") return <ManagerZeroState hasDepartures />; if (id === "no-departures") return <ManagerZeroState hasDepartures={false} />; if (id === "active") return <ManagerActive />; if (id === "completed") return <ManagerCompleted />; return null; }
+// Zero-active-sessions state — orbital illustration; message + CTAs depend on HRIS status (R3-01).
 function ManagerActive() {
   const sessions = SESSIONS;
-  if (sessions.length === 0) return (<div className="max-w-4xl mx-auto p-6"><GreetingBanner name={"H\u00e0 Vy"} subtitle="No active handovers right now" /><ManagerEmptyState /></div>);
+  if (sessions.length === 0) return <ManagerZeroState hasDepartures={DEPARTURES.length > 0} />;
   return (<div className="max-w-4xl mx-auto p-6">
     <GreetingBanner name={"H\u00e0 Vy"} subtitle={`${sessions.length} active handover${sessions.length !== 1 ? "s" : ""}`} />
     <div className="grid grid-cols-3 gap-5">
@@ -270,22 +268,54 @@ function DecoNodes() {
     <circle cx="150" cy="30" r="9" fill="#7c3aed" /><circle cx="110" cy="20" r="5" fill="#a78bfa" /><circle cx="175" cy="68" r="5" fill="#a78bfa" /><circle cx="120" cy="70" r="6" fill="#c4b5fd" />
   </svg>);
 }
-// Empty state (§9) — orbital illustration shown when there are no active sessions.
-function ManagerEmptyState() {
-  return (<div className="rounded-xl border border-gray-200 bg-white p-10 text-center">
+// Orbital illustration (§9 / R3-01) — the "no active work" signal. Reused on the
+// dashboard zero-states and inside a session's departure-pending state.
+export function OrbitalIllustration() {
+  return (<div className="relative w-40 h-40 mx-auto mb-6">
     <style>{"@keyframes orbit-cw{from{transform:rotate(0)}to{transform:rotate(360deg)}}@keyframes orbit-ccw{from{transform:rotate(0)}to{transform:rotate(-360deg)}}"}</style>
-    <div className="relative w-40 h-40 mx-auto mb-6">
-      <div className="absolute inset-0 rounded-full border border-violet-200/70" />
-      <div className="absolute inset-[18px] rounded-full border border-violet-200/60" />
-      <div className="absolute inset-[36px] rounded-full border border-violet-200/50" />
-      <div className="absolute inset-0" style={{ animation: "orbit-cw 18s linear infinite" }}><span className="absolute left-1/2 top-0 -translate-x-1/2 w-3 h-3 rounded-full bg-violet-400" /></div>
-      <div className="absolute inset-[18px]" style={{ animation: "orbit-ccw 24s linear infinite" }}><span className="absolute left-1/2 top-0 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-violet-300" /></div>
-      <div className="absolute inset-[36px]" style={{ animation: "orbit-cw 14s linear infinite" }}><span className="absolute left-1/2 top-0 -translate-x-1/2 w-2 h-2 rounded-full bg-fuchsia-300" /></div>
-      <div className="absolute inset-0 flex items-center justify-center"><div className="w-12 h-12 rounded-full inline-flex items-center justify-center shadow-sm" style={{ background: "linear-gradient(135deg,#8b5cf6,#7c3aed)" }}><Sparkles className="w-5 h-5 text-white" strokeWidth={1.75} /></div></div>
+    <div className="absolute inset-0 rounded-full border border-violet-200/70" />
+    <div className="absolute inset-[18px] rounded-full border border-violet-200/60" />
+    <div className="absolute inset-[36px] rounded-full border border-violet-200/50" />
+    <div className="absolute inset-0" style={{ animation: "orbit-cw 18s linear infinite" }}><span className="absolute left-1/2 top-0 -translate-x-1/2 w-3 h-3 rounded-full bg-violet-400" /></div>
+    <div className="absolute inset-[18px]" style={{ animation: "orbit-ccw 24s linear infinite" }}><span className="absolute left-1/2 top-0 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-violet-300" /></div>
+    <div className="absolute inset-[36px]" style={{ animation: "orbit-cw 14s linear infinite" }}><span className="absolute left-1/2 top-0 -translate-x-1/2 w-2 h-2 rounded-full bg-fuchsia-300" /></div>
+    <div className="absolute inset-0 flex items-center justify-center"><div className="w-12 h-12 rounded-full inline-flex items-center justify-center shadow-sm" style={{ background: "linear-gradient(135deg,#8b5cf6,#7c3aed)" }}><Sparkles className="w-5 h-5 text-white" strokeWidth={1.75} /></div></div>
+  </div>);
+}
+
+const GRADIENT = "linear-gradient(135deg,#8b5cf6,#7c3aed)";
+function SyncFromHris() {
+  const [spinning, setSpinning] = useState(false);
+  const [done, setDone] = useState(false);
+  const handle = () => { setSpinning(true); setDone(false); setTimeout(() => { setSpinning(false); setDone(true); }, 700); };
+  return (<button onClick={handle} disabled={spinning} className="h-9 px-4 rounded-lg text-sm font-medium inline-flex items-center gap-1.5 transition-colors border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-violet-500/20 disabled:opacity-60">
+    <RefreshCw className={`w-3.5 h-3.5 ${spinning ? "animate-spin" : ""}`} />{spinning ? "Syncing…" : done ? "Synced just now" : "Sync from HRIS"}
+  </button>);
+}
+
+// Zero active sessions (R3-01). Orbital is constant; message + CTAs depend on HRIS status.
+// With departures → departure list + "Create session". Without → "Create manually".
+function ManagerZeroState({ hasDepartures }) {
+  return (<div className="max-w-2xl mx-auto p-6">
+    <div className="rounded-xl border border-gray-200 bg-white p-10 text-center">
+      <OrbitalIllustration />
+      {hasDepartures ? (<>
+        <h3 className="text-sm font-semibold text-gray-900 mb-1">{DEPARTURES.length}{" upcoming departure"}{DEPARTURES.length !== 1 ? "s" : ""}</h3>
+        <p className="text-xs text-gray-500 mb-5">{"HRIS flagged people leaving soon. Start a session to begin building their knowledge graph."}</p>
+        <div className="flex items-center justify-center gap-2">
+          <Link href="/session/new" className="h-9 px-4 rounded-lg text-white text-sm font-medium inline-flex items-center gap-1.5 transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-violet-500/30" style={{ background: GRADIENT }}><Plus className="w-3.5 h-3.5" />Create session</Link>
+          <SyncFromHris />
+        </div>
+      </>) : (<>
+        <h3 className="text-sm font-semibold text-gray-900 mb-1">No upcoming departures</h3>
+        <p className="text-xs text-gray-500 mb-5">{"Nothing from HRIS right now. When someone’s leaving, their knowledge graph starts building here."}</p>
+        <div className="flex items-center justify-center gap-2">
+          <SyncFromHris />
+          <Link href="/session/new" className="h-9 px-4 rounded-lg text-white text-sm font-medium inline-flex items-center gap-1.5 transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-violet-500/30" style={{ background: GRADIENT }}><Plus className="w-3.5 h-3.5" />Create manually</Link>
+        </div>
+      </>)}
     </div>
-    <h3 className="text-sm font-semibold text-gray-900 mb-1">No departures on the horizon</h3>
-    <p className="text-xs text-gray-500 mb-5">{"When someone’s leaving, their knowledge graph starts building here."}</p>
-    <Link href="/session/new" className="h-9 px-4 rounded-lg text-white text-sm font-medium inline-flex items-center gap-1.5 transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-violet-500/30" style={{ background: "linear-gradient(135deg,#8b5cf6,#7c3aed)" }}><Plus className="w-3.5 h-3.5" />Create session</Link>
+    {hasDepartures && <div className="mt-5"><DepartureBanner departures={DEPARTURES} /></div>}
   </div>);
 }
 function DepartureBanner({ departures }) { return (<article className="rounded-lg border border-yellow-200 bg-yellow-50/40 p-4 mb-6"><div className="flex items-center gap-2 mb-3"><AlertTriangle className="w-3.5 h-3.5 text-yellow-700" strokeWidth={2} /><h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider">{departures.length}{" upcoming departures from HRIS"}</h3></div><div className="space-y-2">{departures.map((d, i) => (<div key={i} className="flex items-center justify-between bg-white rounded-md border border-gray-200 px-3 py-2"><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 text-gray-700 text-[10px] font-semibold inline-flex items-center justify-center shrink-0">{d.initials}</div><div><div className="text-sm font-medium text-gray-900">{d.name}</div><div className="text-[11px] text-gray-500">{d.role}{" · "}{d.dept}</div></div></div><div className="flex items-center gap-3"><span className="text-[10px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{"Last day "}{d.lastDay}{" · "}{d.daysLeft}{"d"}</span><Link href="/session/new" className="h-7 px-2.5 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-[11px] font-medium inline-flex items-center gap-1 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30">Start session<ArrowRight className="w-2.5 h-2.5" /></Link></div></div>))}</div></article>); }

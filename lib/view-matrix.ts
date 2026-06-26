@@ -219,6 +219,7 @@ export function defaultRoute(_role: string): string {
 export const DASHBOARD_STATES: Record<string, FlowState[]> = {
   manager: [
     { id: "departures", label: "Departures pending" },
+    { id: "no-departures", label: "No departures (empty)" },
     { id: "active", label: "Active sessions" },
     { id: "completed", label: "Session completed" },
   ],
