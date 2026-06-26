@@ -42,7 +42,7 @@ export function DeliverOverview({ role, onSwitchTab, S, MD, modProgress, MC, Pro
   return <div className="space-y-4">
     <div>
       <h2 className="text-xl font-semibold text-gray-900">Ready to commit</h2>
-      <p className="text-[12px] text-gray-500 mt-1">Review Minh L\u00ea&apos;s knowledge before committing to the Knowledge Graph.</p>
+      <p className="text-[12px] text-gray-500 mt-1">Review Minh Lê&apos;s knowledge before committing to the Knowledge Graph.</p>
     </div>
 
     {/* Knowledge summary */}
