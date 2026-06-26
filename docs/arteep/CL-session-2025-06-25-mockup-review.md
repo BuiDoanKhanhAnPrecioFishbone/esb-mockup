@@ -1,66 +1,163 @@
-# ART-EEP — Mockup Review Notes (2025-06-25)
+# ART-EEP — Mockup Review + Build Instructions (2025-06-25)
 
-*Review of deployed mockup state. No code changes — issues documented for Claude Code to apply later.*
+*Single instruction file for Claude Code. Contains all NOT BUILT features, consistency fixes, and review issues.*
+*Apply in the order listed. Delete this file after everything is verified.*
 
 ---
 
-## Graph View
+## PART A: Features to build
 
-### GV-01: Node ambient motion
+### A1. Dashboard redesign — NOT BUILT 🔒
+
+**File:** `components/mockups/ha-vy-handover-dashboard.jsx`
+
+#### A1.1 Manager dashboard (`ManagerActive` function)
+
+**Remove:**
+- 4 KPI tiles ("Needs your action", "Deadline ≤ 7 days", "Active sessions", "Open gaps")
+- "Needs your action" / "Waiting on you" tags and `blockedOnManager` logic
+
+**Add — Greeting banner:**
+- Gradient background (`#f5f3ff` → `#ede9fe` → `#faf5ff`)
+- "Good afternoon, Hà Vy" + "2 active handovers" subtitle
+- Faint decorative graph nodes in the background corner (very low opacity)
+
+**Change — Session cards (section title stays "Active sessions"):**
+- Days left stays as **text** (no countdown ring, no urgency left border)
+- Phase progress bar kept (3 segments: Prepare / Capture / Deliver, with sub-stage fill)
+- Replace old metrics line with **inline knowledge metrics**: `✨ 4/6 gaps resolved · 💬 9/14 answered`
+- One compact text row — no full-width bars
+
+**Add — Dashed "+ Create session" card** below session cards
+
+**Keep — Activity feed:** compact, same position
+
+**Add — Empty state (zero active sessions):**
+- **Orbital illustration:** central AI node with gradient fill (#7c3aed → #a78bfa), 3 elliptical orbital rings (`stroke: #ede9fe`, 0.8px), smaller knowledge nodes orbiting slowly (CSS `@keyframes` rotation, 12-20s cycles, different speeds per ring)
+- "No departures on the horizon"
+- "When someone's leaving, their knowledge graph starts building here."
+- "+ Create session" CTA button with gradient background (`linear-gradient(135deg, #6366f1, #7c3aed)`)
+- Only shown when Manager has zero active sessions. When first session is created, orbital disappears and session cards appear.
+
+#### A1.2 Offboarder dashboard (`OBActiveQueue` function)
+
+- **Remove** "Files uploaded" KPI tile (upload removed from POC)
+- **Keep** "To answer" and "Answered" tiles
+- **Add greeting banner:** "Good afternoon, Minh Lê" · "5 questions waiting for you" — same gradient as Manager
+- **Completion state** ("You're all caught up"): keep existing green checkmark, optionally add small illustration (connected graph nodes)
+
+#### A1.3 Coworker dashboard (`CoworkerActive` function)
+
+- **Keep** existing KPI tiles ("Answers to review", "Waiting for answer", "Active sessions")
+- **Add greeting banner:** "Good afternoon" · "3 answers to review across 2 sessions" — same gradient
+- **Completion state** ("All satisfied"): keep existing structure, optionally add matching illustration
+
+#### A1.4 Artwork summary
+
+| Artwork | Manager | Offboarder | Coworker |
+|---|---|---|---|
+| Greeting banner | ✅ personalized | ✅ personalized | ✅ generic |
+| Empty state orbital | ✅ (no sessions) | ❌ (n/a) | ❌ (n/a) |
+| Completion celebration | ✅ (emerald banner) | ✅ (all caught up) | ✅ (all satisfied) |
+
+---
+
+### A2. Chat-to-graph interactive node references — NOT BUILT 🔒
+
+**File:** `components/mockups/knowledge-graph-explorer.jsx`
+
+**Decision:** AI chat responses contain clickable node references that bridge text and graph.
+
+#### Visual style
+
+| Property | Value |
+|---|---|
+| Text color | Violet (`#5b21b6`) |
+| Background | Subtle violet (`#f5f3ff`) |
+| Underline | `text-decoration: underline`, `text-decoration-color: #c4b5fd`, offset 2px |
+| Border radius | 3px (inline pill shape) |
+| Cursor | Pointer |
+
+#### Interactions
+
+| Action | What happens |
+|---|---|
+| **Hover** reference in chat | Graph highlights that specific node (violet glow ring `box-shadow: 0 0 0 4px rgba(124,58,237,0.2)`, others dim to ~20% opacity). "Node name · from chat" indicator appears on graph top-left |
+| **Click** reference in chat | Graph zooms to that node + node detail drawer opens from the right |
+| **Multiple references** in one response | Each highlights independently on hover |
+| **Mouse leave** reference | Graph returns to normal (all nodes visible, no highlighting) |
+
+#### Example AI response
+```
+"Start with [Kafka retry config] — incomplete checklist, DLQ undocumented.
+Then review [Stripe webhook handler] since it depends on retry logic."
+```
+Each `[bracketed term]` renders as inline violet reference linked to existing graph node.
+
+#### Rules
+- Only existing nodes — references never create new nodes
+- Node matching by `id` or `label` in graph data
+- If referenced node doesn't exist in graph, render as plain text (no link)
+- Works alongside dynamic recommendation chips
+
+---
+
+## PART B: Review issues (by view)
+
+### Graph View
+
+#### GV-01: Node ambient motion
 **Issue:** Graph nodes are completely static.
 **Change:** Add subtle slow ambient animation — nodes drift slightly in random directions. CSS `@keyframes` with small translate offsets (±3px) over 10-20 second cycles. Different delays per node so they don't move in sync.
 **File:** `components/mockups/knowledge-graph-explorer.jsx`
 
 ---
 
-## Manager View
+### Manager View
 
-### MV-01: Remove "Draft" tag — rename to "Verified" and "Flagged" ✅ LOCKED
-**Issue:** POC still uses "Draft" as a node status. We now only have two statuses.
+#### MV-01: Remove "Draft" tag — use "Verified" and "Flagged" ✅ LOCKED
+**Issue:** POC still uses "Draft" as a node status. Now only two statuses.
 **Change:**
 
 | Old status | New status | Visual |
 |---|---|---|
 | Draft | *(removed)* | — |
-| Verified | **Verified** | Purple node, emerald badge when canonical |
-| *(new)* | **Flagged** | Rose border + small rose "Flagged" badge with flag icon — node reported via UC-HO-06, pending Manager review |
+| Verified | **Verified** | Purple node (#ede9fe border #c4b5fd), emerald badge when canonical |
+| *(new)* | **Flagged** | Rose node (#fff1f2 border #fda4af), small rose "Flagged" badge with flag icon. Reported via UC-HO-06, pending Manager review. Resolves back to Verified |
 
-Updated legend: **Verified** (purple) · **Flagged** (rose) · **Module** (gray)
-
-**Affects:** KG Explorer node rendering, legend, any status filters in the chat copilot.
+**Updated legend:** Verified (purple) · Flagged (rose) · Module (gray)
 **File:** `components/mockups/knowledge-graph-explorer.jsx`
 
-### MV-02: Rename "System node" to "Module"
-**Issue:** The gray structural nodes (Payment Service, CI/CD Pipeline, etc.) are labeled "System" in the legend. This is confusing — they're module-level grouping nodes.
-**Change:** Rename from "System" to **"Module"** in the graph legend and any internal references. Matches the session terminology where these are called "modules."
+#### MV-02: Rename "System node" to "Module"
+**Issue:** Gray structural nodes labeled "System" in legend. Should be "Module" to match session terminology.
+**Change:** Rename in graph legend + any internal references.
 **File:** `components/mockups/knowledge-graph-explorer.jsx`
 
-### MV-03: Orbital empty state location
-**Issue:** The orbital illustration (§9 in build queue) is not yet built. Clarification needed on where it appears.
-**Decision:** It belongs on the **Manager dashboard** (`/` route, `ha-vy-handover-dashboard.jsx`) when there are zero active sessions. NOT a separate "Departure Pending" page. When the first session is created, the orbital disappears and session cards appear.
+#### MV-03: Orbital empty state location
+**Decision:** On the Manager dashboard (`/` route) when zero active sessions. See §A1.1 for full spec.
 **File:** `components/mockups/ha-vy-handover-dashboard.jsx`
 
-### MV-04: `/sessions` route not updated
-**Issue:** The `esb-mockup.vercel.app/sessions` (all-sessions page) hasn't been updated to reflect recent Dashboard and Session Details changes.
-**Change:** Audit `all-sessions.jsx` and align with:
+#### MV-04: `/sessions` route not updated
+**Issue:** `all-sessions.jsx` hasn't been updated to match Dashboard/Session Details changes.
+**Change:** Audit and align:
 - New session card structure (inline knowledge metrics, no KPI tiles)
-- Remove any "Needs your action" / "Waiting on you" tags
-- Remove any upload references
-- Ensure phase progress bar matches the dashboard card format
+- Remove "Needs your action" / "Waiting on you" tags
+- Remove upload references
+- Ensure phase progress bar matches dashboard format
 **File:** `components/mockups/all-sessions.jsx`
 
-### MV-05: Logs tab still tracks file uploads
-**Issue:** The Logs/Audit tab in Session Details still shows file upload events ("File uploaded: kafka-config.yaml"). Upload is removed from POC.
-**Change:** Remove all file-upload log entries from the Logs tab mock data. Keep other log entries (questions asked, answers submitted, gaps detected, coworker joined, etc.).
+#### MV-05: Logs tab still tracks file uploads
+**Issue:** Logs tab shows file upload events. Upload removed from POC.
+**Change:** Remove all file-upload log entries from mock data. Keep question/answer/gap/coworker log entries.
 **File:** `components/mockups/session-command-view.jsx` — `LogsTab` or `AuditContent` function
 
-### MV-06: Functional drag-and-drop ✅ LOCKED
-**Issue:** Data tab shows a static drag handle icon (⠿) on cards but no actual drag interaction.
-**Decision:** Build functional drag-and-drop. Implement React DnD (or simple onDrag handlers) so cards can be dragged between modules and to/from Uncategorized.
+#### MV-06: Functional drag-and-drop ✅ LOCKED
+**Issue:** Static drag handle icon (⠿) with no interaction.
+**Change:** Build functional React DnD.
 
-**Three interaction states:**
-1. **Idle** — drag handle (⠿) appears on card row hover. Cursor changes to grab.
-2. **Dragging** — card lifts as a ghost (violet border, shadow, slight rotation). Target modules highlight with violet border as drop zones. Original position shows dashed placeholder.
+**Three states:**
+1. **Idle** — handle (⠿) appears on card row hover. Cursor: grab.
+2. **Dragging** — card lifts as ghost (violet border, shadow, slight rotation). Target modules highlight with violet border as drop zones. Original position shows dashed placeholder.
 3. **Dropped** — card lands in new module with violet highlight + "moved" badge (fades after 3s). Source/destination card counts update.
 
 **Card movement rules:**
@@ -69,144 +166,184 @@ Updated legend: **Verified** (purple) · **Flagged** (rose) · **Module** (gray)
 |---|---|
 | Primary-only cards | ✅ Can be dragged between modules or to/from Uncategorized |
 | Uncategorized cards | ✅ Can be dragged into any module |
-| Linked cards (1:N) | ❌ Cannot be dragged — they exist in multiple modules by design. Drag handle is hidden or grayed out with tooltip "This card is linked to multiple modules — use Move to" |
-| Linked card reassignment | Use the "Move to" dropdown instead — it shows all current assignments and lets the Manager pick precisely |
-| Gaps after card move | Gaps are independent of card moves. Moving a card does NOT create, resolve, or invalidate any gap. Gaps are module-level knowledge assessments, not card-level |
-| Q&A after card move | Questions and answers move with the card — they belong to the card, not the module |
+| Linked cards (1:N) | ❌ Cannot be dragged. Handle hidden or grayed out with tooltip "This card is linked to multiple modules — use Move to" |
+| Linked card reassignment | Use "Move to" dropdown — shows all current assignments |
+| Gaps after card move | Independent — gaps are module-level, unaffected by card moves |
+| Q&A after card move | Moves with the card — belongs to card, not module |
 
 **File:** `components/mockups/session-command-view.jsx` — `ModuleSection` / card rows
 
-### MV-07: Edit/remove AI-generated questions in Gaps section
-**Issue:** AI-generated questions in gap rows may not have edit/delete affordances.
-**Decision (already locked in §8.2):** AI-generated questions are editable AND deletable by Manager and Coworker. Same hover pencil + trash pattern as human questions. Deleting a gap's last question does NOT dismiss the gap — gap stays visible with zero questions.
-**Verify:** Check that `canEdit` prop is passed to AI-generated question rows in gap sections, not just card-level questions.
+#### MV-07: Edit/remove AI-generated questions in Gaps section
+**Decision (locked in §8.2):** AI questions editable + deletable. Same hover pencil + trash as human questions. Deleting last question does NOT dismiss gap.
+**Verify:** Check `canEdit` prop reaches AI-generated question rows in gap sections.
 **File:** `components/mockups/session-command-view.jsx`
 
 ---
 
-## Offboarder View
+### Offboarder View
 
-### OV-01: Remove double header (greeting inside session)
-**Screenshot:** Image 1 — session header "Minh Lê's session · CAPTURE" appears at top, then below the tabs a "Good afternoon, Minh Lê" greeting card appears.
-**Issue:** The greeting banner was designed for the **dashboard**, not inside the session detail page. Inside the session, the session header already identifies the user. The greeting is redundant.
-**Change:** Remove the "Good afternoon, Minh Lê · 5 questions waiting for you" card from the Offboarder's session Overview tab. Keep the greeting banner ONLY on the dashboard.
+#### OV-01: Remove double header (greeting inside session)
+**Screenshot:** Session header "Minh Lê's session · CAPTURE" + below tabs "Good afternoon, Minh Lê" card.
+**Issue:** Greeting banner designed for dashboard only. Redundant inside session detail.
+**Change:** Remove "Good afternoon, Minh Lê · 5 questions waiting for you" from Offboarder's session Overview tab. Keep greeting ONLY on dashboard.
 **File:** `components/mockups/session-command-view.jsx` — Offboarder Overview rendering
 
-### OV-02: Offboarder data access scope (double-check)
-**Decision (already locked in §8.3):** The Offboarder does NOT see the full data page (module tree, card counts, board headers). They see:
-- **Capture:** Flat question queue + "See in context" link → opens side panel with specific card
-- **Deliver/Complete:** Read-only summary (contribution stats, thank-you, timeline)
+#### OV-02: Offboarder data access scope (verify)
+**Decision (locked in §8.3):** Offboarder does NOT see full data page. Capture = flat question queue + "See in context". Deliver/Complete = read-only summary.
+**Status:** Verify implementation matches.
 
-They never see the full module → card tree structure. The module tag on each question provides light context. "See in context" opens the specific card's detail, not the whole tree.
-**Status:** Already locked. Verify implementation matches.
-
-### OV-03: "All Answered" state needs distinct design
-**Issue:** The "All Answered" state looks identical to the "Active Queue" state — same layout, just no unanswered questions. It should feel like a celebration/completion moment.
-**Change:** When all questions are answered, show:
-1. A green checkmark icon or small celebration illustration (matching the orbital illustration style — connected graph nodes)
+#### OV-03: "All Answered" state needs distinct design
+**Issue:** Same visual as Active Queue — should be a celebration moment.
+**Change:**
+1. Green checkmark icon or small connected-nodes illustration
 2. "You're all caught up!" heading
 3. Contribution summary: "You answered 14 questions across 5 modules"
-4. Read-only list of submitted answers below (collapsed by default, expandable)
-5. Distinct from the active queue — no answer inputs, no "Submit" buttons, no progress bar
+4. Read-only list of submitted answers (collapsed by default, expandable)
+5. No answer inputs, no Submit buttons, no progress bar
 **File:** `components/mockups/session-command-view.jsx` — Offboarder state rendering
 
-### OV-04: Redesign "Complete" page ✅ LOCKED
-**Issue:** The Offboarder's Complete page (after Manager commits to KG) is plain and not engaging.
-**Change:** Make it a proper thank-you/celebration page:
-
-1. **Green gradient header** with connected-nodes illustration (small SVG — gradient emerald nodes connected by lines)
-2. **"Thank you, Minh Lê"** heading + "Your knowledge has been preserved." subtitle
-3. **Contribution stats** (3 cards in a grid):
-   - 14 questions answered
-   - 5 modules covered
-   - 42 knowledge entries
-4. **"What happens next" timeline** (3 steps):
-   - ✅ Your answers submitted (completed, green)
-   - 🔵 Manager review — "Hà Vy will verify your answers and resolve any gaps" (in progress, violet)
-   - ⚪ Committed to Knowledge Graph — "Your knowledge becomes a permanent part of the team's memory" (upcoming, gray)
+#### OV-04: Redesign "Complete" page ✅ LOCKED
+**Change:** Proper thank-you/celebration page:
+1. **Green gradient header** (`#f0fdf4` → `#dcfce7`) with connected-nodes SVG illustration (emerald gradient nodes + lines)
+2. **"Thank you, Minh Lê"** + "Your knowledge has been preserved."
+3. **Contribution stats** (3 cards grid): 14 questions answered · 5 modules covered · 42 knowledge entries
+4. **"What happens next" timeline** (3 steps only — NO successor playbook):
+   - ✅ Your answers submitted (green, completed)
+   - 🔵 Manager review — "Hà Vy will verify your answers and resolve any gaps" (violet, in progress)
+   - ⚪ Committed to Knowledge Graph — "Your knowledge becomes a permanent part of the team's memory" (gray, upcoming)
 5. **Footer:** "Thank you for contributing to the team's success."
 
-**NOTE:** No successor's playbook step — ART-EEP POC does not have this feature. Timeline is 3 steps only.
-
+**NOTE:** No successor's playbook step — ART-EEP POC does not have this feature.
 **File:** `components/mockups/session-command-view.jsx` — Offboarder Complete state
 
 ---
 
-## Coworker View
+### Coworker View
 
-### CW-01: Remove upload references from Logs tab
-**Issue:** Same as MV-05 — the Coworker's Logs tab may still show file upload events.
-**Change:** Remove file-upload log entries. Keep question/answer/review log entries.
-**File:** `components/mockups/session-command-view.jsx` — Coworker Logs rendering
+#### CW-01: Remove upload references from Logs tab
+**Same as MV-05.** Remove file-upload log entries from Coworker Logs.
+**File:** `components/mockups/session-command-view.jsx`
 
-### CW-02: "Ask a question" button should go to Data tab
-**Issue:** Clicking "Ask a question" on the Coworker dashboard navigates to the Overview tab instead of the Data tab.
-**Change:** Update the link/navigation target to `?tab=data` (or the Data tab equivalent). The Coworker needs to see the module/card structure to ask contextual questions.
+#### CW-02: "Ask a question" → Data tab not Overview
+**Issue:** Button navigates to Overview tab.
+**Change:** Update to `?tab=data`. Coworker needs module/card structure to ask contextual questions.
 **File:** `components/mockups/ha-vy-handover-dashboard.jsx` — Coworker session card CTA
 
-### CW-03: Inconsistent question count — separate sections ✅ LOCKED
-**Screenshot:** Image 2 — header shows "2 answers ready · 2 waiting · 4 asked total" but only 2 question cards are displayed. Answer text is not shown.
-**Change:** Show all questions, grouped into two separate sections:
+#### CW-03: Fix question count + show answer text ✅ LOCKED
+**Issue:** "4 asked total" but only 2 shown. No answer text visible.
+**Change:** Separate sections:
 
 **Section 1: "Ready for review (2)"**
-- Shows question text + Offboarder's full answer text (in a green-left-bordered card)
-- Satisfy / Needs more buttons on each
-- Module tag on each question
+- Question text + Offboarder's full answer (green-left-bordered card)
+- Satisfy / Needs more buttons
+- Module tag
 - Each question is a deep link (see CW-04)
 
 **Section 2: "Waiting for answer (2)"**
-- Shows question text + when asked + status ("Waiting · 1 day")
+- Question text + when asked + "Waiting · 1 day" status
 - Module tag
-- No action buttons — nothing to review yet
+- No action buttons
 
 **File:** `components/mockups/ha-vy-handover-dashboard.jsx` — Coworker session card
 
-### CW-04: Deep links from dashboard to specific card Q&A
-**Issue:** Clicking a question on the Coworker dashboard should navigate directly to that card's Q&A in the Data tab, not to a generic session view.
-**Change:** Each question on the dashboard card should link to `/session/minh-le?tab=data&card=<cardId>` (or equivalent) which opens the Data tab and auto-expands/scrolls to the specific card with its Q&A visible. If the side panel pattern is used, clicking the question opens the session Data tab with the side panel pre-opened on that card.
+#### CW-04: Deep links from dashboard to card Q&A
+**Issue:** Question clicks should go to specific card, not generic session.
+**Change:** Link to `/session/minh-le?tab=data&card=<cardId>` — opens Data tab with side panel pre-opened on that card.
 **File:** `components/mockups/ha-vy-handover-dashboard.jsx` — question click handlers
 
-### CW-05: Overview tab should show coworker list
-**Issue:** The Coworker's Overview tab doesn't display the list of coworkers in the session.
-**Change:** Add the `CoworkerNetwork` component (already built for Manager view) to the Coworker's Overview tab, but in **read-only mode** — no "+ Add" button, no × remove. Just the list of who's participating: names, avatars, shared card counts, join status.
+#### CW-05: Overview tab should show coworker list
+**Issue:** Coworker's Overview tab missing coworker list.
+**Change:** Add `CoworkerNetwork` component in **read-only mode** — no "+ Add", no × remove. Just names, avatars, shared card counts, join status.
 **File:** `components/mockups/session-command-view.jsx` — Coworker Overview rendering
 
 ---
 
-## Summary by priority
+## PART C: Consistency cleanup
 
-| Priority | ID | Description | File |
-|---|---|---|---|
-| 🔴 High | OV-01 | Remove double header (greeting inside session) | session-command-view.jsx |
-| 🔴 High | CW-03 | Fix inconsistent question count + show answer text | ha-vy-handover-dashboard.jsx |
-| 🔴 High | MV-01 | Remove Draft tag, add Verified + Flagged | knowledge-graph-explorer.jsx |
-| 🔴 High | MV-05 | Remove file upload from Logs tab | session-command-view.jsx |
-| 🟡 Medium | MV-02 | Rename System → Module in legend | knowledge-graph-explorer.jsx |
-| 🟡 Medium | MV-04 | Update /sessions route | all-sessions.jsx |
-| 🟡 Medium | MV-06 | Functional drag-and-drop (linked cards blocked) | session-command-view.jsx |
-| 🟡 Medium | CW-02 | Ask a question → Data tab not Overview | ha-vy-handover-dashboard.jsx |
-| 🟡 Medium | CW-04 | Deep links from dashboard to card Q&A | ha-vy-handover-dashboard.jsx |
-| 🟡 Medium | CW-05 | Show coworker list on Coworker Overview | session-command-view.jsx |
-| 🟡 Medium | OV-03 | Distinct "All Answered" celebration state | session-command-view.jsx |
-| 🟡 Medium | OV-04 | Redesign Complete page (3-step timeline, no playbook) | session-command-view.jsx |
-| 🟡 Medium | GV-01 | Node ambient motion | knowledge-graph-explorer.jsx |
-| 🟡 Medium | MV-07 | Verify AI question edit/delete in gap rows | session-command-view.jsx |
-| 🟡 Medium | CW-01 | Remove upload from Coworker Logs | session-command-view.jsx |
-| 🟡 Medium | MV-03 | Orbital empty state on dashboard | ha-vy-handover-dashboard.jsx |
+### C1. KG Explorer cleanup
+**File:** `components/mockups/knowledge-graph-explorer.jsx`
 
----
-
-## All open questions resolved ✅
-
-| Question | Decision |
+| Issue | Change |
 |---|---|
-| MV-01: Node status naming | **Flagged** — short, fits badge, clear meaning |
-| MV-06: Drag-and-drop | **Functional** — build actual DnD. Linked cards blocked from dragging |
-| MV-06: Card move + gaps | **Independent** — gaps are module-level, unaffected by card moves |
-| MV-06: Linked card movement | **Blocked** — linked cards can't be dragged. Use "Move to" dropdown instead |
-| CW-03: Question grouping | **Separate sections** — "Ready for review" + "Waiting for answer" |
-| OV-04: Complete page | **"What happens next" timeline** — 3 steps (no successor playbook) |
+| 5 fixed `CHIPS` array (Show risks, Auth flow, etc.) | Remove — replaced by dynamic contextual chips in chat |
+| `FilterChip` component (~line 94) | Remove — filtering through chat only |
+| Graph toolbar filter button | Remove if still present — toolbar = title + entry count + zoom only |
+| Graph toolbar padding | Review spacing after filter removal for visual balance |
+| Chat layout | Verify left-panel layout matches spec: history sidebar (~120px, hide/show toggle) + active chat (~180px) |
+| Node statuses | Remove "Draft", add "Flagged" per MV-01 |
+| Legend | Update to: Verified (purple) · Flagged (rose) · Module (gray) |
+| Node references | Add per §A2 |
+| Node motion | Add per GV-01 |
+
+### C2. Dashboard cleanup
+**File:** `components/mockups/ha-vy-handover-dashboard.jsx`
+
+See §A1 for full spec. Summary of all changes:
+- Manager: remove 4 KPI tiles, remove action/waiting tags, add greeting banner, add inline metrics, add orbital empty state
+- Offboarder: remove "Files uploaded" tile, add greeting banner
+- Coworker: add greeting banner, fix question sections (CW-03), fix Ask button (CW-02), add deep links (CW-04)
+
+### C3. Session view cleanup
+**File:** `components/mockups/session-command-view.jsx`
+
+| Issue | Change |
+|---|---|
+| OV-01 | Remove greeting card from Offboarder session Overview |
+| OV-03 | Build distinct "All Answered" celebration state |
+| OV-04 | Build Complete page with thank-you + 3-step timeline |
+| MV-05 + CW-01 | Remove file-upload entries from Logs tab mock data |
+| MV-06 | Build functional drag-and-drop (linked cards blocked) |
+| MV-07 | Verify AI question edit/delete in gap rows |
+| CW-05 | Add CoworkerNetwork (read-only) to Coworker Overview |
+
+### C4. All-sessions page cleanup
+**File:** `components/mockups/all-sessions.jsx`
+
+Audit and align with dashboard changes (MV-04). Remove stale tags, upload refs, update card format.
+
+### C5. Orphaned files — DELETE
+
+| File | Why |
+|---|---|
+| `components/mockups/prepare-stage.jsx` | Replaced by Prepare steps inside `session-command-view.jsx`. Has stale "Successor" row |
+| `components/mockups/uc-ho-01-quick-initiate.jsx` | Replaced by `create-session.jsx` |
 
 ---
 
-*End of review notes. Apply via Claude Code using this file as the instruction set.*
+## Priority order
+
+| # | Scope | Files |
+|---|---|---|
+| 1 | Dashboard redesign (A1) + dashboard fixes (CW-02, CW-03, CW-04) | `ha-vy-handover-dashboard.jsx` |
+| 2 | Session view fixes (OV-01, OV-03, OV-04, MV-05, MV-06, MV-07, CW-01, CW-05) | `session-command-view.jsx` |
+| 3 | KG Explorer (MV-01, MV-02, GV-01, A2, filter/chip cleanup) | `knowledge-graph-explorer.jsx` |
+| 4 | All-sessions page (MV-04) | `all-sessions.jsx` |
+| 5 | Delete orphaned files (C5) | `prepare-stage.jsx`, `uc-ho-01-quick-initiate.jsx` |
+
+---
+
+## Verification checklist
+
+After applying all changes:
+
+- [ ] `/` — Manager dashboard: no KPI tiles, greeting banner visible, inline metrics on cards, orbital shows when zero sessions
+- [ ] `/` — Offboarder dashboard: no "Files uploaded" tile, greeting banner visible
+- [ ] `/` — Coworker dashboard: greeting banner, questions grouped Ready/Waiting with answer text
+- [ ] `/session/minh-le` — Offboarder: no greeting card inside session, flat question queue with "See in context"
+- [ ] `/session/minh-le` — Offboarder All Answered: celebration state, not empty queue
+- [ ] `/session/minh-le` — Offboarder Complete: thank-you page, 3-step timeline, no playbook step
+- [ ] `/session/minh-le` — Manager Data tab: drag-and-drop works on primary/uncategorized cards, linked cards blocked
+- [ ] `/session/minh-le` — Logs tab: no file upload entries
+- [ ] `/session/minh-le` — Coworker Overview: coworker list visible (read-only)
+- [ ] `/session/minh-le` — Coworker "Ask a question" → goes to Data tab
+- [ ] `/knowledge-graph` — no Draft nodes, Verified + Flagged + Module in legend
+- [ ] `/knowledge-graph` — no filter button, no fixed AI chips, no FilterChip component
+- [ ] `/knowledge-graph` — node references in chat: hover highlights, click opens drawer
+- [ ] `/knowledge-graph` — nodes drift slowly (ambient motion)
+- [ ] `/sessions` — cards match dashboard format, no stale tags
+- [ ] `prepare-stage.jsx` deleted
+- [ ] `uc-ho-01-quick-initiate.jsx` deleted
+
+---
+
+*End of review + build instructions. Delete this file after all items are applied and verified.*
