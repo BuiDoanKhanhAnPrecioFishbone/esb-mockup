@@ -76,14 +76,16 @@ const OB_ANSWERED = [
 
 const CW_SESSIONS = [
   { id: "minh-le", name: "Minh L\u00ea", role: "Senior Backend Engineer", initials: "ML", phase: "Capture", phaseKey: "capture", daysLeft: 22,
-    answersReady: 2, waiting: 2, totalAsked: 4,
-    latestAnswer: { q: "What are the undocumented rate limits?", module: "Payment Service", time: "2h ago", answer: "1,000 req/min per tenant with 1.5x burst for 10s. Admin API for mid-contract changes. No public doc yet." },
-    latestWaiting: { q: "Runbook for nightly batch failures?", module: "CI/CD Pipeline", time: "1 day" },
+    ready: [
+      { q: "What are the undocumented rate limits on the payment API?", module: "Payment Service", card: "Payment gateway timeout", time: "2h ago", answer: "1,000 req/min per tenant with 1.5x burst for 10s. Admin API for mid-contract changes. No public doc yet." },
+      { q: "Which webhook events are critical vs optional?", module: "Payment Service", card: "Stripe webhook handler", time: "20m ago", answer: "Critical: payment_intent.succeeded, charge.refunded, invoice.payment_failed. Everything else routes to the batch queue." },
+    ],
+    waiting: [
+      { q: "Is there a runbook for the nightly batch job failures?", module: "CI/CD Pipeline", card: "GitHub Actions workflow", time: "1 day" },
+      { q: "What's the rollback procedure for the Atlas migration?", module: "CI/CD Pipeline", card: "Atlas migration rollback", time: "3h" },
+    ],
   },
-  { id: "thanh-tung", name: "Thanh T\u00f9ng", role: "QA Lead", initials: "TT", phase: "Prepare", phaseKey: "prepare", daysLeft: 28,
-    answersReady: 0, waiting: 0, totalAsked: 0,
-    latestAnswer: null, latestWaiting: null,
-  },
+  { id: "thanh-tung", name: "Thanh T\u00f9ng", role: "QA Lead", initials: "TT", phase: "Prepare", phaseKey: "prepare", daysLeft: 28, ready: [], waiting: [] },
 ];
 
 export default function HaVyHandoverDashboard({ embedded = false, role: roleProp, state: stateProp } = {}) {
@@ -120,18 +122,33 @@ function ManagerCompleted() { const [dismissed, setDismissed] = useState(false);
 // Offboarder's dashboard IS their session command view (Overview/Data/Logs). Dashboard
 // states map to session lifecycle steps; the old dashboard UI now lives in the Overview tab.
 const OB_STATE_TO_STEP = { "not-started": "ready", "active-queue": "capture", "all-answered": "capture", "complete": "complete" };
-function OffboarderStep({ id }) { return <SessionCommandView role="offboarder" step={OB_STATE_TO_STEP[id] || "capture"} chrome={false} />; }
+function OffboarderStep({ id }) { if (id === "all-answered") return <OBAllAnswered />; return <SessionCommandView role="offboarder" step={OB_STATE_TO_STEP[id] || "capture"} chrome={false} />; }
 function DeadlineBar({ days }) { const color = days > 14 ? "safe" : days > 7 ? "amber" : "danger"; const cls = { safe: "bg-emerald-50 border-emerald-200 text-emerald-800", amber: "bg-yellow-50 border-yellow-200 text-yellow-800", danger: "bg-rose-50 border-rose-200 text-rose-800" }[color]; return (<div className={`rounded-lg border px-4 py-2.5 mb-4 text-[12px] flex items-center gap-2 ${cls}`}><Clock className="w-3.5 h-3.5 shrink-0" /><span><span className="font-semibold">{days}{" days"}</span>{" until your last day \u00b7 July 4, 2026"}</span></div>); }
 function OBNotStarted() { return (<div className="max-w-2xl mx-auto p-6"><DeadlineBar days={30} /><div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center mt-4"><div className="w-12 h-12 rounded-full bg-gray-100 inline-flex items-center justify-center mb-3"><Clock className="w-5 h-5 text-gray-400" strokeWidth={1.5} /></div><h3 className="text-sm font-medium text-gray-700 mb-1">Your session is being prepared</h3><p className="text-xs text-gray-500">{"You\u2019ll be notified when your question queue is ready."}</p></div></div>); }
 function OBActiveQueue() { return (<div className="max-w-2xl mx-auto p-6"><DeadlineBar days={22} /><div className="grid grid-cols-3 gap-3 mb-4"><ActionCard label={"To answer"} value={5} color="urgent" /><ActionCard label={"Answered"} value={9} color="good" /><ActionCard label={"Files uploaded"} value={2} color="normal" /></div><div className="flex items-center gap-3 mb-4"><div className="flex-1 h-[5px] rounded-full bg-gray-200 overflow-hidden"><div className="h-full rounded-full bg-violet-500" style={{ width: "64%" }} /></div><span className="text-[11px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>9 / 14</span></div><SectionLabel count={5}>Questions waiting for you</SectionLabel><div className="space-y-2 mt-2">{OB_QUESTIONS.map((q, i) => (<Link key={i} href="/session/minh-le?tab=data" className="block rounded-lg border border-gray-200 bg-white px-4 py-3 hover:border-gray-300 hover:shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-violet-500/20"><div className="text-[13px] text-gray-900 mb-1">{q.q}</div><div className="text-[11px] text-gray-500 flex items-center gap-1.5">{q.fromType === "ai" ? <Sparkles className="w-3 h-3 text-violet-500" /> : <User className="w-3 h-3" />}<span>{q.from}</span><span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 ml-1">{q.module}</span></div></Link>))}</div><div className="mt-3"><Link href="/session/minh-le?tab=data" className="h-8 px-4 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30">Open question queue<ArrowRight className="w-3 h-3" /></Link><p className="text-[10px] text-gray-400 mt-1.5">Opens in Data tab</p></div><div className="mt-6"><SectionLabel count={9}>Recently answered</SectionLabel><div className="space-y-2 mt-2">{OB_ANSWERED.map((q, i) => (<div key={i} className="rounded-lg border border-gray-200 bg-white px-4 py-3 opacity-50"><div className="text-[13px] text-gray-900 line-through mb-1">{q.q}</div><div className="text-[11px] text-gray-500 flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-emerald-500" /><span>Answered</span>{q.satisfied && <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">{"\u2713 Satisfied"}</span>}{!q.satisfied && <span className="text-[9px] text-gray-400">waiting for review</span>}<span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 ml-1">{q.module}</span></div>{q.preview && <p className="text-[11px] text-gray-500 mt-1.5 italic leading-relaxed">&quot;{q.preview}&quot;</p>}<Link href="/session/minh-le?tab=data" className="text-[10px] text-violet-600 mt-1 inline-block">{"See full answer \u2192"}</Link></div>))}</div></div></div>); }
-function OBAllAnswered() { return (<div className="max-w-2xl mx-auto p-6"><DeadlineBar days={18} /><div className="grid grid-cols-3 gap-3 mb-4"><ActionCard label={"To answer"} value={0} color="good" /><ActionCard label={"Answered"} value={14} color="good" /><ActionCard label={"Files uploaded"} value={4} color="normal" /></div><div className="flex items-center gap-3 mb-6"><div className="flex-1 h-[5px] rounded-full bg-gray-200 overflow-hidden"><div className="h-full rounded-full bg-emerald-500" style={{ width: "100%" }} /></div><span className="text-[11px] text-emerald-600 font-medium" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{"14 / 14 \u2713"}</span></div><div className="rounded-lg border border-emerald-200 bg-emerald-50/40 p-6 text-center"><CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" strokeWidth={1.5} /><h3 className="text-sm font-medium text-gray-900 mb-1">{"You\u2019re all caught up"}</h3><p className="text-xs text-gray-500">{"All 14 questions answered. Your knowledge will be reviewed and committed."}<br />{"If new questions come in, you\u2019ll be notified."}</p></div></div>); }
+// OV-03 \u2014 "All answered" is a distinct celebration moment: contribution summary + read-only answers, no inputs/progress.
+function OBStat({ v, l }) { return (<div className="rounded-lg border border-gray-200 bg-white p-3 text-center"><div className="text-xl font-semibold text-gray-900" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{v}</div><div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mt-0.5">{l}</div></div>); }
+function OBAllAnswered() {
+  const [open, setOpen] = useState(false);
+  return (<div className="max-w-2xl mx-auto p-6">
+    <div className="rounded-xl border border-emerald-200 p-8 text-center mb-5" style={{ background: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)" }}>
+      <div className="w-14 h-14 rounded-full bg-white inline-flex items-center justify-center mb-3 shadow-sm"><CheckCircle2 className="w-8 h-8 text-emerald-500" strokeWidth={1.75} /></div>
+      <h3 className="text-base font-semibold text-gray-900 mb-1">{"You\u2019re all caught up!"}</h3>
+      <p className="text-xs text-gray-600">{"You answered 14 questions across 5 modules."}</p>
+    </div>
+    <div className="grid grid-cols-3 gap-3 mb-5"><OBStat v={14} l="Questions answered" /><OBStat v={5} l="Modules covered" /><OBStat v={42} l="Knowledge entries" /></div>
+    <button onClick={() => setOpen(o => !o)} className="w-full flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-[12px] font-medium text-gray-700 hover:bg-gray-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-violet-500/20"><span>Your submitted answers</span><span className="inline-flex items-center gap-1 text-gray-400"><span style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>14</span><ChevronRight className={`w-3.5 h-3.5 transition-transform ${open ? "rotate-90" : ""}`} /></span></button>
+    {open && (<div className="space-y-2 mt-2">{OB_ANSWERED.map((q, i) => (<div key={i} className="rounded-lg border border-gray-200 bg-white px-4 py-3"><div className="text-[12px] text-gray-900 mb-1">{q.q}</div><div className="text-[11px] text-gray-500 flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-emerald-500" /><span>Answered</span>{q.satisfied ? <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">{"\u2713 Satisfied"}</span> : <span className="text-[9px] text-gray-400">waiting for review</span>}<span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 ml-1">{q.module}</span></div>{q.preview && <p className="text-[11px] text-gray-500 mt-1.5 italic leading-relaxed">&quot;{q.preview}&quot;</p>}</div>))}<p className="text-[10px] text-gray-400 text-center pt-1">+ 12 more answered questions</p></div>)}
+    <p className="text-[11px] text-gray-400 text-center mt-5">{"H\u00e0 Vy will review your answers and commit them to the knowledge graph. You\u2019ll be notified if new questions come in."}</p>
+  </div>);
+}
 function OBComplete() { return (<div className="max-w-2xl mx-auto p-6"><div className="rounded-lg border border-emerald-200 bg-emerald-50/40 p-8 text-center"><CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-3" strokeWidth={1.5} /><h3 className="text-base font-semibold text-gray-900 mb-1">Your knowledge has been preserved</h3><p className="text-xs text-gray-500">{"14 answers and 4 files committed to the knowledge graph."}<br />{"Future team members can access this knowledge."}<br /><br />{"Thank you, Minh L\u00ea."}</p></div></div>); }
 
 function CoworkerStep({ id }) { if (id === "all-satisfied") return <CoworkerAllSatisfied />; return <CoworkerActive />; }
 
 function CoworkerActive() {
-  const totalAnswers = CW_SESSIONS.reduce((s, c) => s + c.answersReady, 0);
-  const totalWaiting = CW_SESSIONS.reduce((s, c) => s + c.waiting, 0);
+  const totalAnswers = CW_SESSIONS.reduce((s, c) => s + c.ready.length, 0);
+  const totalWaiting = CW_SESSIONS.reduce((s, c) => s + c.waiting.length, 0);
   return (<div className="max-w-3xl mx-auto p-6">
     <GreetingBanner name={"Tr\u1ea7n H\u1eefu Nam"} subtitle={`${totalAnswers} answer${totalAnswers !== 1 ? "s" : ""} to review across ${CW_SESSIONS.length} sessions`} />
     <div className="grid grid-cols-3 gap-3 mb-6">
@@ -166,10 +183,33 @@ function CoworkerAllSatisfied() {
   </div>);
 }
 
+// Deep link to a specific card's Q&A: opens the Data tab with the side panel pre-opened (CW-04).
+function cardLink(sessionId, card) { return `/session/${sessionId}?tab=data&card=${encodeURIComponent(card)}`; }
+function CWReadyItem({ sessionId, item }) {
+  const [verdict, setVerdict] = useState(null);
+  return (
+    <div className="rounded-md bg-gray-50 px-3 py-2.5" style={{ borderLeft: "2px solid rgb(16,185,129)", borderRadius: 0 }}>
+      <p className="text-[11px] font-medium text-gray-900 mb-1">{item.q}</p>
+      <p className="text-[11px] text-gray-700 leading-relaxed mb-1.5">{item.answer}</p>
+      <div className="flex items-center gap-1.5 mb-2 text-[9px]"><CheckCircle2 className="w-3 h-3 text-emerald-500" /><span className="text-emerald-600">{"Answered "}{item.time}</span><span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">{item.module}</span></div>
+      {verdict ? (
+        <p className="text-[10px] text-emerald-600 inline-flex items-center gap-1"><CheckCircle2 className="w-3 h-3" />{verdict === "satisfied" ? "Marked satisfied" : "Sent back for more detail"}</p>
+      ) : (
+        <div className="flex gap-2 items-center">
+          <button onClick={() => setVerdict("satisfied")} className="h-6 px-2 rounded border border-emerald-300 text-emerald-700 text-[10px] inline-flex items-center gap-1 hover:bg-emerald-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500/20"><CheckCircle2 className="w-2.5 h-2.5" />Satisfy</button>
+          <button onClick={() => setVerdict("more")} className="h-6 px-2 rounded border border-gray-300 text-gray-600 text-[10px] inline-flex items-center gap-1 hover:bg-gray-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-violet-500/20">Needs more</button>
+          <Link href={cardLink(sessionId, item.card)} className="text-[10px] text-violet-600 hover:text-violet-700 ml-auto inline-flex items-center gap-1">{"In context \u2192"}</Link>
+        </div>
+      )}
+    </div>
+  );
+}
 function CoworkerSessionCard({ session: s, showEmpty }) {
   const phaseColors = { prepare: "bg-blue-50 border-blue-200 text-blue-700", capture: "bg-violet-50 border-violet-200 text-violet-700", deliver: "bg-emerald-50 border-emerald-200 text-emerald-700" };
-  const hasActivity = s.totalAsked > 0 && !showEmpty;
-  const noQuestions = s.totalAsked === 0;
+  const ready = showEmpty ? [] : (s.ready || []);
+  const waiting = showEmpty ? [] : (s.waiting || []);
+  const hasActivity = (ready.length + waiting.length) > 0;
+  const noQuestions = (s.ready || []).length === 0 && (s.waiting || []).length === 0;
   return (
     <div className="rounded-lg border border-gray-200 bg-white">
       <Link href={`/session/${s.id}`} className="flex items-center gap-3 p-4 hover:bg-gray-50/50 transition-colors">
@@ -184,28 +224,21 @@ function CoworkerSessionCard({ session: s, showEmpty }) {
         <ArrowRight className="w-4 h-4 text-gray-400 shrink-0" />
       </Link>
       {hasActivity && (
-        <div className="px-4 pb-4 border-t border-gray-100 pt-3">
-          <div className="flex gap-3 mb-2.5 text-[10px]">
-            {s.answersReady > 0 && <span className="text-emerald-600 inline-flex items-center gap-1"><CheckCircle2 className="w-3 h-3" />{s.answersReady}{s.answersReady > 1 ? " answers ready" : " answer ready"}</span>}
-            {s.waiting > 0 && <span className="text-yellow-600 inline-flex items-center gap-1"><Clock className="w-3 h-3" />{s.waiting}{" waiting"}</span>}
-            <span className="text-gray-500">{s.totalAsked}{" asked total"}</span>
-          </div>
-          {s.latestAnswer && (
-            <div className="rounded-md px-3 py-2 bg-gray-50 mb-1.5" style={{ borderLeft: "2px solid rgb(16,185,129)", borderRadius: 0 }}>
-              <p className="text-[11px] font-medium text-gray-900 mb-0.5">{s.latestAnswer.q}</p>
-              <p className="text-[9px] text-emerald-600">{"Answered "}{s.latestAnswer.time}{" \u00b7 "}{s.latestAnswer.module}</p>
-            </div>
-          )}
-          {s.latestWaiting && (
-            <div className="rounded-md px-3 py-2 bg-gray-50 mb-2.5" style={{ borderLeft: "2px solid rgb(234,179,8)", borderRadius: 0 }}>
-              <p className="text-[11px] font-medium text-gray-900 mb-0.5">{s.latestWaiting.q}</p>
-              <p className="text-[9px] text-yellow-600">{"Waiting \u00b7 "}{s.latestWaiting.time}{" \u00b7 "}{s.latestWaiting.module}</p>
-            </div>
-          )}
-          <div className="flex gap-2">
-            <Link href={`/session/${s.id}?tab=data`} className="h-7 px-3 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-[10px] font-medium inline-flex items-center gap-1 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20">Review answers</Link>
-            <Link href={`/session/${s.id}?tab=data`} className="h-7 px-3 rounded-md border border-gray-300 text-gray-700 text-[10px] font-medium inline-flex items-center gap-1 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-violet-500/20">Ask a question</Link>
-          </div>
+        <div className="px-4 pb-4 border-t border-gray-100 pt-3 space-y-3">
+          {ready.length > 0 && (<div>
+            <p className="text-[10px] uppercase tracking-wider font-medium text-emerald-700 mb-1.5">{"Ready for review \u00b7 "}{ready.length}</p>
+            <div className="space-y-1.5">{ready.map((item, i) => <CWReadyItem key={i} sessionId={s.id} item={item} />)}</div>
+          </div>)}
+          {waiting.length > 0 && (<div>
+            <p className="text-[10px] uppercase tracking-wider font-medium text-yellow-700 mb-1.5">{"Waiting for answer \u00b7 "}{waiting.length}</p>
+            <div className="space-y-1.5">{waiting.map((item, i) => (
+              <Link key={i} href={cardLink(s.id, item.card)} className="block rounded-md bg-gray-50 px-3 py-2 hover:bg-gray-100 transition-colors" style={{ borderLeft: "2px solid rgb(234,179,8)", borderRadius: 0 }}>
+                <p className="text-[11px] font-medium text-gray-900 mb-0.5">{item.q}</p>
+                <div className="flex items-center gap-1.5 text-[9px]"><Clock className="w-3 h-3 text-yellow-600" /><span className="text-yellow-600">{"Waiting \u00b7 "}{item.time}</span><span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">{item.module}</span></div>
+              </Link>
+            ))}</div>
+          </div>)}
+          <div><Link href={`/session/${s.id}?tab=data`} className="h-7 px-3 rounded-md border border-gray-300 text-gray-700 text-[10px] font-medium inline-flex items-center gap-1 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-violet-500/20">Ask a question</Link></div>
         </div>
       )}
       {noQuestions && (
