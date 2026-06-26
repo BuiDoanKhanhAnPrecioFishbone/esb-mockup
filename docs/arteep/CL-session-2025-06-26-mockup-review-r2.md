@@ -7,12 +7,31 @@
 
 ## PART A: Coworker View
 
-### CW-R01: Consolidate "Needs more" and "Ask follow-up" terminology ✅ LOCKED
-**Issue:** "Needs more" and "Ask follow-up" may coexist as labels. They're different actions but the naming is confusing.
-**Decision:**
-- **"Needs more"** — button on an answered card. Sends the answer back to the Offboarder for improvement. Stays on the answered card.
-- **"Ask a question"** — separate action on the Data tab. Creates a brand-new question on a card.
-- **Remove** any "Ask follow-up" label — it's ambiguous.
+### CW-R01: "Needs more" vs "Ask follow-up" — two distinct actions ✅ LOCKED
+**Issue:** "Needs more" and "Ask follow-up" may coexist as labels. They're different actions.
+**Decision:** Both actions exist but serve different purposes. Remove any "Ask follow-up" LABEL — use "Ask a question" instead.
+
+#### ↩ Needs more (yellow)
+- **Where:** Button on an answered card (next to "Satisfy")
+- **What it does:** Sends the SAME answer back to the Offboarder for improvement
+- **Flow:**
+  1. Coworker clicks "Needs more" on an answered question
+  2. A note field appears: "What's missing?" with a text area
+  3. Coworker writes feedback (e.g., "What about per-user limits?")
+  4. Clicks "Send back"
+  5. Offboarder sees: question with "↩ Revision requested" badge, original answer struck-through, Coworker's note, and a fresh answer field to resubmit
+- **Result:** Same question, better answer. One Q&A thread.
+
+#### + Ask a question (violet)
+- **Where:** Button on the Coworker dashboard card OR on the Data tab (per card)
+- **What it does:** Creates a brand-new question on the same (or different) card
+- **Flow:**
+  1. Coworker navigates to Data tab → finds a card → writes a new question
+  2. New question appears in Offboarder's queue as a separate item
+  3. Original Q&A stays untouched (satisfied or otherwise)
+- **Result:** New question, new answer. Separate Q&A thread.
+
+**File:** `components/mockups/session-command-view.jsx` + `ha-vy-handover-dashboard.jsx`
 
 ### CW-R02: Logs tab must exist
 **Issue:** Coworker view is missing a Logs tab.
@@ -80,7 +99,12 @@
 
 **File:** `components/mockups/session-command-view.jsx`
 
-### MV-R05: Deliver page — FULL DEFINITION ✅ LOCKED
+### MV-R05: Deliver page — FULL DEFINITION ✅ LOCKED (UPDATED)
+
+**⚠️ RULE CHANGE: Commit is NO LONGER blocked by unresolved gaps.**
+
+**Previous rule (overridden):** Commit disabled if unresolved gaps remain.
+**New rule:** Commit is **always allowed**. Unresolved gaps are stored as "potential knowledge" in the session.
 
 **When does Deliver activate?**
 Manager clicks "Start Deliver" when satisfied with Capture. This locks the Offboarder's queue (no more answers accepted).
@@ -102,10 +126,10 @@ Manager clicks "Start Deliver" when satisfied with Capture. This locks the Offbo
 - Collapsible if >5 items
 
 #### Unresolved gaps section (if any)
-- List with yellow warning icons
+- List with yellow info icons (NOT red blockers)
 - Each shows: gap name → status ("1 question waiting" / "0 questions")
-- Warning banner: "N gaps must be resolved before commit"
-- This section blocks the Commit button
+- **Info banner (NOT a blocker):** "2 gaps will remain unresolved and stored as potential knowledge. If relevant information is found during chunking, it will help resolve them. Otherwise, they remain logged for manual resolution."
+- This section is **informational only** — it does NOT block the Commit button
 
 #### Sanitization note
 - Info card: "N entries contain sensitive content that will be sanitized before commit."
@@ -113,12 +137,13 @@ Manager clicks "Start Deliver" when satisfied with Capture. This locks the Offbo
 
 #### Action buttons
 - **"Back to Capture"** — secondary button, returns to Capture phase (Offboarder queue reopens, new answers accepted)
-- **"Commit to KG"** — primary button, **disabled** if unresolved gaps remain. Enabled only when all gaps are resolved or dismissed.
+- **"Commit to KG"** — primary button, **always enabled** regardless of gap status
 
 #### Confirmation modal (on Commit click)
 - "Commit 42 entries to the Knowledge Graph?"
 - "This action cannot be undone."
 - Entry count + sanitization note summary
+- If unresolved gaps exist: "2 unresolved gaps will be preserved for future resolution."
 - Buttons: "Commit" (primary, violet) / "Cancel" (secondary)
 
 #### After commit
@@ -126,7 +151,14 @@ Manager clicks "Start Deliver" when satisfied with Capture. This locks the Offbo
 - Manager sees emerald completion banner ("Minh Lê's knowledge has been committed")
 - Offboarder sees thank-you page (OV-04)
 - Coworker sees celebration page (CW-R05)
-- Gap nodes become normal purple nodes in KG Explorer (per §8.1c)
+- **Resolved gaps** → normal purple nodes in KG Explorer
+- **Unresolved gaps** → stay in session view as logged items, visible to Manager/Coworkers. NOT in KG Explorer (no knowledge to commit). Manager or Coworkers can manage resolution later (e.g., manually creating a Trello card to resolve themselves).
+
+#### Post-commit unresolved gap lifecycle
+1. Gaps remain visible in the session's Complete state (read-only list)
+2. During the chunking process, if relevant information is found, it can help resolve them automatically
+3. If not auto-resolved, Manager/Coworkers can view them and take manual action (e.g., create a Trello card)
+4. Unresolved gaps do NOT appear as nodes in the KG Explorer — they have no committed knowledge content
 
 **File:** `components/mockups/session-command-view.jsx` — new `DeliverContent` or `DeliverReview` function
 
@@ -236,13 +268,13 @@ Manager clicks "Start Deliver" when satisfied with Capture. This locks the Offbo
 
 | Priority | ID | Description | File |
 |---|---|---|---|
-| 🔴 High | MV-R05 | Deliver page full layout (commit flow) | session-command-view.jsx |
+| 🔴 High | MV-R05 | Deliver page (commit always allowed, gaps as potential knowledge) | session-command-view.jsx |
 | 🔴 High | OV-R04 | All answered shows historical queue | session-command-view.jsx |
 | 🔴 High | OV-R05 | Gap questions "See in context" (module context panel) | session-command-view.jsx |
 | 🔴 High | Part D | Tab state matrix (all roles, all states) | session-command-view.jsx |
 | 🟡 Medium | MV-R04 | AI question delete confirmation + Generate button | session-command-view.jsx |
+| 🟡 Medium | CW-R01 | Needs more (send back) + Ask a question (new Q) — two actions | session-command-view.jsx |
 | 🟡 Medium | OV-R03 | Offboarder can edit answers during Capture | session-command-view.jsx |
-| 🟡 Medium | CW-R01 | Consolidate Needs more / Ask follow-up terminology | session-command-view.jsx |
 | 🟡 Medium | CW-R03/R04 | Tab disabled states for Coworker | session-command-view.jsx |
 | 🟡 Medium | MV-R03 | Tab disabled states for Manager Collecting | session-command-view.jsx |
 | 🟡 Medium | CW-R02 | Add Logs tab to Coworker | session-command-view.jsx |
@@ -256,8 +288,10 @@ Manager clicks "Start Deliver" when satisfied with Capture. This locks the Offbo
 ## Verification checklist
 
 - [ ] Manager Collecting: only Overview tab active, Data + Logs grayed out
-- [ ] Manager Deliver: shows review page with gap summary, Commit disabled if unresolved gaps, confirmation modal works
+- [ ] Manager Deliver: shows review page with gap summary, Commit ALWAYS enabled, unresolved gaps shown as info (not blocker)
+- [ ] Manager Deliver: confirmation modal mentions unresolved gaps if any ("2 gaps will be preserved")
 - [ ] Manager Deliver: Back to Capture reopens Offboarder queue
+- [ ] Manager Complete: unresolved gaps visible as logged items (read-only list)
 - [ ] Manager: delete AI question shows confirmation dialog
 - [ ] Manager: "+ Generate question" button on gap rows works
 - [ ] Manager: Departure Pending shows orbital illustration
@@ -267,10 +301,11 @@ Manager clicks "Start Deliver" when satisfied with Capture. This locks the Offbo
 - [ ] Offboarder: can edit submitted answers during Capture (Edit button on hover)
 - [ ] Offboarder: answers locked once Deliver starts (no Edit button)
 - [ ] Offboarder: gap question "See in context" opens module context panel (yellow border, gap description, AI reasoning)
+- [ ] Coworker: "Needs more" sends answer back with note field → Offboarder sees revision request
+- [ ] Coworker: "Ask a question" navigates to Data tab to create new question
 - [ ] Coworker: Logs tab exists and works
 - [ ] Coworker Collecting: only Overview active
 - [ ] Coworker Start Deliver / Complete: Data + Logs disabled, celebration page with artwork
-- [ ] Coworker: "Needs more" button on answered cards, no "Ask follow-up" label anywhere
 - [ ] All roles: tab states match Part D matrix exactly
 
 ---
