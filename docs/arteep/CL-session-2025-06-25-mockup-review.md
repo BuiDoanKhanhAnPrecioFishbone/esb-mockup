@@ -15,7 +15,7 @@
 
 ## Manager View
 
-### MV-01: Remove "Draft" tag — rename to "Verified" and "Flagged"
+### MV-01: Remove "Draft" tag — rename to "Verified" and "Flagged" ✅ LOCKED
 **Issue:** POC still uses "Draft" as a node status. We now only have two statuses.
 **Change:**
 
@@ -23,9 +23,9 @@
 |---|---|---|
 | Draft | *(removed)* | — |
 | Verified | **Verified** | Purple node, emerald badge when canonical |
-| *(new)* | **Flagged** | Rose/amber badge — node reported via UC-HO-06, pending Manager review |
+| *(new)* | **Flagged** | Rose border + small rose "Flagged" badge with flag icon — node reported via UC-HO-06, pending Manager review |
 
-"Flagged" is the recommended name — short, fits a badge, clear meaning. A flagged node has been reported for hallucination or error. Once the Manager resolves it (approve/reject/edit), it returns to Verified.
+Updated legend: **Verified** (purple) · **Flagged** (rose) · **Module** (gray)
 
 **Affects:** KG Explorer node rendering, legend, any status filters in the chat copilot.
 **File:** `components/mockups/knowledge-graph-explorer.jsx`
@@ -33,7 +33,6 @@
 ### MV-02: Rename "System node" to "Module"
 **Issue:** The gray structural nodes (Payment Service, CI/CD Pipeline, etc.) are labeled "System" in the legend. This is confusing — they're module-level grouping nodes.
 **Change:** Rename from "System" to **"Module"** in the graph legend and any internal references. Matches the session terminology where these are called "modules."
-**Updated legend:** Knowledge (purple) · Module (gray) · Flagged (rose)
 **File:** `components/mockups/knowledge-graph-explorer.jsx`
 
 ### MV-03: Orbital empty state location
@@ -55,12 +54,26 @@
 **Change:** Remove all file-upload log entries from the Logs tab mock data. Keep other log entries (questions asked, answers submitted, gaps detected, coworker joined, etc.).
 **File:** `components/mockups/session-command-view.jsx` — `LogsTab` or `AuditContent` function
 
-### MV-06: Functional drag-and-drop
+### MV-06: Functional drag-and-drop ✅ LOCKED
 **Issue:** Data tab shows a static drag handle icon (⠿) on cards but no actual drag interaction.
-**Recommendation:** 
-- **If time allows:** Implement React DnD (or simple onDrag handlers) so cards can be dragged between modules and to/from Uncategorized. Impressive demo moment.
-- **Fallback:** Keep static icon, add hover tooltip "Drag to reorder modules" — implies capability without full implementation.
-**Priority:** Nice-to-have. The "Move to" dropdown already provides the same functionality.
+**Decision:** Build functional drag-and-drop. Implement React DnD (or simple onDrag handlers) so cards can be dragged between modules and to/from Uncategorized.
+
+**Three interaction states:**
+1. **Idle** — drag handle (⠿) appears on card row hover. Cursor changes to grab.
+2. **Dragging** — card lifts as a ghost (violet border, shadow, slight rotation). Target modules highlight with violet border as drop zones. Original position shows dashed placeholder.
+3. **Dropped** — card lands in new module with violet highlight + "moved" badge (fades after 3s). Source/destination card counts update.
+
+**Card movement rules:**
+
+| Rule | Value |
+|---|---|
+| Primary-only cards | ✅ Can be dragged between modules or to/from Uncategorized |
+| Uncategorized cards | ✅ Can be dragged into any module |
+| Linked cards (1:N) | ❌ Cannot be dragged — they exist in multiple modules by design. Drag handle is hidden or grayed out with tooltip "This card is linked to multiple modules — use Move to" |
+| Linked card reassignment | Use the "Move to" dropdown instead — it shows all current assignments and lets the Manager pick precisely |
+| Gaps after card move | Gaps are independent of card moves. Moving a card does NOT create, resolve, or invalidate any gap. Gaps are module-level knowledge assessments, not card-level |
+| Q&A after card move | Questions and answers move with the card — they belong to the card, not the module |
+
 **File:** `components/mockups/session-command-view.jsx` — `ModuleSection` / card rows
 
 ### MV-07: Edit/remove AI-generated questions in Gaps section
@@ -97,14 +110,24 @@ They never see the full module → card tree structure. The module tag on each q
 5. Distinct from the active queue — no answer inputs, no "Submit" buttons, no progress bar
 **File:** `components/mockups/session-command-view.jsx` — Offboarder state rendering
 
-### OV-04: Redesign "Complete" page
+### OV-04: Redesign "Complete" page ✅ LOCKED
 **Issue:** The Offboarder's Complete page (after Manager commits to KG) is plain and not engaging.
 **Change:** Make it a proper thank-you/celebration page:
-1. Illustration or artwork (connected knowledge graph nodes — knowledge preserved)
-2. "Thank you, Minh Lê" heading
-3. Contribution stats: questions answered, modules covered, knowledge entries created
-4. "What happens next" timeline: Your answers → Manager review → Knowledge Graph → Successor's playbook
-5. Optionally: "Your knowledge will help Trần Hữu Nam get up to speed" — personal touch
+
+1. **Green gradient header** with connected-nodes illustration (small SVG — gradient emerald nodes connected by lines)
+2. **"Thank you, Minh Lê"** heading + "Your knowledge has been preserved." subtitle
+3. **Contribution stats** (3 cards in a grid):
+   - 14 questions answered
+   - 5 modules covered
+   - 42 knowledge entries
+4. **"What happens next" timeline** (3 steps):
+   - ✅ Your answers submitted (completed, green)
+   - 🔵 Manager review — "Hà Vy will verify your answers and resolve any gaps" (in progress, violet)
+   - ⚪ Committed to Knowledge Graph — "Your knowledge becomes a permanent part of the team's memory" (upcoming, gray)
+5. **Footer:** "Thank you for contributing to the team's success."
+
+**NOTE:** No successor's playbook step — ART-EEP POC does not have this feature. Timeline is 3 steps only.
+
 **File:** `components/mockups/session-command-view.jsx` — Offboarder Complete state
 
 ---
@@ -121,16 +144,21 @@ They never see the full module → card tree structure. The module tag on each q
 **Change:** Update the link/navigation target to `?tab=data` (or the Data tab equivalent). The Coworker needs to see the module/card structure to ask contextual questions.
 **File:** `components/mockups/ha-vy-handover-dashboard.jsx` — Coworker session card CTA
 
-### CW-03: Inconsistent question count (Image 2)
+### CW-03: Inconsistent question count — separate sections ✅ LOCKED
 **Screenshot:** Image 2 — header shows "2 answers ready · 2 waiting · 4 asked total" but only 2 question cards are displayed. Answer text is not shown.
-**Issues:**
-1. **Missing questions:** If 4 questions were asked, all 4 should be visible (or clearly separated by status tabs/sections: "Ready for review" vs "Waiting for answer")
-2. **Missing answer text:** The Coworker's job is to REVIEW answers. They need to see the actual answer text, not just the status. Each card should show the question + the Offboarder's answer + approve/flag actions.
-**Change:**
-- Show all 4 questions, grouped by status:
-  - "Ready for review (2)" — shows question + answer + approve/flag buttons
-  - "Waiting for answer (2)" — shows question + status "Waiting · 1 day"
-- Alternatively, add filter tabs: All / Ready / Waiting
+**Change:** Show all questions, grouped into two separate sections:
+
+**Section 1: "Ready for review (2)"**
+- Shows question text + Offboarder's full answer text (in a green-left-bordered card)
+- Satisfy / Needs more buttons on each
+- Module tag on each question
+- Each question is a deep link (see CW-04)
+
+**Section 2: "Waiting for answer (2)"**
+- Shows question text + when asked + status ("Waiting · 1 day")
+- Module tag
+- No action buttons — nothing to review yet
+
 **File:** `components/mockups/ha-vy-handover-dashboard.jsx` — Coworker session card
 
 ### CW-04: Deep links from dashboard to specific card Q&A
@@ -155,25 +183,29 @@ They never see the full module → card tree structure. The module tag on each q
 | 🔴 High | MV-05 | Remove file upload from Logs tab | session-command-view.jsx |
 | 🟡 Medium | MV-02 | Rename System → Module in legend | knowledge-graph-explorer.jsx |
 | 🟡 Medium | MV-04 | Update /sessions route | all-sessions.jsx |
+| 🟡 Medium | MV-06 | Functional drag-and-drop (linked cards blocked) | session-command-view.jsx |
 | 🟡 Medium | CW-02 | Ask a question → Data tab not Overview | ha-vy-handover-dashboard.jsx |
 | 🟡 Medium | CW-04 | Deep links from dashboard to card Q&A | ha-vy-handover-dashboard.jsx |
 | 🟡 Medium | CW-05 | Show coworker list on Coworker Overview | session-command-view.jsx |
 | 🟡 Medium | OV-03 | Distinct "All Answered" celebration state | session-command-view.jsx |
-| 🟡 Medium | OV-04 | Redesign Complete page | session-command-view.jsx |
+| 🟡 Medium | OV-04 | Redesign Complete page (3-step timeline, no playbook) | session-command-view.jsx |
 | 🟡 Medium | GV-01 | Node ambient motion | knowledge-graph-explorer.jsx |
 | 🟡 Medium | MV-07 | Verify AI question edit/delete in gap rows | session-command-view.jsx |
 | 🟡 Medium | CW-01 | Remove upload from Coworker Logs | session-command-view.jsx |
 | 🟡 Medium | MV-03 | Orbital empty state on dashboard | ha-vy-handover-dashboard.jsx |
-| 🟢 Low | MV-06 | Functional drag-and-drop (nice-to-have) | session-command-view.jsx |
 
 ---
 
-## Open questions to confirm
+## All open questions resolved ✅
 
-1. **MV-01:** Is "Flagged" the right name for reported nodes, or prefer "Disputed" / "Under review"?
-2. **MV-06:** Build functional drag-and-drop, or keep static icon as fallback?
-3. **CW-03:** Group questions by status (Ready / Waiting sections), or add filter tabs (All / Ready / Waiting)?
-4. **OV-04:** Should the Complete page include a "What happens next" timeline, or keep it simple with just stats + thank you?
+| Question | Decision |
+|---|---|
+| MV-01: Node status naming | **Flagged** — short, fits badge, clear meaning |
+| MV-06: Drag-and-drop | **Functional** — build actual DnD. Linked cards blocked from dragging |
+| MV-06: Card move + gaps | **Independent** — gaps are module-level, unaffected by card moves |
+| MV-06: Linked card movement | **Blocked** — linked cards can't be dragged. Use "Move to" dropdown instead |
+| CW-03: Question grouping | **Separate sections** — "Ready for review" + "Waiting for answer" |
+| OV-04: Complete page | **"What happens next" timeline** — 3 steps (no successor playbook) |
 
 ---
 
