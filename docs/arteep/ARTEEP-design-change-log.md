@@ -1039,6 +1039,108 @@
 
 ---
 
+## Session 2025-06-25 — Patch + Review batch (2026-06-25/26)
+
+*Companion docs (now deleted after application): `CL-session-2025-06-25-mockup-patch.md`, `CL-session-2025-06-25-mockup-review.md`. Build-queue companion `CL-session-2025-06-25-build-queue.md` §8/§9/§10/§11 retained. All BUILT + pushed.*
+
+### CL-134 — §8 resolved discussion items: KG filter removed, committed graph is gap-free, AI questions editable, Offboarder hybrid Capture (BUILT)
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-25 |
+| Sprint | POC build · Management + Consumer plane |
+| Change | Four locked §8 decisions. **(8.1a)** The KG Explorer filter control (status/contributor/has-gaps chips) is removed — the committed graph is browsed via the chat copilot + zoom only; toolbar is title + count + actions. **(8.1c)** The KG Explorer only shows **committed** entries, which are NEVER gaps: dropped `hasGap` from all entry nodes, zeroed module gap counts, removed the "Gap" legend swatch. Gaps are session-scoped only. **(8.2)** AI-generated questions are now **editable and deletable** by Manager + Coworker in Prepare (same inline pencil/trash as human questions; buttons made always-visible, not hover-only, for discoverability). Applies to general, added-module, and card-level (Side Panel) questions, and to the module-gap's auto-generated question — deleting that question keeps the gap flagged (a "+ Add AI question" affordance restores it); deleted AI questions are not regenerated. **(8.3)** The Offboarder Capture view is a **flat question queue** (no module tree/cards/gaps/flags/drag) with a **"See in context"** link per question that opens the source card in the Side Panel (active question gets a violet border). |
+| UC Reference | UC-HO-01 Data tab + `/knowledge-graph` · extends CL-130 (gap/flag) and CL-133 (KG chat) |
+| Why | Filtering and gap states belong to the active session, not the permanent committed graph; surfacing them in the Explorer implied the graph was editable/incomplete. Editable AI questions let the Manager curate the queue. The Offboarder needs to answer, not navigate a data model — a flat queue with on-demand context matches that job. |
+| Decided By | PO (Tram) |
+| Category | UX Refinement (significant) · Visual System · extends CL-130 / CL-133 |
+
+### CL-135 — Manager dashboard redesign: greeting banner, no KPI tiles, inline knowledge metrics, orbital empty state (BUILT)
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-25 |
+| Sprint | POC build · Management plane |
+| Change | The Manager dashboard (`/`) drops the 4 KPI tiles ("Needs your action" / "Deadline ≤ 7 days" / "Active sessions" / "Open gaps") and the `blockedOnManager` "Waiting on you" urgency logic/border. Adds a **gradient greeting banner** (`#f5f3ff → #ede9fe → #faf5ff`, "Good afternoon, Hà Vy" + active-handover count, faint decorative graph nodes). Session cards keep the 3-segment phase bar, days-left as plain text, and replace the old metrics line with **inline knowledge metrics** (`✨ 4/6 gaps resolved · 💬 9/14 answered`; Prepare sessions show "N modules mapped"). A dashed "+ Create session" card and the activity feed remain. New **orbital empty state** (animated AI node + 3 orbiting rings) shows when there are zero active sessions. Coworker dashboard gets the same greeting banner (KPI tiles kept, as they're actionable for that role). |
+| UC Reference | UC-HO-01 dashboard · `/` · supersedes the KPI-tile dashboard from CL-117 |
+| Why | The KPI tiles were vanity metrics for an infrequent high-stakes task (CL-117's action-orientation rule); a warm greeting + at-a-glance per-session knowledge progress is what the Manager actually acts on. The orbital empty state makes "no departures" feel intentional rather than broken. |
+| Decided By | PO (Tram) |
+| Category | UX Refinement (significant) · Visual System (greeting banner · inline metrics · orbital empty state) · extends CL-117 |
+
+### CL-136 — Chat-to-graph interactive node references (BUILT)
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-25 |
+| Sprint | S-KG · Consumer plane |
+| Change | AI chat answers in the KG Explorer render mentions of existing node labels as inline violet references (text `#5b21b6`, bg `#f5f3ff`, dotted-violet underline, pill radius). **Hover** highlights that node (violet glow, others dim to ~20%, "‹label› · from chat" indicator); **click** opens the node's detail drawer + expands its module + focuses it. References resolve only to existing nodes by id/label — never create nodes — and work alongside the dynamic recommendation chips. |
+| UC Reference | UC-HO-01 / UC-ON-02 · `/knowledge-graph` · builds on CL-133 |
+| Why | A chat that names entities but can't point to them leaves the user hunting the graph manually; clickable references bridge the explanation and the visualization so reading an answer and navigating the graph are one motion. |
+| Decided By | PO (Tram) |
+| Category | UX Refinement · Visual System (inline node reference) · extends CL-133 |
+
+### CL-137 — KG node status model: Verified/Flagged only (Draft removed), "System" → "Module", ambient node motion (BUILT)
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-26 |
+| Sprint | S-KG · Consumer plane |
+| Change | KG Explorer node statuses collapse to **two**: **Verified** (purple) and **Flagged** (rose `#fff1f2`/`#fda4af`, with a flag badge) — "Draft" is removed entirely. Flagged === the existing reported state (reported via the issue flow, pending Manager review, resolves back to Verified); two nodes are seeded flagged. The gray structural nodes are relabeled **"Module"** (was "System"). Legend is now exactly **Verified · Flagged · Module**. Nodes gain a subtle **ambient drift** (±3px, out-of-sync per node, paused while dragging) so the graph feels alive. |
+| UC Reference | UC-HO-01 / UC-ON-02 · `/knowledge-graph` · supersedes the verified/draft status from CL-094/CL-121 KG model |
+| Why | Post-commit, every entry is verified unless someone has flagged it for correction — "Draft" was a session-stage concept leaking into the committed graph. "Module" matches the session terminology the team already uses. Ambient motion reads as a living knowledge graph rather than a static diagram. |
+| Decided By | PO (Tram) |
+| Category | Visual System (two-status node model · legend · ambient motion) · supersedes prior KG status scheme |
+
+### CL-138 — Functional card drag-and-drop in the session Data tab; linked cards blocked (BUILT)
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-26 |
+| Sprint | POC build · Management plane |
+| Change | The Data tab's card drag handle is now a real drag-and-drop interaction (Manager, editable phases). Primary and Uncategorized cards drag between modules and to/from the Uncategorized section; the target zone highlights violet, the dragged row shows a ghost, and the moved card gets a transient "moved" badge. **Linked (1:N) cards cannot be dragged** — their handle is grayed with a tooltip directing to "Move to". Q&A moves with the card; module-level gaps are unaffected (extends CL-131). |
+| UC Reference | UC-HO-01 Data tab · extends CL-131 (1:N card-to-module) |
+| Why | The static handle implied a capability that didn't exist; real DnD makes re-categorizing the AI's card assignments direct. Blocking linked cards prevents ambiguous multi-module moves, which the "Move to" dropdown handles explicitly instead. |
+| Decided By | PO (Tram) |
+| Category | UX Refinement · extends CL-131 |
+
+### CL-139 — Offboarder journey polish: no in-session greeting, "All answered" celebration, redesigned Complete page (BUILT)
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-26 |
+| Sprint | POC build · Offboarder plane |
+| Change | **(OV-01)** Removed the greeting card from the Offboarder's session Overview (it duplicated the session header — greeting lives on the dashboard only). **(OV-03)** The "All answered" state is a distinct celebration: contribution summary (questions answered · modules covered · knowledge entries) + a collapsible read-only list of submitted answers, with no answer inputs / Submit / progress bar. **(OV-04)** The Complete page is a proper thank-you: green-gradient header (`#f0fdf4 → #dcfce7`) with a connected-nodes SVG, "Thank you, Minh Lê · Your knowledge has been preserved", 3 contribution-stat cards, and a 3-step "What happens next" timeline (answers submitted ✅ · Manager review 🔵 · Committed to KG ⚪) — **no successor playbook step** (not a POC feature). |
+| UC Reference | UC-HO-01 Offboarder Overview / Deliver / Complete |
+| Why | The Offboarder's milestones (all-answered, committed) deserve closure moments, not a recycled queue view. The explicit "no playbook" timeline keeps the POC honest about what exists. |
+| Decided By | PO (Tram) |
+| Category | UX Refinement (significant) · Visual System (celebration states) |
+
+### CL-140 — Coworker workflow: Ready/Waiting split, deep links to card Q&A, read-only network in Overview (BUILT)
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-26 |
+| Sprint | POC build · Coworker plane |
+| Change | **(CW-03)** The Coworker dashboard session card splits questions into **"Ready for review"** (full answer text + Satisfy / Needs more) and **"Waiting for answer"** sections with accurate counts (fixes the "4 asked but 2 shown / no answer text" issue). **(CW-04)** Each question deep-links to `/session/<id>?tab=data&card=<name>`, which pre-opens the Data tab Side Panel on that card. **(CW-02)** "Ask a question" routes to the Data tab. **(CW-05)** The Coworker's session Overview shows the `CoworkerNetwork` in **read-only** mode (names, avatars, shared-card counts, join status — no add/remove). |
+| UC Reference | UC-HO-01 Coworker dashboard + Overview |
+| Why | The Coworker reviews and asks; they need to see the actual answer to decide satisfaction and to land on the exact card in context, not a generic session. Seeing who else is in the network (read-only) gives them orientation without edit rights. |
+| Decided By | PO (Tram) |
+| Category | UX Refinement · extends CL-127 (Coworker terminology) |
+
+### CL-141 — Cross-surface cleanup: KG filter/fixed-chips removed, Logs upload entries removed, /sessions aligned, orphaned files deleted (BUILT)
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-26 |
+| Sprint | POC build · cross-cutting |
+| Change | Consistency sweep against the locked decisions. KG Explorer: removed the 5 fixed AI chips, the `FilterChip` component, and the filter toolbar (chat-only filtering). Logs tab: removed all file-upload log entries and the "Files" filter (upload is out of POC scope). `/sessions` (`all-sessions.jsx`): cards aligned to the dashboard format — inline knowledge metrics, 3-segment phase bar, no "Needs action"/"Waiting on you" urgency tags, no upload refs. **Deleted orphaned files** `components/mockups/prepare-stage.jsx` (superseded by Prepare steps inside `session-command-view.jsx`) and `components/mockups/uc-ho-01-quick-initiate.jsx` (superseded by `create-session.jsx`). |
+| UC Reference | Cross-cutting · `/knowledge-graph` · `/session/[id]` Logs · `/sessions` |
+| Why | After the §7/§8/§9 redesigns several surfaces still carried removed concepts (fixed chips, filters, file uploads, blocked-on-manager tags). Aligning them and deleting the two superseded files keeps the codebase matching the locked design and avoids future `apply-to-mockup` calls editing dead files. |
+| Decided By | PO (Tram) |
+| Category | Consistency cleanup · supersedes CL-091 quick-initiate surface (file deleted) |
+
+---
+
 ## Pending Decisions (Need Stakeholder Input)
 
 The defaults in CL-003, CL-004, and CL-005 are working assumptions. The following decisions remain open and should be confirmed before their respective sprints begin:

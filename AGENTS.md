@@ -12,9 +12,8 @@ REAL APP — shared sidebar + topbar via components/app/AppShell.tsx
 /                         → Hà Vy's handover dashboard (home)
                             components/mockups/ha-vy-handover-dashboard.jsx
 
-/session/new              → Quick initiate (one-click session creation)
-                            components/mockups/uc-ho-01-quick-initiate.jsx
-                            ?customize=1 opens the customize expander
+/session/new              → Create session (HRIS departures → board picker → Start)
+                            components/mockups/create-session.jsx
 
 /session/[id]             → Session command view (3 tabs · Overview + Data + Logs)
                             components/mockups/session-command-view.jsx
@@ -90,7 +89,7 @@ For tweaks to the dashboard, quick-initiate, or session command view — by far 
 | Ask refers to… | File to edit |
 |---|---|
 | The dashboard, pending session cards, completed row, activity feed | `components/mockups/ha-vy-handover-dashboard.jsx` |
-| The quick-initiate page, default tiles, customize expander | `components/mockups/uc-ho-01-quick-initiate.jsx` |
+| The create-session page, departures accordion, board picker | `components/mockups/create-session.jsx` |
 | Any session-detail tab (Overview, Data, Logs), the 3-phase hero, Prepare subStage views, stakeholder selection | `components/mockups/session-command-view.jsx` |
 | The sidebar, top bar, search, notifications, user pill | `components/app/AppShell.tsx` |
 | The team guide content | `TEAM-GUIDE.md` (rendered at `/guide`) |

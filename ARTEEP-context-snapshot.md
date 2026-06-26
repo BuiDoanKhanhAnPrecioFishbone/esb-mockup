@@ -268,13 +268,13 @@ The Consumption plane is the **single artifact** for all four reader archetypes 
 | `arteep-s1-handover-initiation.jsx` | SUPERSEDED | V1 with old amber palette |
 | `arteep-s1-handover-initiation-v2.jsx` | SUPERSEDED | V2; replaced by dashboard + quick-initiate + command-view trio (2026-06-02) |
 | `ha-vy-handover-dashboard.jsx` | CURRENT | Multi-session command center · 3-phase progress · **post-commit KG count uses "entries" (CL-112)** — completion banner "487 entries", `stats.entries` key, completed-card "Entries" stat, activity-feed line, This-week "Entries committed to KG" stat. **30-day session model + canonical timelines applied (CL-111)** — Minh / Khánh Linh days-left + successor fields. **CL-114 / CL-115 / CL-116 / CL-117 applied (2026-06-08)** — no successor field; "Manager dashboard" chrome label removed; no playbook refs; KPI row + "This week" panel removed. **CL-118 surface application pending** — drop `sess-pha` from `SESSIONS_ACTIVE` (3 → 2 cards); rewrite or drop the Phương Anh activity-feed entry; update FLOW trigger copy "3 sessions" → "2 sessions". |
-| `uc-ho-01-quick-initiate.jsx` | CURRENT | One-click session creation · progressive-disclosure customize. **CL-111 30-day window applied via review deadline default.** **CL-114 applied (2026-06-09)** — Successor select removed from Customize panel; field eliminated from session model entirely. Customize panel now exposes Review deadline · Data source · Focus areas. **CL-115 verified clean.** |
+| `uc-ho-01-quick-initiate.jsx` | **DELETED (CL-141, 2026-06-26)** | Orphaned — superseded by `create-session.jsx` (the `/session/new` flow per CL-121). Removed from the repo. |
 | `session-command-view.jsx` | CURRENT | Per-session tabbed workspace · **2 tabs now: Overview · Manager review (CL-107)** — Stages folded into hero phase bar, Data folded into Overview + action rail, Audit demoted to link, Settings folded into action rail. Legacy `?tab=stages|data|audit|settings` URLs resolve to Overview so old links don't 404. **Labels-only style applied (CL-107)** — explainer text stripped, helper text only on destructive actions. File ~30KB (down from ~55KB). **CL-111 30-day window propagation pending** — review-deadline strip + successor field. **CL-114 propagation pending** — remove "Successor: X" lines if present in Overview / hero / sidebar. **CL-115 propagation pending** — verify topbar has no role qualifier. **CL-118 propagation pending** — remove `phuong-anh` slug branch from `SESSIONS_BY_SLUG`; remove `PhuongAnhReview` component + `PA_SECTIONS` data + per-item Accept/Send-back state + sign-off gate (built per CL-109, now superseded); simplify `ReviewTab` dispatch to only `minh-le` → `UCHO04ManagerReview`. |
 | `uc-ho-04-manager-review.jsx` | **CURRENT (NEW 2026-06-07)** | Sprint 3 Manager Review + Sign-off · 8 states · violet/yellow · `embedded` + `state` props (CL-103). **Review-unit terminology "items" (CL-112)** — 14 items total; S1 arrival tiles reconciled to sum to 14 (5 tiles: 4 source tiles + Uploaded files tile); `SESSION.filesTotal` corrected 4 → 3 |
 | `uc-ho-04-s6-flag-fix.jsx` | **CURRENT (NEW 2026-06-07)** | UC-HO-04 sibling · S6 3-way diff for Atlas rollback flag chain (CL-102) |
 | `uc-ho-04-s7s8-signoff.jsx` | **CURRENT (NEW 2026-06-07)** | UC-HO-04 sibling · S7 bundle summary + S8 SHA-256 sign-off (CL-102) |
 | `uc-ho-02-interview-canvas` | DEFERRED TO PHASE 2 | Voice interview focus-mode surface · retained for Phase 2, not in the POC (CL-098) |
-| `prepare-stage.jsx` | CURRENT | **CL-111 timeline propagation pending** — 30-day window + 3–5-day review-deadline buffer |
+| `prepare-stage.jsx` | **DELETED (CL-141, 2026-06-26)** | Orphaned — Prepare now lives as steps inside `session-command-view.jsx`. Removed from the repo. |
 | `arteep-s2-capture-verify.jsx` | NEEDS MIGRATION | 5 Offboarder screens · old amber palette |
 | `arteep-s3-kg-commit.jsx` | **SUPERSEDED 2026-06-07** | Old amber-palette Manager Completion Report 4 states; replaced by `uc-ho-04-manager-review.jsx` trio above |
 | `arteep-s4-onboarding-gen-read.jsx` | **SUPERSEDED 2026-06-08 (CL-113)** | Amber UC-ON-01 / UC-ON-02 "playbook" artifact. No longer needs migration — the surface it portrays no longer exists. Playbook eliminated; Consumption plane unified on the KG. |
@@ -298,7 +298,7 @@ The Consumption plane is the **single artifact** for all four reader archetypes 
 
 ---
 
-## 10. Design Change Log Summary (CL-001 through CL-133 · see change log for full entries)
+## 10. Design Change Log Summary (CL-001 through CL-141 · see change log for full entries)
 
 118 entries across these major themes. Sections CL-001 through CL-101 are unchanged — see prior commits of this file or the change-log itself for theme summaries.
 
@@ -395,6 +395,16 @@ The Consumption plane is the **single artifact** for all four reader archetypes 
 - **CL-131 — 1:N card-to-module:** one card can belong to several modules. ≥80% confidence = match (all % hidden); highest = primary, others = linked (dashed violet + `↗ Primary` chip), below-threshold = Uncategorized section. Manager drag handle + "Move to". Q&A is card-level, gaps module-level, flags card-level. `/session/minh-le` Data tab.
 - **CL-132 — AI categorization animation:** looping cartoon explainer in the Manager Collecting state — 4 scenes (match · match · 1:N split ★/↗ · no-match → Uncategorized), placeholder cards, `prefers-reduced-motion` aware. `/session/minh-le` Prepare.
 - **CL-133 — KG Explorer chat redesign:** removed 5 fixed chips + footer bar; added collapsible history sidebar (renamable threads · + New chat), always-on active chat (bubbles + dynamic reco chips), full-width graph, overlay node drawer, graph dimming (non-focused → ~20%), "Focusing: X ×" chip, "Ask about this" bridge. Supersedes CL-121 chat affordances. `/knowledge-graph`.
+
+### Session 2025-06-25 patch + review · dashboard, KG, drag-drop, journeys (CL-134 to CL-141, 2026-06-25/26 · all BUILT)
+- **CL-134 — §8 batch:** KG filter removed (chat-only); committed graph is gap-free (gaps are session-scoped); AI questions editable + deletable (incl. the gap's auto-question — delete keeps the gap); Offboarder Capture = flat queue + "See in context". `/knowledge-graph`, `/session/minh-le`.
+- **CL-135 — Manager dashboard redesign:** dropped 4 KPI tiles + blocked-on-manager logic; gradient greeting banner; inline knowledge metrics on cards; orbital empty state. Coworker gets the greeting too. `/`.
+- **CL-136 — Chat-to-graph node references:** AI answers render existing node labels as inline violet refs — hover highlights, click opens drawer + focuses. `/knowledge-graph`.
+- **CL-137 — KG status model:** two statuses only — Verified (purple) / Flagged (rose = reported); "Draft" removed; "System" → "Module"; legend = Verified · Flagged · Module; ambient node drift. Supersedes prior verified/draft scheme. `/knowledge-graph`.
+- **CL-138 — Functional drag-and-drop:** Data tab cards drag between modules + to/from Uncategorized (ghost · drop highlight · "moved" badge); linked cards blocked (use Move to). `/session/minh-le`.
+- **CL-139 — Offboarder journey:** removed in-session greeting (OV-01); distinct "All answered" celebration (OV-03); redesigned Complete thank-you page with connected-nodes header + 3-step timeline, no playbook (OV-04). `/session/minh-le`.
+- **CL-140 — Coworker workflow:** dashboard Ready/Waiting split with answer text + Satisfy/Needs more; deep links to `?tab=data&card=`; read-only CoworkerNetwork in Overview. `/`, `/session/minh-le`.
+- **CL-141 — Cleanup:** removed KG fixed chips + FilterChip; removed Logs upload entries + Files filter; aligned `/sessions` to dashboard format; **deleted** `prepare-stage.jsx` + `uc-ho-01-quick-initiate.jsx`.
 
 ---
 
