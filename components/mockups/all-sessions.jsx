@@ -111,7 +111,7 @@ function InlineMetrics({ session: s, isComplete }) {
     return (
       <div className="flex items-center gap-3 mt-2 pt-2 border-t border-gray-100 text-[11px] text-gray-600">
         <span className="inline-flex items-center gap-1"><Layers className="w-3 h-3 text-gray-400" />{s.modules}{" modules mapped"}</span>
-        <span className="text-gray-300">&middot;</span>
+        <span className="text-gray-300">·</span>
         <span className="text-gray-400">capture not started</span>
       </div>
     );
@@ -119,7 +119,7 @@ function InlineMetrics({ session: s, isComplete }) {
   return (
     <div className="flex items-center gap-3 mt-2 pt-2 border-t border-gray-100 text-[11px] text-gray-600">
       <span className="inline-flex items-center gap-1"><Sparkles className="w-3 h-3 text-violet-500" />{s.gapsResolved}{" gaps resolved"}</span>
-      <span className="text-gray-300">&middot;</span>
+      <span className="text-gray-300">·</span>
       <span className="inline-flex items-center gap-1"><MessageCircle className="w-3 h-3 text-gray-400" />{s.answered}{" answered"}</span>
     </div>
   );
@@ -141,7 +141,7 @@ function SessionRow({ session: s }) {
               {isComplete && <CheckCircle2 className="w-2.5 h-2.5 inline mr-0.5" />}{isComplete ? "Complete" : phase.label}
             </span>
           </div>
-          <p className="text-[12px] text-gray-500 mb-3">{s.role} &middot; {s.dept} {isComplete ? `· Completed ${s.completedAt}` : `· ${s.daysLeft} days left`}</p>
+          <p className="text-[12px] text-gray-500 mb-3">{s.role} · {s.dept} {isComplete ? `· Completed ${s.completedAt}` : `· ${s.daysLeft} days left`}</p>
           <PhaseProgress subStageId={s.subStageId} done={isComplete} />
           <InlineMetrics session={s} isComplete={isComplete} />
         </div>

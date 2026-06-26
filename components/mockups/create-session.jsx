@@ -36,7 +36,7 @@ export default function CreateSession({ embedded = false, asSection = false } = 
         <h1 className="text-xl font-semibold text-gray-900 tracking-tight mb-5 flex items-center gap-2">
           <Users className="w-4 h-4 text-gray-400" />
           Upcoming departures from HRIS
-          <span className="text-sm font-normal text-gray-400" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{"\u00b7 "}{OFFBOARDERS.length}</span>
+          <span className="text-sm font-normal text-gray-400" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{"· "}{OFFBOARDERS.length}</span>
         </h1>
       ) : (
         <>
@@ -46,7 +46,7 @@ export default function CreateSession({ embedded = false, asSection = false } = 
           </div>
           <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-3 flex items-center gap-1.5">
             <Users className="w-3 h-3" />
-            {"Upcoming departures from HRIS \u00b7 "}{OFFBOARDERS.length}
+            {"Upcoming departures from HRIS · "}{OFFBOARDERS.length}
           </p>
         </>
       )}
@@ -98,7 +98,7 @@ function DepartureCard({ person, isExpanded, onToggle }) {
             <h3 className="text-sm font-semibold text-gray-900">{person.name}</h3>
             <span className="text-[10px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{person.daysLeft}d left</span>
           </div>
-          <p className="text-[12px] text-gray-500">{person.role} {"\u00b7"} {person.dept} {"\u00b7"} Last day {person.lastDay}</p>
+          <p className="text-[12px] text-gray-500">{person.role} {"·"} {person.dept} {"·"} Last day {person.lastDay}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <span className={`text-[11px] font-medium ${
@@ -136,7 +136,7 @@ function DepartureCard({ person, isExpanded, onToggle }) {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium text-gray-900">{b.name}</div>
-                        <div className="text-[11px] text-gray-500">{b.cards} cards {"\u00b7"} last active {b.lastActive}</div>
+                        <div className="text-[11px] text-gray-500">{b.cards} cards {"·"} last active {b.lastActive}</div>
                       </div>
                       {b.suggested && (
                         <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-600 font-medium border border-violet-200">Suggested</span>

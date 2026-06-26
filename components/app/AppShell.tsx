@@ -355,7 +355,7 @@ function StateSwitcher({
             ))}
           </ul>
           <div className="px-3 py-1.5 border-t border-gray-200 bg-gray-50/40">
-            <p className="text-[10px] text-gray-500">Preview &middot; cases of this view</p>
+            <p className="text-[10px] text-gray-500">Preview · cases of this view</p>
           </div>
         </div>
       )}
@@ -463,7 +463,7 @@ const NOTIFICATIONS: Notification[] = [
     icon: AlertOctagon,
     tone: "rose",
     title: "Kh\u00e1nh Linh Tr\u1ea7n is urgent",
-    detail: "2 days until departure \u00b7 awaiting your initiation",
+    detail: "2 days until departure · awaiting your initiation",
     time: "38m",
     href: "/session/new",
   },
@@ -472,7 +472,7 @@ const NOTIFICATIONS: Notification[] = [
     icon: CheckCircle2,
     tone: "emerald",
     title: "Minh L\u00ea committed to knowledge graph",
-    detail: "487 entries committed \u00b7 Knowledge Graph access ready for the Senior Backend Engineer role",
+    detail: "487 entries committed · Knowledge Graph access ready for the Senior Backend Engineer role",
     time: "2h",
     href: "/session/minh-le",
   },
@@ -481,7 +481,7 @@ const NOTIFICATIONS: Notification[] = [
     icon: Sparkles,
     tone: "violet",
     title: "Minh L\u00ea seeding finished",
-    detail: "Knowledge map ready \u00b7 question queue ready",
+    detail: "Knowledge map ready · question queue ready",
     time: "4h",
     href: "/session/minh-le",
   },
@@ -547,7 +547,7 @@ function NotificationsButton() {
               className="text-[10px] text-gray-500"
               style={{ fontFamily: "ui-monospace, Menlo, monospace" }}
             >
-              {NOTIFICATIONS.length} unread &middot; feed updates in near-real-time
+              {NOTIFICATIONS.length} unread · feed updates in near-real-time
             </p>
           </div>
         </div>

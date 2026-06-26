@@ -184,7 +184,7 @@ function FilteredView({ mod, hoveredRow, setHoveredRow }) {
               <span className="text-[11px] font-medium text-gray-900 flex-1 truncate">{entry.name}</span>
               <StatusBadge status={entry.status} />
             </div>
-            <p className="text-[10px] text-gray-500">{entry.contributor}{" \u00b7 "}{entry.date}</p>
+            <p className="text-[10px] text-gray-500">{entry.contributor}{" · "}{entry.date}</p>
           </div>
         ))}
       </div>
