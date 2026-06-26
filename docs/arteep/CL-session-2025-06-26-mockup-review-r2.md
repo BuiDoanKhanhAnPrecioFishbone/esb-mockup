@@ -63,10 +63,22 @@
 
 ## PART B: Manager View
 
-### MV-R01: Departure Pending — add empty state artwork
-**Issue:** "Departure Pending" is an empty state with no visual.
-**Change:** Add the orbital illustration (same one used for zero-session dashboard empty state). "Departure Pending" means no data yet — the orbital communicates "waiting for the system to start."
-**File:** `components/mockups/session-command-view.jsx` or `ha-vy-handover-dashboard.jsx` (wherever Departure Pending renders)
+### MV-R01: Dashboard + session empty states — corrected orbital logic ✅ LOCKED
+
+**⚠️ The orbital is NOT for "zero departures." It's for "departures exist but no sessions started."**
+
+#### Dashboard empty states (Manager)
+
+| Condition | What shows |
+|---|---|
+| HRIS departures exist + **zero active sessions** | Orbital illustration + "2 upcoming departures" + HRIS departure list + "Create session" CTA. The orbital = "knowledge is waiting to be captured." |
+| HRIS departures exist + **active sessions** | Greeting banner + session cards + activity feed (normal dashboard) |
+| Zero HRIS departures + zero sessions | Simple text: "No upcoming departures. Sync from HRIS to check." + "Sync now" button. No orbital. |
+
+#### Session "Departure Pending" state
+Same orbital illustration used when a session exists but data collection hasn't started yet. "Departure Pending" = waiting for the crawl to begin.
+
+**Files:** `components/mockups/ha-vy-handover-dashboard.jsx` + `components/mockups/session-command-view.jsx`
 
 ### MV-R02: Fix `·` (middle dot / unicode) rendering
 **Issue:** Middle dot characters showing as garbled text in some places.
@@ -264,6 +276,69 @@ Manager clicks "Start Deliver" when satisfied with Capture. This locks the Offbo
 
 ---
 
+## PART E: Session Creation flow ✅ LOCKED
+
+**File:** `components/mockups/create-session.jsx`
+
+### Two creation paths
+
+Sessions can be created in two ways. Both converge at the board selection step.
+
+#### Path 1: HRIS sync (primary)
+1. System auto-syncs upcoming departures from HRIS (name, email, department, last day already known)
+2. Manager sees the list on the Create Session page
+3. Clicks "Configure →" on a person → expands to board selection
+4. System already looked up their email in Trello → boards discovered
+5. Manager selects boards → "Start session"
+
+#### Path 2: Manual creation
+1. Manager fills in a form: Name, Email, Department, Last day, Role (optional)
+2. System uses the **email to find the employee's Trello account** and discover their boards
+3. If found: shows discovered boards for selection (same UI as HRIS path)
+4. If not found: error state — "No Trello account found for this email. Check the address or ask the employee to confirm."
+5. Manager selects boards → "Start session"
+
+**Key insight:** The email is the lookup key for Trello — no separate "Trello link" field needed.
+
+### Manual creation fields
+
+| Field | Required | Type | Purpose |
+|---|---|---|---|
+| Full name | Yes | Text | Display name for the session |
+| Email | Yes | Text | **Trello lookup key** — finds their account, discovers boards |
+| Department | Yes | Dropdown | Engineering, Sales, People & Culture, etc. Helps with gap analysis |
+| Last day | Yes | Date picker | Auto-calculates review deadline (last day minus 4 days) |
+| Role / Title | No | Text | Context ("Senior Backend Engineer") |
+
+### Page states
+
+| State | What shows |
+|---|---|
+| **HRIS departures exist** | "Synced from HRIS" header with "Sync now" button + departure list (accordion cards). Below, "or" divider + manual creation form. |
+| **Zero HRIS departures** | "No upcoming departures from HRIS" message + "Sync now" button + manual creation form. No orbital (orbital is dashboard-only). |
+| **After manual form submit (Trello found)** | Person's info card + "Found in Trello ✓" + discovered boards with checkboxes (suggested/not suggested) + "Start session →" |
+| **After manual form submit (Trello NOT found)** | Error: "No Trello account found for this email." + options to try different email or skip (manual Q&A only) |
+
+### "Sync from HRIS" button placement
+
+| Surface | Behavior |
+|---|---|
+| Dashboard (zero sessions + HRIS departures) | Prominent CTA alongside "Create session" |
+| Dashboard (active sessions) | "Sync from HRIS" in the "Create session" dropdown or as a secondary action |
+| Create Session page (HRIS list exists) | "Sync now" button in the HRIS section header — refreshes the list |
+| Create Session page (zero HRIS departures) | "Sync now" button next to the "No departures" message |
+
+### Board selection (shared UI for both paths)
+
+After the person is identified (via HRIS or manual form), the board selection step is identical:
+- List of discovered Trello boards with checkboxes
+- Each board shows: name, card count, last active date
+- "Suggested" badge on boards with recent activity
+- Review deadline field (auto-calculated, editable)
+- "Start session →" button (disabled if zero boards selected)
+
+---
+
 ## Summary by priority
 
 | Priority | ID | Description | File |
@@ -272,6 +347,8 @@ Manager clicks "Start Deliver" when satisfied with Capture. This locks the Offbo
 | 🔴 High | OV-R04 | All answered shows historical queue | session-command-view.jsx |
 | 🔴 High | OV-R05 | Gap questions "See in context" (module context panel) | session-command-view.jsx |
 | 🔴 High | Part D | Tab state matrix (all roles, all states) | session-command-view.jsx |
+| 🔴 High | Part E | Session Creation — two paths + manual form + board selection | create-session.jsx |
+| 🔴 High | MV-R01 | Dashboard empty states — corrected orbital logic | ha-vy-handover-dashboard.jsx |
 | 🟡 Medium | MV-R04 | AI question delete confirmation + Generate button | session-command-view.jsx |
 | 🟡 Medium | CW-R01 | Needs more (send back) + Ask a question (new Q) — two actions | session-command-view.jsx |
 | 🟡 Medium | OV-R03 | Offboarder can edit answers during Capture | session-command-view.jsx |
@@ -279,7 +356,6 @@ Manager clicks "Start Deliver" when satisfied with Capture. This locks the Offbo
 | 🟡 Medium | MV-R03 | Tab disabled states for Manager Collecting | session-command-view.jsx |
 | 🟡 Medium | CW-R02 | Add Logs tab to Coworker | session-command-view.jsx |
 | 🟡 Medium | CW-R05 | Reuse Offboarder celebration artwork | session-command-view.jsx |
-| 🟡 Medium | MV-R01 | Orbital artwork for Departure Pending | session-command-view.jsx |
 | 🟡 Medium | MV-R02 | Fix unicode middle dot rendering | all files |
 | 🟡 Medium | OV-R01 | Logs tab disabled in Not started | session-command-view.jsx |
 
@@ -287,14 +363,20 @@ Manager clicks "Start Deliver" when satisfied with Capture. This locks the Offbo
 
 ## Verification checklist
 
+- [ ] Dashboard: HRIS departures + zero sessions → orbital + departure list + "Create session" CTA
+- [ ] Dashboard: HRIS departures + active sessions → greeting banner + session cards (no orbital)
+- [ ] Dashboard: zero HRIS departures + zero sessions → plain text + "Sync now" (no orbital)
+- [ ] Create Session: HRIS list + manual form below "or" divider
+- [ ] Create Session: manual form → email lookup → boards found → board selection
+- [ ] Create Session: manual form → email lookup → not found → error message
+- [ ] Create Session: "Sync now" button refreshes HRIS list
 - [ ] Manager Collecting: only Overview tab active, Data + Logs grayed out
-- [ ] Manager Deliver: shows review page with gap summary, Commit ALWAYS enabled, unresolved gaps shown as info (not blocker)
-- [ ] Manager Deliver: confirmation modal mentions unresolved gaps if any ("2 gaps will be preserved")
+- [ ] Manager Deliver: shows review page, Commit ALWAYS enabled, unresolved gaps as info banner
+- [ ] Manager Deliver: confirmation modal mentions unresolved gaps if any
 - [ ] Manager Deliver: Back to Capture reopens Offboarder queue
 - [ ] Manager Complete: unresolved gaps visible as logged items (read-only list)
 - [ ] Manager: delete AI question shows confirmation dialog
 - [ ] Manager: "+ Generate question" button on gap rows works
-- [ ] Manager: Departure Pending shows orbital illustration
 - [ ] Manager: no garbled `·` characters anywhere
 - [ ] Offboarder Not started: Logs tab disabled
 - [ ] Offboarder All answered: celebration header + full read-only queue visible + "new questions may come" note
