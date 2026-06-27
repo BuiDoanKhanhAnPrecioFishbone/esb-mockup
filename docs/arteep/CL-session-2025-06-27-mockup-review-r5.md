@@ -91,6 +91,28 @@
 
 ---
 
+## R5-03: Remove "WAITING ON YOU" tag from session header ✅ LOCKED
+
+**Screenshot:** Thanh Tùng's session in Coworker view shows "PREPARE" badge + "⏳ WAITING ON YOU" tag in the session header.
+
+**Issue:** We locked the decision to remove all "Needs your action" / "Waiting on you" tags in the dashboard redesign (§9 build queue). The tag was removed from the Manager dashboard session cards, but it's still appearing in the **session detail header** across views.
+
+**Change:** Remove the "WAITING ON YOU" tag from the session header in ALL views:
+- Manager session detail header
+- Coworker session detail header
+- Offboarder session detail header (if present)
+- Thanh Tùng session detail header
+- Any other session that renders this tag
+
+**Search for:** `WAITING ON YOU`, `waitingOnManager`, `blockedOnManager`, `waiting on you` — remove the tag rendering from the session header component. The phase badge (PREPARE / CAPTURE / DELIVER) is sufficient to communicate session state.
+
+**Files:**
+- `components/mockups/session-command-view.jsx` — session header area
+- `components/mockups/session-thanh-tung.jsx` — session header area
+- Any shared header component that renders this tag
+
+---
+
 ## Verification checklist
 
 - [ ] Coworker: click "See in context" on gap question → gap context panel opens
@@ -103,6 +125,7 @@
 - [ ] Offboarder Collecting state: orbital illustration + "Your session is being prepared" message
 - [ ] Coworker Collecting state: orbital illustration + "Data is being collected" message
 - [ ] Manager Collecting state: AI animation only, NO orbital (per MV-R4-04)
+- [ ] No "WAITING ON YOU" tag visible in ANY session header across ALL roles and sessions
 
 ---
 
