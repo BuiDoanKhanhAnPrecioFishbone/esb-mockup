@@ -130,6 +130,121 @@ Nice-to-have for POC. The demo works without it. If time allows, it's ~30 lines 
 
 ---
 
+## R6-03: Notification system — bell dropdown ✅ LOCKED
+
+**File:** `components/app/AppShell.tsx`
+
+**Decision:** In-app notification dropdown from the existing bell icon. No full notification page, no email/push. Per-role event streams. Grouped notifications with deep links.
+
+### Core design
+
+| Decision | Value |
+|---|---|
+| Location | Bell icon in top bar (existing in `AppShell.tsx`) |
+| UI | Click bell → 320px dropdown, max 8 visible, scrollable |
+| Grouping | By actor + session + time window (Slack-style) |
+| Deep links | Every notification navigates to the specific surface |
+| Unread badge | Red circle with count on bell icon |
+| Mark as read | Opening dropdown clears badge count |
+| Notification page | ❌ Not needed — dropdown IS the experience |
+| "View all" link | ❌ Removed — not needed for POC |
+| Scope | In-app dropdown only — no email/push |
+| Data | Static mock notifications with timestamps matching current state |
+
+### Dropdown layout
+
+```
+┌── Notifications ──────────────── Mark all read ─┐
+│                                                  │
+│  🟣  Just now                                    │
+│  Minh Lê answered 3 questions in Payment Service │
+│  Kafka retry · Stripe webhook · Gateway timeout  │
+│                                                  │
+│  🟣  1h ago                                      │
+│  Coworker asked about disaster recovery          │
+│  Payment Service · from gap                      │
+│                                                  │
+│  ○  2h ago                                       │
+│  Linh Anh joined Minh Lê's session               │
+│                                                  │
+│  ○  3h ago                                       │
+│  Data collection complete — 127 cards, 4 modules │
+│  Thanh Tùng's session                            │
+│                                                  │
+│  ○  Yesterday                                    │
+│  AI detected 2 gaps in CI/CD Pipeline            │
+│  Minh Lê's session                               │
+│                                                  │
+└──────────────────────────────────────────────────┘
+```
+
+🟣 = unread (violet dot), ○ = read (gray dot). Each notification has: status dot, timestamp, title (bold), detail line (muted text), session name if cross-session.
+
+### Notification events per role
+
+#### Manager receives
+
+| Event | Notification text | Deep link |
+|---|---|---|
+| Offboarder answered N questions | "Minh Lê answered 3 questions in Payment Service" | `/session/minh-le?tab=data` → Payment Service expanded |
+| Coworker joined session | "Linh Anh joined Minh Lê's session" | `/session/minh-le?tab=overview` |
+| Coworker asked a question | "Coworker asked a question about Kafka retry config" | `/session/minh-le?tab=data&card=kafka` |
+| AI detected new gap | "New knowledge gap detected in CI/CD Pipeline" | `/session/minh-le?tab=data` → CI/CD gap row |
+| Crawl completed | "Data collection complete — 64 cards, 5 modules" | `/session/minh-le?tab=overview` |
+| Answer flagged by Coworker | "Coworker flagged an answer as needing more detail" | `/session/minh-le?tab=data` → that answer |
+
+#### Offboarder receives
+
+| Event | Notification text | Deep link |
+|---|---|---|
+| New questions assigned | "3 new questions waiting for you" | Queue scrolls to first new question |
+| Answer marked "Needs more" | "Hà Vy requested more detail on your answer about retry logic" | Queue scrolls to that question |
+| Answer satisfied | "Your answer about Kafka retry was accepted ✓" | Queue scrolls to that question |
+| Session phase changed | "Your session has moved to Deliver" | Overview tab |
+
+#### Coworker receives
+
+| Event | Notification text | Deep link |
+|---|---|---|
+| New answers ready for review | "Minh Lê answered 2 questions — ready for your review" | Dashboard → session card → Ready section |
+| Gap detected in shared module | "New gap in Test Automation Framework" | `/session/thanh-tung?tab=data` → gap |
+| Session phase changed | "Thanh Tùng's session is now in Capture" | Session overview |
+
+### Cross-session handling
+
+The Manager runs multiple sessions. Notifications from all sessions mix in one dropdown but each notification includes the session name for disambiguation: "Minh Lê's session: 3 answers ready" vs "Thanh Tùng's session: crawl complete."
+
+### Notification interaction
+
+| Action | Behavior |
+|---|---|
+| Click bell (has badge) | Dropdown opens, badge clears |
+| Click bell (no badge) | Dropdown opens, shows recent notifications |
+| Click a notification | Dropdown closes, navigates to deep link |
+| Click "Mark all read" | All 🟣 become ○, badge clears |
+| Click outside dropdown | Dropdown closes |
+
+### Design system fit
+
+| Element | Treatment |
+|---|---|
+| Bell icon | Existing in AppShell top bar. Add relative positioning for badge. |
+| Unread badge | Red circle (`bg-rose-500`), 16px, white text, positioned top-right of bell icon |
+| Dropdown | 320px wide, `bg-white`, `border border-gray-200`, `rounded-xl`, `shadow-lg`. Max height ~400px with overflow scroll. |
+| Notification row | Padding 10px 14px, `border-bottom: 0.5px solid border-tertiary`, cursor pointer, hover `bg-gray-50` |
+| Unread dot | 8px violet circle (`bg-violet-500`) left of timestamp |
+| Read dot | 8px gray circle (`bg-gray-300`) left of timestamp |
+| Title | 12px, font-weight 500, `color-text-primary` |
+| Detail line | 10px, `color-text-tertiary` |
+| Timestamp | 9px, `color-text-tertiary`, right-aligned or above title |
+| "Mark all read" | Text link, top-right of dropdown header, `color-violet-600` |
+
+### Priority
+
+Medium. Small build effort (~50 lines for the dropdown component). High demo impact — shows the multi-role system is alive and connected.
+
+---
+
 ## Verification checklist
 
 - [ ] Manager: gap context panel has "Ask about this gap" button at bottom
@@ -146,6 +261,14 @@ Nice-to-have for POC. The demo works without it. If time allows, it's ~30 lines 
 - [ ] Manager: clicking "Dismiss all flags" shows confirmation dialog → confirm → all flags dismissed
 - [ ] No bulk operations visible for Coworker or Offboarder
 - [ ] No checkboxes on any row
+- [ ] Bell icon: shows red badge with unread count
+- [ ] Bell click: 320px dropdown opens with grouped notifications
+- [ ] Manager notifications: answer events, coworker joins, gap detection, crawl complete
+- [ ] Offboarder notifications: new questions, needs more, satisfied, phase change
+- [ ] Coworker notifications: answers ready, gap detected, phase change
+- [ ] Notification click: navigates to correct deep link, dropdown closes
+- [ ] "Mark all read": clears all unread dots + badge
+- [ ] Cross-session: notifications show session name for disambiguation
 
 ---
 
