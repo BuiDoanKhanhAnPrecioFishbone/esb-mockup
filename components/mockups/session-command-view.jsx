@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, ArrowRight, ArrowUpRight, X, CheckCircle2, Clock, AlertTriangle, Sparkles, Bell, Layers, User, FileText, ChevronDown, Plus, MessageCircle, Paperclip, Pencil, Trash2, Check, GripVertical, HelpCircle, Inbox, ExternalLink } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowRight, ArrowUpRight, X, CheckCircle2, Clock, AlertTriangle, Sparkles, Bell, Layers, User, FileText, ChevronDown, Plus, MessageCircle, Paperclip, Pencil, Trash2, Check, GripVertical, HelpCircle, Inbox, ExternalLink, Mic, Pause, SkipForward, RotateCcw } from "lucide-react";
 import { DeliverOverview, CompleteOverview } from "./session-deliver";
 import { useViewAs } from "@/lib/view-as";
 
@@ -170,8 +170,24 @@ function ManagerOverview({ stepId, isReady, onSwitchTab, coworkers, onAddCoworke
   return <div className="space-y-4"><div className="rounded-lg border border-gray-200 bg-white p-5"><h3 className="text-sm font-semibold text-gray-900 mb-3">Data collection complete</h3><div className="grid grid-cols-4 gap-3 mb-4"><MC l="Boards" v={SESSION.boards}/><MC l="Cards" v={SESSION.cards}/><MC l="Areas" v={SESSION.modules}/><MC l="Questions" v={SESSION.questions}/></div><div className="pt-3 border-t border-gray-100 space-y-2"><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Knowledge areas</p><div className="flex flex-wrap gap-1.5">{["Payment Service","CI/CD Pipeline","Shared Libraries","Monitoring & Alerts","Infrastructure as Code"].map(m=><span key={m} className="text-[11px] px-2 py-1 rounded-md bg-gray-50 border border-gray-200 text-gray-700">{m}</span>)}</div></div><div className="pt-3 mt-3 border-t border-gray-100 grid grid-cols-2 gap-3"><div><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">Coworker engagement</p><p className="text-[12px] text-gray-700">2 of 3 have asked questions</p></div><div><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">Knowledge gaps</p><p className="text-[12px] text-gray-700">3 module gaps · flags on cards</p></div></div></div><CoworkerNetwork coworkers={coworkers} onAdd={onAddCoworker} onRemove={onRemoveCoworker} readOnly={false}/><div className="flex items-center gap-3"><button onClick={()=>onSwitchTab("data")} className="h-9 px-4 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer">Review in Data tab</button><Link href={`/session/${SESSION.id}`} className="h-9 px-4 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center gap-2">{"Start Capture"}<ArrowRight className="w-3.5 h-3.5"/></Link></div></div>;
 }
 
+// Orbital illustration (R5-02) \u2014 the "waiting" visual for roles that can't act during
+// Collecting (Offboarder + Coworker). Manager keeps the categorization animation instead.
+function OrbitalIllustration() {
+  return (<div className="relative w-32 h-32 mx-auto mb-5">
+    <style>{"@keyframes sorbit-cw{from{transform:rotate(0)}to{transform:rotate(360deg)}}@keyframes sorbit-ccw{from{transform:rotate(0)}to{transform:rotate(-360deg)}}"}</style>
+    <div className="absolute inset-0 rounded-full border border-violet-200/70" />
+    <div className="absolute inset-[16px] rounded-full border border-violet-200/60" />
+    <div className="absolute inset-[32px] rounded-full border border-violet-200/50" />
+    <div className="absolute inset-0" style={{ animation: "sorbit-cw 18s linear infinite" }}><span className="absolute left-1/2 top-0 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-violet-400" /></div>
+    <div className="absolute inset-[16px]" style={{ animation: "sorbit-ccw 24s linear infinite" }}><span className="absolute left-1/2 top-0 -translate-x-1/2 w-2 h-2 rounded-full bg-violet-300" /></div>
+    <div className="absolute inset-[32px]" style={{ animation: "sorbit-cw 14s linear infinite" }}><span className="absolute left-1/2 top-0 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-fuchsia-300" /></div>
+    <div className="absolute inset-0 flex items-center justify-center"><div className="w-11 h-11 rounded-full inline-flex items-center justify-center shadow-sm" style={{ background: "linear-gradient(135deg,#8b5cf6,#7c3aed)" }}><Sparkles className="w-5 h-5 text-white" strokeWidth={1.75} /></div></div>
+  </div>);
+}
+
 function OffboarderOverview({ stepId, onSwitchTab, onOpenQuestion }) {
-  if (stepId!=="capture") return <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center"><div className="w-12 h-12 rounded-full bg-gray-100 inline-flex items-center justify-center mb-3 mx-auto"><Clock className="w-5 h-5 text-gray-400" strokeWidth={1.5}/></div><h3 className="text-sm font-medium text-gray-700 mb-1">Your session is being prepared</h3><p className="text-xs text-gray-500">{"You\u2019ll be notified when your question queue is ready."}</p></div>;
+  // R5-02 \u2014 waiting state: orbital + "being prepared" message, no CTA.
+  if (stepId!=="capture") return <div className="rounded-xl border border-gray-200 bg-white p-10 text-center"><OrbitalIllustration/><h3 className="text-sm font-semibold text-gray-900 mb-1">Your session is being prepared</h3><p className="text-xs text-gray-500 max-w-sm mx-auto">{"H\u00e0 Vy is setting up your knowledge handover. You\u2019ll be notified when questions are ready for you."}</p></div>;
   return <OffboarderWorkspace/>;
 }
 function primaryHome(card){ const x = ALL_CARDS.find(a=>a.card.name===card.name); return x?x.home:"__uncat__"; }
@@ -183,14 +199,38 @@ function GapContextPanel({ moduleName, onClose, showAsk = false }) {
   const gapQ = mod&&mod.moduleGapQs&&mod.moduleGapQs[0];
   const cards = (mod&&mod.items) || [];
   const reason = `${moduleName} has ${mod?mod.cards:cards.length} cards covering ${cards.slice(0,3).map(c=>c.name).join(", ")}, but none of them addresses this area — so the AI flagged it as missing knowledge.`;
+  // CW-R5-01 — "Ask about this gap" creates a human question targeting the gap. It posts to the
+  // Offboarder's queue (OB_QUEUE) and appears immediately in "Questions from this gap" below.
+  const [asking, setAsking] = useState(false);
+  const [input, setInput] = useState("");
+  const [extraQs, setExtraQs] = useState([]);
+  const [sent, setSent] = useState(false);
+  const sentTimer = useRef(null);
+  const submitAsk = () => {
+    const t = input.trim(); if(!t) return;
+    OB_QUEUE.push({ id:`cwgap${++qId}`, q:t, from:"Coworker", fromType:"human", module:moduleName, answered:false });
+    setExtraQs(p=>[...p, t]); setInput("");
+    setSent(true); if(sentTimer.current) clearTimeout(sentTimer.current); sentTimer.current = setTimeout(()=>setSent(false), 2400);
+  };
+  const hasQs = !!gapQ || extraQs.length>0;
   return <div className="p-5">
     <div className="flex items-center justify-between mb-3"><div className="flex items-center gap-1.5"><Sparkles className="w-4 h-4 text-yellow-600"/><h3 className="text-[15px] font-semibold text-gray-900">Gap context</h3></div><button onClick={onClose} className="w-7 h-7 rounded-md hover:bg-gray-100 inline-flex items-center justify-center text-gray-400 cursor-pointer"><X className="w-4 h-4"/></button></div>
     <div className="rounded-lg bg-yellow-50 border border-yellow-200 px-3 py-2.5 mb-3" style={{borderLeft:"3px solid #eab308"}}><p className="text-[10px] text-yellow-700 uppercase tracking-wider font-medium">Module</p><p className="text-[13px] font-medium text-gray-900">{moduleName}</p><p className="text-[11px] text-yellow-800 mt-1.5 flex items-start gap-1.5"><AlertTriangle className="w-3 h-3 shrink-0 mt-0.5"/>{gap}</p><span className="inline-flex items-center gap-1 text-[9px] mt-2 px-1.5 py-0.5 rounded bg-white border border-yellow-200 text-yellow-700"><Sparkles className="w-2.5 h-2.5"/>Detected by AI analysis</span></div>
     <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">Why this was flagged</p><p className="text-[11px] text-gray-600 leading-relaxed mb-3">{reason}</p>
-    {gapQ&&<><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1 pt-2 border-t border-gray-100">Questions from this gap</p><div className="text-[11px] bg-gray-50 rounded-md px-2.5 py-2 mb-3 flex items-center gap-1.5"><HelpCircle className="w-3 h-3 text-violet-500 shrink-0"/><span className="flex-1 text-gray-800">{gapQ}</span><span className="text-[9px] text-gray-400">waiting</span></div></>}
+    {hasQs&&<><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1 pt-2 border-t border-gray-100">{"Questions from this gap ("}{(gapQ?1:0)+extraQs.length}{")"}</p>
+      {gapQ&&<div className="text-[11px] bg-gray-50 rounded-md px-2.5 py-2 mb-1.5 flex items-center gap-1.5"><HelpCircle className="w-3 h-3 text-violet-500 shrink-0"/><span className="flex-1 text-gray-800">{gapQ}</span><span className="text-[9px] text-gray-400">waiting</span></div>}
+      {extraQs.map((q,i)=><div key={i} className="text-[11px] bg-violet-50/60 border border-violet-100 rounded-md px-2.5 py-2 mb-1.5 flex items-center gap-1.5"><HelpCircle className="w-3 h-3 text-violet-500 shrink-0"/><span className="flex-1 text-gray-800">{q}</span><span className="text-[9px] px-1.5 py-0.5 rounded bg-white border border-violet-200 text-violet-600 shrink-0">{"Coworker · waiting"}</span></div>)}
+      <div className="mb-1.5"/></>}
     <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1 pt-2 border-t border-gray-100">{"Cards in this module ("}{cards.length}{")"}</p>
     <div className="space-y-1 mb-3">{cards.map((c,i)=><div key={i} className="flex items-center gap-2 text-[11px] text-gray-700 px-2 py-1 rounded bg-gray-50"><FileText className="w-3 h-3 text-gray-400 shrink-0"/>{c.name}</div>)}</div>
-    {showAsk&&<button className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md bg-violet-50 border border-violet-200 text-violet-700 text-[11px] font-medium hover:bg-violet-100 cursor-pointer"><Sparkles className="w-3 h-3"/>Ask about this gap</button>}
+    {showAsk&&<div className="pt-2 border-t border-gray-100">
+      <button onClick={()=>setAsking(a=>!a)} className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md bg-violet-50 border border-violet-200 text-violet-700 text-[11px] font-medium hover:bg-violet-100 cursor-pointer"><Sparkles className="w-3 h-3"/>Ask about this gap</button>
+      {asking&&<div className="mt-2">
+        <textarea value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==="Escape"){setAsking(false);setInput("");}}} autoFocus placeholder={`What would you like Minh Lê to clarify about ${moduleName}?`} className="w-full h-16 px-2 py-1.5 rounded border border-violet-300 text-[11px] resize-none focus:outline-none focus:ring-2 focus:ring-violet-500/20"/>
+        <div className="flex items-center justify-end gap-2 mt-1.5"><button onClick={()=>{setAsking(false);setInput("");}} className="text-[11px] text-gray-500 hover:text-gray-700 cursor-pointer">Cancel</button><button onClick={submitAsk} className="h-7 px-3 rounded bg-violet-600 text-white text-[11px] font-medium hover:bg-violet-700 cursor-pointer">Ask</button></div>
+      </div>}
+      {sent&&<p className="text-[10px] text-emerald-600 mt-2 flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/>Question sent to Minh Lê</p>}
+    </div>}
   </div>;
 }
 // Offboarder workspace — lives in the Overview tab (Data is hidden for the Offboarder, Part D).
@@ -200,7 +240,10 @@ function OffboarderWorkspace() {
   const [drafts, setDrafts] = useState({});
   const [editing, setEditing] = useState(null); const [editText, setEditText] = useState("");
   const [ctxCard, setCtxCard] = useState(null); const [ctxGap, setCtxGap] = useState(null); const [activeQ, setActiveQ] = useState(null);
+  const [voiceMode, setVoiceMode] = useState(false); // R5-04 — voice interview mode
   const submit = (q) => { const t=(drafts[q.id]||"").trim(); if(!t) return; setAnswers(p=>({...p,[q.id]:{text:t,satisfied:false,edited:false}})); setDrafts(p=>({...p,[q.id]:""})); };
+  // R5-04 — voice session submits all recorded transcripts at once; answers carry a voice flag.
+  const submitVoice = (transcripts) => { setAnswers(p=>{ const n={...p}; Object.entries(transcripts).forEach(([id,text])=>{ if(text&&text.trim()) n[id]={text:text.trim(),satisfied:false,edited:false,voice:true}; }); return n; }); setVoiceMode(false); };
   const saveEdit = (qid) => { if(editText.trim()) setAnswers(p=>({...p,[qid]:{...p[qid],text:editText.trim(),edited:true}})); setEditing(null); };
   const openCtx = (q) => { setActiveQ(q.id); if(q.fromType==="ai"){ setCtxGap(q.module); setCtxCard(null); } else { setCtxCard(findCardForQuestion(q)); setCtxGap(null); } };
   const closeCtx = () => { setCtxCard(null); setCtxGap(null); setActiveQ(null); };
@@ -208,13 +251,15 @@ function OffboarderWorkspace() {
   const waiting = items.filter(x=>!x.ans); const answered = items.filter(x=>x.ans);
   const done = answered.length; const total = OB_QUEUE.length; const allDone = waiting.length===0;
   const SeeCtx = ({ q }) => <button onClick={()=>openCtx(q)} className="text-[9px] text-violet-600 hover:text-violet-700 cursor-pointer inline-flex items-center gap-1 shrink-0 mt-0.5" title={q.fromType==="ai"?"See the module gap this came from":"Open the source card"}><ExternalLink className="w-2.5 h-2.5"/>See in context</button>;
-  const Meta = ({ q, ans }) => <div className="text-[11px] text-gray-500 flex items-center gap-1.5 flex-wrap">{ans?<CheckCircle2 className="w-3 h-3 text-emerald-500"/>:q.fromType==="ai"?<Sparkles className="w-3 h-3 text-violet-500"/>:<User className="w-3 h-3"/>}<span>{ans?"Answered":q.from}</span>{ans&&(ans.satisfied?<span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">{"✓ Satisfied"}</span>:<span className="text-[9px] text-gray-400">waiting for review</span>)}{ans&&ans.edited&&<span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-600 border border-violet-200">Edited</span>}<span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">{q.module}</span></div>;
+  const Meta = ({ q, ans }) => <div className="text-[11px] text-gray-500 flex items-center gap-1.5 flex-wrap">{ans?<CheckCircle2 className="w-3 h-3 text-emerald-500"/>:q.fromType==="ai"?<Sparkles className="w-3 h-3 text-violet-500"/>:<User className="w-3 h-3"/>}<span>{ans?"Answered":q.from}</span>{ans&&(ans.satisfied?<span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">{"✓ Satisfied"}</span>:<span className="text-[9px] text-gray-400">waiting for review</span>)}{ans&&ans.edited&&<span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-600 border border-violet-200">Edited</span>}{ans&&ans.voice&&<span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 border border-gray-200 inline-flex items-center gap-0.5" title="Answered via voice"><Mic className="w-2.5 h-2.5"/>Voice</span>}<span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">{q.module}</span></div>;
+  if (voiceMode) return <VoiceSession questions={waiting.map(x=>x.q)} onSubmitAll={submitVoice} onClose={()=>setVoiceMode(false)}/>;
   return <div className="max-w-2xl">
     <div className="rounded-lg border border-emerald-200 bg-emerald-50/40 text-emerald-800 px-4 py-2.5 mb-4 text-[12px] flex items-center gap-2"><Clock className="w-3.5 h-3.5 shrink-0"/><span><span className="font-semibold">{SESSION.daysLeft}{" days"}</span>{" until your last day · July 4, 2026"}</span></div>
     {allDone&&<div className="rounded-xl border border-emerald-200 p-5 text-center mb-4" style={{background:"linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)"}}><div className="w-11 h-11 rounded-full bg-white inline-flex items-center justify-center mb-2 shadow-sm"><CheckCircle2 className="w-6 h-6 text-emerald-500"/></div><h3 className="text-sm font-semibold text-gray-900">{"You’re all caught up!"}</h3><p className="text-[11px] text-gray-600 mt-0.5">{"You answered "}{done}{" questions. New questions may still come in from Hà Vy or coworkers."}</p></div>}
     <div className="grid grid-cols-3 gap-3 mb-4"><QTile label="To answer" value={waiting.length} tone={waiting.length>0?"urgent":"good"}/><QTile label="Answered" value={done} tone="good"/><QTile label="Gaps" value={SESSION.gaps} tone="normal"/></div>
     <div className="flex items-center gap-3 mb-5"><div className="flex-1 h-[5px] rounded-full bg-gray-200 overflow-hidden"><div className={`h-full rounded-full ${allDone?"bg-emerald-500":"bg-violet-500"}`} style={{width:`${Math.round(done/total*100)}%`}}/></div><span className="text-[11px] text-gray-500" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{done}{" / "}{total}</span></div>
-    {waiting.length>0&&<><p className="text-[10px] text-gray-500 uppercase tracking-[0.2em] font-medium">Questions waiting for you <span className="text-gray-400" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{"· "}{waiting.length}</span></p>
+    {waiting.length>0&&<><button onClick={()=>setVoiceMode(true)} className="w-full text-left rounded-lg border mb-4 px-4 py-3 flex items-center gap-3 transition-colors hover:bg-violet-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-violet-500/20" style={{borderColor:"#c4b5fd",background:"#f5f3ff"}}><div className="w-9 h-9 rounded-full bg-white border border-violet-200 inline-flex items-center justify-center shrink-0"><Mic className="w-4 h-4 text-violet-600"/></div><div className="flex-1 min-w-0"><div className="text-[13px] font-semibold" style={{color:"#5b21b6"}}>Answer by voice</div><div className="text-[11px] text-gray-500">The AI will guide you through all questions. Speak your answers naturally.</div></div><span className="text-[11px] font-medium inline-flex items-center gap-1 shrink-0" style={{color:"#5b21b6"}}>Start voice session<ArrowRight className="w-3.5 h-3.5"/></span></button>
+    <p className="text-[10px] text-gray-500 uppercase tracking-[0.2em] font-medium">Questions waiting for you <span className="text-gray-400" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{"· "}{waiting.length}</span></p>
     <div className="space-y-2 mt-2 mb-6">{waiting.map(({q})=><div key={q.id} className={`rounded-lg border bg-white px-4 py-3 ${activeQ===q.id?"border-violet-500 ring-2 ring-violet-500/15":"border-gray-200"}`}><div className="flex items-start gap-2"><div className="text-[13px] text-gray-900 mb-1 flex-1">{q.q}</div><SeeCtx q={q}/></div><Meta q={q}/><div className="mt-2"><textarea value={drafts[q.id]||""} onChange={e=>setDrafts(p=>({...p,[q.id]:e.target.value}))} placeholder="Type your answer..." className="w-full h-16 px-2 py-1.5 rounded border border-gray-200 text-[11px] resize-none focus:outline-none focus:ring-2 focus:ring-violet-500/20"/><div className="flex items-center justify-end mt-1"><button onClick={()=>submit(q)} className="h-6 px-2 rounded bg-violet-600 text-white text-[10px] cursor-pointer hover:bg-violet-700">Submit</button></div></div></div>)}</div></>}
     <p className="text-[10px] text-gray-500 uppercase tracking-[0.2em] font-medium">Answered <span className="text-gray-400" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{"· "}{done}</span></p>
     <div className="space-y-2 mt-2">{answered.map(({q,ans})=><div key={q.id} className={`group/ans rounded-lg border bg-white px-4 py-3 ${activeQ===q.id?"border-violet-500 ring-2 ring-violet-500/15":"border-gray-200"}`}><div className="flex items-start gap-2"><div className="text-[13px] text-gray-900 mb-1 flex-1">{q.q}</div><SeeCtx q={q}/></div><Meta q={q} ans={ans}/>{editing===q.id?<div className="mt-2"><textarea value={editText} onChange={e=>setEditText(e.target.value)} className="w-full h-16 px-2 py-1.5 rounded border border-violet-300 text-[11px] resize-none focus:outline-none focus:ring-2 focus:ring-violet-500/20" autoFocus/><div className="flex items-center justify-end gap-1.5 mt-1"><button onClick={()=>saveEdit(q.id)} className="h-6 px-2 rounded bg-violet-600 text-white text-[10px] cursor-pointer hover:bg-violet-700">Save</button><button onClick={()=>setEditing(null)} className="h-6 px-2 rounded border border-gray-300 text-gray-600 text-[10px] cursor-pointer hover:bg-gray-50">Cancel</button></div></div>:<div className="mt-2 rounded-md px-3 py-2 bg-gray-50 border-l-2 border-emerald-400 relative"><p className="text-[11px] text-gray-800 leading-relaxed">{ans.text}</p><button onClick={()=>{setEditing(q.id);setEditText(ans.text);}} className="absolute top-1.5 right-1.5 opacity-0 group-hover/ans:opacity-100 w-6 h-6 rounded border border-gray-200 bg-white hover:bg-gray-100 inline-flex items-center justify-center text-gray-400 hover:text-violet-600 cursor-pointer" title="Edit answer"><Pencil className="w-3 h-3"/></button></div>}</div>)}</div>
@@ -222,6 +267,112 @@ function OffboarderWorkspace() {
   </div>;
 }
 function QTile({ label, value, tone }) { const c = { urgent: "text-rose-600", good: "text-emerald-600", normal: "text-gray-900" }[tone]; return <div className="rounded-lg border border-gray-200 bg-white p-3"><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">{label}</p><p className={`text-xl font-semibold ${c}`} style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{value}</p></div>; }
+
+// ── R5-04: Voice interview mode ─────────────────────────────────────────────
+// Mock recording (no real audio): animated mic + waveform, a streamed canned transcript the
+// Offboarder can edit, manual advance, skipped-question round, and a batch submit at the end.
+function vFmt(s){ return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; }
+function mockTranscript(q){ if(!q) return ""; const base=(q.q||"").replace(/\?+$/,"").trim(); const lead=base?base.charAt(0).toLowerCase()+base.slice(1):"this"; return `Good question about ${q.module||"this area"}. On ${lead} — the short version is we handle it through the documented runbook. I'd point the next person to the wiki page and the on-call rotation, and flag the two edge cases the team usually hits.`; }
+
+function VoiceContext({ q }) {
+  if (!q) return null;
+  if (q.fromType==="ai") {
+    const mod = MODULES_DATA.flatMap(b=>b.modules).find(m=>m.name===q.module);
+    const gap = (mod&&mod.moduleGaps&&mod.moduleGaps[0])||"Knowledge gap detected by AI";
+    return <div><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1.5">Gap context</p><div className="rounded-md bg-yellow-50 border border-yellow-200 px-2.5 py-2" style={{borderLeft:"3px solid #eab308"}}><p className="text-[12px] font-medium text-gray-900">{q.module}</p><p className="text-[10px] text-yellow-800 mt-1 flex items-start gap-1"><AlertTriangle className="w-3 h-3 shrink-0 mt-0.5"/>{gap}</p></div></div>;
+  }
+  const card = findCardForQuestion(q);
+  if (!card) return <p className="text-[11px] text-gray-400">No card context.</p>;
+  return <div><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1.5">Card context</p><p className="text-[12px] font-medium text-gray-900 mb-1">{card.name}</p><p className="text-[11px] text-gray-600 leading-relaxed mb-2">{card.desc||<span className="text-gray-400 italic">No description</span>}</p>{card.checklist&&card.checklist.length>0&&<div className="mb-2 space-y-0.5">{card.checklist.map((c,i)=><div key={i} className="flex items-center gap-1.5 text-[11px]">{c.done?<CheckCircle2 className="w-3 h-3 text-emerald-500"/>:<div className="w-3 h-3 rounded border border-gray-300"/>}<span className={c.done?"text-gray-500 line-through":"text-gray-700"}>{c.text}</span></div>)}</div>}{(card.files||[]).map((f,i)=><p key={i} className="text-[10px] text-gray-500 flex items-center gap-1"><Paperclip className="w-2.5 h-2.5"/>{f.name}</p>)}</div>;
+}
+
+// Stable wrapper (module-level so streaming re-renders reconcile instead of remounting).
+function VoiceShell({ children }) {
+  return <div className="max-w-3xl">
+    <style>{"@keyframes vring{0%{transform:scale(.75);opacity:.55}100%{transform:scale(1.7);opacity:0}}@keyframes vbar{0%,100%{transform:scaleY(.25)}50%{transform:scaleY(1)}}"}</style>
+    {children}
+  </div>;
+}
+
+function VoiceSession({ questions, onSubmitAll, onClose }) {
+  const [queue, setQueue] = useState(questions);
+  const [idx, setIdx] = useState(0);
+  const [recording, setRecording] = useState(true);
+  const [paused, setPaused] = useState(false);
+  const [secs, setSecs] = useState(0);
+  const [transcripts, setTranscripts] = useState({});
+  const [durations, setDurations] = useState({});
+  const [skipped, setSkipped] = useState([]);
+  const [phase, setPhase] = useState("interview"); // interview | review | skipped | complete
+  const [editId, setEditId] = useState(null);
+  const cur = queue[idx];
+
+  useEffect(()=>{ if(phase!=="interview"||!recording||paused) return; const iv=setInterval(()=>setSecs(s=>s+1),1000); return ()=>clearInterval(iv); }, [phase,recording,paused]);
+  useEffect(()=>{ if(phase!=="interview"||!recording||paused||!cur) return; const full=mockTranscript(cur); const iv=setInterval(()=>{ setTranscripts(t=>{ const have=(t[cur.id]||"").length; if(have>=full.length) return t; return {...t,[cur.id]: full.slice(0, Math.min(full.length, have+3))}; }); }, 110); return ()=>clearInterval(iv); }, [idx,phase,recording,paused]); // eslint-disable-line
+
+  const remaining = queue.filter(q=>!(transcripts[q.id]||"").trim()).length;
+  const answeredInQueue = queue.length - remaining;
+
+  const goReview = () => { setRecording(false); setDurations(d=>({...d,[cur.id]:secs})); setPhase("review"); };
+  const reRecord = () => { setTranscripts(t=>({...t,[cur.id]:""})); setSecs(0); setRecording(true); setPhase("interview"); };
+  const advance = (justSkippedId) => {
+    if (idx+1 < queue.length) { setIdx(idx+1); setSecs(0); setRecording(true); setPhase("interview"); }
+    else { const sk=[...new Set([...skipped, ...(justSkippedId?[justSkippedId]:[])])].filter(id=>!(transcripts[id]||"").trim()); setPhase(sk.length>0?"skipped":"complete"); }
+  };
+  const skip = () => { setTranscripts(t=>{ const n={...t}; delete n[cur.id]; return n; }); setSkipped(s=>s.includes(cur.id)?s:[...s,cur.id]); advance(cur.id); };
+  const answerSkipped = () => { const sk=questions.filter(q=>skipped.includes(q.id)&&!(transcripts[q.id]||"").trim()); setQueue(sk); setSkipped([]); setIdx(0); setSecs(0); setRecording(true); setPhase("interview"); };
+
+  const answeredAll = questions.filter(q=>(transcripts[q.id]||"").trim());
+  const skippedAll = questions.filter(q=>!(transcripts[q.id]||"").trim());
+
+  if (phase==="skipped") return <VoiceShell><div className="rounded-xl border border-gray-200 bg-white p-6">
+    <h3 className="text-base font-semibold text-gray-900 mb-1">You skipped {skippedAll.length} question{skippedAll.length!==1?"s":""}</h3>
+    <p className="text-[12px] text-gray-500 mb-4">Answer them now by voice, or leave them in your regular queue for later.</p>
+    <div className="space-y-2 mb-5">{skippedAll.map(q=><div key={q.id} className="rounded-lg bg-gray-50 px-3 py-2.5" style={{borderLeft:"2px solid #eab308",borderRadius:0}}><p className="text-[12px] text-gray-900">{q.q}</p><p className="text-[10px] text-gray-500 mt-0.5">{q.module}</p></div>)}</div>
+    <div className="flex items-center justify-end gap-2"><button onClick={onClose} className="h-9 px-4 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer">Leave for later</button><button onClick={answerSkipped} className="h-9 px-4 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center gap-1.5 cursor-pointer"><Mic className="w-3.5 h-3.5"/>Answer these now</button></div>
+  </div></VoiceShell>;
+
+  if (phase==="complete") return <VoiceShell><div className="rounded-xl border border-emerald-200 p-6 text-center mb-4" style={{background:"linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%)"}}>
+      <h3 className="text-base font-semibold text-gray-900 mb-1">🎉 Voice session complete</h3>
+      <p className="text-[12px] text-gray-600">{questions.length}{" questions · "}{vFmt(Object.values(durations).reduce((a,b)=>a+b,0))}{" · "}{skippedAll.length}{" skipped"}</p>
+    </div>
+    <div className="space-y-2 mb-5">{answeredAll.map(q=><div key={q.id} className="rounded-lg border border-gray-200 bg-white px-4 py-3"><div className="flex items-start gap-2"><div className="flex-1"><div className="text-[12px] text-gray-900 mb-1 inline-flex items-center gap-1.5"><Mic className="w-3 h-3 text-gray-400"/>{q.q}</div>{editId===q.id?<textarea value={transcripts[q.id]} onChange={e=>setTranscripts(t=>({...t,[q.id]:e.target.value}))} className="w-full h-16 px-2 py-1.5 rounded border border-violet-300 text-[11px] resize-none focus:outline-none focus:ring-2 focus:ring-violet-500/20" autoFocus/>:<p className="text-[11px] text-gray-600 italic leading-relaxed">&quot;{transcripts[q.id]}&quot;</p>}</div><button onClick={()=>setEditId(editId===q.id?null:q.id)} className="text-[10px] text-violet-600 hover:text-violet-700 cursor-pointer shrink-0 inline-flex items-center gap-1"><Pencil className="w-2.5 h-2.5"/>{editId===q.id?"Done":"Edit"}</button></div></div>)}
+      {skippedAll.map(q=><div key={q.id} className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 opacity-60"><div className="text-[12px] text-gray-600">{q.q}</div><p className="text-[10px] text-gray-400 mt-0.5">left in queue</p></div>)}</div>
+    <div className="flex items-center justify-between"><button onClick={onClose} className="h-9 px-4 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer">Back to queue</button><button onClick={()=>onSubmitAll(transcripts)} className="h-9 px-5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center gap-1.5 cursor-pointer"><Check className="w-3.5 h-3.5"/>Submit all ({answeredAll.length} answer{answeredAll.length!==1?"s":""})</button></div>
+  </VoiceShell>;
+
+  // interview / review
+  return <VoiceShell><div className="flex gap-4">
+    <div className="flex-1 min-w-0">
+      <div className="flex items-center justify-between mb-3"><div className="text-sm font-semibold text-gray-900 inline-flex items-center gap-1.5"><Mic className="w-4 h-4 text-rose-500"/>{"Voice session · "}{remaining}{" remaining"}</div><button onClick={onClose} className="h-7 px-2.5 rounded-md border border-gray-300 text-[11px] font-medium text-gray-700 hover:bg-gray-50 cursor-pointer">End session</button></div>
+      <div className="flex items-center gap-3 mb-1"><div className="flex-1 h-[5px] rounded-full bg-gray-200 overflow-hidden"><div className="h-full rounded-full bg-violet-500" style={{width:`${Math.round((answeredInQueue/queue.length)*100)}%`}}/></div><span className="text-[11px] text-gray-500" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{"Question "}{idx+1}{" of "}{queue.length}</span></div>
+      <p className="text-[10px] text-gray-400 mb-4">{answeredInQueue}{" answered · "}{skipped.length}{" skipped"}</p>
+
+      <div className="rounded-lg bg-white px-4 py-4 mb-4" style={{border:"1px solid #e5e7eb",borderLeft:"3px solid #7c3aed"}}>
+        <p className="text-[14px] text-gray-900 leading-snug">{cur?cur.q:""}</p>
+        <span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 inline-block mt-2">{cur?cur.module:""}</span>
+      </div>
+
+      {phase==="interview"?<>
+        <div className="relative w-20 h-20 mx-auto mb-2">
+          {!paused&&<><span className="absolute inset-0 rounded-full" style={{background:"#fecdd3",animation:"vring 1.8s ease-out infinite"}}/><span className="absolute inset-0 rounded-full" style={{background:"#fecdd3",animation:"vring 1.8s ease-out infinite",animationDelay:"0.9s"}}/></>}
+          <button onClick={()=>setPaused(p=>!p)} className="absolute inset-2 rounded-full inline-flex items-center justify-center shadow cursor-pointer" style={{background:"#e11d48"}} title={paused?"Resume":"Pause"}>{paused?<Pause className="w-6 h-6 text-white"/>:<Mic className="w-6 h-6 text-white"/>}</button>
+        </div>
+        <p className="text-center text-[12px] text-gray-500 mb-2" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{paused?"Paused":vFmt(secs)}</p>
+        <div className="flex items-end justify-center gap-1 h-8 mb-3">{[0,1,2,3,4,5,6].map(i=><span key={i} className="w-1 rounded-full" style={{height:24,transformOrigin:"bottom",background:"#fda4af",animation:paused?"none":`vbar 0.9s ease-in-out ${i*0.11}s infinite`}}/>)}</div>
+        <div className="rounded-md bg-[#f8f8f8] border border-gray-200 px-3 py-2 mb-3 min-h-[64px]"><p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium mb-1">Live transcript</p><textarea value={transcripts[cur?.id]||""} onChange={e=>setTranscripts(t=>({...t,[cur.id]:e.target.value}))} placeholder="Speak now — your words appear here…" className="w-full h-16 bg-transparent text-[11px] text-gray-700 resize-none focus:outline-none"/></div>
+        <div className="flex items-center justify-between"><button onClick={()=>setPaused(p=>!p)} className="h-8 px-3 rounded-lg border border-gray-300 text-[12px] font-medium text-gray-700 hover:bg-gray-50 inline-flex items-center gap-1.5 cursor-pointer"><Pause className="w-3.5 h-3.5"/>{paused?"Resume":"Pause"}</button><div className="flex items-center gap-2"><button onClick={skip} className="h-8 px-3 rounded-lg border border-gray-300 text-[12px] font-medium text-gray-600 hover:bg-gray-50 inline-flex items-center gap-1.5 cursor-pointer"><SkipForward className="w-3.5 h-3.5"/>Skip</button><button onClick={goReview} className="h-8 px-4 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-[12px] font-medium inline-flex items-center gap-1.5 cursor-pointer">Next question<ArrowRight className="w-3.5 h-3.5"/></button></div></div>
+      </>:<>
+        <p className="text-[12px] text-emerald-600 mb-2 inline-flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4"/>{"Answer recorded · "}{vFmt(durations[cur?.id]||0)}</p>
+        <textarea value={transcripts[cur?.id]||""} onChange={e=>setTranscripts(t=>({...t,[cur.id]:e.target.value}))} className="w-full h-24 px-3 py-2 rounded-lg border border-gray-200 text-[12px] text-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500/20 mb-1" placeholder="Edit your transcript…"/>
+        <p className="text-[10px] text-gray-400 mb-3">Edit the text above to fix names or technical terms.</p>
+        <div className="flex items-center justify-end gap-2"><button onClick={reRecord} className="h-8 px-3 rounded-lg border border-gray-300 text-[12px] font-medium text-gray-600 hover:bg-gray-50 inline-flex items-center gap-1.5 cursor-pointer"><RotateCcw className="w-3.5 h-3.5"/>Re-record</button><button onClick={()=>advance()} className="h-8 px-4 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-[12px] font-medium inline-flex items-center gap-1.5 cursor-pointer">Next<ArrowRight className="w-3.5 h-3.5"/></button></div>
+      </>}
+    </div>
+
+    <div className="w-[200px] shrink-0 rounded-lg border border-gray-200 bg-gray-50/50 p-3 self-start"><VoiceContext q={cur}/></div>
+  </div></VoiceShell>;
+}
 // Offboarder hybrid queue (\u00a78.3): a flat list \u2014 no module tree, headers, card counts, gaps, flags, drag, or rename.
 // Each question carries a light module tag + a "See in context" link that opens the source card in the Side Panel.
 function OffboarderQueue({ focusQ, focusKey, onSelectCard, selectedCard }) {
@@ -236,7 +387,8 @@ function OffboarderQueue({ focusQ, focusKey, onSelectCard, selectedCard }) {
 }
 
 function CoworkerOverview({ stepId, isReady, onSwitchTab, coworkers }) {
-  if (!isReady) return <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center"><div className="w-12 h-12 rounded-full bg-gray-100 inline-flex items-center justify-center mb-3 mx-auto"><Clock className="w-5 h-5 text-gray-400" strokeWidth={1.5}/></div><h3 className="text-sm font-medium text-gray-700 mb-1">Session is being set up</h3><p className="text-xs text-gray-500">{"You\u2019ll be notified when ready."}</p></div>;
+  // R5-02 \u2014 waiting state: orbital + "Data is being collected" message, no CTA.
+  if (!isReady) return <div className="rounded-xl border border-gray-200 bg-white p-10 text-center"><OrbitalIllustration/><h3 className="text-sm font-semibold text-gray-900 mb-1">Data is being collected</h3><p className="text-xs text-gray-500 max-w-sm mx-auto">{"The system is crawling Trello boards and organizing knowledge. You\u2019ll be able to review and ask questions once data is ready."}</p></div>;
   if (stepId==="capture") return <div className="space-y-4"><div className="rounded-lg border border-gray-200 bg-white p-5"><h3 className="text-sm font-semibold text-gray-900 mb-1">Your questions</h3><p className="text-[12px] text-gray-500 mb-3">Review answers and ask follow-ups.</p><div className="grid grid-cols-3 gap-3"><MC l="Answered" v={2}/><MC l="Waiting" v={1}/><MC l="Satisfied" v={1}/></div><p className="text-[11px] text-yellow-700 mt-3 flex items-center gap-1.5"><AlertTriangle className="w-3 h-3"/>1 answer waiting for review</p></div><CoworkerNetwork coworkers={coworkers} readOnly/><button onClick={()=>onSwitchTab("data")} className="h-9 px-4 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center gap-2 cursor-pointer">{"Review in Data tab"}<ArrowRight className="w-3.5 h-3.5"/></button></div>;
   return <div className="space-y-4"><div className="rounded-lg border border-gray-200 bg-white p-5"><h3 className="text-sm font-semibold text-gray-900 mb-1">{"Minh L\u00ea is leaving soon"}</h3><p className="text-[12px] text-gray-500 mb-3">{"Senior Backend Engineer · Last day July 4, 2026"}</p><div className="pt-3 border-t border-gray-100 space-y-2"><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Knowledge areas</p><div className="flex flex-wrap gap-1.5">{["Payment Service","CI/CD Pipeline","Shared Libraries","Monitoring & Alerts","Infrastructure as Code"].map(m=><span key={m} className="text-[11px] px-2 py-1 rounded-md bg-gray-50 border border-gray-200 text-gray-700">{m}</span>)}</div></div><div className="pt-3 mt-3 border-t border-gray-100 grid grid-cols-2 gap-3"><div><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">Your activity</p><p className="text-[12px] text-gray-700">0 questions asked</p></div><div><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">Others</p><p className="text-[12px] text-gray-700">2 coworkers active</p></div></div></div><CoworkerNetwork coworkers={coworkers} readOnly/><button onClick={()=>onSwitchTab("data")} className="h-9 px-4 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center gap-2 cursor-pointer">{"Browse Data tab"}<ArrowRight className="w-3.5 h-3.5"/></button></div>;
 }
