@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import {
-  ChevronLeft, ChevronRight, Plus, ArrowRight, X,
+  ChevronLeft, Plus, ArrowRight, X,
   AlertTriangle, CheckCircle2, Clock, RefreshCw,
   Database, Network, Sparkles, Users, FileText,
   Bell, Layers, ClipboardList, User, MessageCircle
@@ -42,8 +42,9 @@ function getPhase(sid) { return PHASES.find(p => p.subs.some(s => s.id === sid))
 function getSub(sid) { for (const p of PHASES) { const s = p.subs.find(x => x.id === sid); if (s) return s; } return null; }
 
 const DEPARTURES = [
-  { name: "Minh L\u00ea", role: "Senior Backend Engineer", dept: "Engineering", lastDay: "July 4, 2026", daysLeft: 30, initials: "ML" },
-  { name: "Thanh T\u00f9ng", role: "QA Lead", dept: "Engineering", lastDay: "July 8, 2026", daysLeft: 28, initials: "TT" },
+  { id: "minh-le", name: "Minh L\u00ea", role: "Senior Backend Engineer", dept: "Engineering", lastDay: "July 4, 2026", daysLeft: 30, initials: "ML" },
+  { id: "thanh-tung", name: "Thanh T\u00f9ng", role: "QA Lead", dept: "Engineering", lastDay: "July 8, 2026", daysLeft: 28, initials: "TT" },
+  { id: "phuong-anh", name: "Ph\u01b0\u01a1ng Anh Nguy\u1ec5n", role: "Account Executive", dept: "Sales", lastDay: "July 11, 2026", daysLeft: 33, initials: "PA" },
 ];
 const SESSIONS = [
   { id: "thanh-tung", name: "Thanh T\u00f9ng", role: "QA Lead", dept: "Engineering", initials: "TT", subStageId: 3, daysLeft: 28, modules: 4 },
@@ -68,9 +69,22 @@ const OB_QUESTIONS = [
   { q: "How does the Kafka retry logic handle poison messages?", from: "AI-generated", fromType: "ai", module: "Payment Service" },
   { q: "Who owns the vendor XYZ contract renewal?", from: "AI-generated", fromType: "ai", module: "Inventory Sync" },
 ];
+// Full historical answer log (OV-R4-02 \u2014 the "All answered" view shows every Q&A, not a truncated 2).
 const OB_ANSWERED = [
   { q: "Where is the API key rotation doc?", module: "Shared Libraries", satisfied: true, preview: "Engineering wiki at /security/api-key-rotation.md. Rotates every 90 days via GitHub Action..." },
   { q: "Who should I contact about the SLA penalty terms?", module: "Inventory Sync", satisfied: false, preview: "Talk to Linh Ph\u1ea1m in Procurement \u2014 she handled the last renewal. SLA doc at /vendor-contracts..." },
+  { q: "How does the Kafka retry logic handle poison messages?", module: "Payment Service", satisfied: true, preview: "After 5 retries with exponential backoff, messages route to the DLQ. Monitor via Datadog alert #4421." },
+  { q: "What's the max retry count before DLQ routing?", module: "Payment Service", satisfied: true, preview: "Max 5, configurable per topic in kafka-config.yaml. Backoff doubles from 500ms." },
+  { q: "Which webhook events are critical vs optional?", module: "Payment Service", satisfied: true, preview: "Critical: payment_intent.succeeded, charge.refunded, invoice.payment_failed. The rest route to the batch queue." },
+  { q: "What's the rollback procedure for a failed Atlas migration?", module: "CI/CD Pipeline", satisfied: true, preview: "Run /scripts/atlas-rollback.sh with the migration ID. A snapshot is taken before each run (7-day expiry)." },
+  { q: "Is there a runbook for the nightly batch job failures?", module: "CI/CD Pipeline", satisfied: false, preview: "Check the Actions logs and rerun transient failures. After 3 fails, check Datadog for the upstream cause." },
+  { q: "What's the token refresh strategy?", module: "Shared Libraries", satisfied: true, preview: "15-min access token, 7-day refresh in HTTP-only cookies. On failure the user is bounced to login." },
+  { q: "What are the critical Datadog alert thresholds?", module: "Monitoring & Alerts", satisfied: false, preview: "P99 latency > 800ms for 5m pages on-call. Error rate > 2% pages immediately. Full list in the dashboard JSON." },
+  { q: "What's the log retention policy?", module: "Monitoring & Alerts", satisfied: true, preview: "30 days hot in Elasticsearch, 1 year cold in S3 Glacier. PII is redacted at the Fluentd layer." },
+  { q: "Is the Terraform version pinned?", module: "Infrastructure as Code", satisfied: true, preview: "Pinned to 1.7.x in versions.tf. State is in S3 with DynamoDB locking." },
+  { q: "How are Helm values overridden per environment?", module: "Infrastructure as Code", satisfied: true, preview: "values-<env>.yaml layered over the base chart. Staging auto-deploys; prod needs manual approval." },
+  { q: "How does currency conversion handle ECB API failures?", module: "Payment Service", satisfied: true, preview: "Falls back to the last cached rate (max 24h old) and flags the transaction for review." },
+  { q: "Who owns the on-call escalation rotation?", module: "Monitoring & Alerts", satisfied: true, preview: "Primary \u2192 secondary \u2192 eng manager via PagerDuty. Schedule in oncall-schedule.pdf, owned by the platform team." },
 ];
 
 const CW_SESSIONS = [
@@ -127,16 +141,16 @@ function OBActiveQueue() { return (<div className="max-w-2xl mx-auto p-6"><Deadl
 // OV-03 \u2014 "All answered" is a distinct celebration moment: contribution summary + read-only answers, no inputs/progress.
 function OBStat({ v, l }) { return (<div className="rounded-lg border border-gray-200 bg-white p-3 text-center"><div className="text-xl font-semibold text-gray-900" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{v}</div><div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mt-0.5">{l}</div></div>); }
 function OBAllAnswered() {
-  const [open, setOpen] = useState(false);
   return (<div className="max-w-2xl mx-auto p-6">
     <div className="rounded-xl border border-emerald-200 p-8 text-center mb-5" style={{ background: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)" }}>
       <div className="w-14 h-14 rounded-full bg-white inline-flex items-center justify-center mb-3 shadow-sm"><CheckCircle2 className="w-8 h-8 text-emerald-500" strokeWidth={1.75} /></div>
       <h3 className="text-base font-semibold text-gray-900 mb-1">{"You\u2019re all caught up!"}</h3>
-      <p className="text-xs text-gray-600">{"You answered 14 questions across 5 modules."}</p>
+      <p className="text-xs text-gray-600">{"You answered "}{OB_ANSWERED.length}{" questions across 5 modules."}</p>
     </div>
-    <div className="grid grid-cols-3 gap-3 mb-5"><OBStat v={14} l="Questions answered" /><OBStat v={5} l="Modules covered" /><OBStat v={42} l="Knowledge entries" /></div>
-    <button onClick={() => setOpen(o => !o)} className="w-full flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-[12px] font-medium text-gray-700 hover:bg-gray-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-violet-500/20"><span>Your submitted answers</span><span className="inline-flex items-center gap-1 text-gray-400"><span style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>14</span><ChevronRight className={`w-3.5 h-3.5 transition-transform ${open ? "rotate-90" : ""}`} /></span></button>
-    {open && (<div className="space-y-2 mt-2">{OB_ANSWERED.map((q, i) => (<div key={i} className="rounded-lg border border-gray-200 bg-white px-4 py-3"><div className="text-[12px] text-gray-900 mb-1">{q.q}</div><div className="text-[11px] text-gray-500 flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-emerald-500" /><span>Answered</span>{q.satisfied ? <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">{"\u2713 Satisfied"}</span> : <span className="text-[9px] text-gray-400">waiting for review</span>}<span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 ml-1">{q.module}</span></div>{q.preview && <p className="text-[11px] text-gray-500 mt-1.5 italic leading-relaxed">&quot;{q.preview}&quot;</p>}</div>))}<p className="text-[10px] text-gray-400 text-center pt-1">+ 12 more answered questions</p></div>)}
+    <div className="grid grid-cols-3 gap-3 mb-5"><OBStat v={OB_ANSWERED.length} l="Questions answered" /><OBStat v={5} l="Modules covered" /><OBStat v={42} l="Knowledge entries" /></div>
+    {/* OV-R4-02 \u2014 full read-only answer history, scrollable, no truncation. */}
+    <SectionLabel count={OB_ANSWERED.length}>Your submitted answers</SectionLabel>
+    <div className="space-y-2 mt-2 max-h-[420px] overflow-y-auto pr-1">{OB_ANSWERED.map((q, i) => (<div key={i} className="rounded-lg border border-gray-200 bg-white px-4 py-3"><div className="text-[12px] text-gray-900 mb-1">{q.q}</div><div className="text-[11px] text-gray-500 flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-emerald-500" /><span>Answered</span>{q.satisfied ? <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">{"\u2713 Satisfied"}</span> : <span className="text-[9px] text-gray-400">waiting for review</span>}<span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 ml-1">{q.module}</span></div>{q.preview && <p className="text-[11px] text-gray-500 mt-1.5 italic leading-relaxed">&quot;{q.preview}&quot;</p>}</div>))}</div>
     <p className="text-[11px] text-gray-400 text-center mt-5">{"H\u00e0 Vy will review your answers and commit them to the knowledge graph. You\u2019ll be notified if new questions come in."}</p>
   </div>);
 }
@@ -294,13 +308,16 @@ function SyncFromHris() {
 }
 
 // Zero active sessions (R3-01). Orbital is constant; message + CTAs depend on HRIS status.
-// With departures → departure list + "Create session". Without → "Create manually".
+// MV-R4-03 — a departure that already has an active session is removed from the list (shown
+// only as a session card). If every departure has a session, the list section is hidden.
 function ManagerZeroState({ hasDepartures }) {
+  const departures = DEPARTURES.filter(d => !SESSIONS.some(s => s.id === d.id));
+  const showDepartures = hasDepartures && departures.length > 0;
   return (<div className="max-w-2xl mx-auto p-6">
     <div className="rounded-xl border border-gray-200 bg-white p-10 text-center">
       <OrbitalIllustration />
-      {hasDepartures ? (<>
-        <h3 className="text-sm font-semibold text-gray-900 mb-1">{DEPARTURES.length}{" upcoming departure"}{DEPARTURES.length !== 1 ? "s" : ""}</h3>
+      {showDepartures ? (<>
+        <h3 className="text-sm font-semibold text-gray-900 mb-1">{departures.length}{" upcoming departure"}{departures.length !== 1 ? "s" : ""}</h3>
         <p className="text-xs text-gray-500 mb-5">{"HRIS flagged people leaving soon. Start a session to begin building their knowledge graph."}</p>
         <div className="flex items-center justify-center gap-2">
           <Link href="/session/new" className="h-9 px-4 rounded-lg text-white text-sm font-medium inline-flex items-center gap-1.5 transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-violet-500/30" style={{ background: GRADIENT }}><Plus className="w-3.5 h-3.5" />Create session</Link>
@@ -315,10 +332,10 @@ function ManagerZeroState({ hasDepartures }) {
         </div>
       </>)}
     </div>
-    {hasDepartures && <div className="mt-5"><DepartureBanner departures={DEPARTURES} /></div>}
+    {showDepartures && <div className="mt-5"><DepartureBanner departures={departures} /></div>}
   </div>);
 }
-function DepartureBanner({ departures }) { return (<article className="rounded-lg border border-yellow-200 bg-yellow-50/40 p-4 mb-6"><div className="flex items-center gap-2 mb-3"><AlertTriangle className="w-3.5 h-3.5 text-yellow-700" strokeWidth={2} /><h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider">{departures.length}{" upcoming departures from HRIS"}</h3></div><div className="space-y-2">{departures.map((d, i) => (<div key={i} className="flex items-center justify-between bg-white rounded-md border border-gray-200 px-3 py-2"><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 text-gray-700 text-[10px] font-semibold inline-flex items-center justify-center shrink-0">{d.initials}</div><div><div className="text-sm font-medium text-gray-900">{d.name}</div><div className="text-[11px] text-gray-500">{d.role}{" · "}{d.dept}</div></div></div><div className="flex items-center gap-3"><span className="text-[10px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{"Last day "}{d.lastDay}{" · "}{d.daysLeft}{"d"}</span><Link href="/session/new" className="h-7 px-2.5 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-[11px] font-medium inline-flex items-center gap-1 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30">Start session<ArrowRight className="w-2.5 h-2.5" /></Link></div></div>))}</div></article>); }
+function DepartureBanner({ departures }) { return (<article className="rounded-lg border border-yellow-200 bg-yellow-50/40 p-4 mb-6"><div className="flex items-center gap-2 mb-3"><AlertTriangle className="w-3.5 h-3.5 text-yellow-700" strokeWidth={2} /><h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider">{departures.length}{" upcoming departures from HRIS"}</h3></div><div className="space-y-2">{departures.map((d, i) => (<div key={i} className="flex items-center justify-between bg-white rounded-md border border-gray-200 px-3 py-2"><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 text-gray-700 text-[10px] font-semibold inline-flex items-center justify-center shrink-0">{d.initials}</div><div><div className="text-sm font-medium text-gray-900">{d.name}</div><div className="text-[11px] text-gray-500">{d.role}{" · "}{d.dept}</div></div></div><div className="flex items-center gap-3"><span className="text-[10px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{"Last day "}{d.lastDay}{" · "}{d.daysLeft}{"d"}</span><Link href={`/session/new?employee=${d.id}`} className="h-7 px-2.5 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-[11px] font-medium inline-flex items-center gap-1 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30">Start session<ArrowRight className="w-2.5 h-2.5" /></Link></div></div>))}</div></article>); }
 function ActionCard({ label, value, color = "normal", active, onClick }) { const cls = { urgent: "text-rose-600", warn: "text-yellow-700", good: "text-emerald-600", normal: "text-gray-900" }[color]; return (<button onClick={onClick} className={`rounded-lg border bg-white p-3 text-left transition-all focus:outline-none focus:ring-2 focus:ring-violet-500/20 cursor-pointer ${active ? "border-violet-400 ring-2 ring-violet-500/10" : "border-gray-200 hover:border-gray-300"}`}><div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">{label}</div><div className={`text-xl font-semibold ${cls}`} style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{value}</div></button>); }
 function SessionCard({ session }) { const phase = getPhase(session.subStageId); const isPrepare = phase.key === "prepare"; const pc = { prepare: "bg-blue-50 border-blue-200 text-blue-700", capture: "bg-violet-50 border-violet-200 text-violet-700", deliver: "bg-emerald-50 border-emerald-200 text-emerald-700" }; return (<Link href={`/session/${session.id}`} className="block rounded-lg border border-gray-200 bg-white transition-all hover:shadow-sm hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-500/20"><article className="p-4 flex items-start gap-4"><div className="w-10 h-10 rounded-full bg-gray-100 text-gray-700 border border-gray-200 text-[11px] font-semibold inline-flex items-center justify-center shrink-0">{session.initials}</div><div className="flex-1 min-w-0"><div className="flex items-center gap-2 mb-1 flex-wrap"><h3 className="text-sm font-semibold text-gray-900">{session.name}&apos;s session</h3><span className={`text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold border ${pc[phase.key]}`}>{phase.label}</span></div><p className="text-[12px] text-gray-500 mb-3">{session.role}{" · "}{session.dept}{" · "}{session.daysLeft}{" days left"}</p><PhaseProgress subStageId={session.subStageId} /><div className="flex items-center gap-3 mt-2 pt-2 border-t border-gray-100 text-[11px] text-gray-600">{isPrepare ? (<><span className="inline-flex items-center gap-1"><Layers className="w-3 h-3 text-gray-400" />{session.modules}{" modules mapped"}</span><span className="text-gray-300">·</span><span className="text-gray-400">capture not started</span></>) : (<><span className="inline-flex items-center gap-1"><Sparkles className="w-3 h-3 text-violet-500" />{session.gapsResolved}{" gaps resolved"}</span><span className="text-gray-300">·</span><span className="inline-flex items-center gap-1"><MessageCircle className="w-3 h-3 text-gray-400" />{session.answered}{" answered"}</span></>)}</div></div><span className="h-8 px-3 rounded-md border border-gray-300 bg-white text-gray-700 text-sm font-medium inline-flex items-center gap-1.5 shrink-0">Open<ArrowRight className="w-3 h-3" /></span></article></Link>); }
 function PhaseProgress({ subStageId, done }) { const cur = getPhase(subStageId); const curSub = getSub(subStageId); return (<div><div className="flex items-center justify-between mb-1 text-[10px]"><span className="text-gray-700 font-medium">{done ? "All 3 phases complete" : <>{"Phase "}{cur.id}{" of 3 · "}<span className="text-gray-900">{cur.label}</span></>}</span><span className="text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{done ? "Complete" : curSub.label}</span></div><div className="grid grid-cols-3 gap-1">{PHASES.map(p => { const isDone = done || p.id < cur.id; const isCur = !done && p.id === cur.id; let pct = 0; if (isCur) { const idx = p.subs.findIndex(s => s.id === subStageId); pct = ((idx + 0.5) / p.subs.length) * 100; } return (<div key={p.id} className="relative h-2 rounded-sm bg-gray-200 overflow-hidden">{isDone && <div className="absolute inset-0 bg-emerald-500" />}{isCur && <div className="absolute inset-y-0 left-0 bg-violet-500" style={{ width: `${pct}%` }} />}</div>); })}</div><div className="grid grid-cols-3 gap-1 mt-1">{PHASES.map(p => { const isDone = done || p.id < cur.id; const isCur = !done && p.id === cur.id; return <span key={p.id} className={`text-[9px] uppercase tracking-wider font-medium text-center ${isDone ? "text-emerald-700" : isCur ? "text-violet-700" : "text-gray-400"}`}>{p.label}</span>; })}</div></div>); }
