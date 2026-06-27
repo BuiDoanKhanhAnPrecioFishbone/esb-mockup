@@ -1,6 +1,6 @@
 # ART-EEP — Mockup Review Round 5 (2025-06-27)
 
-*Remaining items from R4 drilling session. Apply via Claude Code.*
+*Remaining items from R4 drilling session + new features. Apply via Claude Code.*
 
 ---
 
@@ -113,6 +113,112 @@
 
 ---
 
+## R5-04: Voice interview session mode for Offboarder ✅ LOCKED
+
+**File:** `components/mockups/session-command-view.jsx`
+
+**Decision:** The Offboarder can answer their entire question queue by voice in a guided session mode. Voice is an alternative to typing — the Offboarder chooses which mode to use. No per-question mic button — voice is a session-level feature only.
+
+### Entry point
+
+- **"Answer by voice" card** above the regular question queue in the Offboarder's Capture view
+- Secondary styling: violet outline with mic icon, NOT primary CTA (typing is the default)
+- Text: "Answer by voice" + subtitle "The AI will guide you through all questions. Speak your answers naturally."
+- "Start voice session →" button
+- The regular text queue remains visible below — Offboarder always has the choice
+
+### Voice session UI (replaces the queue while active)
+
+**Layout:** Two panels side by side.
+
+**Left panel (main):**
+- Session header: "Voice session · 5 remaining" + "End session" button
+- Progress bar: violet fill on gray track, "Question 2 of 7" + "2 answered · 0 skipped"
+- **Active question card:** large text, violet left border, module tag below. Question displayed as text (no text-to-speech — Offboarder reads it)
+- **Mic button:** large rose circle with mic icon, pulsing rose rings (from animation budget), timer counting up ("0:12"), waveform visualization bars below
+- **Live transcript:** gray background area below the mic, text streaming in as the Offboarder speaks
+- **Controls:** Pause | Skip question | Next question →
+
+**Right panel (~200px, alongside):**
+- "See in context" content shown **alongside the recording** — NOT in a separate panel the Offboarder has to click away to see
+- For card questions: card description, checklist, files
+- For gap questions: module name, gap description, "Why flagged" reasoning
+- Always visible during recording so the Offboarder has context while speaking
+
+### Recording flow
+
+1. Voice session starts → first unanswered question displayed
+2. Mic auto-activates (or Offboarder clicks to start recording)
+3. Offboarder speaks → live transcript streams below the mic
+4. Offboarder clicks **"Next question →"** to stop recording and advance (manual advance, no silence detection)
+
+### Review before advancing
+
+After clicking "Next question →":
+- Recording stops
+- "✓ Answer recorded · 0:34" confirmation
+- Transcript shown in an editable text area
+- Three options:
+  - **Edit** — opens transcript for text corrections (fix names, technical terms)
+  - **Re-record** — discard and speak again
+  - **Next →** — accept transcript, advance to next question
+
+### Skipped questions (offered again at end)
+
+After the last regular question, if any were skipped:
+- "You skipped 2 questions" screen
+- List of skipped questions with yellow left border
+- Two CTAs:
+  - "Leave for later" → returns to regular queue, skipped questions stay unanswered
+  - "🎙 Answer these now" → re-enters voice mode for just the skipped questions
+
+### Session complete (batch review + submit)
+
+After all questions answered (or skipped questions handled):
+- "🎉 Voice session complete" header
+- Summary: "7 questions · 4m 32s · 2 skipped"
+- **Full list of all answered questions** with transcripts:
+  - Each shows: question text + transcript preview + "Edit" button
+  - Skipped questions shown dimmed with "left in queue" note
+  - 🎙 icon on each answered question
+- **"Submit all (5 answers)"** button — batch submission (NOT individual submit per question)
+- "Back to queue" returns to regular queue without submitting
+
+### After submission
+
+- All voice-answered questions appear in the regular queue as submitted answers
+- Each has a small 🎙 badge: "Answered via voice" — informational, for Manager/Coworker reviewing
+- The answers are text — Manager/Coworker review, satisfy, or "needs more" identically to typed answers
+- If the Offboarder re-enters the voice session later, it **restarts from the beginning** showing only unanswered questions
+
+### Re-entry behavior
+
+| Scenario | What happens |
+|---|---|
+| Exit voice session early (3 of 7 done) | Answered questions have transcripts pre-filled but NOT submitted. Return to queue. Can re-enter voice session — it restarts showing only the remaining 4 unanswered questions. |
+| All answered via voice, not yet submitted | "Submit all" available. Can also "Back to queue" to review individually. |
+| Re-enter after submitting | Voice session shows only NEW unanswered questions (if any arrived from Coworker/Manager). |
+
+### What Manager/Coworker sees
+
+Nothing different. Answers are text. A small 🎙 badge on each answer indicates voice input. The review/satisfy/needs-more flow is identical to typed answers.
+
+### Design system fit
+
+| Element | Treatment |
+|---|---|
+| Recording indicator | Rose pulsing rings (from animation budget — "recording mic rings (rose)") |
+| Active mic button | Rose circle (#e11d48), white mic icon, 44px+ touch target |
+| Waveform | 7 vertical bars, rose (#fda4af), animated height cycling |
+| Live transcript | Gray background (#f8f8f8), 11px font, text streaming left-to-right |
+| Progress bar | Violet fill on gray track |
+| "Start voice session" button | Secondary — violet outline (#c4b5fd border, #f5f3ff bg, #5b21b6 text) with mic icon |
+| 🎙 badge on submitted answers | Small gray badge, informational only |
+| Question card during session | White, violet left border (3px), larger text (14px) |
+| Context panel | Right side, ~200px, same styling as existing "See in context" side panel |
+
+---
+
 ## Verification checklist
 
 - [ ] Coworker: click "See in context" on gap question → gap context panel opens
@@ -126,6 +232,14 @@
 - [ ] Coworker Collecting state: orbital illustration + "Data is being collected" message
 - [ ] Manager Collecting state: AI animation only, NO orbital (per MV-R4-04)
 - [ ] No "WAITING ON YOU" tag visible in ANY session header across ALL roles and sessions
+- [ ] Offboarder queue: "Answer by voice" card visible above question list (secondary styling, not primary CTA)
+- [ ] Voice session: question displayed as text (no text-to-speech), mic with rose pulsing rings, live transcript
+- [ ] Voice session: "See in context" panel visible alongside recording (right side, ~200px)
+- [ ] Voice session: "Next question →" stops recording, shows review (Edit / Re-record / Next)
+- [ ] Voice session: skipped questions offered again at end ("Answer these now" or "Leave for later")
+- [ ] Voice session: complete screen shows all answers + "Submit all (N answers)" batch button
+- [ ] Voice session: after submit, answers appear in queue with 🎙 badge
+- [ ] Voice session: re-entering restarts with unanswered questions only
 
 ---
 
