@@ -91,13 +91,42 @@ The info card text should update: "Paste the employee's Trello board or workspac
 
 ## PART C: Coworker View
 
-### CW-R4-01: Implement "See in context" for Coworker
-**Issue:** Coworker doesn't have the "See in context" link on their questions.
-**Change:** Add the same "See in context" link pattern used for the Offboarder:
+### CW-R4-01: Implement "See in context" + functional "Ask about this gap" ✅ LOCKED
+**Issue:** Coworker doesn't have the "See in context" link on their questions, and the "Ask about this gap" button is not functional.
+
+**Change 1 — "See in context" link:**
 - Each question in the Coworker's view has a "See in context" link
 - For card-based questions → opens the card context side panel (description, checklist, files, other Q&A)
 - For AI gap questions → opens the gap context side panel (module, gap description, "why flagged" reasoning, sibling questions, cards in module)
-- The Coworker's panel CAN keep the "Ask about this" button (unlike Offboarder) — because the Coworker might want to ask a follow-up question on the same card
+
+**Change 2 — "Ask about this gap" button is FUNCTIONAL:**
+
+The "Ask about this gap" button at the bottom of the Coworker's gap context panel creates a new human question targeting that gap.
+
+**Flow:**
+1. Coworker clicks "See in context" on a gap question → gap context panel opens
+2. At the bottom: "Ask about this gap" button (violet, full-width)
+3. Coworker clicks → an inline question input field appears INSIDE the panel, below the button
+4. Coworker types their question (e.g., "What's the manual failover procedure when Stripe goes down?")
+5. Clicks "Ask" → question is created:
+   - Added to the gap's question list (visible in "Questions from this gap" section above)
+   - Appears in the Offboarder's queue as a new item
+   - Tagged as: "Coworker · Payment Service · waiting"
+6. Input field clears, ready for another question
+
+**What this is NOT:**
+- NOT "Generate question" (that's AI-generated, Manager-only via MV-R4-04)
+- NOT "Needs more" (that sends an existing answer back for revision)
+- NOT KG Explorer chat (that navigates the graph)
+- It's simply: "I see this gap, I want to ask the Offboarder something specific about it"
+
+**Button behavior per role:**
+
+| Role | Gap context panel | "Ask about this gap" button |
+|---|---|---|
+| Manager | Has "Generate question" (AI) on the Data tab + can manually add questions | Button shows but labeled "Ask about this gap" — creates human question |
+| Coworker | Opens via "See in context" | ✅ **Active** — creates human question targeting the gap |
+| Offboarder | Opens via "See in context" | ❌ **Removed** (OV-R4-03) — Offboarder answers, doesn't ask |
 
 **File:** `components/mockups/session-command-view.jsx`
 
@@ -223,6 +252,7 @@ Info card below Trello field: "Paste the employee's Trello board or workspace UR
 - [ ] Offboarder All Answered: shows ALL historical Q&A (no truncation to 2)
 - [ ] Offboarder gap context panel: no "Ask about this" button
 - [ ] Coworker: "See in context" link works for both card questions and gap questions
+- [ ] Coworker: "Ask about this gap" button is functional — click → inline input → creates human question → appears in Offboarder queue
 - [ ] Coworker: Logs tab enabled in Deliver and Complete (disabled only in Pending/Collecting)
 - [ ] Tab states match Part D matrix for all three roles
 
