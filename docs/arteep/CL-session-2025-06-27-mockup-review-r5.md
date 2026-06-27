@@ -4,25 +4,25 @@
 
 ---
 
-## CW-R5-01: Make "Ask about this gap" button functional in Coworker gap context panel ✅ LOCKED
+## R5-01: Make "Ask about this gap" button functional — Manager AND Coworker ✅ LOCKED
 
 **File:** `components/mockups/session-command-view.jsx`
 
-**Current state:** The Coworker's gap context panel (opened via "See in context" on a gap question) has an "Ask about this gap" button at the bottom, but it's static — clicking does nothing.
+**Current state:** The gap context panel (opened via "See in context" on a gap question) has an "Ask about this gap" button at the bottom, but it's static — clicking does nothing. This applies to BOTH the Manager and Coworker views.
 
-**Change:** Make the button functional. Clicking it creates a new human question targeting that gap.
+**Change:** Make the button functional for both Manager and Coworker. Clicking it creates a new human question targeting that gap.
 
-### Flow
+### Flow (identical for Manager and Coworker)
 
-1. Coworker opens gap context panel via "See in context" on a gap question
+1. Manager/Coworker opens gap context panel via "See in context" on a gap question
 2. Panel shows: module name, gap description, "Why this was flagged", sibling questions, cards in module
 3. At the bottom: "Ask about this gap" button (violet, full-width)
-4. Coworker clicks → an **inline question input field** appears INSIDE the panel, below the button
-5. Coworker types their question (e.g., "What's the manual failover procedure when Stripe goes down?")
+4. Click → an **inline question input field** appears INSIDE the panel, below the button
+5. Types their question (e.g., "What's the manual failover procedure when Stripe goes down?")
 6. Clicks **"Ask"** → question is created:
    - Added to the gap's question list (visible in "Questions from this gap" section above — panel updates immediately)
    - Appears in the Offboarder's queue as a new item
-   - Tagged as: **"Coworker · [Module Name] · waiting"**
+   - Tagged as: **"Hà Vy · [Module Name] · waiting"** (Manager) or **"Coworker · [Module Name] · waiting"** (Coworker)
 7. Input field clears, ready for another question
 8. Optional: show a brief success toast/message ("Question sent to Minh Lê")
 
@@ -31,8 +31,21 @@
 - The input field should match existing question input patterns in the codebase (same border, padding, font size)
 - "Ask" button: small violet primary button, right-aligned below the input
 - "Cancel" link or Escape to dismiss the input without submitting
-- After submission, the new question should appear in the "Questions from this gap" section above with "waiting" status and "Coworker" attribution
+- After submission, the new question should appear in the "Questions from this gap" section above with "waiting" status and correct attribution (Manager name or "Coworker")
 - The button text stays "Ask about this gap" (not "Ask follow-up" — terminology locked in CW-R01)
+
+### How this relates to "Generate question"
+
+The Manager has TWO ways to create questions for a gap:
+
+| Action | Where | What it does |
+|---|---|---|
+| **"+ Generate question"** | Data tab, on the gap row | AI generates a question automatically |
+| **"Ask about this gap"** | Gap context panel (side panel) | Manager writes a human question manually |
+
+Both are available to the Manager. They complement each other — AI for broad coverage, manual for specific knowledge the Manager knows is needed.
+
+The Coworker only has "Ask about this gap" (no "Generate question" — that's Manager-only).
 
 ### What this is NOT
 
@@ -43,11 +56,11 @@
 | "Ask a question" from Data tab | Creates question on a specific CARD, not a gap |
 | KG Explorer chat | Navigates the graph, not the session |
 
-### Button visibility per role (reference)
+### Button visibility per role
 
 | Role | Gap context panel | "Ask about this gap" button |
 |---|---|---|
-| Manager | Has "+ Generate question" (AI) on Data tab | Button present — creates human question |
+| Manager | Opens via gap row click or "See in context" | ✅ **Functional** — creates human question (alongside "Generate question" on Data tab) |
 | Coworker | Opens via "See in context" | ✅ **Functional** — creates human question targeting the gap |
 | Offboarder | Opens via "See in context" | ❌ **Removed** (OV-R4-03) — Offboarder answers, doesn't ask |
 
@@ -221,12 +234,11 @@ Nothing different. Answers are text. A small 🎙 badge on each answer indicates
 
 ## Verification checklist
 
-- [ ] Coworker: click "See in context" on gap question → gap context panel opens
-- [ ] Coworker: click "Ask about this gap" → inline input appears in panel
-- [ ] Coworker: type question + click "Ask" → question added to gap's question list in panel
-- [ ] Coworker: new question shows in Offboarder's queue as "Coworker · [Module] · waiting"
-- [ ] Coworker: input clears after submission, ready for another question
-- [ ] Coworker: Escape or Cancel dismisses input without submitting
+- [ ] Manager: gap context panel has "Ask about this gap" button — click → inline input → creates human question tagged "Hà Vy · [Module] · waiting"
+- [ ] Coworker: gap context panel has "Ask about this gap" button — click → inline input → creates human question tagged "Coworker · [Module] · waiting"
+- [ ] Manager: "Ask about this gap" (manual) coexists with "+ Generate question" (AI) — both available
+- [ ] Input clears after submission, ready for another question
+- [ ] Escape or Cancel dismisses input without submitting
 - [ ] Offboarder: gap context panel has NO "Ask about this gap" button (removed in R4)
 - [ ] Offboarder Collecting state: orbital illustration + "Your session is being prepared" message
 - [ ] Coworker Collecting state: orbital illustration + "Data is being collected" message
