@@ -154,10 +154,69 @@ The info card text should update: "Paste the employee's Trello board or workspac
 
 ---
 
+## PART E: Trello link scenarios — session creation analysis ✅ LOCKED
+
+*Analysis of when and why the Trello link is needed across all session creation paths.*
+
+### Core principle
+
+Without Trello data, the system has nothing to crawl → no cards → no modules → no AI categorization → no gaps → no knowledge map. **A session without a Trello data source is an empty shell for the POC.**
+
+### Scenario matrix
+
+| # | Scenario | Trello link source | Manager provides link? | What happens |
+|---|---|---|---|---|
+| 1 | **HRIS sync + Step Zero mapped** | Auto from Step Zero config | No — system discovers boards | System finds boards via department-source mapping. Manager just selects boards → Start session. |
+| 2 | **HRIS sync + Step Zero NOT mapped** | Manager must provide | Yes | System can't discover boards for this department. Shows: "We couldn't find a Trello workspace for Sales. Paste a Trello board link to continue." Manager provides link → board selection → Start session. |
+| 3 | **Manual creation** | Manager must provide | Yes — always required | No HRIS data, no Step Zero mapping. Manager fills form including Trello link → board selection → Start session. |
+| 4 | **Employee doesn't use Trello** | N/A — blocked for POC | N/A | POC only supports Trello. Show: "Trello is the only supported data source in this version. Contact the admin to configure additional connectors." Session cannot start. |
+| 5 | **Multiple Trello workspaces** | Manager adds additional links | First link required, extras optional | Board selection shows boards from first link. "Add another Trello link" option lets Manager add boards from a second workspace. |
+
+### Trello link validation
+
+| Check | Behavior |
+|---|---|
+| Valid board URL | System discovers cards from that board → board appears in selection |
+| Valid workspace URL | System discovers ALL boards in workspace → Manager selects relevant ones |
+| Invalid URL / 404 | Error: "Could not access this Trello link. Check the URL and make sure it's public or shared with the system." |
+| Valid URL, zero cards after filtering | Warning: "0 cards found after filtering. The board may not contain relevant work data." Manager can still start (degraded experience — Q&A only, no modules/cards) or try a different board. |
+| Valid URL, board is empty | Error: "This Trello board has no cards." |
+
+### What email is used for (NOT for Trello lookup)
+
+| Purpose | How email is used |
+|---|---|
+| **Invitation** | Send the session invitation to the Offboarder |
+| **Identification** | Display the Offboarder's identity in the session |
+| **Notification** | Notify when new questions arrive, session status changes |
+| **NOT for Trello lookup** | Trello link is the direct connection — email may not match Trello account |
+
+### Impact on Create Session page
+
+**HRIS path:** Trello link may or may not be needed depending on Step Zero config. If not mapped, the board selection step prompts for a link.
+
+**Manual path:** Form has 6 fields (5 required + 1 optional):
+```
+Full name *     [_______________]
+Email *         [_______________]
+Department *    [▼ Select ______]
+Last day *      [📅 Select date_]
+Trello link *   [🔗 Paste URL___]
+Role / Title    [_______________]  (optional)
+```
+
+Info card below Trello field: "Paste the employee's Trello board or workspace URL. The system will discover their cards and activity from this link."
+
+---
+
 ## Verification checklist
 
 - [ ] Dashboard: clicking "Start session" on HRIS departure → navigates to Create Session with pre-fill, skips to board selection
-- [ ] Create Session: manual form has Trello link as required field
+- [ ] Create Session: manual form has Trello link as required field (not email-based lookup)
+- [ ] Create Session: Trello link validation — valid URL shows boards, invalid shows error, empty board shows error, zero cards after filtering shows warning
+- [ ] Create Session: "Add another Trello link" option on board selection step
+- [ ] Create Session: Scenario 2 — HRIS sync without Step Zero mapping prompts for Trello link
+- [ ] Create Session: Scenario 4 — employee without Trello shows "only supported data source" message
 - [ ] Dashboard: employee with active session is NOT shown in departure list (no duplication)
 - [ ] Session Collecting Data: shows AI animation ONLY, no orbital
 - [ ] Offboarder: Logs tab enabled in Collecting, Capture, All Answered, and Complete (disabled only in Pending)
