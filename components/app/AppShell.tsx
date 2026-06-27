@@ -18,6 +18,8 @@ import {
   ChevronDown,
   Check,
   LogOut,
+  MessageCircle,
+  Users,
 } from "lucide-react";
 import { ViewAsProvider } from "@/lib/view-as";
 import {
@@ -268,7 +270,7 @@ function TopBar({
 
       <div className="flex-1" />
 
-      <NotificationsButton />
+      <NotificationsButton role={role} />
 
       <StateSwitcher states={states} value={viewState} onChange={onState} />
 
@@ -457,7 +459,13 @@ type Notification = {
   href?: string;
 };
 
-const NOTIFICATIONS: Notification[] = [
+// R6-03 — per-role notification streams. Each row deep-links to the relevant surface.
+const NOTIFS_BY_ROLE: Record<string, Notification[]> = {
+  manager: [
+    { id: "m1", icon: MessageCircle, tone: "violet", title: "Minh Lê answered 3 questions in Payment Service", detail: "Kafka retry · Stripe webhook · Gateway timeout", time: "Just now", href: "/session/minh-le?tab=data" },
+    { id: "m2", icon: Users, tone: "gray", title: "Linh Anh joined Minh Lê’s session", detail: "Minh Lê’s session", time: "1h", href: "/session/minh-le?tab=overview" },
+    { id: "m3", icon: Network, tone: "gray", title: "Data collection complete — 127 cards, 4 modules", detail: "Thanh Tùng’s session", time: "2h", href: "/session/thanh-tung?tab=overview" },
+    { id: "m4", icon: Sparkles, tone: "yellow", title: "AI detected 2 gaps in CI/CD Pipeline", detail: "Minh Lê’s session", time: "3h", href: "/session/minh-le?tab=data" },
   {
     id: "n-kltran-urgent",
     icon: AlertOctagon,
@@ -485,11 +493,27 @@ const NOTIFICATIONS: Notification[] = [
     time: "4h",
     href: "/session/minh-le",
   },
-];
+  ],
+  offboarder: [
+    { id: "o1", icon: MessageCircle, tone: "violet", title: "3 new questions waiting for you", detail: "Payment Service · CI/CD Pipeline", time: "Just now", href: "/session/minh-le?tab=overview" },
+    { id: "o2", icon: AlertOctagon, tone: "yellow", title: "Hà Vy requested more detail on your retry logic answer", detail: "CI/CD Pipeline", time: "1h", href: "/session/minh-le?tab=overview" },
+    { id: "o3", icon: CheckCircle2, tone: "emerald", title: "Your answer about Kafka retry was accepted ✓", detail: "Payment Service", time: "3h", href: "/session/minh-le?tab=overview" },
+    { id: "o4", icon: Network, tone: "gray", title: "Your session has moved to Deliver", detail: "Minh Lê’s session", time: "Yesterday", href: "/session/minh-le?tab=overview" },
+  ],
+  coworker: [
+    { id: "c1", icon: CheckCircle2, tone: "emerald", title: "Minh Lê answered 2 questions — ready for your review", detail: "Payment Service", time: "Just now", href: "/session/minh-le?tab=data" },
+    { id: "c2", icon: Sparkles, tone: "yellow", title: "New gap in Test Automation Framework", detail: "Thanh Tùng’s session", time: "2h", href: "/session/thanh-tung?tab=data" },
+    { id: "c3", icon: Network, tone: "gray", title: "Thanh Tùng’s session is now in Capture", detail: "Phase change", time: "Yesterday", href: "/session/thanh-tung?tab=overview" },
+  ],
+};
 
-function NotificationsButton() {
+function NotificationsButton({ role }: { role: string }) {
+  const list = NOTIFS_BY_ROLE[role] ?? NOTIFS_BY_ROLE.manager;
   const [open, setOpen] = useState(false);
+  const [seen, setSeen] = useState(false);
+  const [readIds, setReadIds] = useState<Set<string>>(new Set());
   const ref = useRef<HTMLDivElement>(null);
+  const unread = list.filter((n) => !readIds.has(n.id)).length;
 
   useEffect(() => {
     if (!open) return;
@@ -513,14 +537,18 @@ function NotificationsButton() {
     <div className="relative" ref={ref}>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => { setOpen((v) => !v); setSeen(true); }}
         className="h-8 w-8 rounded-md hover:bg-gray-100 inline-flex items-center justify-center text-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20 relative"
         title="Notifications"
         aria-haspopup="menu"
         aria-expanded={open}
       >
         <Bell className="w-3.5 h-3.5" strokeWidth={1.75} />
-        <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-rose-500" />
+        {!seen && unread > 0 && (
+          <span className="absolute -top-1 -right-1 min-w-[15px] h-[15px] px-1 rounded-full bg-rose-500 text-white text-[9px] font-semibold inline-flex items-center justify-center leading-none">
+            {unread}
+          </span>
+        )}
       </button>
 
       {open && (
@@ -532,14 +560,21 @@ function NotificationsButton() {
             <p className="text-xs font-semibold text-gray-900">Notifications</p>
             <button
               type="button"
+              onClick={() => setReadIds(new Set(list.map((n) => n.id)))}
               className="text-[11px] text-violet-700 hover:text-violet-900"
             >
               Mark all as read
             </button>
           </div>
           <ul className="max-h-96 overflow-y-auto divide-y divide-gray-100">
-            {NOTIFICATIONS.map((n) => (
-              <NotificationItem key={n.id} n={n} onClose={() => setOpen(false)} />
+            {list.map((n) => (
+              <NotificationItem
+                key={n.id}
+                n={n}
+                read={readIds.has(n.id)}
+                onRead={() => setReadIds((s) => new Set(s).add(n.id))}
+                onClose={() => setOpen(false)}
+              />
             ))}
           </ul>
           <div className="px-4 py-2 border-t border-gray-200 bg-gray-50/40">
@@ -547,7 +582,7 @@ function NotificationsButton() {
               className="text-[10px] text-gray-500"
               style={{ fontFamily: "ui-monospace, Menlo, monospace" }}
             >
-              {NOTIFICATIONS.length} unread · feed updates in near-real-time
+              {unread} unread · feed updates in near-real-time
             </p>
           </div>
         </div>
@@ -558,10 +593,14 @@ function NotificationsButton() {
 
 function NotificationItem({
   n,
+  read,
   onClose,
+  onRead,
 }: {
   n: Notification;
+  read: boolean;
   onClose: () => void;
+  onRead: () => void;
 }) {
   const toneCls = {
     violet: "bg-violet-50 text-violet-700 border-violet-100",
@@ -572,7 +611,8 @@ function NotificationItem({
   }[n.tone];
 
   const body = (
-    <div className="flex items-start gap-2.5 px-4 py-3">
+    <div className="flex items-start gap-2 px-4 py-3">
+      <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${read ? "bg-gray-300" : "bg-violet-500"}`} />
       <span
         className={`w-7 h-7 rounded-md border inline-flex items-center justify-center shrink-0 ${toneCls}`}
       >
@@ -596,13 +636,19 @@ function NotificationItem({
   );
 
   if (!n.href) {
-    return <li>{body}</li>;
+    return (
+      <li>
+        <button type="button" onClick={onRead} className="w-full text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none">
+          {body}
+        </button>
+      </li>
+    );
   }
   return (
     <li>
       <Link
         href={n.href}
-        onClick={onClose}
+        onClick={() => { onRead(); onClose(); }}
         className="block hover:bg-gray-50 focus:bg-gray-50 focus:outline-none"
       >
         {body}
