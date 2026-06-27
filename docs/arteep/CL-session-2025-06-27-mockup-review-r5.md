@@ -1,6 +1,6 @@
 # ART-EEP — Mockup Review Round 5 (2025-06-27)
 
-*Remaining item from R4 drilling session. Apply via Claude Code.*
+*Remaining items from R4 drilling session. Apply via Claude Code.*
 
 ---
 
@@ -53,6 +53,44 @@
 
 ---
 
+## R5-02: Orbital illustration for Offboarder and Coworker during Collecting state ✅ LOCKED
+
+**File:** `components/mockups/session-command-view.jsx`
+
+**Issue:** During the Collecting Data state, the Manager sees the AI categorization animation (active work). But the Offboarder and Coworker are just waiting — they have nothing to do yet. Their Collecting state should show the orbital illustration as a "waiting" visual, not a blank page or the animation.
+
+### What each role sees during Collecting
+
+| Role | Collecting state visual | Why |
+|---|---|---|
+| **Manager** | AI categorization animation (cartoon explainer) | Manager is actively monitoring the crawl/categorization |
+| **Offboarder** | **Orbital illustration** + "Your session is being prepared" | Nothing to do yet — waiting for questions to arrive |
+| **Coworker** | **Orbital illustration** + "Data is being collected" | Nothing to do yet — waiting for data before they can review |
+
+### Offboarder Collecting state
+
+- Show the orbital illustration (same one used on Manager dashboard empty state)
+- Message below: **"Your session is being prepared"**
+- Subtitle: "Hà Vy is setting up your knowledge handover. You'll be notified when questions are ready for you."
+- No CTA buttons — Offboarder can't act during this state
+- Logs tab: ✅ enabled (per OV-R4-01)
+
+### Coworker Collecting state
+
+- Show the orbital illustration (same one)
+- Message below: **"Data is being collected"**
+- Subtitle: "The system is crawling Trello boards and organizing knowledge. You'll be able to review and ask questions once data is ready."
+- No CTA buttons — Coworker can't act during this state
+- Logs tab: ❌ disabled (per CW-R4-02 — Pending/Collecting is the disabled state)
+
+### Orbital spec (same as dashboard)
+- Central AI node with gradient fill (`#7c3aed` → `#a78bfa`)
+- 3 elliptical orbital rings (`stroke: #ede9fe`, 0.8px width)
+- Smaller knowledge nodes orbiting slowly (CSS `@keyframes` rotation, 12-20s cycles)
+- Centered above the message text
+
+---
+
 ## Verification checklist
 
 - [ ] Coworker: click "See in context" on gap question → gap context panel opens
@@ -62,6 +100,9 @@
 - [ ] Coworker: input clears after submission, ready for another question
 - [ ] Coworker: Escape or Cancel dismisses input without submitting
 - [ ] Offboarder: gap context panel has NO "Ask about this gap" button (removed in R4)
+- [ ] Offboarder Collecting state: orbital illustration + "Your session is being prepared" message
+- [ ] Coworker Collecting state: orbital illustration + "Data is being collected" message
+- [ ] Manager Collecting state: AI animation only, NO orbital (per MV-R4-04)
 
 ---
 
