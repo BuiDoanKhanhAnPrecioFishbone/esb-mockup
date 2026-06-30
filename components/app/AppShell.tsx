@@ -26,6 +26,8 @@ import {
   ROLES,
   statesFor,
   defaultStateFor,
+  isRouteAllowed,
+  defaultRoute,
 } from "@/lib/view-matrix";
 
 type NavItem = {
@@ -87,6 +89,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       setRole(m[1]);
     }
   }, []);
+
+  // §1.2 — gate routes the current role can't see (e.g. Offboarder → /knowledge-graph).
+  useEffect(() => {
+    if (!isRouteAllowed(role, pathname)) router.replace(defaultRoute(role));
+  }, [role, pathname, router]);
 
   useEffect(() => {
     if (isUrlSyncedRoute(pathname)) {

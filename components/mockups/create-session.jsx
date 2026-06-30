@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowRight, ArrowLeft, Calendar, Check, ChevronDown, Users, RefreshCw,
-  Info, Mail, Building2, AlertCircle, AlertTriangle, CheckCircle2, Plus, Link2,
+  Info, Mail, Building2, AlertCircle, AlertTriangle, CheckCircle2, Plus, Link2, X,
 } from "lucide-react";
 
 /* Create Session (CL-121 + R3 two-path + R4 Trello-link-as-source)
@@ -17,6 +17,8 @@ const OFFBOARDERS = [
   { id: "minh-le", name: "Minh Lê", role: "Senior Backend Engineer", dept: "Engineering", email: "minh.le@company.com", lastDay: "July 4, 2026", daysLeft: 30, initials: "ML", stepZeroMapped: true },
   { id: "thanh-tung", name: "Thanh Tùng", role: "QA Lead", dept: "Engineering", email: "thanh.tung@company.com", lastDay: "July 8, 2026", daysLeft: 26, initials: "TT", stepZeroMapped: true },
   { id: "phuong-anh", name: "Phương Anh Nguyễn", role: "Account Executive", dept: "Sales", email: "phuong.anh@company.com", lastDay: "July 11, 2026", daysLeft: 33, initials: "PA", stepZeroMapped: false },
+  { id: "khanh-linh", name: "Khánh Linh Trần", role: "People Partner", dept: "People & Culture", email: "khanh.linh@company.com", lastDay: "July 6, 2026", daysLeft: 28, initials: "KL", stepZeroMapped: false },
+  { id: "duc-an", name: "Đức An Phạm", role: "Finance Analyst", dept: "Finance", email: "duc.an@company.com", lastDay: "July 15, 2026", daysLeft: 37, initials: "DA", stepZeroMapped: false },
 ];
 
 const BOARDS = [
@@ -32,7 +34,13 @@ const EXTRA_BOARDS = [
   { id: "x2", name: "Analytics Workspace", cards: 11, lastActive: "4 days ago", suggested: false },
 ];
 
-const DEPARTMENTS = ["Engineering", "Sales", "People & Culture", "Product", "Design", "Operations"];
+const DEPARTMENTS = ["Engineering", "People & Culture", "Sales", "Finance", "Operations"];
+
+// §3.2 — optional data sources (non-functional in the mockup). Trello is always-on + required.
+const OPTIONAL_SOURCES = ["GitHub", "OneDrive", "Planner", "Jira", "Notion", "Slack"];
+
+// §3.4 — employees who already have an active session must NOT reappear in the departure list.
+const ACTIVE_SESSION_IDS = ["minh-le", "thanh-tung"];
 
 function calcDeadline(daysLeft) {
   const d = new Date();
@@ -47,15 +55,25 @@ function calcDeadlineFromDate(dateStr) {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-// Mock Trello-link validation (Part E). Rules keyed on the URL so testers can reach each state:
-//   not a trello.com URL → invalid/404 · contains "empty" → empty board · contains "zero" → 0 cards after filter (degraded).
+// Mock Trello-link validation (§3.5) — no network, switched on simple heuristics of the typed URL:
+//   contains "trello.com/w/" → workspace (M boards to pick) · contains "trello.com/b/" → single board (N cards)
+//   contains "empty" → empty board (error) · contains "zero"/"nodata" → 0 cards after filter (warning)
+//   anything else → invalid / couldn't reach.
 function validateTrello(url) {
   const u = (url || "").trim().toLowerCase();
-  if (!u) return { ok: false, kind: "empty", msg: "Paste a Trello board or workspace URL." };
-  if (!/^https?:\/\/(www\.)?trello\.com\/\S+/.test(u)) return { ok: false, kind: "invalid", msg: "Could not access this Trello link. Check the URL and make sure it's public or shared with the system." };
-  if (u.includes("empty")) return { ok: false, kind: "emptyboard", msg: "This Trello board has no cards." };
-  if (u.includes("zero") || u.includes("nodata")) return { ok: true, kind: "zerocards", warn: "0 cards found after filtering. The board may not contain relevant work data.", boards: [] };
-  return { ok: true, kind: "ok", boards: BOARDS };
+  if (!u) return { ok: false, kind: "empty", msg: "" };
+  // Workspace link → discover all boards, Manager picks.
+  if (u.includes("trello.com/w/")) {
+    return { ok: true, kind: "workspace", boards: BOARDS, msg: `Workspace found · ${BOARDS.length} boards` };
+  }
+  // Board link.
+  if (u.includes("trello.com/b/")) {
+    if (u.includes("empty")) return { ok: false, kind: "emptyboard", msg: "This board has no cards — try another link." };
+    if (u.includes("zero") || u.includes("nodata")) return { ok: true, kind: "zerocards", boards: [], warn: "No cards after filtering — you can still start." };
+    const board = BOARDS[0];
+    return { ok: true, kind: "board", boards: [board], msg: `Board found · ${board.cards} cards discovered` };
+  }
+  return { ok: false, kind: "invalid", msg: "Couldn't reach that board — check the URL." };
 }
 
 export default function CreateSession({ embedded = false, asSection = false } = {}) {
@@ -90,7 +108,9 @@ function SyncButton({ synced, onSync }) {
 // ── Path 1: HRIS list + Path 2: manual form ─────────────────────────────────
 function TwoPathPage({ asSection, resolved }) {
   const [synced, setSynced] = useState(false);
-  const hasHris = OFFBOARDERS.length > 0;
+  // §3.4 — hide anyone who already has an active session so they don't appear twice.
+  const departures = OFFBOARDERS.filter(p => !ACTIVE_SESSION_IDS.includes(p.id));
+  const hasHris = departures.length > 0;
   return (
     <div className="max-w-2xl mx-auto p-6">
       {!asSection && (
@@ -105,14 +125,14 @@ function TwoPathPage({ asSection, resolved }) {
           <h2 className="text-[11px] uppercase tracking-wider font-medium text-gray-500 flex items-center gap-1.5">
             <Users className="w-3 h-3" />
             {hasHris ? "Synced from HRIS" : "No upcoming departures from HRIS"}
-            {hasHris && <span className="text-gray-400" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{"· "}{OFFBOARDERS.length}</span>}
+            {hasHris && <span className="text-gray-400" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{"· "}{departures.length}</span>}
           </h2>
           <SyncButton synced={synced} onSync={() => setSynced(true)} />
         </div>
 
         {hasHris ? (
           <div className="space-y-3">
-            {OFFBOARDERS.map(person => <DepartureCard key={person.id} person={person} />)}
+            {departures.map(person => <DepartureCard key={person.id} person={person} />)}
           </div>
         ) : (
           <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-6 text-center">
@@ -231,8 +251,7 @@ function TrelloLinkField({ onDiscover, label = "Trello link", required, autoFocu
       const r = validateTrello(url);
       setChecking(false);
       setResult(r);
-      if (r.ok && r.kind === "ok") onDiscover(r.boards);
-      if (r.ok && r.kind === "zerocards") onDiscover([]); // degraded — Q&A only
+      if (r.ok) onDiscover(r.boards || []); // board / workspace / zero-cards all advance to board selection
     }, 700);
   };
   return (
@@ -347,19 +366,27 @@ function BoardPicker({ discovered = [], initialDeadline, personId = "minh-le", o
   );
 }
 
-// ── Path 2: manual creation — Trello link is the required data source (MV-R4-02) ─
+// ── Path 2: manual creation — 4 fields + selectable data-source chips (§3.1 / §3.2) ─
 function ManualForm() {
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [dept, setDept] = useState("");
   const [lastDay, setLastDay] = useState("");
   const [trello, setTrello] = useState("");
-  const [title, setTitle] = useState("");
-  const [noTrello, setNoTrello] = useState(false); // Part E scenario 4 — employee doesn't use Trello
-  const [result, setResult] = useState(null); // null | {ok, kind, boards|msg|warn}
+  // §3.2 — optional sources: name → typed value (non-functional). Presence of a key = chip active.
+  const [extraSources, setExtraSources] = useState({});
+  const [result, setResult] = useState(null); // null | validateTrello() — set on "Discover boards"
   const [checking, setChecking] = useState(false);
 
-  const canSubmit = name.trim() && email.trim() && dept && lastDay && trello.trim() && !noTrello;
+  // §3.5 — live Trello validation feedback driven by the typed value (no network).
+  const live = validateTrello(trello);
+  const canSubmit = email.trim() && dept && lastDay && live.ok;
+
+  const toggleSource = (name) => setExtraSources(prev => {
+    const next = { ...prev };
+    if (name in next) delete next[name]; else next[name] = "";
+    return next;
+  });
+  const setSourceValue = (name, value) => setExtraSources(prev => ({ ...prev, [name]: value }));
 
   const submit = () => {
     if (!canSubmit) return;
@@ -377,19 +404,11 @@ function ManualForm() {
       </h2>
 
       <div className="rounded-lg border border-gray-200 bg-white p-5 space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Full name" required>
-            <input value={name} onChange={(e) => { setName(e.target.value); reset(); }} placeholder="Phương Anh Nguyễn" className={inputCls} />
-          </Field>
-          <Field label="Role / Title" hint="optional">
-            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Senior Backend Engineer" className={inputCls} />
-          </Field>
-        </div>
-
-        <Field label="Email" required hint="invitation & identification">
+        {/* §3.1 — exactly 4 fields. Name is auto-derived from the Trello profile, not entered. */}
+        <Field label="Email" required hint="identification & invitation">
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@company.com" className={`${inputCls} pl-9`} />
+            <input type="email" value={email} onChange={(e) => { setEmail(e.target.value); reset(); }} placeholder="name@company.com" className={`${inputCls} pl-9`} />
           </div>
         </Field>
 
@@ -412,30 +431,58 @@ function ManualForm() {
           </Field>
         </div>
 
-        <Field label="Trello link" required>
-          <div className="relative">
-            <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-            <input value={trello} onChange={(e) => { setTrello(e.target.value); reset(); }} disabled={noTrello} placeholder="https://trello.com/b/…  or  /w/workspace" className={`${inputCls} pl-9 disabled:bg-gray-50 disabled:text-gray-400`} />
+        {/* §3.2 — Data sources as selectable chips */}
+        <div className="pt-1">
+          <label className="text-[11px] text-gray-500 uppercase tracking-wider font-medium mb-2 flex items-center gap-1.5">
+            Data sources<span className="text-rose-400 normal-case tracking-normal">*</span>
+            <span className="text-gray-400 normal-case tracking-normal font-normal">{"· "}Trello required</span>
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {/* Trello — always active, no × */}
+            <span className="h-7 px-2.5 rounded-full bg-violet-600 text-white text-[11px] font-medium inline-flex items-center gap-1.5 select-none">
+              <Check className="w-3 h-3" />Trello
+            </span>
+            {OPTIONAL_SOURCES.map(name => {
+              const active = name in extraSources;
+              return (
+                <button key={name} type="button" onClick={() => toggleSource(name)} className={`h-7 px-2.5 rounded-full text-[11px] font-medium inline-flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/20 ${active ? "bg-violet-600 text-white" : "border border-gray-300 bg-white text-gray-600 hover:border-gray-400"}`}>
+                  {active ? <X className="w-3 h-3" /> : <Plus className="w-3 h-3" />}{name}
+                </button>
+              );
+            })}
           </div>
-        </Field>
 
-        {/* Info card — Trello link is the data source (MV-R4-02) */}
-        <div className="rounded-lg p-3 flex items-start gap-2.5" style={{ background: "#f5f3ff", border: "1px solid #c4b5fd" }}>
-          <Info className="w-4 h-4 text-violet-500 shrink-0 mt-0.5" />
-          <p className="text-[11px] text-violet-900 leading-relaxed">Paste the employee&apos;s Trello board or workspace URL. The system will discover their cards and activity from this link.</p>
+          {/* Trello link input — always visible. §3.5 live validation feedback below. */}
+          <div className="mt-3">
+            <div className="relative">
+              <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+              <input value={trello} onChange={(e) => { setTrello(e.target.value); reset(); }} placeholder="https://trello.com/b/…  or  /w/workspace" className={`${inputCls} pl-9`} />
+            </div>
+            {trello.trim() && live.ok && (
+              <p className={`text-[11px] mt-1.5 flex items-start gap-1.5 ${live.kind === "zerocards" ? "text-yellow-700" : "text-emerald-700"}`}>
+                {live.kind === "zerocards"
+                  ? <><AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-px" />{live.warn}</>
+                  : <><CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-px" />{live.msg}</>}
+              </p>
+            )}
+            {trello.trim() && !live.ok && (
+              <p className="text-[11px] text-rose-600 mt-1.5 flex items-start gap-1.5"><AlertCircle className="w-3.5 h-3.5 shrink-0 mt-px" />{live.msg}</p>
+            )}
+            <p className="text-[10px] text-gray-400 mt-1">The offboarder&apos;s name is auto-derived from their Trello profile.</p>
+          </div>
+
+          {/* Link inputs for active optional sources — non-functional in the mockup. */}
+          {Object.keys(extraSources).length > 0 && (
+            <div className="mt-3 space-y-2">
+              {OPTIONAL_SOURCES.filter(n => n in extraSources).map(name => (
+                <div key={name} className="relative">
+                  <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                  <input value={extraSources[name]} onChange={(e) => setSourceValue(name, e.target.value)} placeholder={`${name} link (optional)`} className={`${inputCls} pl-9`} />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-
-        <label className="flex items-center gap-2 text-[11px] text-gray-600 cursor-pointer">
-          <input type="checkbox" checked={noTrello} onChange={(e) => { setNoTrello(e.target.checked); reset(); }} className="w-3.5 h-3.5 accent-violet-600" />
-          This employee doesn&apos;t use Trello
-        </label>
-
-        {noTrello && (
-          <div className="rounded-lg border border-rose-200 bg-rose-50/50 p-3 flex items-start gap-2.5">
-            <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-            <p className="text-[11px] text-gray-700 leading-relaxed">Trello is the only supported data source in this version. Contact the admin to configure additional connectors. The session can&apos;t start without a data source.</p>
-          </div>
-        )}
 
         {!discovered && (
           <div className="flex justify-end pt-1">
@@ -451,16 +498,6 @@ function ManualForm() {
             )}
           </div>
         )}
-
-        {result && !result.ok && (
-          <div className="rounded-lg border border-rose-200 bg-rose-50/50 p-3 flex items-start gap-2.5">
-            <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="text-[12px] text-gray-900">{result.msg}</p>
-              <button onClick={reset} className="text-[11px] text-violet-600 hover:text-violet-700 font-medium mt-1.5">Try a different link</button>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Discovery succeeded → person card + board selection (same UI as the HRIS path) */}
@@ -468,14 +505,14 @@ function ManualForm() {
         <div className="rounded-lg border border-violet-300 bg-white shadow-sm p-4 mt-3">
           <div className="flex items-center gap-3 pb-3 mb-4 border-b border-gray-100">
             <div className="w-10 h-10 rounded-full bg-violet-100 text-violet-700 text-[11px] font-semibold inline-flex items-center justify-center shrink-0 border border-violet-200">
-              {(name.trim().split(/\s+/).map(w => w[0]).slice(-2).join("") || "?").toUpperCase()}
+              <Users className="w-4 h-4" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold text-gray-900">{name}</h3>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1"><CheckCircle2 className="w-2.5 h-2.5" />{result.kind === "zerocards" ? "Link reachable" : "Boards discovered"}</span>
+                <h3 className="text-sm font-semibold text-gray-900">{email || "New offboarder"}</h3>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1"><CheckCircle2 className="w-2.5 h-2.5" />{result.kind === "zerocards" ? "Link reachable" : result.kind === "workspace" ? "Workspace found" : "Board found"}</span>
               </div>
-              <p className="text-[12px] text-gray-500">{[title.trim(), dept].filter(Boolean).join(" · ")}{" · "}{email}</p>
+              <p className="text-[12px] text-gray-500">{dept}{" · "}Name auto-derived from Trello profile</p>
             </div>
           </div>
           <BoardPicker discovered={result.boards || []} initialDeadline={calcDeadlineFromDate(lastDay)} personId="minh-le" onCancel={reset} />

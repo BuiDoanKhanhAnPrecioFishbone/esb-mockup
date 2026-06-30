@@ -67,11 +67,22 @@ export function tabVisibility(
   step: string,
   tab: string
 ): Visibility {
-  const phase = phaseOf(step);
-  if (tab === "logs" && role === "coworker") return "hidden";
-  if (tab === "data" && role === "offboarder" && phase === "prepare")
-    return "disabled";
-  return "visible";
+  // §1.4 matrix (R5–R10 consolidated). Overview is always visible.
+  if (tab === "overview") return "visible";
+  const inDataWindow = step === "ready" || step === "capture"; // Data live only in Prepare(ready) + Capture
+
+  if (role === "offboarder") {
+    if (tab === "data")
+      return phaseOf(step) === "prepare" ? "disabled" : "hidden"; // disabled in collecting/ready, hidden once capturing
+    // logs: disabled only in "not-started" (ready); visible from collecting onward
+    return step === "ready" ? "disabled" : "visible";
+  }
+
+  if (tab === "data") return inDataWindow ? "visible" : "disabled";
+
+  // logs
+  if (role === "coworker") return step === "collecting" ? "disabled" : "visible";
+  return inDataWindow ? "visible" : "disabled"; // manager logs
 }
 
 // Fully enumerated session matrix: role × step × tab → visibility.
@@ -200,6 +211,7 @@ export function dashboardUrl(role: string, state?: string): string {
 export const ROUTE_GATES: { prefix: string; roles: string[] }[] = [
   { prefix: "/settings", roles: ["manager"] },
   { prefix: "/prepare", roles: ["manager"] },
+  { prefix: "/knowledge-graph", roles: ["manager", "coworker"] }, // §1.2 — Offboarder can't see the KG
 ];
 
 export function isRouteAllowed(role: string, pathname: string): boolean {
