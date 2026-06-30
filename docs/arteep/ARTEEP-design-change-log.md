@@ -1141,6 +1141,60 @@
 
 ---
 
+## Session 2025-06-30 — Consolidated review R5–R10 (2026-06-30)
+
+*Companion: `docs/arteep/CL-session-2025-06-30-consolidated-pending.md`. All BUILT + pushed; key surfaces browser-verified.*
+
+### CL-142 — Create-session redesigned: 4-field form + selectable data-source chips + HRIS pre-fill (BUILT)
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-30 |
+| Sprint | POC build · Management plane |
+| Change | The `/session/new` manual form collapses to **four required fields** — Email (identification + invitation), Department (dropdown), Last day (date), Trello link — and the offboarder's name is auto-derived from their Trello profile (Full name, Role/Title, and the "doesn't use Trello" checkbox are removed). Below the form, **data sources are selectable chips**: Trello is always-active/required with its link always visible; GitHub · OneDrive · Planner · Jira · Notion · Slack start inactive (gray "+"), activate on click to reveal a (non-functional, demo-only) link field, and deactivate via ×. An HRIS departure's "Start session" deep-links to `/session/new?employee=<id>` and pre-fills, skipping to board selection; employees with an active session drop off the departure list. Trello link validation gives believable mock feedback (board found · N cards / workspace found · M boards / invalid / empty / zero-after-filter). |
+| UC Reference | UC-HO-01 · `/session/new` · `create-session.jsx` · extends CL-121 create-session |
+| Why | Session creation only needs enough to identify the person, invite them, and point at the data source; everything else is derived. Toggleable source chips make the multi-source model (CL-091) tangible without overbuilding non-Trello connectors for the POC. |
+| Decided By | PO (Tram) |
+| Category | UX Refinement (significant) · extends CL-121 |
+
+### CL-143 — Data-tab semantics: "Flag" → "Detects" (orange), drag-and-drop removed, no generate-question, Uncategorized to top, gap numbering (BUILT)
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-30 |
+| Sprint | POC build · Management plane |
+| Change | Five Data-tab refinements. **(4.1)** Mechanical card flags are renamed **"Detects"** and recolored **orange** (bg `#fff7ed`, text `#c2410c`, border `#fb923c`) with a ⚡ icon — `⚡ no description` · `⚡ checklist 1/3` · `⚡ stale (90d)` — on card rows and in the Side Panel. **(4.2)** Card drag-and-drop, the "Move to" dropdown, and the card-row attachment paperclip are **removed**; reassignment now happens via AI Classification Review (CL-144). **(4.3)** The "Generate question" button on gap rows is removed (gap questions are pre-generated). **(4.4)** The Uncategorized section moves **above** the module list. **(4.5)** Gaps are numbered `GAP #1 / #2 …` under a single `Module — N gaps` group header. Applied to `session-command-view.jsx` + `session-thanh-tung.jsx`. |
+| UC Reference | UC-HO-01 Data tab · **supersedes CL-138** (functional drag-and-drop, removed) · extends CL-130 (gap/flag) |
+| Why | Orange separates mechanical "Detects" from yellow AI gaps and violet knowledge at a glance. Drag-and-drop implied a manual taxonomy the AI now owns (CL-144), so it's retired in favour of the classification flow. Numbered gaps under one header read cleanly when a module has several. |
+| Decided By | PO (Tram) |
+| Category | Visual System (Detects = orange) · UX Refinement · supersedes CL-138 · extends CL-130 |
+
+### CL-144 — AI Classification Review: two-agent reasoning panel + classification merged into the module chip (BUILT)
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-30 |
+| Sprint | POC build · Management plane |
+| Change | Every card carries an AI classification **verdict** — Pass / Review / New Module / Uncategorized. Card rows show the state badge + a left accent (Pass is quiet); **filter tabs** (All · Pass · Review · New Module · Uncategorized, with counts) sit above the Data tab. In the card detail, **Module + Classification are merged into one clickable chip** (`★ primary ›` + `↗ linked` for Pass; `Module · ⚠ conf% ›` for Review; `💡 Name · conf% ›` for New Module; dashed Uncategorized). Clicking the chip opens the **AI Reasoning panel** to the left: a **two-agent transcript** (Modulize Agent M, purple · Gap Agent G, orange) with labeled steps (CLASSIFY/RECONSIDER/PROPOSE/DEFER · VERIFY/CHALLENGE/COUNTER/VALIDATE/FLAG), a confidence bar (green >70 / amber 40–70 / red <40), a verdict box, and a **multi-select "Assign to"** (★ primary / ↗ linked chips + Add module + Confirm). Six conversation templates (Pass·single, Pass·multi 1:N, Review, New Module·standalone, New Module + link, Uncategorized) drive the verdict + action buttons. **Coworker view is read-only**; Offboarder doesn't see it. Confidence % is internal — surfaced only inside the panel. |
+| UC Reference | UC-HO-01 Data tab · `session-command-view.jsx` · realises the 1:N assignment UX promised by CL-131 |
+| Why | One card can belong to several modules and the AI's confidence varies; surfacing the reasoning (and letting the Manager override with multi-select) makes the auto-classification trustworthy and correctable instead of a black box. The merged chip keeps the card detail compact while making "why this module?" one click away. |
+| Decided By | PO (Tram) |
+| Category | UX Refinement (significant) · Visual System (classification chip · two-agent reasoning panel · filter tabs) · extends CL-131 |
+
+### CL-145 — Navigation + tab-state matrix consolidated; dashboard orbital empty-states; insights heatmap-only (BUILT)
+
+| Field | Value |
+|---|---|
+| Date | 2026-06-30 |
+| Sprint | POC build · cross-cutting |
+| Change | **(1.2)** The Knowledge Graph is gated for the Offboarder — hidden from the sidebar and route-blocked (redirect to `/`) via `ROUTE_GATES` in `lib/view-matrix.ts`. **(1.4)** The per-role × per-step tab-visibility matrix is consolidated into `view-matrix.ts` `tabVisibility()` as the single source of truth (the session view now reads it): Data lives only in Prepare(ready)+Capture for Manager/Coworker and is hidden for the Offboarder; Logs is widened — visible for the Coworker in Deliver/Complete and for the Offboarder from Collecting onward, disabled only where there's nothing yet. **(2.1/5.2)** The dashboard orbital empty-state shows for any zero-session Manager dashboard with two variants (HRIS departures pending → orbital + departure list + Create; zero departures → orbital + "No upcoming departures" + Sync/Create), driven by the dashboard state id. **(8.1)** The session insights surface is confirmed heatmap-only, framed at the whole-session level. |
+| UC Reference | Cross-cutting · `lib/view-matrix.ts` · `AppShell.tsx` · `ha-vy-handover-dashboard.jsx` · `knowledge-graph-insights.jsx` · consolidates the inline matrix from CL-119/§8.3 |
+| Why | RBAC should gate what a role can reach, not just hide chrome; centralising the matrix in `view-matrix.ts` stops the session view and the design-states surface from drifting. The orbital makes an empty dashboard intentional; heatmap-only insights keep that surface focused. |
+| Decided By | PO (Tram) |
+| Category | Engineering Pattern (matrix single-source) · UX Refinement · Visual System (orbital variants) |
+
+---
+
 ## Pending Decisions (Need Stakeholder Input)
 
 The defaults in CL-003, CL-004, and CL-005 are working assumptions. The following decisions remain open and should be confirmed before their respective sprints begin:

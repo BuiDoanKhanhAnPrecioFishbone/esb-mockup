@@ -298,7 +298,7 @@ The Consumption plane is the **single artifact** for all four reader archetypes 
 
 ---
 
-## 10. Design Change Log Summary (CL-001 through CL-141 · see change log for full entries)
+## 10. Design Change Log Summary (CL-001 through CL-145 · see change log for full entries)
 
 118 entries across these major themes. Sections CL-001 through CL-101 are unchanged — see prior commits of this file or the change-log itself for theme summaries.
 
@@ -405,6 +405,12 @@ The Consumption plane is the **single artifact** for all four reader archetypes 
 - **CL-139 — Offboarder journey:** removed in-session greeting (OV-01); distinct "All answered" celebration (OV-03); redesigned Complete thank-you page with connected-nodes header + 3-step timeline, no playbook (OV-04). `/session/minh-le`.
 - **CL-140 — Coworker workflow:** dashboard Ready/Waiting split with answer text + Satisfy/Needs more; deep links to `?tab=data&card=`; read-only CoworkerNetwork in Overview. `/`, `/session/minh-le`.
 - **CL-141 — Cleanup:** removed KG fixed chips + FilterChip; removed Logs upload entries + Files filter; aligned `/sessions` to dashboard format; **deleted** `prepare-stage.jsx` + `uc-ho-01-quick-initiate.jsx`.
+
+### Session 2025-06-30 · consolidated review R5–R10 (CL-142 to CL-145, 2026-06-30 · all BUILT)
+- **CL-142 — Create-session redesign:** 4-field form (Email · Department · Last day · Trello link; name auto-derived); selectable data-source chips (Trello always-on; GitHub/OneDrive/Planner/Jira/Notion/Slack toggle); HRIS `?employee=` pre-fill + departure dedup; mock Trello validation. `/session/new`.
+- **CL-143 — Data-tab semantics:** "Flag" → **"Detects"** (orange ⚡); **drag-and-drop removed** (supersedes CL-138) along with "Move to" + paperclip; no "Generate question"; Uncategorized moved to top; gaps numbered "GAP #1/#2" under a "Module — N gaps" header.
+- **CL-144 — AI Classification Review:** per-card verdict (Pass/Review/New Module/Uncategorized) with row badges + filter tabs; card detail merges Module+Classification into one clickable chip; clicking opens a two-agent reasoning panel (Modulize M purple · Gap G orange) with confidence bar, verdict box, 6 templates, and multi-select Assign. Coworker read-only; Offboarder hidden. `/session/minh-le` Data tab.
+- **CL-145 — Navigation + matrix:** KG gated for Offboarder (sidebar + route); tab-visibility matrix consolidated in `view-matrix.ts` (Logs widened); dashboard orbital empty-state variants; insights heatmap-only.
 
 ---
 
