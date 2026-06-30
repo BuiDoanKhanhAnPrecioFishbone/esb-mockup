@@ -157,7 +157,7 @@ function UnfilteredView({ onSelect, hoveredRow, setHoveredRow }) {
       {/* Right: Module heatmap */}
       <div className="col-span-7 rounded-lg border border-gray-200 bg-white overflow-hidden">
         <div className="px-4 py-2.5 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
-          <span className="text-[12px] font-semibold text-gray-900">Activity heatmap</span>
+          <span className="text-[12px] font-semibold text-gray-900">Activity across all modules</span>
           <Legend />
         </div>
         <div className="p-4">

@@ -112,11 +112,17 @@ export default function HaVyHandoverDashboard({ embedded = false, role: roleProp
 
 function RoleRenderer({ role, stepId }) { if (role === "manager") return <ManagerStep id={stepId} />; if (role === "offboarder") return <OffboarderStep id={stepId} />; if (role === "coworker") return <CoworkerStep id={stepId} />; return null; }
 
-function ManagerStep({ id }) { if (id === "departures") return <ManagerZeroState hasDepartures />; if (id === "no-departures") return <ManagerZeroState hasDepartures={false} />; if (id === "active") return <ManagerActive />; if (id === "completed") return <ManagerCompleted />; return null; }
+// Dashboard state id drives which Manager surface renders. The two empty/orbital
+// variants are chosen by id (not by SESSIONS.length), so the zero-session states
+// are reachable from the "View as" → State switcher even though SESSIONS has 2 by default:
+//   departures     → orbital + HRIS departure list + "Create session"  (zero-session, HRIS pending)
+//   no-departures  → orbital + "No upcoming departures" + Sync/Create  (zero-session, zero HRIS)
+//   active/completed → normal dashboard (no orbital)
+function ManagerStep({ id }) { if (id === "departures") return <ManagerEmpty hasDepartures />; if (id === "no-departures") return <ManagerEmpty hasDepartures={false} />; if (id === "active") return <ManagerActive />; if (id === "completed") return <ManagerCompleted />; return null; }
 // Zero-active-sessions state — orbital illustration; message + CTAs depend on HRIS status (R3-01).
 function ManagerActive() {
   const sessions = SESSIONS;
-  if (sessions.length === 0) return <ManagerZeroState hasDepartures={DEPARTURES.length > 0} />;
+  if (sessions.length === 0) return <ManagerEmpty hasDepartures={DEPARTURES.length > 0} />;
   return (<div className="max-w-4xl mx-auto p-6">
     <GreetingBanner name={"H\u00e0 Vy"} subtitle={`${sessions.length} active handover${sessions.length !== 1 ? "s" : ""}`} />
     <div className="grid grid-cols-3 gap-5">
@@ -307,10 +313,14 @@ function SyncFromHris() {
   </button>);
 }
 
-// Zero active sessions (R3-01). Orbital is constant; message + CTAs depend on HRIS status.
+// Zero active sessions (R3-01 / §2.1). Orbital (OrbitalIllustration) is constant; the copy +
+// CTAs depend on HRIS status via `hasDepartures`:
+//   hasDepartures → orbital + "N upcoming departures" + Create session / Sync, plus the
+//                   HRIS departure list below (DepartureBanner).
+//   !hasDepartures → orbital + "No upcoming departures" + Sync / Create manually, no list.
 // MV-R4-03 — a departure that already has an active session is removed from the list (shown
 // only as a session card). If every departure has a session, the list section is hidden.
-function ManagerZeroState({ hasDepartures }) {
+function ManagerEmpty({ hasDepartures }) {
   const departures = DEPARTURES.filter(d => !SESSIONS.some(s => s.id === d.id));
   const showDepartures = hasDepartures && departures.length > 0;
   return (<div className="max-w-2xl mx-auto p-6">
