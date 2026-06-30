@@ -258,24 +258,41 @@ function OffboarderWorkspace() {
 // ── §4.6 / §4.8 — AI Classification Review ──────────────────────────────────
 // Per-card AI verdict: state (pass/review/newmod/uncat), confidence, the modules
 // involved, and the two-agent reasoning transcript. Cards not listed default to a
-// clean Pass. Modulize Agent (M, purple) classifies; Gap Agent (G, orange) checks.
+// clean single-module Pass. Modulize Agent (M, purple) classifies; Gap Agent (G,
+// orange) checks. The 6 conversation templates (§4.6) are realised below.
 const CLASSIFY = {
+  // Template 1 — Pass · single module (2 messages)
+  "Payment gateway timeout": { state:"pass", confidence:93, primary:"Payment Service", chat:[
+    {a:"M",step:"CLASSIFY",t:"Clear Payment Service signals — circuit breaker, 30s timeout, gateway semantics. 93%."},
+    {a:"G",step:"VALIDATE",t:"Confirmed — single clean home, no cross-module overlap."},
+  ]},
+  // Template 2 — Pass · multi-module 1:N (3 messages)
   "Kafka retry configuration": { state:"pass", confidence:96, primary:"Payment Service", linked:["CI/CD Pipeline"], chat:[
     {a:"M",step:"CLASSIFY",t:"Strong payment-domain signals — Kafka, DLQ routing, idempotency keys. Best fit is Payment Service at 96%."},
     {a:"G",step:"VALIDATE",t:"Agreed. It's also referenced by the deploy rollback runbook, so a linked CI/CD Pipeline tag is warranted."},
     {a:"M",step:"PROPOSE",t:"Primary Payment Service, linked CI/CD Pipeline."},
   ]},
+  // Template 3 — Review (4 messages)
   "Datadog dashboard": { state:"review", confidence:41, candidates:["Monitoring & Alerts","Payment Service"], chat:[
     {a:"M",step:"CLASSIFY",t:"Monitoring & Alerts at 41% — SLO dashboards and panels. But it also drives the payment alert routes."},
     {a:"G",step:"CHALLENGE",t:"41% is well below the 80% bar, and the payment-alert overlap makes the primary ambiguous."},
     {a:"M",step:"RECONSIDER",t:"Likely Monitoring primary with a Payment Service link — but the split needs a human call."},
     {a:"G",step:"FLAG",t:"Flagging for Manager review — please confirm the primary module."},
   ]},
-  "Terraform modules": { state:"newmod", confidence:88, newModule:"Infrastructure Provisioning", linked:["CI/CD Pipeline"], chat:[
-    {a:"M",step:"CLASSIFY",t:"Doesn't fit the existing modules well — IaC, AKS cluster, VNet, remote state backend."},
-    {a:"G",step:"VERIFY",t:"Confirmed: 6 cards cluster around provisioning with no good home module."},
-    {a:"M",step:"PROPOSE",t:"Propose a new module — Infrastructure Provisioning (88%), with a CI/CD Pipeline link."},
+  // Template 4 — New Module · standalone (3 messages)
+  "Secrets management": { state:"newmod", confidence:84, newModule:"Secrets & Vault", chat:[
+    {a:"M",step:"CLASSIFY",t:"Vault sidecar, auto-unseal, rotation — no existing module owns secrets management."},
+    {a:"G",step:"VERIFY",t:"Confirmed: this is a distinct concern, not a fit for Shared Libraries or IaC."},
+    {a:"M",step:"PROPOSE",t:"Propose a new standalone module — Secrets & Vault (84%)."},
   ]},
+  // Template 5 — New Module + existing link (4 messages)
+  "Terraform modules": { state:"newmod", confidence:88, newModule:"Infrastructure Provisioning", linked:["CI/CD Pipeline"], chat:[
+    {a:"M",step:"CLASSIFY",t:"IaC, AKS cluster, VNet, remote state backend — doesn't fit the existing modules well."},
+    {a:"G",step:"VERIFY",t:"Confirmed: 6 cards cluster around provisioning with no good home module."},
+    {a:"M",step:"RECONSIDER",t:"It's applied via GitHub Actions, so it also links to CI/CD Pipeline."},
+    {a:"G",step:"VALIDATE",t:"Agreed — new module Infrastructure Provisioning, linked to CI/CD Pipeline."},
+  ]},
+  // Template 6 — Uncategorized (3 messages)
   "Vendor onboarding checklist": { state:"uncat", confidence:23, chat:[
     {a:"M",step:"CLASSIFY",t:"Top match is only 23% — too weak to assign confidently."},
     {a:"G",step:"VERIFY",t:"No module clears the 80% threshold for this card."},
@@ -284,45 +301,58 @@ const CLASSIFY = {
 };
 function classify(card){ return CLASSIFY[card.name] || { state:"pass", confidence:94, primary:undefined }; }
 const CLS_META = {
-  pass:    { label:"Pass",        badge:null,                                                       border:null,        chip:"bg-violet-50 text-violet-700 border-violet-200" },
-  review:  { label:"Review",      badge:"bg-amber-50 text-amber-700 border-amber-400",              border:"#f59e0b",   chip:"bg-amber-50 text-amber-700 border-amber-400" },
-  newmod:  { label:"New Module",  badge:"bg-violet-50 text-violet-700 border-violet-300",           border:"#8b5cf6",   chip:"bg-violet-50 text-violet-700 border-violet-300" },
-  uncat:   { label:"Uncategorized",badge:"bg-gray-50 text-gray-500 border-gray-300 border-dashed",  border:null,        chip:"bg-gray-50 text-gray-500 border-gray-300 border-dashed" },
+  pass:    { label:"Pass",         badge:null,                                                       border:null,        chip:"bg-violet-50 text-violet-700 border-violet-200" },
+  review:  { label:"Review",       badge:"bg-amber-50 text-amber-700 border-amber-400",              border:"#f59e0b",   chip:"bg-amber-50 text-amber-700 border-amber-400" },
+  newmod:  { label:"New Module",   badge:"bg-violet-50 text-violet-700 border-violet-300",           border:"#8b5cf6",   chip:"bg-violet-50 text-violet-700 border-violet-300" },
+  uncat:   { label:"Uncategorized",badge:"bg-gray-50 text-gray-500 border-gray-300 border-dashed",   border:null,        chip:"bg-gray-50 text-gray-500 border-gray-300 border-dashed" },
 };
 function confColor(c){ return c>70?"#10b981":c>=40?"#f59e0b":"#f43f5e"; }
 const AGENT_AV = { M:{bg:"#ede9fe",fg:"#6d28d9",name:"Modulize Agent"}, G:{bg:"#fff7ed",fg:"#c2410c",name:"Gap Agent"} };
 
 // The AI Reasoning panel — opens to the left of the card detail when a module chip is clicked.
-function AIReasoningPanel({ card, onClose }) {
+// readOnly (Coworker, §9) hides the action area; the Manager gets the full assign/accept controls.
+function AIReasoningPanel({ card, onClose, readOnly = false }) {
   const cls = classify(card);
-  const meta = CLS_META[cls.state];
-  const initial = cls.primary ? [cls.primary, ...(cls.linked||[])] : cls.newModule ? [cls.newModule, ...(cls.linked||[])] : (cls.candidates||[]).slice(0,0);
+  const hasLink = !!(cls.linked && cls.linked.length);
+  const initial = cls.primary ? [cls.primary, ...(cls.linked||[])] : cls.newModule ? [cls.newModule, ...(cls.linked||[])] : [];
   const [assign, setAssign] = useState(initial);
   const [adding, setAdding] = useState(false);
-  const [done, setDone] = useState(false);
+  const [done, setDone] = useState(null); // string verdict once acted on
   const addable = ALL_MOD_NAMES.filter(m=>!assign.includes(m));
   const setPrimary = (m) => setAssign(a=>[m, ...a.filter(x=>x!==m)]);
   const remove = (m) => setAssign(a=>a.filter(x=>x!==m));
+  const isMulti = cls.state==="review" || cls.state==="uncat";
   const verdictBox = cls.state==="pass"
-    ? <div className="rounded-md bg-emerald-50 border border-emerald-200 px-3 py-2 text-[11px] text-emerald-800 flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5"/>{cls.linked&&cls.linked.length?`No action needed · Primary ${cls.primary} + Linked ${cls.linked.join(", ")}`:"No action needed"}</div>
+    ? <div className="rounded-md bg-emerald-50 border border-emerald-200 px-3 py-2 text-[11px] text-emerald-800 flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5"/>{hasLink?`No action needed · Primary ${cls.primary} + Linked ${cls.linked.join(", ")}`:"No action needed"}</div>
     : cls.state==="review" ? <div className="rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-[11px] text-amber-800 flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5"/>Needs your call — confirm the primary module.</div>
-    : cls.state==="newmod" ? <div className="rounded-md bg-violet-50 border border-violet-200 px-3 py-2 text-[11px] text-violet-800 flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5"/>Proposed new module — accept or skip.</div>
+    : cls.state==="newmod" ? <div className="rounded-md bg-violet-50 border border-violet-200 px-3 py-2 text-[11px] text-violet-800 flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5"/>{hasLink?`Proposed new module + a link to ${cls.linked.join(", ")}.`:"Proposed new module — accept or skip."}</div>
     : <div className="rounded-md bg-gray-50 border border-gray-300 border-dashed px-3 py-2 text-[11px] text-gray-600 flex items-center gap-1.5"><Inbox className="w-3.5 h-3.5"/>Couldn’t place this card — assign it below.</div>;
   return <div className="fixed top-0 right-[480px] h-full w-[400px] bg-white border-l border-gray-200 shadow-xl z-50 overflow-y-auto" onClick={e=>e.stopPropagation()}>
     <div className="p-4">
-      <div className="flex items-center justify-between mb-3"><div className="flex items-center gap-1.5"><Sparkles className="w-4 h-4 text-violet-600"/><h3 className="text-[14px] font-semibold text-gray-900">AI Classification</h3></div><button onClick={onClose} className="w-7 h-7 rounded-md hover:bg-gray-100 inline-flex items-center justify-center text-gray-400 cursor-pointer"><X className="w-4 h-4"/></button></div>
+      <div className="flex items-center justify-between mb-3"><div className="flex items-center gap-1.5"><Sparkles className="w-4 h-4 text-violet-600"/><h3 className="text-[14px] font-semibold text-gray-900">AI Classification</h3>{readOnly&&<span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 border border-gray-200">Read-only</span>}</div><button onClick={onClose} className="w-7 h-7 rounded-md hover:bg-gray-100 inline-flex items-center justify-center text-gray-400 cursor-pointer"><X className="w-4 h-4"/></button></div>
       <p className="text-[11px] text-gray-500 mb-2">{card.name}</p>
       <div className="mb-3"><div className="flex items-center justify-between text-[10px] mb-1"><span className="text-gray-500 uppercase tracking-wider font-medium">Confidence</span><span style={{fontFamily:"ui-monospace,Menlo,monospace",color:confColor(cls.confidence)}}>{cls.confidence}%</span></div><div className="h-1.5 rounded-full bg-gray-100 overflow-hidden"><div className="h-full rounded-full" style={{width:`${cls.confidence}%`,background:confColor(cls.confidence)}}/></div></div>
       <div className="space-y-2 mb-3">{(cls.chat||[]).map((m,i)=>{const av=AGENT_AV[m.a];return <div key={i} className={`flex gap-2 ${m.a==="G"?"pl-5":""}`}><div className="w-5 h-5 rounded-full inline-flex items-center justify-center text-[9px] font-semibold shrink-0 mt-0.5" style={{background:av.bg,color:av.fg}}>{m.a}</div><div className="flex-1 rounded-lg px-2.5 py-1.5" style={{background:m.a==="M"?"#faf5ff":"#fff7ed",borderLeft:`2px solid ${av.fg}`}}><p className="text-[8px] uppercase tracking-wider font-semibold mb-0.5" style={{color:av.fg}}>{m.step}</p><p className="text-[10px] text-gray-700 leading-snug">{m.t}</p></div></div>;})}</div>
       <div className="pt-2 border-t border-gray-100 mb-3">{verdictBox}</div>
-      {/* Your call — multi-select assignment */}
-      {done ? <p className="text-[11px] text-emerald-600 flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5"/>Assignment saved.</p> : <>
-        <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1.5">Assign to</p>
-        <div className="flex flex-wrap gap-1.5 mb-2">{assign.map((m,i)=><span key={m} className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200">{i===0?<button onClick={()=>{}} title="Primary" className="text-violet-600">★</button>:<button onClick={()=>setPrimary(m)} title="Make primary" className="text-gray-400 hover:text-violet-600 cursor-pointer">↗</button>}{cls.state==="newmod"&&i===0&&m===cls.newModule?<Sparkles className="w-2.5 h-2.5"/>:null}{m}<button onClick={()=>remove(m)} className="hover:text-rose-500 cursor-pointer ml-0.5">×</button></span>)}
-          <div className="relative"><button onClick={()=>setAdding(a=>!a)} className="text-[10px] px-2 py-0.5 rounded-full border border-gray-200 text-gray-500 hover:border-violet-200 hover:text-violet-600 cursor-pointer inline-flex items-center gap-0.5"><Plus className="w-2.5 h-2.5"/>Add module</button>{adding&&<div className="absolute left-0 top-full mt-1 z-10 w-44 rounded-md border border-gray-200 bg-white shadow-lg py-1 max-h-44 overflow-y-auto">{addable.map(m=><button key={m} onClick={()=>{setAssign(a=>[...a,m]);setAdding(false);}} className="w-full text-left px-2.5 py-1 text-[11px] text-gray-700 hover:bg-violet-50 hover:text-violet-700 cursor-pointer">{m}</button>)}</div>}</div>
-        </div>
-        <button onClick={()=>setDone(true)} disabled={assign.length===0} className={`h-7 px-3 rounded-md text-[11px] font-medium inline-flex items-center gap-1.5 ${assign.length===0?"bg-gray-100 text-gray-400 cursor-not-allowed":"bg-violet-600 text-white hover:bg-violet-700 cursor-pointer"}`}>{cls.state==="newmod"?"Accept new module":"Confirm"}</button>
-      </>}
+      {/* Manager action area (hidden for Coworker / Pass) */}
+      {readOnly ? <p className="text-[10px] text-gray-400 flex items-center gap-1.5"><User className="w-3 h-3"/>Read-only — only the Manager can change the assignment.</p>
+        : done ? <p className="text-[11px] text-emerald-600 flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5"/>{done}</p>
+        : cls.state==="pass" ? null
+        : cls.state==="newmod" ? <div className="flex flex-wrap gap-2">{hasLink ? <>
+            <button onClick={()=>setDone(`Accepted new module "${cls.newModule}" + link to ${cls.linked.join(", ")}.`)} className="h-7 px-3 rounded-md bg-violet-600 text-white text-[11px] font-medium hover:bg-violet-700 cursor-pointer">Accept both</button>
+            <button onClick={()=>setDone(`Accepted new module "${cls.newModule}" (link skipped).`)} className="h-7 px-3 rounded-md border border-violet-300 text-violet-700 text-[11px] font-medium hover:bg-violet-50 cursor-pointer">Accept new only</button>
+            <button onClick={()=>setDone("Skipped — left as-is.")} className="h-7 px-3 rounded-md border border-gray-300 text-gray-600 text-[11px] font-medium hover:bg-gray-50 cursor-pointer">Skip</button>
+          </> : <>
+            <button onClick={()=>setDone(`Accepted new module "${cls.newModule}".`)} className="h-7 px-3 rounded-md bg-violet-600 text-white text-[11px] font-medium hover:bg-violet-700 cursor-pointer">Accept</button>
+            <button onClick={()=>setDone("Skipped — left as-is.")} className="h-7 px-3 rounded-md border border-gray-300 text-gray-600 text-[11px] font-medium hover:bg-gray-50 cursor-pointer">Skip</button>
+          </>}</div>
+        : <>{/* review / uncat — multi-select */}
+          <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1.5">Assign to</p>
+          <div className="flex flex-wrap gap-1.5 mb-2">{assign.map((m,i)=><span key={m} className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200">{i===0?<span title="Primary" className="text-violet-600">★</span>:<button onClick={()=>setPrimary(m)} title="Make primary" className="text-gray-400 hover:text-violet-600 cursor-pointer">↗</button>}{m}<button onClick={()=>remove(m)} className="hover:text-rose-500 cursor-pointer ml-0.5">×</button></span>)}
+            <div className="relative"><button onClick={()=>setAdding(a=>!a)} className="text-[10px] px-2 py-0.5 rounded-full border border-gray-200 text-gray-500 hover:border-violet-200 hover:text-violet-600 cursor-pointer inline-flex items-center gap-0.5"><Plus className="w-2.5 h-2.5"/>Add module</button>{adding&&<div className="absolute left-0 top-full mt-1 z-10 w-44 rounded-md border border-gray-200 bg-white shadow-lg py-1 max-h-44 overflow-y-auto">{addable.map(m=><button key={m} onClick={()=>{setAssign(a=>[...a,m]);setAdding(false);}} className="w-full text-left px-2.5 py-1 text-[11px] text-gray-700 hover:bg-violet-50 hover:text-violet-700 cursor-pointer">{m}</button>)}</div>}</div>
+          </div>
+          <button onClick={()=>setDone(assign.length?`Assigned · primary ${assign[0]}${assign.length>1?` + ${assign.length-1} linked`:""}.`:"")} disabled={assign.length===0} className={`h-7 px-3 rounded-md text-[11px] font-medium inline-flex items-center gap-1.5 ${assign.length===0?"bg-gray-100 text-gray-400 cursor-not-allowed":"bg-violet-600 text-white hover:bg-violet-700 cursor-pointer"}`}>{cls.state==="uncat"?"Assign":"Confirm"}</button>
+        </>}
     </div>
   </div>;
 }
@@ -511,7 +541,6 @@ function DataContent({ role, stepId, isReady, canEditQs, generalQs, addedModQs, 
   const onMoreQ = (k)=>setMoreKeys(s=>{ const n=new Set(s); n.add(k); return n; });
   const satisfyMany = (keys)=>setSatKeys(s=>{ const n=new Set(s); keys.forEach(k=>n.add(k)); return n; });
   const satCtl = { satKeys, moreKeys, onSatisfyQ, onMoreQ };
-  const [dragCard, setDragCard] = useState(null); const [dropTarget, setDropTarget] = useState(null); const [movedCard, setMovedCard] = useState(null); const movedTimer = useRef(null);
   // CW-04 — deep link: ?card=<name> pre-opens the side panel on that card.
   useEffect(() => { const c = new URLSearchParams(window.location.search).get("card"); if (c) { const found = ALL_CARDS.find(x => x.card.name === c); if (found) setSelectedCard(found.card); } }, []);
   const isCapture = stepId==="capture"; const isDeliver = stepId==="deliver"||stepId==="complete"; const isComplete = stepId==="complete"; const readOnly = isDeliver;
@@ -521,17 +550,12 @@ function DataContent({ role, stepId, isReady, canEditQs, generalQs, addedModQs, 
   const linkedFor = (modName) => ALL_CARDS.filter(x=>eff(x)!==modName && eff(x)!=="__uncat__" && (x.card.linkedIn||[]).includes(modName)).map(x=>x.card);
   const uncats = ALL_CARDS.filter(x=>eff(x)==="__uncat__").map(x=>x.card);
   const primaryModuleOf = (card) => { const x=ALL_CARDS.find(a=>a.card.name===card.name); return x?eff(x):"__uncat__"; };
-  const moveCard = (name, dest) => setAssignments(p=>({...p,[name]:dest}));
   const dismissFlag = (key) => setDismissedFlags(prev=>new Set([...prev,key]));
-  // MV-06 — functional drag-and-drop. Primary + uncategorized cards are draggable; linked cards are blocked (use "Move to").
-  const onDragStart = (name) => setDragCard(name);
-  const onDragEnd = () => { setDragCard(null); setDropTarget(null); };
-  const onDropTo = (dest) => { if (dragCard) { moveCard(dragCard, dest); setMovedCard(dragCard); if (movedTimer.current) clearTimeout(movedTimer.current); movedTimer.current = setTimeout(() => setMovedCard(null), 3000); } setDragCard(null); setDropTarget(null); };
-  const cardProps = { canManage, dismissedFlags, onDismissFlag:dismissFlag, onMoveCard:moveCard, primaryModuleOf, selectedCard, onSelectCard:setSelectedCard, dragCard, movedCard, onDragStart, onDragEnd, clsFilter };
-  const dndZone = { dragActive: !!dragCard, dropTarget, onDropTarget: setDropTarget, onDropTo, canManage };
+  // §4.2 — drag-and-drop removed; card reassignment happens via AI Classification Review (§4.6).
+  const cardProps = { canManage, dismissedFlags, onDismissFlag:dismissFlag, primaryModuleOf, selectedCard, onSelectCard:setSelectedCard, clsFilter };
   if (role==="offboarder"&&!isCapture&&!isDeliver) return <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center"><h3 className="text-sm font-medium text-gray-700 mb-1">Questions are being collected</h3><p className="text-xs text-gray-500">{"You\u2019ll see them when Capture starts."}</p></div>;
   if (!isReady) return <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center"><div className="w-10 h-10 rounded-full bg-violet-50 inline-flex items-center justify-center mb-3 mx-auto"><div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-violet-500 animate-spin"/></div><h3 className="text-sm font-medium text-gray-700 mb-1">Data is being collected...</h3></div>;
-  const drawer = selectedCard&&<><div className="fixed inset-0 bg-black/10 z-30" onClick={()=>{setSelectedCard(null);setReasoningCard(null);}}/><div className="fixed top-0 right-0 h-full w-[480px] bg-white border-l border-gray-200 shadow-xl z-40 overflow-y-auto"><SidePanel key={selectedCard.name} card={selectedCard} role={role} onClose={()=>{setSelectedCard(null);setReasoningCard(null);}} isCapture={isCapture} isDeliver={isDeliver} isComplete={isComplete} primaryModule={primaryModuleOf(selectedCard)} sat={satCtl} onOpenReasoning={role!=="offboarder"?setReasoningCard:undefined}/></div>{reasoningCard&&<AIReasoningPanel card={reasoningCard} onClose={()=>setReasoningCard(null)}/>}</>;
+  const drawer = selectedCard&&<><div className="fixed inset-0 bg-black/10 z-30" onClick={()=>{setSelectedCard(null);setReasoningCard(null);}}/><div className="fixed top-0 right-0 h-full w-[480px] bg-white border-l border-gray-200 shadow-xl z-40 overflow-y-auto"><SidePanel key={selectedCard.name} card={selectedCard} role={role} onClose={()=>{setSelectedCard(null);setReasoningCard(null);}} isCapture={isCapture} isDeliver={isDeliver} isComplete={isComplete} primaryModule={primaryModuleOf(selectedCard)} sat={satCtl} onOpenReasoning={role!=="offboarder"?setReasoningCard:undefined}/></div>{reasoningCard&&<AIReasoningPanel card={reasoningCard} onClose={()=>setReasoningCard(null)} readOnly={role==="coworker"}/>}</>;
   // CW-R4-01 / R6-01 — gap-context drawer with a functional "Ask about this gap" for both
   // Coworker and Manager. Attribution differs: Manager → "Hà Vy", Coworker → "Coworker".
   const gapDrawer = ctxGap&&<><div className="fixed inset-0 bg-black/10 z-30" onClick={()=>setCtxGap(null)}/><div className="fixed top-0 right-0 h-full w-[480px] bg-white border-l border-gray-200 shadow-xl z-40 overflow-y-auto"><GapContextPanel moduleName={ctxGap} onClose={()=>setCtxGap(null)} showAsk={role!=="offboarder"} askLabel={role==="manager"?"Hà Vy":"Coworker"}/></div></>;
@@ -544,7 +568,7 @@ function DataContent({ role, stepId, isReady, canEditQs, generalQs, addedModQs, 
     {/* §4.6 — AI Classification filter tabs */}
     <div className="flex items-center gap-1.5 mb-3 flex-wrap">{[["all","All"],["pass","Pass"],["review","Review"],["newmod","New Module"],["uncat","Uncategorized"]].map(([k,lbl])=>{const n=k==="all"?ALL_CARDS.length:ALL_CARDS.filter(x=>classify(x.card).state===k).length;return <button key={k} onClick={()=>setClsFilter(k)} className={`text-[11px] px-2.5 py-1 rounded-md border inline-flex items-center gap-1.5 cursor-pointer ${clsFilter===k?"bg-violet-600 text-white border-violet-600":"bg-white text-gray-600 border-gray-200 hover:border-violet-300 hover:text-violet-700"}`}>{lbl}<span className={`text-[9px] ${clsFilter===k?"text-violet-100":"text-gray-400"}`} style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{n}</span></button>;})}</div>
     {uncats.length>0&&clsFilter!=="pass"&&clsFilter!=="review"&&clsFilter!=="newmod"&&<div className="rounded-lg border-2 border-dashed border-gray-300 bg-gray-50/60 mb-3 overflow-hidden"><div className="px-4 py-2.5 border-b border-dashed border-gray-300 flex items-center gap-2"><Inbox className="w-3.5 h-3.5 text-gray-400"/><span className="text-sm font-semibold text-gray-700">Uncategorized</span><span className="text-[11px] text-gray-500">{uncats.length}</span><span className="text-[10px] text-gray-400 ml-1">AI couldn’t confidently assign these — review first</span></div>{uncats.map((card,ci)=><CardRow key={ci} card={card} linked={false} showProgress={showProgress} {...cardProps}/>)}</div>}
-    {MODULES_DATA.map((board,bi)=><div key={bi} className="rounded-lg border border-gray-200 bg-white mb-3 overflow-hidden"><div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center gap-2"><Layers className="w-3.5 h-3.5 text-gray-400"/><span className="text-sm font-semibold text-gray-900">{board.board}</span><span className="text-[11px] text-gray-500">{board.boardCards}c</span></div>{board.modules.map((mod,mi)=><ModuleSection key={mi} mod={mod} role={role} isCapture={isCapture} isDeliver={isDeliver} isComplete={isComplete} canEditQs={canEditQs} primaryCards={primaryFor(mod.name)} linkedCards={linkedFor(mod.name)} showProgress={showProgress} addedQs={addedModQs.filter(q=>q.module===mod.name)} onAddModQ={onAddModQ} onEditModQ={onEditModQ} onDeleteModQ={onDeleteModQ} onSeeGapContext={role!=="offboarder"?setCtxGap:undefined} satKeys={satKeys} moreKeys={moreKeys} onSatisfyMany={satisfyMany} {...cardProps} {...dndZone}/>)}</div>)}
+    {MODULES_DATA.map((board,bi)=><div key={bi} className="rounded-lg border border-gray-200 bg-white mb-3 overflow-hidden"><div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center gap-2"><Layers className="w-3.5 h-3.5 text-gray-400"/><span className="text-sm font-semibold text-gray-900">{board.board}</span><span className="text-[11px] text-gray-500">{board.boardCards}c</span></div>{board.modules.map((mod,mi)=><ModuleSection key={mi} mod={mod} role={role} isCapture={isCapture} isDeliver={isDeliver} isComplete={isComplete} canEditQs={canEditQs} primaryCards={primaryFor(mod.name)} linkedCards={linkedFor(mod.name)} showProgress={showProgress} addedQs={addedModQs.filter(q=>q.module===mod.name)} onAddModQ={onAddModQ} onEditModQ={onEditModQ} onDeleteModQ={onDeleteModQ} onSeeGapContext={role!=="offboarder"?setCtxGap:undefined} satKeys={satKeys} moreKeys={moreKeys} onSatisfyMany={satisfyMany} {...cardProps}/>)}</div>)}
     {/* Uncategorized \u2014 AI couldn't confidently assign (1:N \u00a75). Drop target for moving cards out of modules. */}
   </div>{drawer}{gapDrawer}</div>;
 }
@@ -566,7 +590,7 @@ function CardRow({ card, linked, showProgress, canManage, dismissedFlags, onDism
     {card.qs.length>0&&<span className="text-[8px] px-1 py-0.5 rounded bg-violet-50 text-violet-600 shrink-0">{card.qs.length}Q</span>}
   </div>;
 }
-function ModuleSection({ mod, role, isCapture, isDeliver, isComplete, canEditQs, primaryCards=[], linkedCards=[], showProgress, addedQs, onAddModQ, onEditModQ, onDeleteModQ, onSeeGapContext, satKeys, moreKeys, onSatisfyMany, canManage, dismissedFlags, onDismissFlag, onMoveCard, primaryModuleOf, selectedCard, onSelectCard, dragCard, movedCard, onDragStart, onDragEnd, dragActive, dropTarget, onDropTarget, onDropTo }) {
+function ModuleSection({ mod, role, isCapture, isDeliver, isComplete, canEditQs, primaryCards=[], linkedCards=[], showProgress, addedQs, onAddModQ, onEditModQ, onDeleteModQ, onSeeGapContext, satKeys, moreKeys, onSatisfyMany, canManage, dismissedFlags, onDismissFlag, primaryModuleOf, selectedCard, onSelectCard, clsFilter }) {
   const [expanded, setExpanded] = useState(true); const [showModQ, setShowModQ] = useState(false); const [modInput, setModInput] = useState("");
   const [confirmFlags, setConfirmFlags] = useState(false); // R6-02 — confirm bulk flag dismissal
   const [renaming, setRenaming] = useState(false); const [displayName, setDisplayName] = useState(mod.name); const [renameInput, setRenameInput] = useState(mod.name);
@@ -577,8 +601,7 @@ function ModuleSection({ mod, role, isCapture, isDeliver, isComplete, canEditQs,
   const readOnly = isDeliver;
   const totalQs = (mod.qs||0) + addedQs.length;
   const cardCount = primaryCards.length + linkedCards.length;
-  const moveTargets = [...ALL_MOD_NAMES.filter(n=>n!==mod.name).map(n=>({value:n,label:n})), {value:"__uncat__",label:"Uncategorized"}];
-  const cardCommon = { showProgress, canManage, dismissedFlags, onDismissFlag, onMoveCard, primaryModuleOf, selectedCard, onSelectCard, dragCard, movedCard, onDragStart, onDragEnd };
+  const cardCommon = { showProgress, canManage, dismissedFlags, onDismissFlag, primaryModuleOf, selectedCard, onSelectCard, clsFilter };
   const handleModAsk = () => { if(modInput.trim()){ onAddModQ(modInput, mod.name); setModInput(""); setShowModQ(false); } };
   const handleRename = () => { if(renameInput.trim()){ setDisplayName(renameInput.trim()); setRenaming(false); } };
   // R6-02 — bulk-op candidates across this module's cards (Manager-only). Satisfy excludes "needs more".
@@ -587,13 +610,12 @@ function ModuleSection({ mod, role, isCapture, isDeliver, isComplete, canEditQs,
   const undismissedFlags = moduleCards.flatMap(c=>cardFlags(c).filter(f=>!(dismissedFlags&&dismissedFlags.has(`${c.name}::${f}`))).map(f=>`${c.name}::${f}`));
   const showSatisfyAll = role==="manager" && isCapture && unsatisfiedKeys.length>=2;
   const showDismissAll = canManage && undismissedFlags.length>=2;
-  const isDrop = dragActive && dropTarget===mod.name;
-  return <div onDragOver={canManage&&dragActive?(e=>{e.preventDefault();if(dropTarget!==mod.name)onDropTarget(mod.name);}):undefined} onDrop={canManage&&dragActive?(e=>{e.preventDefault();onDropTo(mod.name);}):undefined} className={`border-b border-gray-100 last:border-b-0 transition-colors ${isDrop?"ring-2 ring-inset ring-violet-400 bg-violet-50/30":""}`}>
+  return <div className="border-b border-gray-100 last:border-b-0">
     <div className="w-full px-4 py-2 flex items-center justify-between hover:bg-gray-50">{renaming?<div className="flex items-center gap-2 flex-1" onClick={e=>e.stopPropagation()}><ChevronDown className={`w-3 h-3 text-gray-400 transition-transform ${expanded?"":"-rotate-90"}`}/><input value={renameInput} onChange={e=>setRenameInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")handleRename();if(e.key==="Escape"){setRenameInput(displayName);setRenaming(false);}}} className="flex-1 h-7 px-2 rounded border border-violet-300 text-[13px] font-medium focus:outline-none focus:ring-2 focus:ring-violet-500/20" autoFocus/><button onClick={handleRename} className="w-6 h-6 rounded bg-violet-600 text-white inline-flex items-center justify-center cursor-pointer hover:bg-violet-700"><Check className="w-3 h-3"/></button><button onClick={()=>{setRenameInput(displayName);setRenaming(false);}} className="w-6 h-6 rounded border border-gray-300 text-gray-500 inline-flex items-center justify-center cursor-pointer hover:bg-gray-50"><X className="w-3 h-3"/></button></div>:<button onClick={()=>setExpanded(!expanded)} className="flex items-center gap-2 flex-1 text-left cursor-pointer"><ChevronDown className={`w-3 h-3 text-gray-400 transition-transform ${expanded?"":"-rotate-90"}`}/><span className="text-[13px] font-medium text-gray-900">{displayName}</span><span className="text-[11px] text-gray-500">{cardCount}c</span>{totalQs>0&&<span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-600 border border-violet-200">{totalQs}Qs</span>}{moduleGaps.length>0&&<span className="text-[9px] px-1.5 py-0.5 rounded bg-yellow-50 text-yellow-700 border border-yellow-200 inline-flex items-center gap-0.5"><Sparkles className="w-2.5 h-2.5"/>{moduleGaps.length}{" gap"}{moduleGaps.length>1?"s":""}</span>}{showProgress&&prog.total>0&&<span className={`text-[9px] px-1.5 py-0.5 rounded border ${prog.answered===prog.total?"bg-emerald-50 text-emerald-700 border-emerald-200":"bg-gray-50 text-gray-600 border-gray-200"}`}>{prog.answered}/{prog.total}</span>}</button>}{role==="manager"&&!readOnly&&!renaming&&<span onClick={e=>{e.stopPropagation();setRenaming(true);setRenameInput(displayName);}} className="text-[10px] text-gray-400 hover:text-violet-600 cursor-pointer shrink-0 ml-2">Rename</span>}</div>
     {expanded&&<>
       {/* Module-level GAPS \u2014 AI-detected missing knowledge (yellow + sparkle), each generates a question (\u00A74). */}
       {moduleGaps.length>0&&<div className="px-4 py-2 pl-10 border-t border-gray-50 space-y-1.5"><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-0.5">{displayName}{" — "}{moduleGaps.length}{" gap"}{moduleGaps.length>1?"s":""}</p>{moduleGaps.map((g,gi)=>{const gq=gapQs[gi];return <div key={gi} className="rounded-md bg-yellow-50 border border-yellow-200 px-2.5 py-1.5"><div className="text-[10px] text-yellow-800 flex items-start gap-1.5"><Sparkles className="w-3 h-3 shrink-0 mt-0.5 text-yellow-600"/><span className="font-semibold mr-1">{"GAP #"}{gi+1}{":"}</span>{g}</div>{gq&&(editingGap===gi?<div className="flex items-center gap-1.5 mt-1.5 pl-4"><input value={gapEditText} onChange={e=>setGapEditText(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")saveGapQ(gi);if(e.key==="Escape")setEditingGap(null);}} autoFocus className="flex-1 h-6 px-1.5 rounded border border-violet-300 text-[10px] focus:outline-none focus:ring-2 focus:ring-violet-500/20"/><button onClick={()=>saveGapQ(gi)} className="w-5 h-5 rounded bg-violet-600 text-white inline-flex items-center justify-center cursor-pointer hover:bg-violet-700"><Check className="w-3 h-3"/></button><button onClick={()=>setEditingGap(null)} className="w-5 h-5 rounded border border-gray-300 text-gray-500 inline-flex items-center justify-center cursor-pointer hover:bg-gray-50"><X className="w-3 h-3"/></button></div>:<div className="text-[10px] text-violet-700 flex items-start gap-1.5 mt-1.5 pl-4 border-t border-yellow-200/70 pt-1.5"><HelpCircle className="w-3 h-3 shrink-0 mt-0.5 text-violet-500"/><span className="flex-1"><span className="text-violet-500 font-medium">AI question:</span> {gq}</span>{onSeeGapContext&&<button onClick={()=>onSeeGapContext(mod.name)} className="text-[9px] text-violet-600 hover:text-violet-700 cursor-pointer inline-flex items-center gap-1 shrink-0" title="See why this gap was flagged"><ExternalLink className="w-2.5 h-2.5"/>See in context</button>}{canEditQs&&<span className="flex items-center gap-1 shrink-0"><button onClick={()=>{setEditingGap(gi);setGapEditText(gq);}} className="w-5 h-5 rounded border border-yellow-300 bg-white/60 hover:bg-white inline-flex items-center justify-center text-gray-400 hover:text-violet-600 cursor-pointer" title="Edit question"><Pencil className="w-2.5 h-2.5"/></button><button onClick={()=>setConfirmGap(gi)} className="w-5 h-5 rounded border border-yellow-300 bg-white/60 hover:bg-rose-50 inline-flex items-center justify-center text-gray-400 hover:text-rose-600 cursor-pointer" title="Delete question — gap stays flagged"><Trash2 className="w-2.5 h-2.5"/></button></span>}</div>)}{confirmGap===gi&&<ConfirmDeleteQ onConfirm={()=>{delGapQ(gi);setConfirmGap(null);}} onCancel={()=>setConfirmGap(null)}/>}</div>;})}</div>}
-      {primaryCards.map((card,ci)=><CardRow key={"p"+ci} card={card} linked={false} moveTargets={moveTargets} {...cardCommon}/>)}
+      {primaryCards.map((card,ci)=><CardRow key={"p"+ci} card={card} linked={false} {...cardCommon}/>)}
       {linkedCards.map((card,ci)=><CardRow key={"l"+ci} card={card} linked={true} {...cardCommon}/>)}
       {cardCount===0&&<div className="px-4 py-2 pl-10 text-[11px] text-gray-400 border-t border-gray-50">No cards</div>}
       {addedQs.length>0&&<div className="px-4 py-2 pl-10 border-t border-gray-100"><p className="text-[9px] text-violet-600 uppercase tracking-wider font-medium mb-1">{"Added questions ("}{addedQs.length}{")"}</p>{addedQs.map(q=><div key={q.id} className="py-1"><EditableQuestion q={q} onEdit={onEditModQ} onDelete={onDeleteModQ} canEdit={canEditQs}/></div>)}</div>}
