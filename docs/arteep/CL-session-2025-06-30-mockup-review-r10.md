@@ -49,7 +49,7 @@ These are action verbs, not generic labels. They tell the judges WHAT each agent
 
 ### Conversation templates per state
 
-#### Pass (2 messages — both agree)
+#### Pass — single module (2 messages — both agree)
 ```
 [M] CLASSIFY
     Title mentions 'timesheet' and 'monthly' —
@@ -66,6 +66,32 @@ These are action verbs, not generic labels. They tell the judges WHAT each agent
 └───────────────────────────────────────┘
 
 ● Module: Attendance — No action needed
+```
+
+#### Pass — multi-module 1:N (3 messages — both agree on primary + linked)
+```
+[M] CLASSIFY
+    'Kafka retry config' touches both Payment Service
+    (retry logic for payments) and CI/CD Pipeline
+    (deployment-time configuration).
+
+                              [G] VERIFY
+                              Agree. Primary domain is Payment Service —
+                              that's where retry behavior matters most.
+                              CI/CD is a secondary link for deployment config.
+
+[M] CLASSIFY
+    Primary: Payment Service. Linked: CI/CD Pipeline.
+
+┌─ ✅ VERDICT ──────────────────────────────────┐
+│ PASS: Payment Service (primary)               │
+│ + CI/CD Pipeline (linked)                     │
+│ Both agents aligned on multi-module assignment.│
+│ ███████████████████████████████── 91%          │
+└───────────────────────────────────────────────┘
+
+● Primary: Payment Service
+  Linked: CI/CD Pipeline — No action needed
 ```
 
 #### Review (4 messages — agents disagree, escalate)
@@ -93,9 +119,10 @@ These are action verbs, not generic labels. They tell the judges WHAT each agent
 └───────────────────────────────────────────┘
 
 Your call: [Payslip ▼] [Confirm]
+Also assign to: [+ Add linked module]
 ```
 
-#### New Module (3 messages — agents agree on new module)
+#### New Module — standalone (3 messages — agents agree on new module)
 ```
 [M] CLASSIFY
     'Benchmark competitor features' doesn't fit
@@ -119,6 +146,38 @@ Suggested: Market Intelligence → for PO
 [Accept] [Skip]
 ```
 
+#### New Module + existing link (4 messages — new module AND link to existing)
+```
+[M] CLASSIFY
+    'Slack notification for leave approval' overlaps
+    Attendance (leave tracking) but also implies
+    a new Integration/Automation domain.
+
+                              [G] CHALLENGE
+                              Attendance covers the leave policy.
+                              But the Slack integration logic is distinct —
+                              it's automation infrastructure, not HR process.
+
+[M] RECONSIDER
+    Agree. Primary home should be a new module:
+    'Integrations & Automation'. But link to Attendance
+    for the leave-tracking context.
+
+                              [G] VALIDATE
+                              Makes sense. Two modules, different concerns.
+
+┌─ 💡 VERDICT ──────────────────────────────────────┐
+│ NEW MODULE SUGGESTED                               │
+│ 'Integrations & Automation' (primary)              │
+│ + Attendance (linked)                              │
+│ █████████████████████████████── 78%                 │
+└────────────────────────────────────────────────────┘
+
+New module: Integrations & Automation → primary
+Link to: Attendance
+[Accept both] [Accept new only] [Skip]
+```
+
 #### Uncategorized (3 messages — agents can't decide)
 ```
 [M] CLASSIFY
@@ -139,7 +198,26 @@ Suggested: Market Intelligence → for PO
 └────────────────────────────────────────────┘
 
 Assign to: [Select module ▼] [Assign]
+Also assign to: [+ Add linked module]
 ```
+
+### Action areas per verdict (updated for 1:N)
+
+| Verdict | Primary action | Multi-module action |
+|---|---|---|
+| **Pass (single)** | "No action needed" (green text) | N/A |
+| **Pass (multi-module)** | "No action needed" — shows primary + linked | N/A |
+| **Review** | Module dropdown + "Confirm" | "+ Add linked module" button |
+| **New Module (standalone)** | "Accept" / "Skip" | N/A |
+| **New Module + existing** | "Accept both" / "Accept new only" / "Skip" | Link shown automatically |
+| **Uncategorized** | Module dropdown + "Assign" | "+ Add linked module" button |
+
+### "+ Add linked module" behavior
+- Appears below the primary assignment on Review and Uncategorized verdicts
+- Click → opens a small dropdown of existing modules
+- Manager selects one → it appears as a "Linked: [module]" tag below the primary
+- Can add multiple linked modules
+- Each linked module has a × to remove
 
 ### Visual design (light mode)
 
@@ -155,7 +233,9 @@ Assign to: [Select module ▼] [Assign]
 | Verdict box — Uncategorized | Gray dashed border (#cbd5e1), gray-50 background (#f8fafc) |
 | Confidence bar | Colored gradient bar on gray track. Green for high (>70%), amber for medium (40-70%), red for low (<40%) |
 | Agent avatars | 20px circles: M = purple (#7c3aed), G = orange (#f97316), R = rose (#e11d48). Shown below verdict. |
-| Action area | Below verdict. Matches the state: Pass = green text, Review = dropdown + Confirm, New Module = Accept/Skip, Uncategorized = dropdown + Assign |
+| Primary module tag | Violet badge with ★ icon |
+| Linked module tag | Gray badge with ↗ icon + × remove |
+| "+ Add linked module" | Small text link below primary, violet color |
 
 ### Panel positioning (unchanged)
 - AI Reasoning: ~400px, LEFT of card detail panel
@@ -245,10 +325,14 @@ Each active chip gets its own input field below the chip row. Fields stack verti
 - [ ] Filter tabs still show "Pass N" count (clickable to filter)
 - [ ] AI Reasoning panel: messages have labeled steps (CLASSIFY, VERIFY, CHALLENGE, etc.)
 - [ ] AI Reasoning panel: 1-2 sentences per message, no filler
-- [ ] AI Reasoning: Pass = 2 messages, Review = 4 messages, New Module = 3 messages, Uncategorized = 3 messages
+- [ ] AI Reasoning: Pass single = 2 messages, Pass multi = 3 messages, Review = 4 messages, New Module = 3 messages, New Module + linked = 4 messages, Uncategorized = 3 messages
 - [ ] AI Reasoning: verdict box colored per state (green/amber/violet/gray-dashed)
 - [ ] AI Reasoning: confidence bar gradient (green >70%, amber 40-70%, red <40%)
 - [ ] AI Reasoning: action area matches state (no action / dropdown+Confirm / Accept+Skip / dropdown+Assign)
+- [ ] AI Reasoning: Pass multi-module shows "Primary: X + Linked: Y" in verdict
+- [ ] AI Reasoning: New Module + existing shows "Accept both" / "Accept new only" / "Skip"
+- [ ] AI Reasoning: Review and Uncategorized have "+ Add linked module" button
+- [ ] Card detail panel: module tags show ★ primary and ↗ linked badges
 - [ ] Session creation: data sources shown as horizontal chips
 - [ ] Session creation: Trello chip always active, no × remove
 - [ ] Session creation: clicking inactive chip activates it + reveals input field below
