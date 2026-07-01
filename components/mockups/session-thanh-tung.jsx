@@ -125,7 +125,7 @@ function QuestionRow({ q, onEdit, onDelete }) {
 function ModuleSection({ mod, questions, onAdd, onEdit, onDelete }) {
   const [expanded, setExpanded] = useState(false); const [showModQ, setShowModQ] = useState(false); const [modInput, setModInput] = useState("");
   const [renaming, setRenaming] = useState(false); const [displayName, setDisplayName] = useState(mod.name); const [renameInput, setRenameInput] = useState(mod.name);
-  const totalGaps = mod.gaps + (mod.moduleGaps || []).length;
+  const totalGaps = (mod.moduleGaps || []).length;
   const handleModAsk = () => { if (modInput.trim()) { onAdd(modInput, mod.name); setModInput(""); setShowModQ(false); } };
   const handleRename = () => { if (renameInput.trim()) { setDisplayName(renameInput.trim()); setRenaming(false); } };
   return <div className="border-b border-gray-100 last:border-b-0">
