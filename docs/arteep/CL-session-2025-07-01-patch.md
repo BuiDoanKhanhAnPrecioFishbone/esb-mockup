@@ -89,7 +89,7 @@ This is the SAME interaction as on the Data tab gap rows, but accessible from wi
 
 ---
 
-## §3 — Card Details & Module Classification
+## §3 — Module Classification Panel
 
 ### MC-01: Rename "AI Classification" → "Module Classification" ✅ LOCKED
 
@@ -115,36 +115,69 @@ Rename everywhere:
 [Payment Service ›] [CI/CD Pipeline ›]
 ```
 
-Not:
-```
-[Payment Service ›] [CI/CD Pipeline]    ← wrong, second chip not clickable
-```
-
 **File:** `components/mockups/session-command-view.jsx`
 
 ---
 
 ### MC-03: Module switching inside Classification panel ✅ LOCKED
 
-**Issue:** When a card belongs to multiple modules and the user opens the classification panel from one chip, they should be able to switch to see the reasoning for another module without closing and re-opening.
+**Issue:** When a card belongs to multiple modules, users should switch between module reasonings without closing the panel.
 
-**Change:** Inside the Module Classification panel, show all assigned modules as clickable chips at the top:
+**Change:** Inside the Module Classification panel, the "Assigned modules" chips at the top double as a switcher. Clicking a different chip switches the conversation/confidence/verdict below to show THAT module's reasoning. The active chip has a violet underline or background highlight.
 
-```
-┌── Module Classification ──────── × ┐
-│                                    │
-│  Viewing: [Payment Service] [CI/CD]│
-│           ▲ active                 │
-│                                    │
-│  Confidence: 91%                   │
-│  ...reasoning for Payment Service..│
-│                                    │
-└────────────────────────────────────┘
-```
+**File:** `components/mockups/session-command-view.jsx`
 
-Clicking `[CI/CD]` switches the panel content to show CI/CD's classification reasoning, confidence, and verdict — without closing the panel.
+---
 
-The active module chip has a subtle underline or violet background to indicate which reasoning is currently displayed.
+### MC-04: AI reasoning visible in ALL states + result highlighted ✅ LOCKED
+
+**⚠️ CLARIFICATION — applies to all states**
+
+Every card, regardless of state (Pass, Review, New Module, Uncategorized), shows the full AI conversation in the Module Classification panel. The conversation is ALWAYS visible — it's not hidden behind a toggle or only shown for certain states.
+
+**Panel layout (top to bottom):**
+
+1. **Header:** "✨ Module Classification" + × close
+2. **Card identity:** title + ID
+3. **Assigned modules** — the RESULT — **highly visible and highlighted:**
+   - Violet background (#f5f3ff) with violet border (#c4b5fd)
+   - Label: "Assigned modules"
+   - Module chips with × to remove + "+ Add module" button
+   - This is the most prominent section — it's what the Manager acts on
+4. **Save / Cancel** — appears when chips are modified (see MC-05)
+5. **Confidence bar** — green/amber/red gradient with percentage
+6. **AI conversation** — multi-agent chat (M/G) with labeled steps — ALWAYS visible
+7. **Verdict box** — colored per state (green/amber/violet/gray dashed)
+8. **Agent avatars** — M (purple), G (orange), R (rose)
+
+**File:** `components/mockups/session-command-view.jsx`
+
+---
+
+### MC-05: Direct inline editing of module chips + Save/Cancel ✅ LOCKED
+
+**⚠️ OVERRIDE of RF-02 from refinements file:** Remove the "Change assignment" button. Users edit modules DIRECTLY by interacting with chips.
+
+**How it works:**
+- Module chips in the "Assigned modules" section are ALWAYS interactive — no edit mode toggle
+- Click **×** on any chip → removes that module from the assignment
+- Click **"+ Add module"** → dropdown of existing modules → select one → chip appears
+- Removing ALL chips → result box changes to dashed gray "No modules assigned — card is Uncategorized"
+- Any change to chips triggers **Save / Cancel** buttons to appear below the result box
+
+**Save / Cancel behavior:**
+
+| Scenario | Save/Cancel visible? |
+|---|---|
+| Panel opened, no edits made (Pass) | ❌ Hidden — nothing changed |
+| Panel opened, no edits made (Review/New Module/Uncategorized) | ✅ Visible — these states need confirmation |
+| User added or removed a chip | ✅ Visible — change needs confirmation |
+| User clicks Save | Changes confirmed, Save/Cancel disappear, card row updates |
+| User clicks Cancel | Chips revert to original state, Save/Cancel disappear |
+
+**For Review and Uncategorized states:** Save/Cancel are shown immediately when the panel opens because these states need a human decision. The AI's suggested chip is pre-populated but the Manager must confirm.
+
+**For New Module:** "Accept" and "Skip" buttons replace Save/Cancel (per RF-01). Accept = inline-edit name + create. Skip = switch to multi-select existing modules.
 
 **File:** `components/mockups/session-command-view.jsx`
 
@@ -216,7 +249,13 @@ The active module chip has a subtle underline or violet background to indicate w
 - [ ] Gap context panel: AI questions have edit (pencil) + remove (×) actions
 - [ ] "AI Classification" renamed to "Module Classification" everywhere — no mid-dots
 - [ ] ALL module chips on multi-module cards have › trigger and are clickable
-- [ ] Module Classification panel: module switcher chips at top, clicking switches reasoning
+- [ ] Module Classification panel: clicking different chips switches reasoning content
+- [ ] Module Classification panel: AI conversation visible in ALL states (Pass, Review, New Module, Uncategorized)
+- [ ] Module Classification panel: "Assigned modules" section is visually prominent (violet bg + border)
+- [ ] Module Classification panel: chips directly editable — × to remove, + to add — no "Change assignment" button
+- [ ] Module Classification panel: Save/Cancel appears on any chip modification
+- [ ] Module Classification panel: Review/Uncategorized show Save/Cancel immediately on open
+- [ ] Module Classification panel: removing all chips → "Uncategorized" state
 - [ ] Prepare state: fresh import — cards + AI badges + gaps, NO human questions or answers
 - [ ] Capture state: mature — all cards organized, NO classification badges, human Q&A active
 - [ ] Prepare → Capture visual transition is clear: badges disappear, answers appear
