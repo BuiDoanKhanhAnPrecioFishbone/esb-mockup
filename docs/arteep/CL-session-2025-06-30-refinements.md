@@ -19,10 +19,19 @@
 
 **When user clicks "Skip":**
 1. New Module suggestion is dismissed
-2. Panel immediately shows a **module selection dropdown**: "Assign to existing module instead"
-3. User selects one or more existing modules
-4. Click "Assign" to confirm
-5. If user closes without selecting → card becomes **Uncategorized**
+2. Panel switches to the **multi-select module assignment** UI (same chip pattern as Review/Uncategorized verdicts):
+   ```
+   Assign to existing modules:
+   [+ Add module]
+   
+   [Assign]
+   ```
+3. User clicks "+ Add module" → dropdown of existing modules → select one → chip appears
+4. User can add **multiple modules** — each appears as an equal-weight chip with ×
+5. Click "Assign" to confirm all selected modules
+6. If user closes without selecting any → card becomes **Uncategorized**
+
+**The Skip multi-select uses the exact same UI as the Review and Uncategorized action areas (RF-03).** No single-dropdown — always the chip-based multi-select.
 
 ---
 
@@ -63,7 +72,7 @@ There is NO "primary" or "linked" module concept. If a card belongs to multiple 
 | New Module | `[💡 Market Intelligence · 88% ›]` |
 | Uncategorized | Dashed `Uncategorized` badge |
 
-**Multi-select action area:**
+**Multi-select action area (shared by Review, Uncategorized, and Skip):**
 ```
 Assign to:
 [Payment Service ×] [CI/CD Pipeline ×] [+ Add module]
@@ -164,10 +173,10 @@ Applies to: individual answer buttons, bulk button, badges on reviewed answers, 
 ## Verification checklist
 
 - [ ] New Module "Accept" → inline-editable module name → confirm creates module
-- [ ] New Module "Skip" → shows existing module dropdown → assign or become Uncategorized
+- [ ] New Module "Skip" → multi-select chips (not single dropdown) → assign to multiple existing modules or become Uncategorized
 - [ ] Pass cards: module chip clickable → AI reasoning → "Change assignment" link at bottom
 - [ ] No ★ or ↗ icons on any module chip — all equal weight
-- [ ] Multi-select: all chips identical, no hierarchy
+- [ ] Multi-select: all chips identical, no hierarchy — same UI for Review, Uncategorized, and Skip
 - [ ] Card Q&A: ONLY manual questions with "Added by [Name]" + avatar — no AI questions
 - [ ] AI gap questions only at module level in gap rows
 - [ ] Data tab headers: "Module: Payment Service (5 cards)"
