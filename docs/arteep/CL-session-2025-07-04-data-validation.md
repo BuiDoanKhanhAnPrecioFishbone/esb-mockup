@@ -17,16 +17,15 @@ A new "Data Validation" section on the Deliver page that simulates conversations
 
 **File:** `components/mockups/session-command-view.jsx` — Deliver state
 
-### Position in Deliver page layout
+### Position in Deliver page layout (top to bottom)
 
-Updated Deliver page order (top to bottom):
-1. **Header:** "Ready to commit" + subtitle
+1. **Header:** violet gradient, "Ready to commit" + subtitle
 2. **Knowledge summary:** 3 stat cards (entries/answered/modules)
-3. **✨ NEW — Data Validation:** two-column layout (test cases + source data)
-4. **Resolved gaps:** green checkmarks
-5. **Unresolved gaps:** yellow info (not blockers)
-6. **Sanitization note**
-7. **Action buttons:** Back to Capture + Commit to KG
+3. **✨ Data Validation:** summary bar + persona tabs + two-column accordion
+4. **Resolved gaps:** green checkmarks (collapsible if >5)
+5. **Unresolved gaps:** yellow info banner (not blockers)
+6. **Sanitization note:** 🔒 info
+7. **Action buttons:** "← Back to Capture" (secondary) + "Commit to Knowledge Graph" (violet gradient, always enabled)
 
 ---
 
@@ -50,229 +49,137 @@ Total: **8 test cases** — 5 pass, 1 partial, 2 fail.
 
 ---
 
-## DV-03: Two-column layout ✅ LOCKED
+## DV-03: Two-column layout with accordion test cases ✅ LOCKED
 
-### Split view — test cases + source data side by side
+### Left column (~55%) — Accordion test case rows
 
-The Data Validation section uses a **two-column layout** so the Manager can cross-reference the AI's answer with the actual collected data.
+Test cases are **collapsed by default** as compact rows. Click to expand and see the full conversation.
 
+**Collapsed row (default):**
 ```
-┌── Data Validation ─────────────────────────────────────────────────┐
-│                                                                     │
-│  ✅ 5 answered · ⚠️ 1 partial · ❌ 2 insufficient (1 flagged)       │
-│  [All 8] [🧑‍💻 Newcomer 3] [📊 Manager 3] [👥 Coworker 2]            │
-│                                                                     │
-│  ┌─── Test cases (left ~55%) ───┬─── Source data (right ~45%) ────┐ │
-│  │                              │                                  │ │
-│  │ 📊 Manager asks:             │ Module: Payment Service          │ │
-│  │ "What's the DR procedure?"   │ ──────────────────────────       │ │
-│  │                              │ Cards (5):                       │ │
-│  │ 🤖 AI:                       │ · Kafka retry config ✓           │ │
-│  │ "I don't have enough info    │ · Stripe webhook ✓               │ │
-│  │  about disaster recovery..." │ · Payment timeout ✓              │ │
-│  │                              │ · Currency conversion ✓          │ │
-│  │ ❌ Insufficient              │ · Contract renewal ✓             │ │
-│  │                              │                                  │ │
-│  │ 💡 No card covers DR         │ Gaps (3):                        │ │
-│  │    procedures                │ ✨ #1 No disaster recovery ← !!  │ │
-│  │                              │ ✨ #2 No escalation process      │ │
-│  │ [🚩 Flag] [→ Back to Capture]│ ✨ #3 Missing SLAs               │ │
-│  │                              │                                  │ │
-│  └──────────────────────────────┴──────────────────────────────────┘ │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
+[persona icon] [question text truncated] ........ [result badge] [🚩] [▼]
+```
+Each row shows: persona icon (🧑‍💻/📊/👥), question text (single line, truncated), result badge (✅/⚠️/❌), optional flag button (🚩), chevron (▼).
+
+**Expanded row (clicked):**
+```
+[persona icon] [question text full] ................. [result badge] [▲]
+─────────────────────────────────────────────────────────────
+📊 Manager asks:
+"What's the disaster recovery procedure?"
+
+🤖 AI (using Minh Lê's data):
+"I don't have enough information about disaster recovery.
+ The collected data covers retry logic and webhook handling,
+ but no DR procedures were documented."
+
+💡 No card covers DR. Maps to GAP #1 in Payment Service.
+
+[🚩 Flag]                                    [→ Back to Capture]
 ```
 
-### Left column (~55%) — Test case conversation
-- The simulated consumer question + AI answer + result badge
-- Sources line (for passed cases)
-- Recommendation (for failed cases)
-- **Flag button** (see DV-04)
-- "→ Back to Capture" quick link (for failed/partial cases)
+**Interaction rules:**
+- Only ONE row expanded at a time (accordion style)
+- Expanding a row updates the RIGHT column to show that test case's source data
+- The expanded row gets a violet left border (3px) + light violet background (#faf8ff)
+- Flagged rows: 50% opacity, ❌ 🚩 badge, sorted to bottom
 
-### Right column (~45%) — Source data from session
-Shows the relevant module's data that the AI referenced (or couldn't find):
+### Right column (~45%) — Source data for selected test case
+
+Updates when a different test case is selected/expanded. Shows the relevant module's data:
+
 - **Module name** at the top
-- **Cards in module** — listed with checkmarks if the AI used them as source
-- **Gaps in module** — listed with highlight (← !!) on the gap that matches the failed test case
-- **Answers** — if any Q&A relates to this test case, show the answer snippet
+- **Cards in module** — listed, with highlights per result type
+- **Gaps in module** — listed, with "← matches this test case" highlight on relevant gap
+- **Relevant answers** — if any Q&A relates to this test case
 
-**The right column updates when the Manager clicks a different test case on the left.** It always shows the data relevant to the SELECTED test case.
-
-### How the right column differs per result
-
-| Result | Right column shows |
+| Result | Right column behavior |
 |---|---|
-| **✅ Answered** | Module + cards the AI used as sources (highlighted in green) |
-| **⚠️ Partial** | Module + cards used + gaps/cards that COULD have helped (highlighted in amber) |
-| **❌ Insufficient** | Module + all cards (none highlighted) + the gap that matches (highlighted in rose with ← !!) |
+| **✅ Answered** | Cards the AI used highlighted in green |
+| **⚠️ Partial** | Used cards highlighted + missing areas in amber |
+| **❌ Insufficient** | All cards shown (none highlighted) + matching gap in rose with "← matches" |
 
 ---
 
 ## DV-04: Flag button on test cases ✅ LOCKED
 
-### Purpose
+Each test case has a **flag icon button** (🚩):
 
-Not every failed test case requires going back to Capture. Some gaps are low priority or not worth the time. The flag button lets the Manager mark test cases as "not critical — skip on revisit."
-
-### Interaction
-
-- Each test case card (especially ❌ and ⚠️) has a small **flag icon button** (🚩) in the bottom-left
-- **Click flag** → test case is marked as flagged:
-  - Flag icon fills/changes color (rose → muted gray)
-  - Badge updates: "❌ Insufficient" → "❌ Insufficient · 🚩 Flagged"
-  - The test case row dims slightly (80% opacity)
-- **Click again** → unflag (toggle)
-- Flagged test cases are excluded from the "insufficient" count in the summary:
-  - Before: "❌ 2 insufficient"
-  - After flagging 1: "❌ 2 insufficient (1 flagged)"
-
-### What flagging does
-
-| When | Effect |
-|---|---|
-| **On the Deliver page** | Flagged test cases dim and move to the bottom of the list. Summary shows "(1 flagged)" |
-| **Going back to Capture** | Flagged test case topics are NOT auto-generated as new questions for the Offboarder |
-| **Re-run test cases** | Flagged cases still run but their result doesn't affect the summary color (green/amber/rose) |
-| **Commit** | Flagged insufficient cases are committed as low-priority gaps (not high-priority) |
-
-### Visual
-
-| State | Flag icon | Card appearance |
-|---|---|---|
-| Unflagged (default) | 🚩 outline, gray | Full opacity |
-| Flagged | 🚩 filled, muted | 80% opacity, moves to bottom |
+- **Click** → toggles flagged state
+- **Flagged test case:** dims to 50% opacity, badge shows "❌ 🚩", moves to bottom of list
+- **Summary count:** "❌ 2 insufficient (1 flagged)" — flagged count in parentheses
+- **Going back to Capture:** flagged topics are NOT auto-generated as new questions
+- **Re-run:** flagged cases still run but don't affect summary color
+- **Commit:** flagged failures become low-priority gaps (not standard gaps)
 
 ---
 
-## DV-05: Simulated conversation format ✅ LOCKED
+## DV-05: Three result states ✅ LOCKED
 
-### Three result states
-
-| Result | Badge | Left border | Icon |
+| Result | Badge color | Left border | Meaning |
 |---|---|---|---|
-| **Answered** | Green bg (#dcfce7) | Green (#059669) | ✅ |
-| **Partial** | Amber bg (#fef3c7) | Amber (#f59e0b) | ⚠️ |
-| **Insufficient** | Rose bg (#ffe4e6) | Rose (#e11d48) | ❌ |
-
-### Conversation card content
-- Persona icon + label ("🧑‍💻 Newcomer asks:")
-- Question text (bold)
-- AI answer (gray-50 background, 2-4 sentences)
-- Sources (small violet links to card names) — for Answered/Partial
-- Recommendation + gap link — for Insufficient
-- Flag button (🚩) — bottom-left
-- "→ Back to Capture" link — for Insufficient/Partial, bottom-right
+| **✅ Answered** | Green (#dcfce7) | Green (#059669) | AI produced a meaningful, grounded answer |
+| **⚠️ Partial** | Amber (#fef3c7) | Amber (#f59e0b) | AI answered but with gaps or low confidence |
+| **❌ Insufficient** | Rose (#ffe4e6) | Rose (#e11d48) | AI couldn't answer — data missing |
 
 ---
 
 ## DV-06: Results summary bar ✅ LOCKED
 
-### Above the two-column layout
+Above the accordion:
 
-```
-Data Validation — 8 test cases
-✅ 5 answered   ⚠️ 1 partial   ❌ 2 insufficient (1 flagged)
-```
-
-- Horizontal bar: green/amber/rose segments proportional to counts
-- Flagged count shown in parentheses
-- If all pass: green banner "All test cases passed — data is ready."
-- If any fail (unflagged): amber banner "N test cases found insufficient data."
-- Persona tabs below: [All 8] [Newcomer 3] [Manager 3] [Coworker 2]
+- Horizontal progress bar: green/amber/rose segments proportional to counts (5px height)
+- Text counts: "✅ 5 answered · ⚠️ 1 partial · ❌ 2 insufficient (1 flagged)"
+- Persona tabs below: [All 8] [🧑‍💻 Newcomer 3] [📊 Manager 3] [👥 Coworker 2]
+- All pass → green banner. Any fail → amber banner.
 
 ---
 
 ## DV-07: Actions after validation ✅ LOCKED
 
-### Validation is INFORMATIONAL, not blocking
+### Commit always enabled — validation is informational
 
-Commit always enabled. Summary in confirmation modal: "Data validation: 5/8 passed, 1 flagged."
+| Validation result | Commit button | Messaging |
+|---|---|---|
+| All pass | ✅ Enabled (green) | "All 8 test cases passed." |
+| Some fail | ✅ Enabled (amber) | "2 test cases found gaps." |
+| All fail | ✅ Enabled (rose) | "Data may not be sufficient." |
 
-### "Back to Capture" from a test case
-- Each failed/partial test case has a "→ Back to Capture" link
-- Click → returns to Capture phase with a NEW question auto-generated from that test case's topic
-- The question is pre-filled: "What's the disaster recovery procedure?" attributed to "Data Validation"
+### Per-test-case actions
+- **"→ Back to Capture"** link on failed/partial rows → returns to Capture, auto-generates question from that test case topic
+- **"Re-run test cases"** button appears after returning from Capture → re-evaluates using updated data
 
-### "Re-run test cases" after returning
-- Appears at the top of validation section after returning from Capture
-- Click → re-evaluates all test cases using updated data
-- Previously failed cases may now pass
+### Confirmation modal
+Adds line: "Data validation: 5/8 test cases passed, 1 flagged."
 
 ---
 
 ## DV-08: Fallback logic ✅ LOCKED
 
-- Manager commits with failed test cases → topics become gap entries marked "unverified"
-- Flagged failed cases → committed as low-priority gaps
-- Unflagged failed cases → committed as standard gaps
-- Future sessions or manual research can fill these gaps later
-
----
-
-## DV-09: Integration with Deliver page ✅ LOCKED
-
-### Updated layout (two-column within validation section)
-
-```
-┌─────────────────────────────────────────────────────────┐
-│  Ready to commit                                         │
-│  Review Minh Lê's knowledge before committing.           │
-├─────────────────────────────────────────────────────────┤
-│  [42 entries] [14 answered] [5 modules]                  │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│  ✨ DATA VALIDATION                                      │
-│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━      │
-│  ✅ 5  ⚠️ 1  ❌ 2 (1 flagged)                             │
-│  [All] [Newcomer] [Manager] [Coworker]                   │
-│                                                         │
-│  ┌── Test cases ──────────┬── Source data ──────────┐    │
-│  │ (scrollable list)      │ (updates per selection) │    │
-│  │                        │                          │    │
-│  │ Test case 1 ✅         │ Module: CI/CD Pipeline   │    │
-│  │ Test case 2 ❌         │ Cards: ...               │    │
-│  │ Test case 3 ⚠️         │ Gaps: ...                │    │
-│  │ ...                    │ Answers: ...             │    │
-│  └────────────────────────┴──────────────────────────┘    │
-│                                                         │
-├─────────────────────────────────────────────────────────┤
-│  Resolved gaps (4) ✅                                     │
-├─────────────────────────────────────────────────────────┤
-│  Unresolved gaps (2) ⚠️                                   │
-├─────────────────────────────────────────────────────────┤
-│  Sanitization note                                       │
-├─────────────────────────────────────────────────────────┤
-│  [Back to Capture]              [Commit to KG]           │
-└─────────────────────────────────────────────────────────┘
-```
-
-### How it interacts with existing elements
-
-| Existing element | Impact |
-|---|---|
-| Knowledge summary | Unchanged — stays above |
-| Resolved/Unresolved gaps | Unchanged — stays below |
-| Commit button | Unchanged — always enabled |
-| Confirmation modal | Add: "Data validation: 5/8 passed, 1 flagged." |
+- Manager commits with failures → topics become gap entries
+- Flagged failures → low-priority gaps
+- Unflagged failures → standard gaps
+- Reuses existing "commit with unresolved gaps" flow
 
 ---
 
 ## Verification checklist
 
-- [ ] Two-column layout: left = test cases, right = source data
-- [ ] Right column updates when a different test case is selected
-- [ ] Answered: right column highlights cards AI used (green)
-- [ ] Partial: right column shows used cards + missing areas (amber)
-- [ ] Insufficient: right column shows all cards (none highlighted) + matching gap (← !!)
-- [ ] Flag button (🚩) on each test case — click to toggle
-- [ ] Flagged cases: dim to 80%, move to bottom, excluded from summary count
-- [ ] Summary bar: shows "(N flagged)" in parentheses
-- [ ] "→ Back to Capture" link on failed/partial test cases
-- [ ] Back to Capture: auto-generates question from test case topic
-- [ ] "Re-run test cases" button after returning from Capture
-- [ ] Commit modal: includes validation summary
+- [ ] Deliver page layout: header → summary → Data Validation → gaps → sanitization → buttons
+- [ ] Test cases displayed as accordion rows (collapsed by default)
+- [ ] Only one row expanded at a time
+- [ ] Expanded row shows full conversation: persona asks → AI answers → sources/recommendation
+- [ ] Right column updates per selected test case
+- [ ] Answered: right column highlights source cards in green
+- [ ] Insufficient: right column shows matching gap with "← matches" in rose
+- [ ] Flag button (🚩) toggles on each test case
+- [ ] Flagged cases: 50% opacity, sorted to bottom, excluded from summary count
+- [ ] Summary bar: green/amber/rose segments + "(N flagged)" count
 - [ ] Persona tabs filter test cases
+- [ ] "→ Back to Capture" on failed/partial rows
+- [ ] "Re-run test cases" button after returning from Capture
+- [ ] Commit button: always enabled with violet gradient
+- [ ] Confirmation modal: includes validation summary
 - [ ] Demo data: 8 test cases (5 pass, 1 partial, 2 fail)
 
 ---
