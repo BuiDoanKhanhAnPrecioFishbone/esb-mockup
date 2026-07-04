@@ -1,11 +1,12 @@
 "use client";
 import React, { useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Clock, AlertTriangle, Sparkles, Database, ArrowLeftRight, Shield, PartyPopper, ArrowRight, Info, ChevronDown } from "lucide-react";
+import { CheckCircle2, Clock, AlertTriangle, Sparkles, Database, ArrowLeftRight, Shield, PartyPopper, ArrowRight, Info, ChevronDown, FileText } from "lucide-react";
 
 export function DeliverOverview({ role, onSwitchTab, S, MD, modProgress, MC, ProgressBar }) {
   const [showCommit, setShowCommit] = useState(false);
   const [showBack, setShowBack] = useState(false);
+  const [flagged, setFlagged] = useState(() => new Set()); // DV-04 — flagged test cases
   if (role === "offboarder") return <div className="space-y-4"><div className="text-center py-4"><div className="w-12 h-12 rounded-full bg-violet-100 text-violet-700 text-sm font-semibold inline-flex items-center justify-center mx-auto mb-3">{S.initials}</div><h2 className="text-xl font-semibold">{"Thank you, "}<span className="text-violet-600">Minh</span>.</h2><p className="text-[12px] text-gray-500 max-w-xs mx-auto mt-2">{"Your contributions are captured. H\u00e0 Vy will review before committing to the Knowledge Graph."}</p></div><div className="rounded-lg border border-gray-200 bg-white p-4"><p className="text-[11px] font-medium mb-2">What you contributed</p><div className="grid grid-cols-2 gap-3"><MC l="Answered" v={S.answered}/><MC l="Gaps addressed" v={S.gapsAddressed}/></div></div><div className="rounded-lg border border-gray-200 bg-white p-4"><p className="text-[11px] font-medium mb-2">What happens next</p><div className="space-y-2">{[{n:1,t:"H\u00e0 Vy reviews your contributions",d:"You\u2019ll get a copy of any follow-ups.",active:true},{n:2,t:"Knowledge Graph commit",d:"Your answers will be available to the team in the Knowledge Graph."}].map(s=><div key={s.n} className="flex gap-2.5 text-[11px]"><div className={`w-5 h-5 rounded-full text-[10px] font-medium flex items-center justify-center shrink-0 ${s.active?"bg-violet-100 text-violet-700":"bg-gray-100 text-gray-500"}`}>{s.n}</div><div><p className="font-medium">{s.t}</p><p className="text-gray-500 text-[10px]">{s.d}</p></div></div>)}</div></div></div>;
   if (role === "coworker") return <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center"><div className="w-12 h-12 rounded-full bg-gray-100 inline-flex items-center justify-center mb-3 mx-auto"><Clock className="w-5 h-5 text-gray-400" strokeWidth={1.5}/></div><h3 className="text-sm font-medium text-gray-700 mb-1">Session is being finalized</h3><p className="text-xs text-gray-500 max-w-xs mx-auto">{"H\u00e0 Vy is reviewing contributions before committing to the Knowledge Graph."}</p></div>;
 
@@ -42,6 +43,9 @@ export function DeliverOverview({ role, onSwitchTab, S, MD, modProgress, MC, Pro
       <MC l="Modules covered" v={MODULES}/>
     </div>
 
+    {/* Data Validation (DV-01..08) */}
+    <DataValidation MD={MD} flagged={flagged} setFlagged={setFlagged} onBackToCapture={()=>setShowBack(true)}/>
+
     {/* Resolved gaps */}
     <ResolvedGaps items={resolvedGaps}/>
 
@@ -73,7 +77,7 @@ export function DeliverOverview({ role, onSwitchTab, S, MD, modProgress, MC, Pro
       <button onClick={()=>setShowCommit(true)} className="h-9 px-4 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center gap-2"><Database className="w-3.5 h-3.5"/>Commit to KG</button>
     </div>
 
-    {showCommit && <CommitModal S={S} entries={ENTRIES} sensitive={SENSITIVE} unresolved={unresolvedGaps.length} onClose={()=>setShowCommit(false)}/>}
+    {showCommit && <CommitModal S={S} entries={ENTRIES} sensitive={SENSITIVE} unresolved={unresolvedGaps.length} validation={{ passed: TEST_CASES.filter(t=>t.result==="pass").length, total: TEST_CASES.length, flagged: flagged.size }} onClose={()=>setShowCommit(false)}/>}
     {showBack && <BackModal onClose={()=>setShowBack(false)}/>}
   </div>;
 }
@@ -137,4 +141,137 @@ function CommitModal({ S, entries = 42, sensitive = 3, unresolved = 0, validatio
 
 function BackModal({ onClose }) {
   return <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center" onClick={onClose}><div className="bg-white rounded-xl shadow-xl p-6 w-[380px] border border-gray-200" onClick={e=>e.stopPropagation()}><h3 className="text-base font-semibold mb-3">Reopen Capture?</h3><p className="text-[12px] text-gray-500 mb-2">{"This will reopen the session for Minh L\u00ea. He\u2019ll be notified that more input is needed."}</p><p className="text-[10px] text-gray-400 mb-4">You can move back to Deliver again when ready.</p><div className="flex gap-2 justify-end"><button onClick={onClose} className="h-8 px-3 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button><button className="h-8 px-3 rounded-md bg-rose-50 border border-rose-300 text-rose-700 text-sm font-medium inline-flex items-center gap-1.5 hover:bg-rose-100"><ArrowLeftRight className="w-3.5 h-3.5"/>Reopen Capture</button></div></div></div>;
+}
+
+/* \u2500\u2500 Data Validation (DV-01..08) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+   Simulated AI\u2194consumer conversations that prove the collected knowledge is usable
+   before commit. Accordion test cases (left) + per-case source data (right). */
+const DV_PERSONA = {
+  newcomer: { icon: "\ud83e\uddd1\u200d\ud83d\udcbb", label: "Newcomer" },
+  manager: { icon: "\ud83d\udcca", label: "Manager" },
+  coworker: { icon: "\ud83d\udc65", label: "Coworker" },
+};
+const DV_RESULT = {
+  pass:    { badge: "\u2705", label: "Answered",     bg: "#dcfce7", border: "#059669", text: "#047857" },
+  partial: { badge: "\u26a0\ufe0f", label: "Partial",      bg: "#fef3c7", border: "#f59e0b", text: "#b45309" },
+  fail:    { badge: "\u274c", label: "Insufficient", bg: "#ffe4e6", border: "#e11d48", text: "#be123c" },
+};
+// 8 test cases \u2014 5 pass, 1 partial, 2 fail. Modules/cards match session-command-view MODULES_DATA.
+const TEST_CASES = [
+  { id: "t1", persona: "newcomer", q: "How do I deploy the payment service?", result: "pass", module: "CI/CD Pipeline",
+    ai: "Deploys run through the GitHub Actions workflow: lint \u2192 test \u2192 build \u2192 deploy. Staging auto-deploys; production needs manual approval.", note: "Grounded in 2 cards from CI/CD Pipeline.", cards: ["GitHub Actions workflow", "Docker image caching"] },
+  { id: "t2", persona: "newcomer", q: "What's the retry logic for failed transactions?", result: "pass", module: "Payment Service",
+    ai: "After 5 retries with exponential backoff, messages route to the DLQ, monitored via Datadog alert #4421.", note: "Grounded in the Kafka retry configuration card.", cards: ["Kafka retry configuration"] },
+  { id: "t3", persona: "newcomer", q: "Who do I contact for Kafka issues?", result: "fail", module: "Payment Service",
+    ai: "I don't have enough information. The data covers retry mechanics, but no ownership or escalation contacts were documented.", note: "No card covers escalation. Maps to gap: No error escalation process defined.", cards: [], gap: "No error escalation process defined" },
+  { id: "t4", persona: "manager", q: "What SLAs exist for the payment gateway?", result: "pass", module: "Payment Service",
+    ai: "The gateway uses a 30s circuit-breaker timeout; on trip it returns 503 and the client retries with an idempotency key.", note: "Grounded in the Payment gateway timeout card.", cards: ["Payment gateway timeout"] },
+  { id: "t5", persona: "manager", q: "What are the key risks in the payment pipeline?", result: "partial", module: "Payment Service",
+    ai: "Retry storms and DLQ backlog are covered. Reconciliation risk is partially covered \u2014 but there's no disaster-recovery view.", note: "Answered from 2 cards; disaster recovery is missing.", cards: ["Kafka retry configuration", "Refund reconciliation"], gap: "No disaster recovery or failover procedures documented" },
+  { id: "t6", persona: "manager", q: "What's the disaster recovery procedure?", result: "fail", module: "Payment Service",
+    ai: "I don't have enough information about disaster recovery. The collected data covers retry logic and webhook handling, but no DR procedures were documented.", note: "No card covers DR. Maps to GAP #1 in Payment Service.", cards: [], gap: "No disaster recovery or failover procedures documented" },
+  { id: "t7", persona: "coworker", q: "How does the webhook handler work?", result: "pass", module: "Payment Service",
+    ai: "The Stripe webhook handler processes payment confirmations and refunds. Critical events: payment_intent.succeeded, charge.refunded, invoice.payment_failed.", note: "Grounded in the Stripe webhook handler card.", cards: ["Stripe webhook handler"] },
+  { id: "t8", persona: "coworker", q: "How is the DLQ consumer group configured?", result: "pass", module: "Payment Service",
+    ai: "Poison messages route to the DLQ after 5 retries; a replay runbook is attached (dlq-replay-runbook.pdf).", note: "Grounded in the Kafka retry configuration card.", cards: ["Kafka retry configuration"] },
+];
+
+function DataValidation({ MD, flagged, setFlagged, onBackToCapture }) {
+  const [expandedId, setExpandedId] = useState(null);
+  const [filter, setFilter] = useState("all");
+  const [rerunning, setRerunning] = useState(false);
+  const isFlagged = (id) => flagged.has(id);
+  const toggleFlag = (id) => setFlagged(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+  const counts = { pass: 0, partial: 0, fail: 0 };
+  TEST_CASES.forEach(t => { counts[t.result]++; });
+  const total = TEST_CASES.length;
+  const flaggedFails = TEST_CASES.filter(t => t.result !== "pass" && isFlagged(t.id)).length;
+  const anyFail = counts.fail > 0 || counts.partial > 0;
+  const pct = (n) => `${(n / total) * 100}%`;
+
+  const filtered = TEST_CASES.filter(t => filter === "all" || t.persona === filter);
+  const sorted = [...filtered].sort((a, b) => (isFlagged(a.id) ? 1 : 0) - (isFlagged(b.id) ? 1 : 0));
+  const selected = TEST_CASES.find(t => t.id === expandedId);
+
+  const tabs = [
+    { id: "all", label: "All", icon: "", count: TEST_CASES.length },
+    { id: "newcomer", label: "Newcomer", icon: DV_PERSONA.newcomer.icon, count: TEST_CASES.filter(t => t.persona === "newcomer").length },
+    { id: "manager", label: "Manager", icon: DV_PERSONA.manager.icon, count: TEST_CASES.filter(t => t.persona === "manager").length },
+    { id: "coworker", label: "Coworker", icon: DV_PERSONA.coworker.icon, count: TEST_CASES.filter(t => t.persona === "coworker").length },
+  ];
+  const rerun = () => { setRerunning(true); setTimeout(() => setRerunning(false), 900); };
+
+  return <div className="rounded-lg border border-gray-200 bg-white p-4">
+    <div className="flex items-center gap-1.5 mb-3"><Sparkles className="w-4 h-4 text-violet-500"/><h3 className="text-sm font-semibold text-gray-900">Data validation</h3><span className="text-[11px] text-gray-500">Can a newcomer, manager, or coworker actually use this knowledge?</span></div>
+
+    {/* Summary bar */}
+    <div className={`rounded-md border px-3 py-2 mb-3 ${anyFail ? "bg-amber-50 border-amber-200" : "bg-emerald-50 border-emerald-200"}`}>
+      <div className="flex h-[5px] rounded-full overflow-hidden mb-1.5 bg-gray-200">
+        <div style={{ width: pct(counts.pass), background: "#059669" }}/><div style={{ width: pct(counts.partial), background: "#f59e0b" }}/><div style={{ width: pct(counts.fail), background: "#e11d48" }}/>
+      </div>
+      <p className="text-[11px] text-gray-700">{"\u2705 "}{counts.pass}{" answered \u00b7 \u26a0\ufe0f "}{counts.partial}{" partial \u00b7 \u274c "}{counts.fail}{" insufficient"}{flaggedFails > 0 ? ` (${flaggedFails} flagged)` : ""}</p>
+    </div>
+
+    {/* Persona tabs */}
+    <div className="flex flex-wrap gap-1.5 mb-3">{tabs.map(t => <button key={t.id} onClick={() => setFilter(t.id)} className={`h-7 px-2.5 rounded-md text-[11px] font-medium inline-flex items-center gap-1 border cursor-pointer ${filter === t.id ? "border-violet-300 bg-violet-50 text-violet-700" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}>{t.icon && <span>{t.icon}</span>}{t.label}<span className="text-gray-400" style={{ fontFamily: "ui-monospace,Menlo,monospace" }}>{t.count}</span></button>)}</div>
+
+    {/* Two columns */}
+    <div className="flex gap-3">
+      <div className="min-w-0 space-y-1.5" style={{ flexBasis: "55%" }}>
+        {sorted.map(t => { const r = DV_RESULT[t.result]; const p = DV_PERSONA[t.persona]; const open = expandedId === t.id; const fl = isFlagged(t.id);
+          return <div key={t.id} className={`rounded-md border transition-colors ${open ? "border-violet-300" : "border-gray-200"} ${fl ? "opacity-50" : ""}`} style={open ? { borderLeft: "3px solid #7c3aed", background: "#faf8ff" } : undefined}>
+            <div className="w-full flex items-center gap-2 px-3 py-2">
+              <button onClick={() => setExpandedId(open ? null : t.id)} className="flex-1 min-w-0 flex items-center gap-2 text-left cursor-pointer">
+                <span className="shrink-0">{p.icon}</span>
+                <span className="flex-1 min-w-0 text-[12px] text-gray-900 truncate">{t.q}</span>
+              </button>
+              <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded border" style={{ background: r.bg, borderColor: r.border, color: r.text }}>{fl ? "\u274c \ud83d\udea9" : `${r.badge} ${r.label}`}</span>
+              <button onClick={() => toggleFlag(t.id)} className="shrink-0 text-[12px] leading-none cursor-pointer hover:scale-110 transition-transform" title={fl ? "Unflag" : "Flag"}>\ud83d\udea9</button>
+              <button onClick={() => setExpandedId(open ? null : t.id)} className="shrink-0 cursor-pointer"><ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${open ? "" : "-rotate-90"}`}/></button>
+            </div>
+            {open && <div className="px-3 pb-3 border-t border-violet-100 space-y-2 text-[11px]">
+              <div className="pt-2"><p className="text-gray-500">{p.icon}{" "}{p.label}{" asks:"}</p><p className="text-gray-900 italic">&quot;{t.q}&quot;</p></div>
+              <div><p className="text-gray-500">{"\ud83e\udd16 AI (using Minh L\u00ea's data):"}</p><p className="text-gray-800 leading-relaxed">&quot;{t.ai}&quot;</p></div>
+              <p className="text-[10px] text-gray-600 flex items-start gap-1"><span>\ud83d\udca1</span><span>{t.note}</span></p>
+              <div className="flex items-center justify-between pt-1">
+                <button onClick={() => toggleFlag(t.id)} className="text-[10px] text-gray-500 hover:text-rose-600 cursor-pointer inline-flex items-center gap-1">\ud83d\udea9 {fl ? "Unflag" : "Flag"}</button>
+                {t.result !== "pass" && <button onClick={onBackToCapture} className="text-[10px] text-violet-600 hover:text-violet-700 font-medium cursor-pointer">{"\u2192 Back to Capture"}</button>}
+              </div>
+            </div>}
+          </div>;
+        })}
+        <button onClick={rerun} disabled={rerunning} className="mt-1 h-7 px-2.5 rounded-md border border-gray-300 text-[11px] font-medium text-gray-600 hover:bg-gray-50 inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-60">{rerunning ? <><span className="w-3 h-3 rounded-full border-2 border-gray-300 border-t-violet-500 animate-spin"/>Re-running\u2026</> : "Re-run test cases"}</button>
+      </div>
+
+      <div className="shrink-0 rounded-md border border-gray-200 bg-gray-50/50 p-3" style={{ flexBasis: "45%" }}>
+        {selected ? <DVSource c={selected} MD={MD}/> : <p className="text-[11px] text-gray-400">Expand a test case to see the data the AI drew from.</p>}
+      </div>
+    </div>
+  </div>;
+}
+
+function DVSource({ c, MD }) {
+  const mod = MD.flatMap(b => b.modules).find(m => m.name === c.module);
+  const cards = mod ? mod.items.map(i => i.name) : [];
+  const used = new Set(c.cards || []);
+  const gaps = (mod && mod.moduleGaps) || [];
+  const showGapExtra = c.gap && !gaps.includes(c.gap) && c.result !== "pass";
+  return <div className="space-y-2 text-[11px]">
+    <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Source module</p>
+    <p className="text-[12px] font-medium text-gray-900">{c.module}</p>
+    <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium pt-1">{"Cards ("}{cards.length}{")"}</p>
+    <div className="space-y-1">
+      {cards.map((name, i) => { const u = used.has(name); const cls = u ? (c.result === "pass" ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-amber-50 border-amber-200 text-amber-800") : "bg-white border-gray-200 text-gray-600";
+        return <div key={i} className={`flex items-center gap-1.5 px-2 py-1 rounded border ${cls}`}><FileText className="w-3 h-3 shrink-0 opacity-60"/><span className="flex-1 truncate">{name}</span>{u && <span className="text-[9px] font-medium shrink-0">used</span>}</div>; })}
+      {cards.length === 0 && <p className="text-gray-400">No cards in this module.</p>}
+    </div>
+    {(gaps.length > 0 || showGapExtra) && <>
+      <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium pt-1">Gaps</p>
+      <div className="space-y-1">
+        {gaps.map((g, i) => { const match = c.result !== "pass" && c.gap === g; return <div key={i} className={`flex items-start gap-1.5 px-2 py-1 rounded border ${match ? "bg-rose-50 border-rose-200 text-rose-800" : "bg-white border-gray-200 text-gray-600"}`}><AlertTriangle className="w-3 h-3 shrink-0 mt-0.5"/><span className="flex-1">{g}</span>{match && <span className="text-[9px] font-medium shrink-0">{"\u2190 matches"}</span>}</div>; })}
+        {showGapExtra && <div className="flex items-start gap-1.5 px-2 py-1 rounded border bg-rose-50 border-rose-200 text-rose-800"><AlertTriangle className="w-3 h-3 shrink-0 mt-0.5"/><span className="flex-1">{c.gap}</span><span className="text-[9px] font-medium shrink-0">{"\u2190 matches"}</span></div>}
+      </div>
+    </>}
+  </div>;
 }
