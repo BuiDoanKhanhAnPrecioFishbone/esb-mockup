@@ -20,7 +20,7 @@ const ROLES = [
 const FLOW = [
   { id: "collecting", label: "Collecting data", trigger: "Crawl running \u2014 3 boards." },
   { id: "ready", label: "Ready for review", trigger: "5 modules, 14 questions, 6 gaps." },
-  { id: "capture", label: "Capture (active)", trigger: "9 of 14 answered, 7 satisfied." },
+  { id: "capture", label: "Capture (active)", trigger: "9 of 14 answered, 7 accepted." },
   { id: "deliver", label: "Deliver (review)", trigger: "Manager reviewing before KG commit." },
   { id: "complete", label: "Complete", trigger: "Committed to Knowledge Graph." },
 ];
@@ -140,7 +140,7 @@ function SessionPage({ role, stepId, initialTab }) {
 function HeroBar({ phase, stepId }) {
   const cls = {prepare:"bg-blue-50 border-blue-200 text-blue-700",capture:"bg-violet-50 border-violet-200 text-violet-700",deliver:"bg-emerald-50 border-emerald-200 text-emerald-700"};
   const label = stepId==="complete"?"Complete":phase==="prepare"?"Prepare":phase==="capture"?"Capture":"Deliver";
-  const metrics = phase==="prepare"?`${SESSION.coworkers} coworkers · ${SESSION.questions} Qs · ${SESSION.gaps} gaps`:phase==="capture"?`${SESSION.answered}/${SESSION.questions} answered · ${SESSION.satisfied} satisfied`:stepId==="complete"?`${SESSION.answered} committed · ${SESSION.files} files`:`${SESSION.answered}/${SESSION.questions} answered · reviewing`;
+  const metrics = phase==="prepare"?`${SESSION.coworkers} coworkers · ${SESSION.questions} Qs · ${SESSION.gaps} gaps`:phase==="capture"?`${SESSION.answered}/${SESSION.questions} answered · ${SESSION.satisfied} accepted`:stepId==="complete"?`${SESSION.answered} committed · ${SESSION.files} files`:`${SESSION.answered}/${SESSION.questions} answered · reviewing`;
   return <div className="rounded-lg border border-gray-200 bg-white p-4 mb-5 flex items-center gap-4"><div className={`w-12 h-12 rounded-full ${stepId==="complete"?"bg-emerald-100 text-emerald-700":"bg-violet-100 text-violet-700"} text-sm font-semibold inline-flex items-center justify-center shrink-0`}>{stepId==="complete"?<CheckCircle2 className="w-5 h-5"/>:SESSION.initials}</div><div className="flex-1 min-w-0"><div className="flex items-center gap-2 mb-0.5"><h1 className="text-lg font-semibold text-gray-900">{SESSION.name}&apos;s session</h1><span className={`text-[9px] px-2 py-0.5 rounded uppercase tracking-wider font-semibold border ${cls[phase]}`}>{label}</span></div><p className="text-[12px] text-gray-500">{SESSION.role}{" · "}{SESSION.dept}</p><p className="text-[11px] text-gray-500 mt-0.5" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{stepId!=="complete"?`${SESSION.daysLeft}d left · `:""}{metrics}</p></div></div>;
 }
 
@@ -710,7 +710,7 @@ function LogsContent({ role, stepId }) {
     ...(stepId==="deliver"||stepId==="complete"?[{ts:"2:30 PM",type:"system",text:"H\u00e0 Vy moved session to Deliver"}]:[]),
     ...(["capture","deliver","complete"].includes(stepId)?[
       {ts:"2:15 PM",type:"questions",text:"Minh L\u00ea answered about token refresh"},
-      {ts:"1:40 PM",type:"questions",text:"Coworker A marked satisfied: webhook events"},
+      {ts:"1:40 PM",type:"questions",text:"Coworker A accepted: webhook events"},
       {ts:"12:50 PM",type:"questions",text:"Minh L\u00ea answered about retry logic"},
       {ts:"11:05 AM",type:"system",text:"Capture started \u2014 Minh L\u00ea notified"},
     ]:[]),
