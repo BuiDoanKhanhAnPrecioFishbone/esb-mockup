@@ -65,14 +65,6 @@ const MODULES = [
       { name: "Token bucket rate limiter", status: "verified", contributor: "Minh L\u00ea", date: "Jun 2026", activity: [0, 0, 0, 0, 0, 2] },
       { name: "API versioning & sunset", status: "verified", contributor: "Minh L\u00ea", date: "Jun 2026", activity: [0, 0, 0, 0, 0, 1] },
     ] },
-  { id: "infra", name: "Infrastructure as Code", entries: 3, verified: 3, draft: 0, gaps: 0,
-    activity: [0, 0, 2, 0, 0, 0],
-    contributors: [{ name: "Thanh \u0110\u1ee9c", date: "Mar 2026", count: 3 }],
-    items: [
-      { name: "Terraform modules", status: "verified", contributor: "Thanh \u0110\u1ee9c", date: "Mar 2026", activity: [0, 0, 2, 0, 0, 0] },
-      { name: "AKS cluster config", status: "verified", contributor: "Thanh \u0110\u1ee9c", date: "Mar 2026", activity: [0, 0, 1, 0, 0, 0] },
-      { name: "Network policies", status: "verified", contributor: "Thanh \u0110\u1ee9c", date: "Mar 2026", activity: [0, 0, 1, 0, 0, 0] },
-    ] },
 ];
 
 function cellColor(v) {
@@ -109,9 +101,9 @@ export default function KnowledgeGraphInsights({ embedded = false } = {}) {
             <h2 className="text-sm font-semibold text-gray-900 leading-tight">Knowledge insights</h2>
             <div className="text-[11px] text-gray-500 flex items-center gap-1 mt-0.5">
               {selectedModule ? (
-                <><button onClick={goToAll} className="text-violet-600 hover:text-violet-700 cursor-pointer">Engineering</button>{" \u203A "}<span className="text-gray-900 font-medium">{selectedModule.name}</span></>
+                <><button onClick={goToAll} className="text-violet-600 hover:text-violet-700 cursor-pointer">Minh L\u00EA</button>{" \u203A "}<span className="text-gray-900 font-medium">{selectedModule.name}</span></>
               ) : (
-                <span>Engineering department</span>
+                <span>Minh L\u00EA&apos;s handover</span>
               )}
             </div>
           </div>
@@ -171,32 +163,14 @@ function UnfilteredView({ onSelect, hoveredRow, setHoveredRow }) {
 function FilteredView({ mod, hoveredRow, setHoveredRow }) {
   return (
     <div className="grid grid-cols-12 gap-3">
-      {/* Left: Entry list */}
-      <div className="col-span-5 rounded-lg border border-gray-200 bg-white overflow-hidden">
-        <div className="px-4 py-2.5 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
-          <span className="text-[12px] font-semibold text-gray-900">Entries</span>
-          <span className="text-[10px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{mod.items.length}</span>
-        </div>
-        {mod.items.map((entry, i) => (
-          <div key={i} onMouseEnter={() => setHoveredRow(i)} onMouseLeave={() => setHoveredRow(null)}
-            className={`px-4 py-2.5 border-b border-gray-100 last:border-b-0 transition-colors ${entry.status === "gap" ? "border-l-2 border-l-yellow-400" : ""} ${hoveredRow === i ? "bg-violet-50/50" : ""}`} style={entry.status === "gap" ? { borderRadius: 0 } : undefined}>
-            <div className="flex items-center gap-1.5 mb-1">
-              <span className="text-[11px] font-medium text-gray-900 flex-1 truncate">{entry.name}</span>
-              <StatusBadge status={entry.status} />
-            </div>
-            <p className="text-[10px] text-gray-500">{entry.contributor}{" · "}{entry.date}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Right: Entry heatmap */}
-      <div className="col-span-7 rounded-lg border border-gray-200 bg-white overflow-hidden">
+      {/* KG-06 — Entries column removed; heatmap only, full width. */}
+      <div className="col-span-12 rounded-lg border border-gray-200 bg-white overflow-hidden">
         <div className="px-4 py-2.5 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
           <span className="text-[12px] font-semibold text-gray-900">Activity heatmap</span>
           <Legend />
         </div>
         <div className="p-4">
-          <HeatmapGrid rows={mod.items.map(e => ({ label: e.name.length > 22 ? e.name.slice(0, 20) + "\u2026" : e.name, activity: e.activity }))} hoveredRow={hoveredRow} setHoveredRow={setHoveredRow} />
+          <HeatmapGrid rows={mod.items.map(e => ({ label: e.name.length > 30 ? e.name.slice(0, 28) + "\u2026" : e.name, activity: e.activity }))} hoveredRow={hoveredRow} setHoveredRow={setHoveredRow} />
         </div>
       </div>
     </div>
@@ -219,7 +193,9 @@ function HeatmapGrid({ rows, hoveredRow, setHoveredRow }) {
             <td className="text-[11px] text-gray-800 truncate" style={{ padding: "4px 8px 4px 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.label}</td>
             {row.activity.map((v, ci) => {
               const c = cellColor(v);
-              return <td key={ci} style={{ padding: "2px" }}><div style={{ height: 22, borderRadius: 3, background: c.bg, border: `0.5px solid ${c.border}` }} /></td>;
+              // KG-06 — hovering a cell surfaces the card count for that month (gap cells show "gap flagged").
+              const tip = `${row.label} — ${MONTHS[ci]}: ${v < 0 ? "gap flagged" : `${v} card${v === 1 ? "" : "s"}`}`;
+              return <td key={ci} style={{ padding: "2px" }}><div title={tip} style={{ height: 22, borderRadius: 3, background: c.bg, border: `0.5px solid ${c.border}`, cursor: "default" }} /></td>;
             })}
           </tr>
         ))}

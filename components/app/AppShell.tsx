@@ -47,12 +47,8 @@ const PRIMARY_NAV: NavItem[] = [
     icon: Briefcase,
     match: (p) => p.startsWith("/session"),
   },
-  {
-    label: "Knowledge graph",
-    href: "/knowledge-graph",
-    icon: Network,
-    match: (p) => p.startsWith("/knowledge-graph"),
-  },
+  // KG-01 — Knowledge Graph removed from sidebar nav. It's reachable only from the
+  // Manager Complete "Explore in Knowledge Graph" link (scoped to one offboarder).
   {
     label: "Settings",
     href: "/settings",

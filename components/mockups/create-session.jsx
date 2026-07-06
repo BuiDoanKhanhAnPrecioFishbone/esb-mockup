@@ -371,7 +371,8 @@ function ManualForm() {
   const [email, setEmail] = useState("");
   const [dept, setDept] = useState("");
   const [lastDay, setLastDay] = useState("");
-  const [trello, setTrello] = useState("");
+  // SC-02 — pre-connect Trello so the manual form demos the "connected" state (green validation) on load.
+  const [trello, setTrello] = useState("https://trello.com/b/abc123/backend-services");
   // §3.2 — optional sources: name → typed value (non-functional). Presence of a key = chip active.
   const [extraSources, setExtraSources] = useState({});
   const [result, setResult] = useState(null); // null | validateTrello() — set on "Discover boards"
@@ -404,7 +405,7 @@ function ManualForm() {
       </h2>
 
       <div className="rounded-lg border border-gray-200 bg-white p-5 space-y-4">
-        {/* §3.1 — exactly 4 fields. Name is auto-derived from the Trello profile, not entered. */}
+        {/* §3.1 — Name is auto-derived from the Trello profile, not entered. */}
         <Field label="Email" required hint="identification & invitation">
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />

@@ -7,6 +7,7 @@ export function DeliverOverview({ role, onSwitchTab, S, MD, modProgress, MC, Pro
   const [showCommit, setShowCommit] = useState(false);
   const [showBack, setShowBack] = useState(false);
   const [flagged, setFlagged] = useState(() => new Set());
+  const [backWarn, setBackWarn] = useState(false); // DV-09 — warn if Back to Capture is clicked with nothing flagged
   const [dvOpen, setDvOpen] = useState(false); // UX-02: collapsed by default
 
   if (role === "offboarder") return <div className="space-y-4"><div className="text-center py-4"><div className="w-12 h-12 rounded-full bg-violet-100 text-violet-700 text-sm font-semibold inline-flex items-center justify-center mx-auto mb-3">{S.initials}</div><h2 className="text-xl font-semibold">{"Thank you, "}<span className="text-violet-600">Minh</span>.</h2><p className="text-[12px] text-gray-500 max-w-xs mx-auto mt-2">{"Your contributions are captured. H\u00e0 Vy will review before committing to the Knowledge Graph."}</p></div><div className="rounded-lg border border-gray-200 bg-white p-4"><p className="text-[11px] font-medium mb-2">What you contributed</p><div className="grid grid-cols-2 gap-3"><MC l="Answered" v={S.answered}/><MC l="Gaps addressed" v={S.gapsAddressed}/></div></div><div className="rounded-lg border border-gray-200 bg-white p-4"><p className="text-[11px] font-medium mb-2">What happens next</p><div className="space-y-2">{[{n:1,t:"H\u00e0 Vy reviews your contributions",d:"You\u2019ll get a copy of any follow-ups.",active:true},{n:2,t:"Knowledge Graph commit",d:"Your answers will be available to the team in the Knowledge Graph."}].map(s=><div key={s.n} className="flex gap-2.5 text-[11px]"><div className={`w-5 h-5 rounded-full text-[10px] font-medium flex items-center justify-center shrink-0 ${s.active?"bg-violet-100 text-violet-700":"bg-gray-100 text-gray-500"}`}>{s.n}</div><div><p className="font-medium">{s.t}</p><p className="text-gray-500 text-[10px]">{s.d}</p></div></div>)}</div></div></div>;
@@ -44,7 +45,7 @@ export function DeliverOverview({ role, onSwitchTab, S, MD, modProgress, MC, Pro
     </div>
 
     {/* Data Validation — UX-02: collapsed by default */}
-    <DataValidation MD={MD} flagged={flagged} setFlagged={setFlagged} onBackToCapture={()=>setShowBack(true)} dvOpen={dvOpen} setDvOpen={setDvOpen}/>
+    <DataValidation MD={MD} flagged={flagged} setFlagged={setFlagged} dvOpen={dvOpen} setDvOpen={setDvOpen}/>
 
     {/* Resolved gaps */}
     <ResolvedGaps items={resolvedGaps}/>
@@ -73,12 +74,13 @@ export function DeliverOverview({ role, onSwitchTab, S, MD, modProgress, MC, Pro
 
     {/* UX-01: Sticky bottom action bar */}
     <div className="sticky bottom-0 z-10 -mx-4 px-4 py-3 bg-white border-t border-gray-200 flex items-center justify-between" style={{boxShadow:"0 -2px 8px rgba(0,0,0,0.04)"}}>
-      <button onClick={()=>setShowBack(true)} className="h-9 px-4 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 inline-flex items-center gap-1.5"><ArrowLeftRight className="w-3.5 h-3.5"/>Back to Capture</button>
+      <button onClick={()=> flagged.size ? setShowBack(true) : setBackWarn(true)} className="h-9 px-4 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 inline-flex items-center gap-1.5"><ArrowLeftRight className="w-3.5 h-3.5"/>Back to Capture</button>
       <button onClick={()=>setShowCommit(true)} className="h-9 px-5 rounded-lg text-white text-sm font-medium inline-flex items-center gap-2" style={{background:"linear-gradient(135deg, #6366f1, #7c3aed)"}}><Database className="w-3.5 h-3.5"/>Commit to Knowledge Graph</button>
     </div>
 
     {showCommit && <CommitModal S={S} entries={ENTRIES} sensitive={SENSITIVE} unresolved={unresolvedGaps.length} validation={{ passed: TEST_CASES.filter(t=>t.result==="pass").length, total: TEST_CASES.length, flagged: flagged.size }} onClose={()=>setShowCommit(false)}/>}
-    {showBack && <BackModal onClose={()=>setShowBack(false)}/>}
+    {showBack && <BackModal count={flagged.size} onClose={()=>setShowBack(false)}/>}
+    {backWarn && <BackWarnModal onClose={()=>setBackWarn(false)}/>}
   </div>;
 }
 
@@ -132,23 +134,23 @@ export function CompleteOverview({ role, S, MC }) {
     <div className="grid grid-cols-2 gap-3 mb-5"><MC l="Questions you asked" v={4}/><MC l="Answers you reviewed" v={2}/></div>
     <p className="text-[12px] text-gray-500 text-center">{"The answers you reviewed are now available to the whole team."}</p>
   </div>;
-  return <div className="space-y-4"><div className="rounded-md bg-emerald-50 border border-emerald-200 p-3 flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0"/><div><p className="text-[12px] font-medium text-emerald-800">Committed to Knowledge Graph</p><p className="text-[10px] text-emerald-600" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{"Jun 14, 2026 at 3:42 PM \u00b7 487 entries"}</p></div></div><div className="rounded-lg border border-gray-200 bg-white p-5"><div className="grid grid-cols-3 gap-3"><MC l="Entries committed" v={42}/><MC l="Questions answered" v={S.answered}/><MC l="Modules covered" v={S.modules}/></div><p className="text-[11px] text-gray-500 mt-3">{"Minh L\u00ea\u2019s knowledge is now available to the team in the Knowledge Graph."}</p><div className="flex gap-3 mt-3"><Link href={`/knowledge-graph?prompt=${S.id}`} className="h-8 px-3 rounded-md border border-violet-300 text-violet-700 text-xs font-medium inline-flex items-center gap-1.5 hover:bg-violet-50"><Sparkles className="w-3 h-3"/>Explore in Knowledge Graph</Link><Link href="/" className="h-8 px-3 rounded-md border border-gray-300 text-gray-700 text-xs font-medium inline-flex items-center gap-1.5 hover:bg-gray-50">Back to dashboard</Link></div></div></div>;
+  return <div className="space-y-4"><div className="rounded-md bg-emerald-50 border border-emerald-200 p-3 flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0"/><div><p className="text-[12px] font-medium text-emerald-800">Committed to Knowledge Graph</p><p className="text-[10px] text-emerald-600" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{"Jun 14, 2026 at 3:42 PM \u00b7 487 entries"}</p></div></div><div className="rounded-lg border border-gray-200 bg-white p-5"><div className="grid grid-cols-3 gap-3"><MC l="Entries committed" v={42}/><MC l="Questions answered" v={S.answered}/><MC l="Modules covered" v={S.modules}/></div><p className="text-[11px] text-gray-500 mt-3">{"Minh L\u00ea\u2019s knowledge is now available to the team in the Knowledge Graph."}</p><div className="flex gap-3 mt-3"><Link href={`/knowledge-graph?session=${S.id}`} className="h-8 px-3 rounded-md border border-violet-300 text-violet-700 text-xs font-medium inline-flex items-center gap-1.5 hover:bg-violet-50"><Sparkles className="w-3 h-3"/>Explore in Knowledge Graph</Link><Link href="/" className="h-8 px-3 rounded-md border border-gray-300 text-gray-700 text-xs font-medium inline-flex items-center gap-1.5 hover:bg-gray-50">Back to dashboard</Link></div></div></div>;
 }
 
 function CommitModal({ S, entries = 42, sensitive = 3, unresolved = 0, validation = { passed: 5, total: 8, flagged: 1 }, onClose }) {
-  return <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center" onClick={onClose}><div className="bg-white rounded-xl shadow-xl p-6 w-[400px] border border-gray-200" onClick={e=>e.stopPropagation()}><h3 className="text-base font-semibold mb-1">{"Commit "}{entries}{" entries to the Knowledge Graph?"}</h3><p className="text-[11px] text-gray-400 mb-3">This action cannot be undone.</p><div className="text-[12px] space-y-0.5 mb-3 text-gray-700"><p>{"\u00b7 "}{entries}{" entries across "}{S.modules}{" modules"}</p><p>{"\u00b7 "}{S.answered}{" questions answered"}</p></div><div className="text-[11px] text-blue-800 bg-blue-50 border border-blue-200 rounded-md px-3 py-2 mb-2 flex items-start gap-1.5"><Shield className="w-3.5 h-3.5 shrink-0 mt-0.5"/><span>{sensitive}{" entries contain sensitive content and will be sanitized before commit."}</span></div>{unresolved>0&&<div className="text-[11px] text-yellow-800 bg-yellow-50 border border-yellow-200 rounded-md px-3 py-2 mb-2 flex items-start gap-1.5"><Info className="w-3.5 h-3.5 shrink-0 mt-0.5"/><span>{unresolved}{" unresolved "}{unresolved===1?"gap":"gaps"}{" will be preserved for future resolution."}</span></div>}<div className="text-[11px] text-violet-900 bg-violet-50 border border-violet-200 rounded-md px-3 py-2 mb-2 flex items-start gap-1.5"><Sparkles className="w-3.5 h-3.5 text-violet-500 shrink-0 mt-0.5"/><span>{"Data validation: "}{validation.passed}{"/"}{validation.total}{" test cases passed"}{validation.flagged>0?` (${validation.flagged} flagged)`:""}</span></div><div className="flex gap-2 justify-end mt-4"><button onClick={onClose} className="h-8 px-3 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button><button className="h-8 px-3 rounded-md bg-violet-600 text-white text-sm font-medium inline-flex items-center gap-1.5 hover:bg-violet-700"><Database className="w-3.5 h-3.5"/>Commit</button></div></div></div>;
+  return <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center" onClick={onClose}><div className="bg-white rounded-xl shadow-xl p-6 w-[400px] border border-gray-200" onClick={e=>e.stopPropagation()}><h3 className="text-base font-semibold mb-1">{"Commit "}{entries}{" entries to the Knowledge Graph?"}</h3><p className="text-[11px] text-gray-400 mb-3">This action cannot be undone.</p><div className="text-[12px] space-y-0.5 mb-3 text-gray-700"><p>{"\u00b7 "}{entries}{" entries across "}{S.modules}{" modules"}</p><p>{"\u00b7 "}{S.answered}{" questions answered"}</p></div><div className="text-[11px] text-blue-800 bg-blue-50 border border-blue-200 rounded-md px-3 py-2 mb-2 flex items-start gap-1.5"><Shield className="w-3.5 h-3.5 shrink-0 mt-0.5"/><span>{sensitive}{" entries contain sensitive content and will be sanitized before commit."}</span></div>{unresolved>0&&<div className="text-[11px] text-yellow-800 bg-yellow-50 border border-yellow-200 rounded-md px-3 py-2 mb-2 flex items-start gap-1.5"><Info className="w-3.5 h-3.5 shrink-0 mt-0.5"/><span>{unresolved}{" unresolved "}{unresolved===1?"gap":"gaps"}{" will be preserved for future resolution."}</span></div>}<div className="text-[11px] text-violet-900 bg-violet-50 border border-violet-200 rounded-md px-3 py-2 mb-2 flex items-start gap-1.5"><Sparkles className="w-3.5 h-3.5 text-violet-500 shrink-0 mt-0.5"/><span>{"Data validation: "}{validation.passed}{"/"}{validation.total}{" test cases passed"}{validation.flagged>0?` (${validation.flagged} flagged for review)`:""}</span></div><div className="flex gap-2 justify-end mt-4"><button onClick={onClose} className="h-8 px-3 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button><button className="h-8 px-3 rounded-md bg-violet-600 text-white text-sm font-medium inline-flex items-center gap-1.5 hover:bg-violet-700"><Database className="w-3.5 h-3.5"/>Commit</button></div></div></div>;
 }
 
-function BackModal({ onClose }) {
-  return <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center" onClick={onClose}><div className="bg-white rounded-xl shadow-xl p-6 w-[380px] border border-gray-200" onClick={e=>e.stopPropagation()}><h3 className="text-base font-semibold mb-3">Reopen Capture?</h3><p className="text-[12px] text-gray-500 mb-2">{"This will reopen the session for Minh L\u00ea. He\u2019ll be notified that more input is needed."}</p><p className="text-[10px] text-gray-400 mb-4">You can move back to Deliver again when ready.</p><div className="flex gap-2 justify-end"><button onClick={onClose} className="h-8 px-3 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button><button className="h-8 px-3 rounded-md bg-rose-50 border border-rose-300 text-rose-700 text-sm font-medium inline-flex items-center gap-1.5 hover:bg-rose-100"><ArrowLeftRight className="w-3.5 h-3.5"/>Reopen Capture</button></div></div></div>;
+function BackModal({ count = 0, onClose }) {
+  return <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center" onClick={onClose}><div className="bg-white rounded-xl shadow-xl p-6 w-[380px] border border-gray-200" onClick={e=>e.stopPropagation()}><h3 className="text-base font-semibold mb-3">Reopen Capture?</h3><p className="text-[12px] text-gray-500 mb-2">{"This will reopen the session for Minh L\u00ea. He\u2019ll be notified that more input is needed."}</p><p className="text-[11px] text-gray-600 mb-2 flex items-start gap-1.5"><Flag className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" fill="currentColor" strokeWidth={0}/><span>{count}{" flagged test "}{count===1?"case":"cases"}{" will generate new gaps and targeted questions. Unflagged answers are committed as-is."}</span></p><p className="text-[10px] text-gray-400 mb-4">You can move back to Deliver again when ready.</p><div className="flex gap-2 justify-end"><button onClick={onClose} className="h-8 px-3 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button><button className="h-8 px-3 rounded-md bg-rose-50 border border-rose-300 text-rose-700 text-sm font-medium inline-flex items-center gap-1.5 hover:bg-rose-100"><ArrowLeftRight className="w-3.5 h-3.5"/>Reopen Capture</button></div></div></div>;
 }
 
-/* -- Data Validation (UX-02/04: collapsed default, no emoji, colored dots) -- */
-const DV_PERSONA = {
-  newcomer: { label: "Newcomer" },
-  manager: { label: "Manager" },
-  coworker: { label: "Coworker" },
-};
+// DV-09 — shown when "Back to Capture" is clicked with nothing flagged.
+function BackWarnModal({ onClose }) {
+  return <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center" onClick={onClose}><div className="bg-white rounded-xl shadow-xl p-6 w-[380px] border border-gray-200" onClick={e=>e.stopPropagation()}><h3 className="text-base font-semibold mb-2 flex items-center gap-1.5"><AlertTriangle className="w-4 h-4 text-yellow-600"/>No test cases flagged</h3><p className="text-[12px] text-gray-500 mb-4">Flag the items you want resolved before going back to Capture. Flagged failures generate new gaps and targeted questions for the offboarder; unflagged answers are committed as-is.</p><div className="flex justify-end"><button onClick={onClose} className="h-8 px-3 rounded-md bg-violet-600 text-white text-sm font-medium hover:bg-violet-700">Got it</button></div></div></div>;
+}
+
+/* -- Data Validation (DV-09/10/11/13: flat list, chat bubbles, flag = send back, no emoji) -- */
 const DV_RESULT = {
   pass:    { label: "Answered",     dot: "bg-emerald-500", border: "border-l-emerald-500", text: "text-emerald-700" },
   partial: { label: "Partial",      dot: "bg-amber-500",   border: "border-l-amber-500",   text: "text-amber-700" },
@@ -164,7 +166,7 @@ const TEST_CASES = [
   { id: "t4", persona: "manager", q: "What SLAs exist for the payment gateway?", result: "pass", module: "Payment Service",
     ai: "The gateway uses a 30s circuit-breaker timeout; on trip it returns 503 and the client retries with an idempotency key.", note: "Grounded in the Payment gateway timeout card.", cards: ["Payment gateway timeout"] },
   { id: "t5", persona: "manager", q: "What are the key risks in the payment pipeline?", result: "partial", module: "Payment Service",
-    ai: "Retry storms and DLQ backlog are covered. Reconciliation risk is partially covered \u2014 but there\u2019s no disaster-recovery view.", note: "Answered from 2 cards; disaster recovery is missing.", cards: ["Kafka retry configuration", "Refund reconciliation"], gap: "No disaster recovery or failover procedures documented" },
+    ai: "Retry storms and DLQ backlog are covered. Reconciliation risk is partially covered \u2014 but there\u2019s no disaster-recovery view.", note: "Gap: No disaster recovery or failover procedures documented → answered from Minh Lê's handover; reconciliation view still partial.", cards: ["Kafka retry configuration", "Refund reconciliation"], gap: "No disaster recovery or failover procedures documented" },
   { id: "t6", persona: "manager", q: "What\u2019s the disaster recovery procedure?", result: "fail", module: "Payment Service",
     ai: "I don\u2019t have enough information about disaster recovery. The collected data covers retry logic and webhook handling, but no DR procedures were documented.", note: "No card covers DR. Maps to GAP #1 in Payment Service.", cards: [], gap: "No disaster recovery or failover procedures documented" },
   { id: "t7", persona: "coworker", q: "How does the webhook handler work?", result: "pass", module: "Payment Service",
@@ -173,9 +175,8 @@ const TEST_CASES = [
     ai: "Poison messages route to the DLQ after 5 retries; a replay runbook is attached (dlq-replay-runbook.pdf).", note: "Grounded in the Kafka retry configuration card.", cards: ["Kafka retry configuration"] },
 ];
 
-function DataValidation({ MD, flagged, setFlagged, onBackToCapture, dvOpen, setDvOpen }) {
+function DataValidation({ MD, flagged, setFlagged, dvOpen, setDvOpen }) {
   const [expandedId, setExpandedId] = useState(null);
-  const [filter, setFilter] = useState("all");
   const [rerunning, setRerunning] = useState(false);
   const isFlagged = (id) => flagged.has(id);
   const toggleFlag = (id) => setFlagged(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
@@ -186,16 +187,11 @@ function DataValidation({ MD, flagged, setFlagged, onBackToCapture, dvOpen, setD
   const flaggedFails = TEST_CASES.filter(t => t.result !== "pass" && isFlagged(t.id)).length;
   const pct = (n) => `${(n / total) * 100}%`;
 
-  const filtered = TEST_CASES.filter(t => filter === "all" || t.persona === filter);
-  const sorted = [...filtered].sort((a, b) => (isFlagged(a.id) ? 1 : 0) - (isFlagged(b.id) ? 1 : 0));
+  // DV-10 — no persona grouping: flat list sorted by result (failures first, then partial, then passed).
+  const order = { fail: 0, partial: 1, pass: 2 };
+  const sorted = [...TEST_CASES].sort((a, b) => order[a.result] - order[b.result]);
   const selected = TEST_CASES.find(t => t.id === expandedId);
 
-  const tabs = [
-    { id: "all", label: "All", count: total },
-    { id: "newcomer", label: "Newcomer", count: TEST_CASES.filter(t => t.persona === "newcomer").length },
-    { id: "manager", label: "Manager", count: TEST_CASES.filter(t => t.persona === "manager").length },
-    { id: "coworker", label: "Coworker", count: TEST_CASES.filter(t => t.persona === "coworker").length },
-  ];
   const rerun = () => { setRerunning(true); setTimeout(() => setRerunning(false), 900); };
 
   return <div className="rounded-lg border border-gray-200 bg-white">
@@ -204,7 +200,7 @@ function DataValidation({ MD, flagged, setFlagged, onBackToCapture, dvOpen, setD
       <Sparkles className="w-4 h-4 text-violet-500 shrink-0"/>
       <div className="flex-1 text-left">
         <span className="text-sm font-semibold text-gray-900">Data Validation</span>
-        <span className="text-[11px] text-gray-500 ml-2">{counts.pass} passed, {counts.partial} partial, {counts.fail} gaps found{flaggedFails > 0 ? ` (${flaggedFails} flagged)` : ""}</span>
+        <span className="text-[11px] text-gray-500 ml-2">{total} test cases — {counts.pass} passed, {counts.partial} partial, {counts.fail} gaps found{flaggedFails > 0 ? ` (${flaggedFails} flagged for review)` : ""}</span>
       </div>
       <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${dvOpen ? "" : "-rotate-90"}`}/>
     </button>
@@ -216,30 +212,26 @@ function DataValidation({ MD, flagged, setFlagged, onBackToCapture, dvOpen, setD
       </div>
     </div>
 
-    {/* Expanded section — UX-02: collapsed by default */}
+    {/* DV-10/11 — flat list (no persona tabs); expanded rows use chat bubbles */}
     {dvOpen && <>
-      {/* Persona tabs — only inside expanded */}
-      <div className="flex flex-wrap gap-1.5 px-4 pb-3 border-t border-gray-100 pt-3">{tabs.map(t => <button key={t.id} onClick={() => setFilter(t.id)} className={`h-7 px-2.5 rounded-md text-[11px] font-medium inline-flex items-center gap-1 border cursor-pointer ${filter === t.id ? "border-violet-300 bg-violet-50 text-violet-700" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}>{t.label}<span className="text-gray-400" style={{ fontFamily: "ui-monospace,Menlo,monospace" }}>{t.count}</span></button>)}</div>
-
-      {/* Two columns */}
       <div className="flex border-t border-gray-100">
         <div className="min-w-0" style={{ flexBasis: "55%" }}>
-          {sorted.map(t => { const r = DV_RESULT[t.result]; const p = DV_PERSONA[t.persona]; const open = expandedId === t.id; const fl = isFlagged(t.id);
-            return <div key={t.id} className={`border-b border-gray-100 ${fl ? "opacity-50" : ""} ${open ? "bg-gray-50/50" : ""}`}>
-              {/* UX-02/04: Collapsed row — question + colored dot + chevron only */}
+          {sorted.map(t => { const r = DV_RESULT[t.result]; const open = expandedId === t.id; const fl = isFlagged(t.id);
+            const flagColor = t.result === "partial" ? "text-amber-500" : "text-rose-500";
+            return <div key={t.id} className={`border-b border-gray-100 ${open ? "bg-gray-50/50" : ""}`}>
+              {/* DV-09/13 — collapsed row: flag icon (before dot) when flagged; NOT dimmed. */}
               <button onClick={() => setExpandedId(open ? null : t.id)} className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-left cursor-pointer hover:bg-gray-50 border-l-[3px] ${r.border}`}>
                 <span className="flex-1 min-w-0 text-[12px] text-gray-800 truncate">{t.q}</span>
+                {fl && <Flag className={`w-3 h-3 shrink-0 ${flagColor}`} fill="currentColor" strokeWidth={0}/>}
                 <span className={`w-2 h-2 rounded-full shrink-0 ${r.dot}`}/>
                 <ChevronDown className={`w-3.5 h-3.5 text-gray-400 shrink-0 transition-transform ${open ? "" : "-rotate-90"}`}/>
               </button>
-              {/* UX-02/04: Expanded — text labels only, no emoji */}
-              {open && <div className="px-4 pb-3 space-y-2 text-[11px] border-l-[3px] border-l-violet-400">
-                <div className="pt-1"><p className="text-gray-500 text-[10px]">{p.label} asks:</p><p className="text-gray-900 font-medium">{t.q}</p></div>
-                <div><p className="text-gray-400 text-[10px]">AI:</p><div className="text-gray-700 leading-relaxed bg-gray-50 rounded-md px-3 py-2 border border-gray-100">{t.ai}</div></div>
-                {t.note && <p className="text-[10px] text-gray-500 pl-1">{t.note}</p>}
-                <div className="flex items-center justify-between pt-1">
-                  <button onClick={(e) => { e.stopPropagation(); toggleFlag(t.id); }} className="text-[10px] text-gray-400 hover:text-gray-600 cursor-pointer inline-flex items-center gap-1"><Flag className="w-3 h-3"/>{fl ? "Unflag" : "Flag"}</button>
-                  {t.result !== "pass" && <button onClick={(e) => { e.stopPropagation(); onBackToCapture(); }} className="text-[10px] text-violet-600 hover:text-violet-700 font-medium cursor-pointer">Back to Capture</button>}
+              {/* DV-11 — expanded: Q/AI chat bubbles. DV-09 — flag = send back (toggle), no per-case Back to Capture. */}
+              {open && <div className="px-4 pb-3 space-y-2 border-l-[3px] border-l-violet-400">
+                <div className="pt-2"><p className="text-[10px] text-gray-500 mb-1">Q</p><div className="bg-gray-100 rounded-lg rounded-tl-none px-3 py-2 text-[11px] text-gray-800 leading-relaxed" style={{ maxWidth: "85%" }}>{t.q}</div></div>
+                <div><p className="text-[10px] text-violet-600 mb-1">AI</p><div className="bg-violet-50 border-l-2 border-violet-300 rounded-lg rounded-tl-none px-3 py-2 text-[11px] text-gray-700 leading-relaxed" style={{ maxWidth: "85%" }}>{t.ai}</div>{t.note && <p className="text-[10px] text-gray-500 mt-1">{t.note}</p>}</div>
+                <div className="flex items-center pt-1">
+                  <button onClick={(e) => { e.stopPropagation(); toggleFlag(t.id); }} className={`text-[10px] cursor-pointer inline-flex items-center gap-1 ${fl ? "text-rose-600 hover:text-rose-700 font-medium" : "text-gray-400 hover:text-gray-600"}`}><Flag className="w-3 h-3" fill={fl ? "currentColor" : "none"}/>{fl ? "Flagged to send back — unflag" : "Flag to send back"}</button>
                 </div>
               </div>}
             </div>;

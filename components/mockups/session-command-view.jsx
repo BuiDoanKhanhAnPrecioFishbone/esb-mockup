@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, ArrowRight, ArrowUpRight, X, CheckCircle2, Clock, AlertTriangle, Sparkles, Bell, Layers, User, FileText, ChevronDown, Plus, MessageCircle, Paperclip, Pencil, Trash2, Check, GripVertical, HelpCircle, Inbox, ExternalLink, Mic, Pause, SkipForward, RotateCcw, Zap } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowRight, ArrowUpRight, X, CheckCircle2, Clock, AlertTriangle, Sparkles, Bell, Layers, User, FileText, ChevronDown, Plus, MessageCircle, Paperclip, Pencil, Trash2, Check, GripVertical, HelpCircle, Inbox, ExternalLink, Mic, Pause, SkipForward, RotateCcw, Zap, MoreHorizontal } from "lucide-react";
 import { DeliverOverview, CompleteOverview } from "./session-deliver";
 import { useViewAs } from "@/lib/view-as";
 import { tabVisibility } from "@/lib/view-matrix";
@@ -134,14 +134,38 @@ function SessionPage({ role, stepId, initialTab }) {
   const [coworkers, setCoworkers] = useState(SEED_COWORKERS);
   const addCoworker = (name) => { if (!name.trim()) return; const initials = name.trim().split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase(); setCoworkers(prev => [...prev, { id: `cw${Date.now()}`, name: name.trim(), initials, modules: [], sharedCards: 0, source: "manual", status: "pending" }]); };
   const removeCoworker = (id) => { setCoworkers(prev => prev.filter(cw => cw.id !== id)); };
-  return <div className="max-w-5xl mx-auto p-6"><HeroBar phase={phase} stepId={stepId}/><div className="flex gap-0 border-b border-gray-200 mb-5">{tabs.filter(t=>!t.hidden).map(t=><button key={t.id} onClick={()=>!t.disabled&&setActiveTab(t.id)} title={t.disabled?t.tip:undefined} className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${shownTab===t.id?"border-violet-600 text-gray-900":t.disabled?"border-transparent text-gray-300 cursor-not-allowed":"border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 cursor-pointer"}`}>{t.label}</button>)}</div>{shownTab==="overview"&&<OverviewContent role={role} stepId={stepId} isReady={isReady} onSwitchTab={setActiveTab} onOpenQuestion={openQuestion} coworkers={coworkers} onAddCoworker={addCoworker} onRemoveCoworker={removeCoworker}/>}{shownTab==="data"&&<DataContent role={role} stepId={stepId} isReady={isReady} canEditQs={canEditQs} generalQs={generalQs} addedModQs={addedModQs} onAddGQ={addGQ} onEditGQ={editGQ} onDeleteGQ={deleteGQ} onAddModQ={addModQ} onEditModQ={editModQ} onDeleteModQ={deleteModQ} focusQ={focusQ} focusKey={focusKey}/>}{shownTab==="logs"&&<LogsContent role={role} stepId={stepId}/>}</div>;
+  return <div className="max-w-5xl mx-auto p-6"><HeroBar phase={phase} stepId={stepId} role={role}/><div className="flex gap-0 border-b border-gray-200 mb-5">{tabs.filter(t=>!t.hidden).map(t=><button key={t.id} onClick={()=>!t.disabled&&setActiveTab(t.id)} title={t.disabled?t.tip:undefined} className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${shownTab===t.id?"border-violet-600 text-gray-900":t.disabled?"border-transparent text-gray-300 cursor-not-allowed":"border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 cursor-pointer"}`}>{t.label}</button>)}</div>{shownTab==="overview"&&<OverviewContent role={role} stepId={stepId} isReady={isReady} onSwitchTab={setActiveTab} onOpenQuestion={openQuestion} coworkers={coworkers} onAddCoworker={addCoworker} onRemoveCoworker={removeCoworker}/>}{shownTab==="data"&&<DataContent role={role} stepId={stepId} isReady={isReady} canEditQs={canEditQs} generalQs={generalQs} addedModQs={addedModQs} onAddGQ={addGQ} onEditGQ={editGQ} onDeleteGQ={deleteGQ} onAddModQ={addModQ} onEditModQ={editModQ} onDeleteModQ={deleteModQ} focusQ={focusQ} focusKey={focusKey}/>}{shownTab==="logs"&&<LogsContent role={role} stepId={stepId}/>}</div>;
 }
 
-function HeroBar({ phase, stepId }) {
+// SA-01 — session actions "..." menu (Manager only), lives in the session header. Holds Cancel session.
+function SessionActionsMenu() {
+  const [open, setOpen] = useState(false);
+  const [confirm, setConfirm] = useState(false);
+  const [cancelled, setCancelled] = useState(false);
+  return <div className="relative shrink-0">
+    <button onClick={()=>setOpen(o=>!o)} onBlur={()=>setTimeout(()=>setOpen(false),150)} title="Session actions" className="w-8 h-8 rounded-md hover:bg-gray-100 inline-flex items-center justify-center text-gray-500 cursor-pointer"><MoreHorizontal className="w-5 h-5"/></button>
+    {open&&<div className="absolute right-0 top-full mt-1 z-30 w-40 rounded-md border border-gray-200 bg-white shadow-lg py-1"><button onMouseDown={e=>e.preventDefault()} onClick={()=>{setOpen(false);setConfirm(true);}} className="w-full text-left px-3 py-1.5 text-[12px] text-rose-600 hover:bg-rose-50 cursor-pointer">Cancel session</button></div>}
+    {confirm&&<div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center" onClick={()=>setConfirm(false)}><div className="bg-white rounded-xl shadow-xl p-6 w-[400px] border border-gray-200" onClick={e=>e.stopPropagation()}><h3 className="text-base font-semibold mb-2 flex items-center gap-1.5"><AlertTriangle className="w-4 h-4 text-rose-500"/>Cancel this session?</h3><p className="text-[12px] text-gray-500 mb-4">{"All collected data will be archived. Minh Lê and all participants will be notified. This cannot be undone."}</p><div className="flex gap-2 justify-end"><button onClick={()=>setConfirm(false)} className="h-8 px-3 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer">Keep session</button><button onClick={()=>{setCancelled(true);setConfirm(false);}} className="h-8 px-3 rounded-md bg-rose-600 text-white text-sm font-medium hover:bg-rose-700 cursor-pointer">Cancel session</button></div></div></div>}
+    {cancelled&&<div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 rounded-lg bg-gray-900 text-white text-[12px] px-4 py-2.5 shadow-lg flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400"/>Session cancelled — data archived and participants notified.</div>}
+  </div>;
+}
+
+// SA-02 — phase progress + summary + the phase-transition CTA, shown as the FIRST card on Overview.
+function PhaseHero({ phase, summary, cta }) {
+  const steps = [{id:"prepare",label:"Prepare"},{id:"capture",label:"Capture"},{id:"deliver",label:"Deliver"}];
+  const idx = steps.findIndex(s=>s.id===phase);
+  return <div className="rounded-lg border border-violet-200 bg-violet-50/40 p-5">
+    <div className="flex items-center gap-2 mb-3">{steps.map((s,i)=><div key={s.id} className="flex items-center gap-1.5 flex-1"><span className={`text-[10px] font-medium shrink-0 ${i<=idx?"text-violet-700":"text-gray-400"}`}>{s.label}</span><div className="flex-1 h-1.5 rounded-full bg-violet-100 overflow-hidden"><div className="h-full rounded-full bg-violet-500" style={{width: i<idx?"100%":i===idx?"45%":"0%"}}/></div></div>)}</div>
+    <p className="text-[12px] text-gray-700 leading-relaxed mb-3">{summary}</p>
+    {cta}
+  </div>;
+}
+
+function HeroBar({ phase, stepId, role }) {
   const cls = {prepare:"bg-blue-50 border-blue-200 text-blue-700",capture:"bg-violet-50 border-violet-200 text-violet-700",deliver:"bg-emerald-50 border-emerald-200 text-emerald-700"};
   const label = stepId==="complete"?"Complete":phase==="prepare"?"Prepare":phase==="capture"?"Capture":"Deliver";
   const metrics = phase==="prepare"?`${SESSION.coworkers} coworkers · ${SESSION.questions} Qs · ${SESSION.gaps} gaps`:phase==="capture"?`${SESSION.answered}/${SESSION.questions} answered · ${SESSION.satisfied} accepted`:stepId==="complete"?`${SESSION.answered} committed · ${SESSION.files} files`:`${SESSION.answered}/${SESSION.questions} answered · reviewing`;
-  return <div className="rounded-lg border border-gray-200 bg-white p-4 mb-5 flex items-center gap-4"><div className={`w-12 h-12 rounded-full ${stepId==="complete"?"bg-emerald-100 text-emerald-700":"bg-violet-100 text-violet-700"} text-sm font-semibold inline-flex items-center justify-center shrink-0`}>{stepId==="complete"?<CheckCircle2 className="w-5 h-5"/>:SESSION.initials}</div><div className="flex-1 min-w-0"><div className="flex items-center gap-2 mb-0.5"><h1 className="text-lg font-semibold text-gray-900">{SESSION.name}&apos;s session</h1><span className={`text-[9px] px-2 py-0.5 rounded uppercase tracking-wider font-semibold border ${cls[phase]}`}>{label}</span></div><p className="text-[12px] text-gray-500">{SESSION.role}{" · "}{SESSION.dept}</p><p className="text-[11px] text-gray-500 mt-0.5" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{stepId!=="complete"?`${SESSION.daysLeft}d left · `:""}{metrics}</p></div></div>;
+  return <div className="rounded-lg border border-gray-200 bg-white p-4 mb-5 flex items-center gap-4"><div className={`w-12 h-12 rounded-full ${stepId==="complete"?"bg-emerald-100 text-emerald-700":"bg-violet-100 text-violet-700"} text-sm font-semibold inline-flex items-center justify-center shrink-0`}>{stepId==="complete"?<CheckCircle2 className="w-5 h-5"/>:SESSION.initials}</div><div className="flex-1 min-w-0"><div className="flex items-center gap-2 mb-0.5"><h1 className="text-lg font-semibold text-gray-900">{SESSION.name}&apos;s session</h1><span className={`text-[9px] px-2 py-0.5 rounded uppercase tracking-wider font-semibold border ${cls[phase]}`}>{label}</span></div><p className="text-[12px] text-gray-500">{SESSION.role}{" · "}{SESSION.dept}</p><p className="text-[11px] text-gray-500 mt-0.5" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{stepId!=="complete"?`${SESSION.daysLeft}d left · `:""}{metrics}</p></div>{role==="manager"&&<SessionActionsMenu/>}</div>;
 }
 
 function OverviewContent({ role, stepId, isReady, onSwitchTab, onOpenQuestion, coworkers, onAddCoworker, onRemoveCoworker }) {
@@ -155,8 +179,8 @@ function OverviewContent({ role, stepId, isReady, onSwitchTab, onOpenQuestion, c
 function ManagerOverview({ stepId, isReady, onSwitchTab, coworkers, onAddCoworker, onRemoveCoworker }) {
   // MV-R4-04 \u2014 Collecting Data is animation-only. The orbital belongs to empty/pending states, not active collection.
   if (!isReady) return <div className="space-y-4"><CategorizeAnimation/><div className="rounded-lg border border-gray-200 bg-white p-4 flex items-center gap-3"><div className="w-9 h-9 rounded-full bg-violet-50 inline-flex items-center justify-center shrink-0"><div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-violet-500 animate-spin"/></div><div><h3 className="text-sm font-medium text-gray-900">{"Collecting data from "}{SESSION.boards}{" boards\u2026"}</h3><p className="text-xs text-gray-500">{"We\u2019ll notify you when ready."}</p></div></div></div>;
-  if (stepId==="capture") return <div className="space-y-4"><div className="rounded-lg border border-gray-200 bg-white p-5"><h3 className="text-sm font-semibold text-gray-900 mb-3">Capture in progress</h3><ProgressBar/><p className="text-[11px] text-gray-500 mb-4">{SESSION.questions-SESSION.answered}{" questions remaining"}</p><div className="grid grid-cols-3 gap-3"><MC l="Accepted" v={SESSION.satisfied}/><MC l="Waiting review" v={SESSION.answered-SESSION.satisfied}/><MC l="Gaps addressed" v={`${SESSION.gapsAddressed}/${SESSION.gaps}`}/></div><p className="text-[11px] text-gray-500 mt-3" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{"Started 3d ago · "}{SESSION.daysLeft}{"d left"}</p></div><CoworkerNetwork coworkers={coworkers} readOnly/><div className="flex items-center gap-3"><button onClick={()=>onSwitchTab("data")} className="h-9 px-4 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer">Review in Data tab</button><button className="h-9 px-4 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center gap-2 cursor-pointer">{"Move to Deliver"}<ArrowRight className="w-3.5 h-3.5"/></button></div></div>;
-  return <div className="space-y-4"><div className="rounded-lg border border-gray-200 bg-white p-5"><h3 className="text-sm font-semibold text-gray-900 mb-3">Data collection complete</h3><div className="grid grid-cols-4 gap-3 mb-4"><MC l="Boards" v={SESSION.boards}/><MC l="Cards" v={SESSION.cards}/><MC l="Areas" v={SESSION.modules}/><MC l="Questions" v={SESSION.questions}/></div><div className="pt-3 border-t border-gray-100 space-y-2"><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Knowledge areas</p><div className="flex flex-wrap gap-1.5">{["Payment Service","CI/CD Pipeline","Shared Libraries","Monitoring & Alerts","Infrastructure as Code"].map(m=><span key={m} className="text-[11px] px-2 py-1 rounded-md bg-gray-50 border border-gray-200 text-gray-700">{m}</span>)}</div></div><div className="pt-3 mt-3 border-t border-gray-100 grid grid-cols-2 gap-3"><div><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">Coworker engagement</p><p className="text-[12px] text-gray-700">2 of 3 have asked questions</p></div><div><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">Knowledge gaps</p><p className="text-[12px] text-gray-700">3 module gaps · flags on cards</p></div></div></div><CoworkerNetwork coworkers={coworkers} onAdd={onAddCoworker} onRemove={onRemoveCoworker} readOnly={false}/><div className="flex items-center gap-3"><button onClick={()=>onSwitchTab("data")} className="h-9 px-4 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer">Review in Data tab</button><Link href={`/session/${SESSION.id}`} className="h-9 px-4 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center gap-2">{"Start Capture"}<ArrowRight className="w-3.5 h-3.5"/></Link></div></div>;
+  if (stepId==="capture") return <div className="space-y-4"><PhaseHero phase="capture" summary={`Minh Lê answered ${SESSION.answered} of ${SESSION.questions} questions. ${SESSION.satisfied} accepted, ${SESSION.answered-SESSION.satisfied} need review, ${SESSION.gaps} gaps active.`} cta={<button className="h-9 px-4 rounded-lg border-[1.5px] border-violet-400 bg-white hover:bg-violet-50 text-violet-700 text-sm font-medium inline-flex items-center gap-2 cursor-pointer">Start Deliver<ArrowRight className="w-3.5 h-3.5"/></button>}/><div className="rounded-lg border border-gray-200 bg-white p-5"><h3 className="text-sm font-semibold text-gray-900 mb-3">Capture in progress</h3><ProgressBar/><p className="text-[11px] text-gray-500 mb-4">{SESSION.questions-SESSION.answered}{" questions remaining"}</p><div className="grid grid-cols-3 gap-3"><MC l="Accepted" v={SESSION.satisfied}/><MC l="Waiting review" v={SESSION.answered-SESSION.satisfied}/><MC l="Gaps addressed" v={`${SESSION.gapsAddressed}/${SESSION.gaps}`}/></div><p className="text-[11px] text-gray-500 mt-3" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{"Started 3d ago · "}{SESSION.daysLeft}{"d left"}</p></div><CoworkerNetwork coworkers={coworkers} readOnly/></div>;
+  return <div className="space-y-4"><PhaseHero phase="prepare" summary={`Ready to invite Minh Lê. AI classified ${SESSION.cards} cards into ${SESSION.modules} modules. 2 cards need review, ${SESSION.gaps} gaps detected.`} cta={<Link href={`/session/${SESSION.id}`} className="h-9 px-4 rounded-lg border-[1.5px] border-violet-400 bg-white hover:bg-violet-50 text-violet-700 text-sm font-medium inline-flex items-center gap-2">Start Capture<ArrowRight className="w-3.5 h-3.5"/></Link>}/><div className="rounded-lg border border-gray-200 bg-white p-5"><h3 className="text-sm font-semibold text-gray-900 mb-3">Data collection complete</h3><div className="grid grid-cols-4 gap-3 mb-4"><MC l="Boards" v={SESSION.boards}/><MC l="Cards" v={SESSION.cards}/><MC l="Areas" v={SESSION.modules}/><MC l="Questions" v={SESSION.questions}/></div><div className="pt-3 border-t border-gray-100 space-y-2"><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Knowledge areas</p><div className="flex flex-wrap gap-1.5">{["Payment Service","CI/CD Pipeline","Shared Libraries","Monitoring & Alerts","Infrastructure as Code"].map(m=><span key={m} className="text-[11px] px-2 py-1 rounded-md bg-gray-50 border border-gray-200 text-gray-700">{m}</span>)}</div></div><div className="pt-3 mt-3 border-t border-gray-100 grid grid-cols-2 gap-3"><div><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">Coworker engagement</p><p className="text-[12px] text-gray-700">2 of 3 have asked questions</p></div><div><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">Knowledge gaps</p><p className="text-[12px] text-gray-700">3 module gaps · flags on cards</p></div></div></div><CoworkerNetwork coworkers={coworkers} onAdd={onAddCoworker} onRemove={onRemoveCoworker} readOnly={false}/></div>;
 }
 
 // Orbital illustration (R5-02) \u2014 the "waiting" visual for roles that can't act during
@@ -180,17 +204,50 @@ function OffboarderOverview({ stepId, onSwitchTab, onOpenQuestion }) {
   return <OffboarderWorkspace/>;
 }
 function primaryHome(card){ const x = ALL_CARDS.find(a=>a.card.name===card.name); return x?x.home:"__uncat__"; }
-// Module-level gap context for an AI gap question — shows WHY it was flagged, not a single card (OV-R05).
-// showAsk gates the "Ask about this gap" action: Coworker keeps it (CW-R4-01), Offboarder doesn't (OV-R4-03).
+// GP-01/02 — per-gap evidence: only the 2-3 source cards the AI used, plus its analysis (chat bubbles).
+const GAP_EVIDENCE = {
+  "Payment Service": {
+    intro: "I reviewed the cards in Payment Service and found 2 that reference failure handling:",
+    sources: [
+      { name: "Kafka retry configuration", note: "retry logic + DLQ, no failover" },
+      { name: "Payment gateway timeout", note: "circuit breaker, no DR" },
+    ],
+    conclusion: "2 cards reference failure handling, but none document what happens when the entire service goes down. This is a critical gap.",
+  },
+  "Monitoring & Alerts": {
+    intro: "I reviewed the cards in Monitoring & Alerts and found 2 that touch on alerting:",
+    sources: [
+      { name: "Datadog dashboard", note: "tracks SLOs, no routing rules" },
+      { name: "PagerDuty escalation", note: "rotation defined, routing unclear" },
+    ],
+    conclusion: "Alerts are tracked and an on-call rotation exists, but no card documents which alert pages which rotation — routing is undocumented.",
+  },
+  "CI/CD Pipeline": {
+    intro: "I compared how deployment is described across CI/CD Pipeline cards:",
+    sources: [
+      { name: "Atlas migration rollback", note: "rollback script, no deploy order" },
+      { name: "GitHub Actions workflow", note: "lint → test → build → deploy" },
+    ],
+    conclusion: "Two cards describe deployment differently, so I couldn't determine which process is authoritative.",
+  },
+};
+function gapEvidence(moduleName, cards) {
+  return GAP_EVIDENCE[moduleName] || {
+    intro: `I reviewed the cards in ${moduleName} and found these most relevant to the gap:`,
+    sources: (cards||[]).slice(0,2).map(c=>({ name:c.name, note:"related context, gap not covered" })),
+    conclusion: "None of these cards documents the missing area, so I flagged it as a knowledge gap.",
+  };
+}
+// Module-level gap context — shows the source cards + AI analysis as chat bubbles (GP-01/02).
+// showAsk gates the always-visible question input (GP-03): Manager/Coworker see it; Offboarder doesn't.
 function GapContextPanel({ moduleName, onClose, showAsk = false, askLabel = "Coworker" }) {
   const mod = MODULES_DATA.flatMap(b=>b.modules).find(m=>m.name===moduleName);
   const gap = (mod&&mod.moduleGaps&&mod.moduleGaps[0]) || "Knowledge gap detected by AI";
   const gapQ = mod&&mod.moduleGapQs&&mod.moduleGapQs[0];
   const cards = (mod&&mod.items) || [];
-  const reason = `${moduleName} has ${mod?mod.cards:cards.length} cards covering ${cards.slice(0,3).map(c=>c.name).join(", ")}, but none of them addresses this area — so the AI flagged it as missing knowledge.`;
-  // CW-R5-01 — "Ask about this gap" creates a human question targeting the gap. It posts to the
-  // Offboarder's queue (OB_QUEUE) and appears immediately in "Questions from this gap" below.
-  const [asking, setAsking] = useState(false);
+  const ev = gapEvidence(moduleName, cards);
+  // CW-R5-01 — the question input posts a human question to the Offboarder's queue (OB_QUEUE)
+  // and it appears immediately in "Questions from this gap" below.
   const [input, setInput] = useState("");
   const [extraQs, setExtraQs] = useState([]);
   const [sent, setSent] = useState(false);
@@ -207,19 +264,22 @@ function GapContextPanel({ moduleName, onClose, showAsk = false, askLabel = "Cow
   return <div className="p-5">
     <div className="flex items-center justify-between mb-3"><div className="flex items-center gap-1.5"><Sparkles className="w-4 h-4 text-yellow-600"/><h3 className="text-[15px] font-semibold text-gray-900">Gap context</h3></div><button onClick={onClose} className="w-7 h-7 rounded-md hover:bg-gray-100 inline-flex items-center justify-center text-gray-400 cursor-pointer"><X className="w-4 h-4"/></button></div>
     <div className="rounded-lg bg-yellow-50 border border-yellow-200 px-3 py-2.5 mb-3" style={{borderLeft:"3px solid #eab308"}}><p className="text-[10px] text-yellow-700 uppercase tracking-wider font-medium">Module</p><p className="text-[13px] font-medium text-gray-900">{moduleName}</p><p className="text-[11px] text-yellow-800 mt-1.5 flex items-start gap-1.5"><AlertTriangle className="w-3 h-3 shrink-0 mt-0.5"/>{gap}</p><span className="inline-flex items-center gap-1 text-[9px] mt-2 px-1.5 py-0.5 rounded bg-white border border-yellow-200 text-yellow-700"><Sparkles className="w-2.5 h-2.5"/>Detected by AI analysis</span></div>
-    <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">Why this was flagged</p><p className="text-[11px] text-gray-600 leading-relaxed mb-3">{reason}</p>
+    <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-2">AI analysis</p>
+    <div className="space-y-2 mb-3">
+      <div className="bg-gray-100 rounded-lg rounded-tl-none px-3 py-2 text-[11px] text-gray-800 leading-relaxed" style={{maxWidth:"90%"}}>{ev.intro}</div>
+      <div className="space-y-1 pl-1">{ev.sources.map((s,i)=><div key={i} className="flex items-start gap-1.5 text-[11px]"><FileText className="w-3 h-3 text-gray-400 shrink-0 mt-0.5"/><span className="text-gray-800 font-medium">{s.name}</span><span className="text-gray-400">{" → "}{s.note}</span></div>)}</div>
+      <div className="bg-violet-50 border-l-2 border-violet-300 rounded-lg rounded-tl-none px-3 py-2 text-[11px] text-gray-700 leading-relaxed" style={{maxWidth:"90%"}}>{ev.conclusion}</div>
+    </div>
     {hasQs&&<><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1 pt-2 border-t border-gray-100">{"Questions from this gap ("}{((gqText&&!gqGone)?1:0)+extraQs.length}{")"}</p>
       {gqText&&!gqGone&&<div className="group/gq text-[11px] bg-gray-50 rounded-md px-2.5 py-2 mb-1.5">{gqEdit?<div className="flex items-center gap-1.5"><input value={gqInput} onChange={e=>setGqInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){setGqText(gqInput.trim()||gqText);setGqEdit(false);}if(e.key==="Escape")setGqEdit(false);}} autoFocus className="flex-1 h-6 px-1.5 rounded border border-violet-300 text-[11px] focus:outline-none focus:ring-2 focus:ring-violet-500/20"/><button onClick={()=>{setGqText(gqInput.trim()||gqText);setGqEdit(false);}} className="w-5 h-5 rounded bg-violet-600 text-white inline-flex items-center justify-center cursor-pointer hover:bg-violet-700"><Check className="w-3 h-3"/></button><button onClick={()=>setGqEdit(false)} className="w-5 h-5 rounded border border-gray-300 text-gray-500 inline-flex items-center justify-center cursor-pointer hover:bg-gray-50"><X className="w-3 h-3"/></button></div>:<div className="flex items-center gap-1.5"><HelpCircle className="w-3 h-3 text-violet-500 shrink-0"/><span className="flex-1 text-gray-800">{gqText}</span>{showAsk?<span className="flex items-center gap-1 opacity-0 group-hover/gq:opacity-100"><button onClick={()=>{setGqEdit(true);setGqInput(gqText);}} className="w-5 h-5 rounded border border-gray-200 bg-white hover:bg-gray-50 inline-flex items-center justify-center text-gray-400 hover:text-violet-600 cursor-pointer" title="Edit question"><Pencil className="w-2.5 h-2.5"/></button><button onClick={()=>setGqConfirm(true)} className="w-5 h-5 rounded border border-gray-200 bg-white hover:bg-rose-50 inline-flex items-center justify-center text-gray-400 hover:text-rose-600 cursor-pointer" title="Remove question"><Trash2 className="w-2.5 h-2.5"/></button></span>:<span className="text-[9px] text-gray-400">waiting</span>}</div>}{gqConfirm&&<div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center" onClick={()=>setGqConfirm(false)}><div className="bg-white rounded-xl shadow-xl p-5 w-[340px] border border-gray-200" onClick={e=>e.stopPropagation()}><h3 className="text-sm font-semibold text-gray-900 mb-1">Delete this question?</h3><p className="text-[12px] text-gray-500 mb-4">The AI won’t regenerate it.</p><div className="flex gap-2 justify-end"><button onClick={()=>setGqConfirm(false)} className="h-8 px-3 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer">Cancel</button><button onClick={()=>{setGqGone(true);setGqConfirm(false);}} className="h-8 px-3 rounded-md bg-rose-600 text-white text-sm font-medium hover:bg-rose-700 cursor-pointer">Delete</button></div></div></div>}</div>}
       {extraQs.map((q,i)=><div key={i} className="text-[11px] bg-violet-50/60 border border-violet-100 rounded-md px-2.5 py-2 mb-1.5 flex items-center gap-1.5"><HelpCircle className="w-3 h-3 text-violet-500 shrink-0"/><span className="flex-1 text-gray-800">{q}</span><span className="text-[9px] px-1.5 py-0.5 rounded bg-white border border-violet-200 text-violet-600 shrink-0">{askLabel}{" · waiting"}</span></div>)}
       <div className="mb-1.5"/></>}
-    <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1 pt-2 border-t border-gray-100">{"Cards in this module ("}{cards.length}{")"}</p>
-    <div className="space-y-1 mb-3">{cards.map((c,i)=><div key={i} className="flex items-center gap-2 text-[11px] text-gray-700 px-2 py-1 rounded bg-gray-50"><FileText className="w-3 h-3 text-gray-400 shrink-0"/>{c.name}</div>)}</div>
     {showAsk&&<div className="pt-2 border-t border-gray-100">
-      <button onClick={()=>setAsking(a=>!a)} className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md bg-violet-50 border border-violet-200 text-violet-700 text-[11px] font-medium hover:bg-violet-100 cursor-pointer"><Sparkles className="w-3 h-3"/>Ask about this gap</button>
-      {asking&&<div className="mt-2">
-        <textarea value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==="Escape"){setAsking(false);setInput("");}}} autoFocus placeholder={`What would you like Minh Lê to clarify about ${moduleName}?`} className="w-full h-16 px-2 py-1.5 rounded border border-violet-300 text-[11px] resize-none focus:outline-none focus:ring-2 focus:ring-violet-500/20"/>
-        <div className="flex items-center justify-end gap-2 mt-1.5"><button onClick={()=>{setAsking(false);setInput("");}} className="text-[11px] text-gray-500 hover:text-gray-700 cursor-pointer">Cancel</button><button onClick={submitAsk} className="h-7 px-3 rounded bg-violet-600 text-white text-[11px] font-medium hover:bg-violet-700 cursor-pointer">Ask</button></div>
-      </div>}
+      <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1.5">Ask about this gap</p>
+      <div className="flex items-center gap-1.5">
+        <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")submitAsk();}} placeholder="Type a question..." className="flex-1 h-9 px-3 rounded-lg border border-gray-200 text-[11px] focus:outline-none focus:ring-2 focus:ring-violet-500/20"/>
+        <button onClick={submitAsk} className="h-9 px-3 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-[11px] font-medium cursor-pointer">Ask</button>
+      </div>
       {sent&&<p className="text-[10px] text-emerald-600 mt-2 flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/>Question sent to Minh Lê</p>}
     </div>}
   </div>;
@@ -242,7 +302,7 @@ function OffboarderWorkspace() {
   const waiting = items.filter(x=>!x.ans); const answered = items.filter(x=>x.ans);
   const done = answered.length; const total = OB_QUEUE.length; const allDone = waiting.length===0;
   const SeeCtx = ({ q }) => <button onClick={()=>openCtx(q)} className="text-[9px] text-violet-600 hover:text-violet-700 cursor-pointer inline-flex items-center gap-1 shrink-0 mt-0.5" title={q.fromType==="ai"?"See the module gap this came from":"Open the source card"}><ExternalLink className="w-2.5 h-2.5"/>See in context</button>;
-  const Meta = ({ q, ans }) => <div className="text-[11px] text-gray-500 flex items-center gap-1.5 flex-wrap">{ans?<CheckCircle2 className="w-3 h-3 text-emerald-500"/>:q.fromType==="ai"?<Sparkles className="w-3 h-3 text-violet-500"/>:<User className="w-3 h-3"/>}<span>{ans?"Answered":q.from}</span>{ans&&(ans.satisfied?<span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">{"✓ Accepted"}</span>:<span className="text-[9px] text-gray-400">waiting for review</span>)}{ans&&ans.edited&&<span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-600 border border-violet-200">Edited</span>}{ans&&ans.voice&&<span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 border border-gray-200 inline-flex items-center gap-0.5" title="Answered via voice"><Mic className="w-2.5 h-2.5"/>Voice</span>}<span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">{q.module}</span></div>;
+  const Meta = ({ q, ans }) => <div className="text-[11px] text-gray-500 flex items-center gap-1.5 flex-wrap">{ans?<CheckCircle2 className="w-3 h-3 text-emerald-500"/>:q.fromType==="ai"?<Sparkles className="w-3 h-3 text-violet-500"/>:<User className="w-3 h-3"/>}<span>{ans?"Answered":q.from}</span>{ans&&(ans.satisfied?<span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 inline-flex items-center gap-0.5"><CheckCircle2 className="w-2.5 h-2.5"/>Accepted</span>:<span className="text-[9px] text-gray-400">waiting for review</span>)}{ans&&ans.edited&&<span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-600 border border-violet-200">Edited</span>}{ans&&ans.voice&&<span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 border border-gray-200 inline-flex items-center gap-0.5" title="Answered via voice"><Mic className="w-2.5 h-2.5"/>Voice</span>}<span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">{q.module}</span></div>;
   if (voiceMode) return <VoiceSession questions={waiting.map(x=>x.q)} onSubmitAll={submitVoice} onClose={()=>setVoiceMode(false)}/>;
   return <div className="max-w-2xl">
     <div className="rounded-lg border border-emerald-200 bg-emerald-50/40 text-emerald-800 px-4 py-2.5 mb-4 text-[12px] flex items-center gap-2"><Clock className="w-3.5 h-3.5 shrink-0"/><span><span className="font-semibold">{SESSION.daysLeft}{" days"}</span>{" until your last day · July 4, 2026"}</span></div>
@@ -257,7 +317,7 @@ function OffboarderWorkspace() {
     {(ctxCard||ctxGap)&&<><div className="fixed inset-0 bg-black/10 z-30" onClick={closeCtx}/><div className="fixed top-0 right-0 h-full w-[480px] bg-white border-l border-gray-200 shadow-xl z-40 overflow-y-auto">{ctxGap?<GapContextPanel moduleName={ctxGap} onClose={closeCtx}/>:<SidePanel key={ctxCard.name} card={ctxCard} role="offboarder" onClose={closeCtx} isCapture={true} isDeliver={false} isComplete={false} primaryModule={primaryHome(ctxCard)}/>}</div></>}
   </div>;
 }
-// ── §4.6 / §4.8 — Module Classification Review ──────────────────────────────────
+// ── §4.6 / §4.8 — Module Classification Review ──────────────────────────────
 // Per-card AI verdict: state (pass/review/newmod/uncat), confidence, the modules
 // involved, and the two-agent reasoning transcript. Cards not listed default to a
 // clean single-module Pass. Modulize Agent (M, purple) classifies; Gap Agent (G,
@@ -272,7 +332,7 @@ const CLASSIFY = {
   "Kafka retry configuration": { state:"pass", confidence:96, primary:"Payment Service", linked:["CI/CD Pipeline"], chat:[
     {a:"M",step:"CLASSIFY",t:"Strong payment-domain signals — Kafka, DLQ routing, idempotency keys. Best fit is Payment Service at 96%."},
     {a:"G",step:"VALIDATE",t:"Agreed. It's also referenced by the deploy rollback runbook, so a linked CI/CD Pipeline tag is warranted."},
-    {a:"M",step:"PROPOSE",t:"Primary Payment Service, linked CI/CD Pipeline."},
+    {a:"M",step:"PROPOSE",t:"Assign to both Payment Service and CI/CD Pipeline — equal weight."},
   ]},
   // Template 3 — Review (4 messages)
   "Datadog dashboard": { state:"review", confidence:41, candidates:["Monitoring & Alerts","Payment Service"], chat:[
@@ -292,7 +352,7 @@ const CLASSIFY = {
     {a:"M",step:"CLASSIFY",t:"IaC, AKS cluster, VNet, remote state backend — doesn't fit the existing modules well."},
     {a:"G",step:"VERIFY",t:"Confirmed: 6 cards cluster around provisioning with no good home module."},
     {a:"M",step:"RECONSIDER",t:"It's applied via GitHub Actions, so it also links to CI/CD Pipeline."},
-    {a:"G",step:"VALIDATE",t:"Agreed — new module Infrastructure Provisioning, linked to CI/CD Pipeline."},
+    {a:"G",step:"VALIDATE",t:"Agreed — new module Infrastructure Provisioning, also assigned to CI/CD Pipeline."},
   ]},
   // Template 6 — Uncategorized (3 messages)
   "Vendor onboarding checklist": { state:"uncat", confidence:23, chat:[
@@ -316,6 +376,26 @@ const CLS_META = {
 function confColor(c){ return c>70?"#10b981":c>=40?"#f59e0b":"#f43f5e"; }
 const AGENT_AV = { M:{bg:"#ede9fe",fg:"#6d28d9",name:"Modulize Agent"}, G:{bg:"#fff7ed",fg:"#c2410c",name:"Gap Agent"} };
 
+// MU-01/02 — distinct gray-dashed "Add module" that expands into a free-text search + create control.
+function AddModuleControl({ addable, onAdd }) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const query = q.trim();
+  const matches = addable.filter(m=>m.toLowerCase().includes(query.toLowerCase()));
+  const exact = addable.some(m=>m.toLowerCase()===query.toLowerCase());
+  const canCreate = query.length>0 && !exact;
+  const pick = (m)=>{ onAdd(m); setQ(""); setOpen(false); };
+  if(!open) return <button onClick={()=>setOpen(true)} className="text-[10px] px-2 py-0.5 rounded-md border border-dashed border-gray-300 bg-white text-gray-500 hover:border-gray-400 hover:text-gray-700 cursor-pointer inline-flex items-center gap-0.5"><Plus className="w-2.5 h-2.5"/>Add module</button>;
+  return <div className="relative">
+    <input value={q} autoFocus onChange={e=>setQ(e.target.value)} onBlur={()=>setTimeout(()=>setOpen(false),150)} onKeyDown={e=>{if(e.key==="Escape"){setOpen(false);setQ("");}if(e.key==="Enter"){if(matches.length===1)pick(matches[0]);else if(canCreate)pick(query);}}} placeholder="Search or create…" className="h-6 w-44 px-2 rounded-md border border-violet-300 text-[10px] focus:outline-none focus:ring-2 focus:ring-violet-500/20"/>
+    <div className="absolute left-0 top-full mt-1 z-10 w-52 rounded-md border border-gray-200 bg-white shadow-lg py-1 max-h-44 overflow-y-auto">
+      {matches.map(m=><button key={m} onMouseDown={e=>e.preventDefault()} onClick={()=>pick(m)} className="w-full text-left px-2.5 py-1 text-[11px] text-gray-700 hover:bg-violet-50 hover:text-violet-700 cursor-pointer">{m}</button>)}
+      {matches.length===0&&!canCreate&&<p className="px-2.5 py-1 text-[10px] text-gray-400">No modules</p>}
+      {canCreate&&<button onMouseDown={e=>e.preventDefault()} onClick={()=>pick(query)} className="w-full text-left px-2.5 py-1 text-[11px] text-violet-700 hover:bg-violet-50 cursor-pointer border-t border-gray-100 mt-1 pt-1.5 inline-flex items-center gap-1"><Plus className="w-2.5 h-2.5"/>Create &quot;{query}&quot;</button>}
+    </div>
+  </div>;
+}
+
 // The AI Reasoning panel — opens to the left of the card detail when a module chip is clicked.
 // readOnly (Coworker, §9) hides the action area; the Manager gets the full assign/accept controls.
 // §3 MC-01..05 — Module Classification panel. Reasoning is always visible; the Assigned-modules box is
@@ -325,25 +405,28 @@ function AIReasoningPanel({ card, onClose, readOnly = false }) {
   const init = cls.primary ? [cls.primary, ...(cls.linked||[])] : cls.newModule ? [] : (cls.candidates ? [cls.candidates[0]] : []);
   const [assign, setAssign] = useState(init);
   const [orig, setOrig] = useState(init);
-  const [adding, setAdding] = useState(false);
   const [active, setActive] = useState(init[0]||null);
   const [accepting, setAccepting] = useState(false);
+  const [accepted, setAccepted] = useState(false); // MC-06 — Accept confirmed → suggested chip becomes a solid assignment
   const [skipped, setSkipped] = useState(false);
   const [newName, setNewName] = useState(cls.newModule||"");
   const [saved, setSaved] = useState(null);
+  const [everSaved, setEverSaved] = useState(false); // MU-03 — after a save, a further chip change re-shows Save/Cancel
   const addable = ALL_MOD_NAMES.filter(m=>!assign.includes(m));
   const dirty = JSON.stringify(assign)!==JSON.stringify(orig);
-  const isNew = cls.state==="newmod" && !skipped;
+  const isNew = cls.state==="newmod" && !skipped && !accepted; // MC-06 — after Accept, behaves like a normal assignment
   const needsConfirm = cls.state==="review" || cls.state==="uncat" || skipped; // MC-05 — these open with Save/Cancel visible
-  const showSave = !readOnly && !isNew && !saved && (dirty || needsConfirm);
-  const removeM=(m)=>{const next=assign.filter(x=>x!==m); setAssign(next); if(active===m) setActive(next[0]||null);};
-  const addM=(m)=>{setAssign(a=>[...a,m]); setAdding(false); setActive(m);};
-  const doSave=()=>{setOrig(assign); setSaved(assign.length?`Saved · ${assign.join(", ")}.`:"Saved · card left Uncategorized.");};
+  // MU-03 — Save/Cancel visibility = current vs last-saved (dirty). Review/Uncat force it only until the first save.
+  const showSave = !readOnly && !isNew && (dirty || (needsConfirm && !everSaved));
+  const removeM=(m)=>{const next=assign.filter(x=>x!==m); setAssign(next); setSaved(null); if(active===m) setActive(next[0]||null);};
+  const addM=(m)=>{setAssign(a=>[...a,m]); setActive(m); setSaved(null);};
+  const doSave=()=>{setOrig(assign); setEverSaved(true); setSaved(assign.length?`Saved · ${assign.join(", ")}.`:"Saved · card left Uncategorized.");};
   const doCancel=()=>{setAssign(orig); setActive(orig[0]||null); setSkipped(false);};
+  const confirmNew=()=>{const nm=(newName.trim()||cls.newModule); setAssign([nm]); setOrig([nm]); setActive(nm); setAccepted(true); setAccepting(false); setEverSaved(true); setSaved(`Created module “${nm}” and assigned this card.`);};
   const verdictBox = cls.state==="pass"
     ? <div className="rounded-md bg-emerald-50 border border-emerald-200 px-3 py-2 text-[11px] text-emerald-800 flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5"/>Confident match — no action needed.</div>
     : cls.state==="review" ? <div className="rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-[11px] text-amber-800 flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5"/>Needs your call — confirm the module(s).</div>
-    : cls.state==="newmod" ? <div className="rounded-md bg-violet-50 border border-violet-200 px-3 py-2 text-[11px] text-violet-800 flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5"/>Proposed new module — accept or skip.</div>
+    : cls.state==="newmod" ? <div className="rounded-md bg-violet-50 border border-violet-200 px-3 py-2.5 text-[11px] text-violet-900"><p className="text-[9px] uppercase tracking-wider font-semibold text-violet-500 mb-1 flex items-center gap-1"><Sparkles className="w-3 h-3"/>New module suggested</p><p className="text-[13px] font-semibold text-gray-900 mb-1">{cls.newModule}</p><p className="text-[10px] text-violet-800 leading-relaxed">{(cls.chat&&cls.chat[0]&&cls.chat[0].t)||"No existing module covers these cards."}</p></div>
     : <div className="rounded-md bg-gray-50 border border-gray-300 border-dashed px-3 py-2 text-[11px] text-gray-600 flex items-center gap-1.5"><Inbox className="w-3.5 h-3.5"/>Couldn’t place this card — assign it below.</div>;
   return <div className="fixed top-0 right-[480px] h-full w-[400px] bg-white border-l border-gray-200 shadow-xl z-50 overflow-y-auto" onClick={e=>e.stopPropagation()}>
     <div className="p-4">
@@ -352,14 +435,24 @@ function AIReasoningPanel({ card, onClose, readOnly = false }) {
       {/* MC-04 — Assigned modules: the prominent result. MC-03 — chips double as a switcher. MC-05 — × remove · + add. */}
       <div className="rounded-lg border border-violet-300 bg-violet-50 px-3 py-2.5 mb-2">
         <p className="text-[10px] text-violet-700 uppercase tracking-wider font-semibold mb-1.5">Assigned modules</p>
-        {assign.length? <div className="flex flex-wrap gap-1.5">{assign.map(m=><span key={m} className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border cursor-pointer ${active===m?"bg-violet-600 text-white border-violet-600":"bg-white text-violet-700 border-violet-300 hover:border-violet-500"}`}><button onClick={()=>setActive(m)} className="cursor-pointer">{m}</button>{!readOnly&&<button onClick={()=>removeM(m)} className={`cursor-pointer ${active===m?"hover:text-rose-200":"hover:text-rose-500"}`}>×</button>}</span>)}
-          {!readOnly&&<div className="relative"><button onClick={()=>setAdding(a=>!a)} className="text-[10px] px-2 py-0.5 rounded-full border border-violet-300 bg-white text-violet-600 hover:border-violet-500 cursor-pointer inline-flex items-center gap-0.5"><Plus className="w-2.5 h-2.5"/>Add module</button>{adding&&<div className="absolute left-0 top-full mt-1 z-10 w-44 rounded-md border border-gray-200 bg-white shadow-lg py-1 max-h-44 overflow-y-auto">{addable.length?addable.map(m=><button key={m} onClick={()=>addM(m)} className="w-full text-left px-2.5 py-1 text-[11px] text-gray-700 hover:bg-violet-50 hover:text-violet-700 cursor-pointer">{m}</button>):<p className="px-2.5 py-1 text-[10px] text-gray-400">All modules added</p>}</div>}</div>}
-        </div> : <div className="rounded-md border border-dashed border-gray-300 bg-white/60 px-2.5 py-1.5 text-[11px] text-gray-500 flex items-center gap-1.5"><Inbox className="w-3 h-3"/>No modules assigned — card is Uncategorized{!readOnly&&<div className="relative ml-auto"><button onClick={()=>setAdding(a=>!a)} className="text-[10px] px-2 py-0.5 rounded-full border border-gray-300 bg-white text-gray-600 hover:border-violet-400 hover:text-violet-600 cursor-pointer inline-flex items-center gap-0.5"><Plus className="w-2.5 h-2.5"/>Add</button>{adding&&<div className="absolute right-0 top-full mt-1 z-10 w-44 rounded-md border border-gray-200 bg-white shadow-lg py-1 max-h-44 overflow-y-auto">{addable.map(m=><button key={m} onClick={()=>addM(m)} className="w-full text-left px-2.5 py-1 text-[11px] text-gray-700 hover:bg-violet-50 hover:text-violet-700 cursor-pointer">{m}</button>)}</div>}</div>}</div>}
+        {accepting ? <div className="flex items-center gap-1.5">
+          {/* MC-06 #3 — Accept → the suggested name becomes inline-editable (per RF-01). */}
+          <input value={newName} onChange={e=>setNewName(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")confirmNew();if(e.key==="Escape")setAccepting(false);}} placeholder="Module name" className="flex-1 h-7 px-2 rounded-md border border-violet-400 text-[11px] focus:outline-none focus:ring-2 focus:ring-violet-500/20" autoFocus/>
+          <button onClick={confirmNew} className="w-7 h-7 rounded bg-violet-600 text-white inline-flex items-center justify-center cursor-pointer hover:bg-violet-700"><Check className="w-3.5 h-3.5"/></button>
+          <button onClick={()=>setAccepting(false)} className="w-7 h-7 rounded border border-gray-300 text-gray-500 inline-flex items-center justify-center cursor-pointer hover:bg-gray-50"><X className="w-3.5 h-3.5"/></button>
+        </div>
+        : isNew ? <div className="flex flex-wrap items-center gap-1.5">
+          {/* MC-06 #1 — suggested name shown here as a violet DASHED chip (a suggestion, not a confirmed assignment). */}
+          <span className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-md border border-dashed border-violet-400 bg-violet-50 text-violet-700 font-medium"><Sparkles className="w-2.5 h-2.5"/>{cls.newModule}</span>
+        </div>
+        : assign.length? <div className="flex flex-wrap gap-1.5 items-center">{assign.map(m=><span key={m} className={`inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-md border ${active===m?"bg-violet-50 text-violet-800 border-violet-500 ring-1 ring-violet-400":"bg-violet-50 text-violet-700 border-violet-300 hover:border-violet-500"}`}><button onClick={()=>setActive(m)} className="cursor-pointer">{m}</button>{!readOnly&&<button onClick={()=>removeM(m)} className="cursor-pointer hover:text-rose-500">×</button>}</span>)}
+          {!readOnly&&<AddModuleControl addable={addable} onAdd={addM}/>}
+        </div> : <div className="rounded-md border border-dashed border-gray-300 bg-white/60 px-2.5 py-1.5 text-[11px] text-gray-500 flex items-center gap-1.5"><Inbox className="w-3 h-3"/>No modules assigned — card is Uncategorized{!readOnly&&<div className="ml-auto"><AddModuleControl addable={addable} onAdd={addM}/></div>}</div>}
       </div>
       {/* MC-05 — Save/Cancel (or New-Module Accept/Skip) */}
       {readOnly ? <p className="text-[10px] text-gray-400 flex items-center gap-1.5 mb-3"><User className="w-3 h-3"/>Read-only — only the Manager can change the assignment.</p>
         : saved ? <p className="text-[11px] text-emerald-600 flex items-center gap-1.5 mb-3"><CheckCircle2 className="w-3.5 h-3.5"/>{saved}</p>
-        : accepting ? <div className="mb-3"><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1.5">Name the new module</p><div className="flex items-center gap-1.5"><input value={newName} onChange={e=>setNewName(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")setSaved(`Created module “${(newName.trim()||cls.newModule)}” and assigned this card.`);if(e.key==="Escape")setAccepting(false);}} placeholder="Module name" className="flex-1 h-7 px-2 rounded border border-violet-300 text-[11px] focus:outline-none focus:ring-2 focus:ring-violet-500/20" autoFocus/><button onClick={()=>setSaved(`Created module “${(newName.trim()||cls.newModule)}” and assigned this card.`)} className="w-7 h-7 rounded bg-violet-600 text-white inline-flex items-center justify-center cursor-pointer hover:bg-violet-700"><Check className="w-3.5 h-3.5"/></button><button onClick={()=>setAccepting(false)} className="w-7 h-7 rounded border border-gray-300 text-gray-500 inline-flex items-center justify-center cursor-pointer hover:bg-gray-50"><X className="w-3.5 h-3.5"/></button></div></div>
+        : accepting ? <div className="mb-3"/>
         : isNew ? <div className="flex flex-wrap gap-2 mb-3"><button onClick={()=>{setAccepting(true);setNewName(cls.newModule);}} className="h-7 px-3 rounded-md bg-violet-600 text-white text-[11px] font-medium hover:bg-violet-700 cursor-pointer">Accept</button><button onClick={()=>{setSkipped(true);setAssign([]);setActive(null);}} className="h-7 px-3 rounded-md border border-gray-300 text-gray-600 text-[11px] font-medium hover:bg-gray-50 cursor-pointer">Skip</button></div>
         : showSave ? <div className="flex gap-2 mb-3"><button onClick={doSave} className="h-7 px-3 rounded-md bg-violet-600 text-white text-[11px] font-medium hover:bg-violet-700 cursor-pointer">Save</button><button onClick={doCancel} className="h-7 px-3 rounded-md border border-gray-300 text-gray-600 text-[11px] font-medium hover:bg-gray-50 cursor-pointer">Cancel</button></div>
         : <div className="mb-3"/>}
@@ -440,7 +533,7 @@ function VoiceSession({ questions, onSubmitAll, onClose }) {
   </div></VoiceShell>;
 
   if (phase==="complete") return <VoiceShell><div className="rounded-xl border border-emerald-200 p-6 text-center mb-4" style={{background:"linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%)"}}>
-      <h3 className="text-base font-semibold text-gray-900 mb-1">🎉 Voice session complete</h3>
+      <h3 className="text-base font-semibold text-gray-900 mb-1">Voice session complete</h3>
       <p className="text-[12px] text-gray-600">{questions.length}{" questions · "}{vFmt(Object.values(durations).reduce((a,b)=>a+b,0))}{" · "}{skippedAll.length}{" skipped"}</p>
     </div>
     <div className="space-y-2 mb-5">{answeredAll.map(q=><div key={q.id} className="rounded-lg border border-gray-200 bg-white px-4 py-3"><div className="flex items-start gap-2"><div className="flex-1"><div className="text-[12px] text-gray-900 mb-1 inline-flex items-center gap-1.5"><Mic className="w-3 h-3 text-gray-400"/>{q.q}</div>{editId===q.id?<textarea value={transcripts[q.id]} onChange={e=>setTranscripts(t=>({...t,[q.id]:e.target.value}))} className="w-full h-16 px-2 py-1.5 rounded border border-violet-300 text-[11px] resize-none focus:outline-none focus:ring-2 focus:ring-violet-500/20" autoFocus/>:<p className="text-[11px] text-gray-600 italic leading-relaxed">&quot;{transcripts[q.id]}&quot;</p>}</div><button onClick={()=>setEditId(editId===q.id?null:q.id)} className="text-[10px] text-violet-600 hover:text-violet-700 cursor-pointer shrink-0 inline-flex items-center gap-1"><Pencil className="w-2.5 h-2.5"/>{editId===q.id?"Done":"Edit"}</button></div></div>)}
@@ -489,15 +582,15 @@ function OffboarderQueue({ focusQ, focusKey, onSelectCard, selectedCard }) {
   const openContext = (q) => { const card = findCardForQuestion(q); if(card&&onSelectCard){ setActiveQ(q.id); onSelectCard(card); } };
   return <div className="space-y-2">
     <style>{"@keyframes qflash{0%{box-shadow:0 0 0 2px #a78bfa;background:#f5f3ff}100%{box-shadow:0 0 0 0 rgba(0,0,0,0);background:#ffffff}}"}</style>
-    {OB_QUEUE.map(q=>{const isActive=activeQ===q.id&&!!selectedCard;return <div key={q.id} ref={el=>{refs.current[q.id]=el;}} style={flash===q.id?{animation:"qflash 1.6s ease-out"}:undefined} className={`rounded-lg border bg-white px-4 py-3 ${isActive?"border-violet-500 ring-2 ring-violet-500/15":"border-gray-200"}`}><div className="flex items-start gap-2"><div className="text-[13px] text-gray-900 mb-1 flex-1">{q.q}</div>{onSelectCard&&<button onClick={()=>openContext(q)} className="text-[9px] text-violet-600 hover:text-violet-700 cursor-pointer inline-flex items-center gap-1 shrink-0 mt-0.5" title="Open the source card"><ExternalLink className="w-2.5 h-2.5"/>See in context</button>}</div><div className="text-[11px] text-gray-500 flex items-center gap-1.5">{q.answered?<CheckCircle2 className="w-3 h-3 text-emerald-500"/>:q.fromType==="ai"?<Sparkles className="w-3 h-3 text-violet-500"/>:<User className="w-3 h-3"/>}<span>{q.answered?"Answered":q.from}</span>{q.answered&&(q.satisfied?<span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">{"\u2713 Accepted"}</span>:<span className="text-[9px] text-gray-400">waiting for review</span>)}<span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 ml-1">{q.module}</span></div>{q.answered?<div className="mt-2 rounded-md px-3 py-2 bg-gray-50 border-l-2 border-emerald-400"><p className="text-[11px] text-gray-800 leading-relaxed">{q.answer}</p></div>:<AnswerInput/>}</div>})}
+    {OB_QUEUE.map(q=>{const isActive=activeQ===q.id&&!!selectedCard;return <div key={q.id} ref={el=>{refs.current[q.id]=el;}} style={flash===q.id?{animation:"qflash 1.6s ease-out"}:undefined} className={`rounded-lg border bg-white px-4 py-3 ${isActive?"border-violet-500 ring-2 ring-violet-500/15":"border-gray-200"}`}><div className="flex items-start gap-2"><div className="text-[13px] text-gray-900 mb-1 flex-1">{q.q}</div>{onSelectCard&&<button onClick={()=>openContext(q)} className="text-[9px] text-violet-600 hover:text-violet-700 cursor-pointer inline-flex items-center gap-1 shrink-0 mt-0.5" title="Open the source card"><ExternalLink className="w-2.5 h-2.5"/>See in context</button>}</div><div className="text-[11px] text-gray-500 flex items-center gap-1.5">{q.answered?<CheckCircle2 className="w-3 h-3 text-emerald-500"/>:q.fromType==="ai"?<Sparkles className="w-3 h-3 text-violet-500"/>:<User className="w-3 h-3"/>}<span>{q.answered?"Answered":q.from}</span>{q.answered&&(q.satisfied?<span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 inline-flex items-center gap-0.5"><CheckCircle2 className="w-2.5 h-2.5"/>Accepted</span>:<span className="text-[9px] text-gray-400">waiting for review</span>)}<span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 ml-1">{q.module}</span></div>{q.answered?<div className="mt-2 rounded-md px-3 py-2 bg-gray-50 border-l-2 border-emerald-400"><p className="text-[11px] text-gray-800 leading-relaxed">{q.answer}</p></div>:<AnswerInput/>}</div>})}
   </div>;
 }
 
 function CoworkerOverview({ stepId, isReady, onSwitchTab, coworkers }) {
   // R5-02 \u2014 waiting state: orbital + "Data is being collected" message, no CTA.
   if (!isReady) return <div className="rounded-xl border border-gray-200 bg-white p-10 text-center"><OrbitalIllustration/><h3 className="text-sm font-semibold text-gray-900 mb-1">Data is being collected</h3><p className="text-xs text-gray-500 max-w-sm mx-auto">{"The system is crawling Trello boards and organizing knowledge. You\u2019ll be able to review and ask questions once data is ready."}</p></div>;
-  if (stepId==="capture") return <div className="space-y-4"><div className="rounded-lg border border-gray-200 bg-white p-5"><h3 className="text-sm font-semibold text-gray-900 mb-1">Your questions</h3><p className="text-[12px] text-gray-500 mb-3">Review answers and ask follow-ups.</p><div className="grid grid-cols-3 gap-3"><MC l="Answered" v={2}/><MC l="Waiting" v={1}/><MC l="Accepted" v={1}/></div><p className="text-[11px] text-yellow-700 mt-3 flex items-center gap-1.5"><AlertTriangle className="w-3 h-3"/>1 answer waiting for review</p></div><CoworkerNetwork coworkers={coworkers} readOnly/><button onClick={()=>onSwitchTab("data")} className="h-9 px-4 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center gap-2 cursor-pointer">{"Review in Data tab"}<ArrowRight className="w-3.5 h-3.5"/></button></div>;
-  return <div className="space-y-4"><div className="rounded-lg border border-gray-200 bg-white p-5"><h3 className="text-sm font-semibold text-gray-900 mb-1">{"Minh L\u00ea is leaving soon"}</h3><p className="text-[12px] text-gray-500 mb-3">{"Senior Backend Engineer · Last day July 4, 2026"}</p><div className="pt-3 border-t border-gray-100 space-y-2"><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Knowledge areas</p><div className="flex flex-wrap gap-1.5">{["Payment Service","CI/CD Pipeline","Shared Libraries","Monitoring & Alerts","Infrastructure as Code"].map(m=><span key={m} className="text-[11px] px-2 py-1 rounded-md bg-gray-50 border border-gray-200 text-gray-700">{m}</span>)}</div></div><div className="pt-3 mt-3 border-t border-gray-100 grid grid-cols-2 gap-3"><div><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">Your activity</p><p className="text-[12px] text-gray-700">0 questions asked</p></div><div><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">Others</p><p className="text-[12px] text-gray-700">2 coworkers active</p></div></div></div><CoworkerNetwork coworkers={coworkers} readOnly/><button onClick={()=>onSwitchTab("data")} className="h-9 px-4 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium inline-flex items-center gap-2 cursor-pointer">{"Browse Data tab"}<ArrowRight className="w-3.5 h-3.5"/></button></div>;
+  if (stepId==="capture") return <div className="space-y-4"><div className="rounded-lg border border-gray-200 bg-white p-5"><h3 className="text-sm font-semibold text-gray-900 mb-1">Your questions</h3><p className="text-[12px] text-gray-500 mb-3">Review answers and ask follow-ups.</p><div className="grid grid-cols-3 gap-3"><MC l="Answered" v={2}/><MC l="Waiting" v={1}/><MC l="Accepted" v={1}/></div><p className="text-[11px] text-yellow-700 mt-3 flex items-center gap-1.5"><AlertTriangle className="w-3 h-3"/>1 answer waiting for review</p></div><CoworkerNetwork coworkers={coworkers} readOnly/></div>;
+  return <div className="space-y-4"><div className="rounded-lg border border-gray-200 bg-white p-5"><h3 className="text-sm font-semibold text-gray-900 mb-1">{"Minh L\u00ea is leaving soon"}</h3><p className="text-[12px] text-gray-500 mb-3">{"Senior Backend Engineer · Last day July 4, 2026"}</p><div className="pt-3 border-t border-gray-100 space-y-2"><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Knowledge areas</p><div className="flex flex-wrap gap-1.5">{["Payment Service","CI/CD Pipeline","Shared Libraries","Monitoring & Alerts","Infrastructure as Code"].map(m=><span key={m} className="text-[11px] px-2 py-1 rounded-md bg-gray-50 border border-gray-200 text-gray-700">{m}</span>)}</div></div><div className="pt-3 mt-3 border-t border-gray-100 grid grid-cols-2 gap-3"><div><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">Your activity</p><p className="text-[12px] text-gray-700">0 questions asked</p></div><div><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">Others</p><p className="text-[12px] text-gray-700">2 coworkers active</p></div></div></div><CoworkerNetwork coworkers={coworkers} readOnly/></div>;
 }
 
 function CoworkerNetwork({ coworkers=[], onAdd, onRemove, readOnly=false }) {
@@ -600,7 +693,7 @@ function CardRow({ card, linked, showProgress, canManage, dismissedFlags, onDism
   if (clsOn && clsFilter && clsFilter!=="all" && cls.state!==clsFilter) return null;
   // §4.6/WS — classification badge + left accent only in Prepare (clsOn). §4.1 — orange Detects. DT-01 — ≤2 indicators.
   return <div className={`group/row relative w-full flex items-center gap-2 pr-3 py-2 border-t border-gray-50 ${linked?"pl-7 border-l-2 border-l-violet-300":"pl-10"} ${isSel?"bg-violet-50 border-l-2 border-l-violet-500":"hover:bg-gray-50"}`} style={!isSel&&!linked&&clsOn&&cmeta.border?{borderLeft:`2px solid ${cmeta.border}`}:(linked&&!isSel?{borderLeftStyle:"dashed"}:undefined)}>
-    {showProgress&&<span className="w-4 shrink-0 text-center">{st==="done"?<CheckCircle2 className="w-3.5 h-3.5 text-emerald-500"/>:st==="pending"?<span className="text-gray-400 text-[11px]">{"○"}</span>:<span className="text-gray-300 text-[11px]">{"—"}</span>}</span>}
+    {showProgress&&<span className="w-4 shrink-0 text-center">{st==="done"?<CheckCircle2 className="w-3.5 h-3.5 text-emerald-500"/>:st==="pending"?<span className="w-2 h-2 rounded-full border border-gray-300 inline-block"/>:<span className="text-gray-300 text-[11px]">{"—"}</span>}</span>}
     <button onClick={()=>onSelectCard(card)} className="flex items-center gap-2 flex-1 min-w-0 text-left cursor-pointer"><FileText className={`w-3 h-3 shrink-0 ${linked?"text-violet-400":"text-gray-400"}`}/><span className={`text-[12px] truncate ${linked?"text-gray-500":"text-gray-800"}`}>{card.name}</span></button>
     {clsOn&&cls.state!=="pass"&&<span className={`text-[8px] px-1.5 py-0.5 rounded border inline-flex items-center gap-0.5 shrink-0 ${cmeta.badge}`} title={`AI: ${cmeta.label}`}>{cls.state==="review"?<AlertTriangle className="w-2.5 h-2.5"/>:cls.state==="newmod"?<Sparkles className="w-2.5 h-2.5"/>:<Inbox className="w-2.5 h-2.5"/>}{cmeta.label}</span>}
     {linked&&primaryMod&&<span className="text-[8px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-600 border border-violet-200 inline-flex items-center gap-0.5 shrink-0" title={`Also in ${primaryMod}`}>{primaryMod}</span>}
@@ -662,7 +755,7 @@ function AnswerBlock({ q, role, committed, readOnly, sat }) {
   const sentBack = sat ? sat.moreKeys.has(key) : localSent;
   const doSatisfy = () => { if (sat) sat.onSatisfyQ(key); else setLocalSat(true); };
   const doSendBack = () => { if (sat) sat.onMoreQ(key); else setLocalSent(true); setShowMore(false); };
-  return <div className="mt-2"><div className="rounded-md px-3 py-2 bg-gray-50 border-l-2 border-emerald-400"><p className="text-[10px] text-gray-500 mb-1">{q.answeredBy}{" · "}{q.answeredAt}{committed&&<span className="ml-1 text-[8px] px-1 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-0.5"><CheckCircle2 className="w-2 h-2"/>Committed</span>}</p><p className="text-[11px] text-gray-800 leading-relaxed">{q.answer}</p>{q.file&&<p className="text-[10px] text-gray-500 mt-1.5 flex items-center gap-1"><Paperclip className="w-2.5 h-2.5"/>{q.file.name}{" ("}{q.file.size}{")"}</p>}</div>{role!=="offboarder"&&!readOnly&&!committed&&<div className="mt-1.5">{satisfied?<p className="text-[10px] text-emerald-600 flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/>{"Accepted by "}{q.satisfiedBy||"you"}{" · "}{q.satisfiedAt||"now"}</p>:sentBack?<div className="rounded-md bg-yellow-50 border border-yellow-200 px-2.5 py-1.5"><p className="text-[10px] text-yellow-800 font-medium">{"↩ Revision requested — sent back to Minh Lê"}</p>{moreText&&<p className="text-[10px] text-gray-600 mt-0.5 italic">&quot;{moreText}&quot;</p>}</div>:<div className="flex items-center gap-2"><button onClick={doSatisfy} className="h-6 px-2 rounded border border-emerald-300 text-emerald-700 text-[10px] inline-flex items-center gap-1 hover:bg-emerald-50 cursor-pointer"><CheckCircle2 className="w-2.5 h-2.5"/>Accept</button><button onClick={()=>setShowMore(!showMore)} className="h-6 px-2 rounded border border-yellow-300 text-yellow-700 text-[10px] inline-flex items-center gap-1 hover:bg-yellow-50 cursor-pointer">Needs more</button></div>}{showMore&&!sentBack&&!satisfied&&<div className="mt-1.5"><textarea value={moreText} onChange={e=>setMoreText(e.target.value)} placeholder="What's missing? This note goes back to the offboarder with the question." className="w-full h-12 px-2 py-1 rounded border border-yellow-300 text-[10px] resize-none focus:outline-none focus:ring-2 focus:ring-yellow-500/20"/><div className="flex justify-end mt-1"><button onClick={doSendBack} className="h-6 px-2 rounded bg-yellow-600 text-white text-[9px] cursor-pointer hover:bg-yellow-700">Send back</button></div></div>}</div>}{(readOnly||committed)&&satisfied&&<p className="mt-1 text-[10px] text-emerald-600 flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/>{"Accepted by "}{q.satisfiedBy}{" · "}{q.satisfiedAt}</p>}</div>;
+  return <div className="mt-2"><div className="rounded-md px-3 py-2 bg-gray-50 border-l-2 border-emerald-400"><p className="text-[10px] text-gray-500 mb-1">{q.answeredBy}{" · "}{q.answeredAt}{committed&&<span className="ml-1 text-[8px] px-1 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-0.5"><CheckCircle2 className="w-2 h-2"/>Committed</span>}</p><p className="text-[11px] text-gray-800 leading-relaxed">{q.answer}</p>{q.file&&<p className="text-[10px] text-gray-500 mt-1.5 flex items-center gap-1"><Paperclip className="w-2.5 h-2.5"/>{q.file.name}{" ("}{q.file.size}{")"}</p>}</div>{role!=="offboarder"&&!readOnly&&!committed&&<div className="mt-1.5">{satisfied?<p className="text-[10px] text-emerald-600 flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/>{"Accepted by "}{q.satisfiedBy||"you"}{" · "}{q.satisfiedAt||"now"}</p>:sentBack?<div className="rounded-md bg-yellow-50 border border-yellow-200 px-2.5 py-1.5"><p className="text-[10px] text-yellow-800 font-medium inline-flex items-center gap-1"><RotateCcw className="w-3 h-3"/>Revision requested — sent back to Minh Lê</p>{moreText&&<p className="text-[10px] text-gray-600 mt-0.5 italic">&quot;{moreText}&quot;</p>}</div>:<div className="flex items-center gap-2"><button onClick={doSatisfy} className="h-6 px-2 rounded border border-emerald-300 text-emerald-700 text-[10px] inline-flex items-center gap-1 hover:bg-emerald-50 cursor-pointer"><CheckCircle2 className="w-2.5 h-2.5"/>Accept</button><button onClick={()=>setShowMore(!showMore)} className="h-6 px-2 rounded border border-yellow-300 text-yellow-700 text-[10px] inline-flex items-center gap-1 hover:bg-yellow-50 cursor-pointer">Needs more</button></div>}{showMore&&!sentBack&&!satisfied&&<div className="mt-1.5"><textarea value={moreText} onChange={e=>setMoreText(e.target.value)} placeholder="What's missing? This note goes back to the offboarder with the question." className="w-full h-12 px-2 py-1 rounded border border-yellow-300 text-[10px] resize-none focus:outline-none focus:ring-2 focus:ring-yellow-500/20"/><div className="flex justify-end mt-1"><button onClick={doSendBack} className="h-6 px-2 rounded bg-yellow-600 text-white text-[9px] cursor-pointer hover:bg-yellow-700">Send back</button></div></div>}</div>}{(readOnly||committed)&&satisfied&&<p className="mt-1 text-[10px] text-emerald-600 flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/>{"Accepted by "}{q.satisfiedBy}{" · "}{q.satisfiedAt}</p>}</div>;
 }
 
 function AnswerInput() { return <div className="mt-2"><textarea placeholder="Type your answer..." className="w-full h-16 px-2 py-1.5 rounded border border-gray-200 text-[11px] resize-none focus:outline-none focus:ring-2 focus:ring-violet-500/20"/><div className="flex items-center justify-end mt-1"><button className="h-6 px-2 rounded bg-violet-600 text-white text-[10px] cursor-pointer">Submit</button></div></div>; }
@@ -725,7 +818,7 @@ export function ProgressBar() { return <div className="flex items-center gap-3 m
 export function MC({ l, v }) { return <div className="rounded-md bg-gray-50 border border-gray-200 px-3 py-2"><div className="text-[9px] text-gray-500 uppercase tracking-wider font-medium">{l}</div><div className="text-lg font-semibold text-gray-900 mt-0.5" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{v}</div></div>; }
 
 /* AI categorization animation — cartoon explainer of HOW the AI sorts cards (placeholder data, loops). CL-session 2025-06-25 §6.
-   4 scenes: simple match → second match → 1:N split (★ primary + ↗ linked) → no match (Uncategorized). */
+   4 scenes: simple match → second match → 1:N split (one card, two modules — equal weight) → no match (Uncategorized). */
 function CategorizeAnimation() {
   const buckets = [
     { label: "Module 1", left: 31, bg: "#f5f3ff", bd: "#c4b5fd", fg: "#6d28d9" },
@@ -757,18 +850,18 @@ function CategorizeAnimation() {
     <div className="relative mx-auto h-5" style={{width:420}}>
       <span className="cat-cap cap-a text-violet-700">Clear match → one module</span>
       <span className="cat-cap cap-b text-blue-700">Another clear match</span>
-      <span className="cat-cap cap-c text-gray-700">2 matches → <span className="text-violet-700">★ primary</span> + <span className="text-pink-600">↗ linked</span></span>
+      <span className="cat-cap cap-c text-gray-700">2 matches → <span className="text-violet-700">both modules</span> · <span className="text-gray-500">equal weight</span></span>
       <span className="cat-cap cap-d text-gray-500">No confident match → Uncategorized</span>
     </div>
     <div className="relative mx-auto" style={{width:420,height:180}}>
       <div className="cat-hub"><Sparkles className="w-4 h-4 text-violet-600"/></div>
       <div className="cat-card cat-a" style={{background:"#f5f3ff",border:"1px solid #c4b5fd",color:"#6d28d9"}}>A</div>
       <div className="cat-card cat-b" style={{background:"#eff6ff",border:"1px solid #bfdbfe",color:"#1d4ed8"}}>B</div>
-      <div className="cat-card cat-cp" style={{background:"#f5f3ff",border:"1px solid #c4b5fd",color:"#6d28d9"}}>{"★"}</div>
-      <div className="cat-card cat-cl" style={{background:"#fdf2f8",border:"1px solid #fbcfe8",color:"#be185d"}}>{"↗"}</div>
+      <div className="cat-card cat-cp" style={{background:"#f5f3ff",border:"1px solid #c4b5fd",color:"#6d28d9"}}>C</div>
+      <div className="cat-card cat-cl" style={{background:"#fdf2f8",border:"1px solid #fbcfe8",color:"#be185d"}}>C</div>
       <div className="cat-card cat-d" style={{background:"#f9fafb",border:"1px solid #e5e7eb",color:"#6b7280"}}>D</div>
       {buckets.map(b=><div key={b.label} className="absolute flex items-center justify-center text-[9px] font-semibold" style={{left:b.left,top:140,width:78,height:30,borderRadius:8,background:b.bg,border:`1px solid ${b.bd}`,color:b.fg}}>{b.label}</div>)}
     </div>
-    <p className="text-center text-[11px] text-gray-500 mt-2" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>Sorting cards… 12 · 28 · 47 · 64 {"✓"}</p>
+    <p className="text-center text-[11px] text-gray-500 mt-2 inline-flex items-center justify-center gap-1 w-full" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>Sorting cards… 12 · 28 · 47 · 64 <CheckCircle2 className="w-3 h-3 text-emerald-500"/></p>
   </div>;
 }
