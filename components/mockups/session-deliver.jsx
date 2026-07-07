@@ -29,7 +29,8 @@ export function DeliverOverview({ role, onSwitchTab, S, MD, modProgress, MC, Pro
     { module: "Monitoring & Alerts", gap: "No alert routing documented", status: "1 question waiting" },
   ];
 
-  return <div className="grid grid-cols-3 gap-5">
+  return <div className="space-y-4"><div className="grid grid-cols-3 gap-5">
+    {/* OV-05-FIX — the 2-column row wraps ONLY the stepper + the KPI card; everything below is full-width */}
     {/* OV-05/06 — vertical stepper column: Back to Capture (outlined) + Commit (gradient) stacked below the stepper */}
     <div><PhaseHero phase="deliver" cta={<>
       <button onClick={()=>setShowBack(true)} className="w-full h-9 px-4 rounded-lg border-[1.5px] border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium inline-flex items-center justify-center gap-2 cursor-pointer"><ArrowLeftRight className="w-3.5 h-3.5"/>Back to Capture</button>
@@ -48,6 +49,7 @@ export function DeliverOverview({ role, onSwitchTab, S, MD, modProgress, MC, Pro
       <MC l="Questions answered" v={ANSWERED}/>
       <MC l="Modules covered" v={MODULES}/>
     </div>
+    </div></div>
 
     {/* Data Validation — UX-02: collapsed by default */}
     <DataValidation MD={MD} flagged={flagged} setFlagged={setFlagged} dvOpen={dvOpen} setDvOpen={setDvOpen}/>
@@ -75,7 +77,6 @@ export function DeliverOverview({ role, onSwitchTab, S, MD, modProgress, MC, Pro
     <div className="rounded-md bg-blue-50 border border-blue-200 px-3 py-2.5 flex items-start gap-2">
       <Shield className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5"/>
       <p className="text-[11px] text-blue-800">{SENSITIVE} entries contain sensitive content that will be sanitized before commit.</p>
-    </div>
     </div>
 
     {showCommit && <CommitModal S={S} entries={ENTRIES} sensitive={SENSITIVE} unresolved={unresolvedGaps.length} validation={{ passed: TEST_CASES.filter(t=>t.result==="pass").length, total: TEST_CASES.length, flagged: flagged.size }} onClose={()=>setShowCommit(false)}/>}
