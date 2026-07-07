@@ -5,6 +5,7 @@ import { CheckCircle2, Clock, AlertTriangle, Sparkles, Database, ArrowLeftRight,
 
 export function DeliverOverview({ role, onSwitchTab, S, MD, modProgress, MC, ProgressBar, PhaseHero }) {
   const [showCommit, setShowCommit] = useState(false);
+  const [showBack, setShowBack] = useState(false); // OV-06 — Back to Capture is a visible button again
   const [flagged, setFlagged] = useState(() => new Set());
   const [dvOpen, setDvOpen] = useState(false); // UX-02: collapsed by default
 
@@ -28,9 +29,13 @@ export function DeliverOverview({ role, onSwitchTab, S, MD, modProgress, MC, Pro
     { module: "Monitoring & Alerts", gap: "No alert routing documented", status: "1 question waiting" },
   ];
 
-  return <div className="space-y-4">
-    {/* PH-01/UR-03 — stepper + gradient Commit CTA at the top (replaces the removed sticky bar) */}
-    <PhaseHero phase="deliver" cta={<button onClick={()=>setShowCommit(true)} className="h-9 px-5 rounded-lg text-white text-sm font-medium inline-flex items-center gap-2 cursor-pointer" style={{background:"linear-gradient(135deg, #6366f1, #7c3aed)"}}><Database className="w-3.5 h-3.5"/>Commit to Knowledge Graph</button>}/>
+  return <div className="grid grid-cols-3 gap-5">
+    {/* OV-05/06 — vertical stepper column: Back to Capture (outlined) + Commit (gradient) stacked below the stepper */}
+    <div><PhaseHero phase="deliver" cta={<>
+      <button onClick={()=>setShowBack(true)} className="w-full h-9 px-4 rounded-lg border-[1.5px] border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium inline-flex items-center justify-center gap-2 cursor-pointer"><ArrowLeftRight className="w-3.5 h-3.5"/>Back to Capture</button>
+      <button onClick={()=>setShowCommit(true)} className="w-full h-9 px-4 rounded-lg text-white text-sm font-medium inline-flex items-center justify-center gap-2 cursor-pointer" style={{background:"linear-gradient(135deg, #6366f1, #7c3aed)"}}><Database className="w-3.5 h-3.5"/>Commit to Knowledge Graph</button>
+    </>}/></div>
+    <div className="col-span-2 space-y-4">
     {/* DP-04: violet gradient header */}
     <div className="rounded-xl p-5" style={{ background: "linear-gradient(135deg, #f5f3ff, #ede9fe)" }}>
       <h2 className="text-xl font-semibold text-violet-900"><Sparkles className="w-4 h-4 inline mr-1.5 text-violet-500"/>Ready to commit</h2>
@@ -71,8 +76,10 @@ export function DeliverOverview({ role, onSwitchTab, S, MD, modProgress, MC, Pro
       <Shield className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5"/>
       <p className="text-[11px] text-blue-800">{SENSITIVE} entries contain sensitive content that will be sanitized before commit.</p>
     </div>
+    </div>
 
     {showCommit && <CommitModal S={S} entries={ENTRIES} sensitive={SENSITIVE} unresolved={unresolvedGaps.length} validation={{ passed: TEST_CASES.filter(t=>t.result==="pass").length, total: TEST_CASES.length, flagged: flagged.size }} onClose={()=>setShowCommit(false)}/>}
+    {showBack && <BackModal count={flagged.size} onClose={()=>setShowBack(false)}/>}
   </div>;
 }
 
@@ -126,7 +133,7 @@ export function CompleteOverview({ role, S, MC, PhaseHero }) {
     <div className="grid grid-cols-2 gap-3 mb-5"><MC l="Questions you asked" v={4}/><MC l="Answers you reviewed" v={2}/></div>
     <p className="text-[12px] text-gray-500 text-center">{"The answers you reviewed are now available to the whole team."}</p>
   </div>;
-  return <div className="space-y-4">{PhaseHero&&<PhaseHero phase="complete"/>}<div className="rounded-md bg-emerald-50 border border-emerald-200 p-3 flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0"/><div><p className="text-[12px] font-medium text-emerald-800">Committed to Knowledge Graph</p><p className="text-[10px] text-emerald-600" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{"Jun 14, 2026 at 3:42 PM \u00b7 487 entries"}</p></div></div><div className="rounded-lg border border-gray-200 bg-white p-5"><div className="grid grid-cols-3 gap-3"><MC l="Entries committed" v={42}/><MC l="Questions answered" v={S.answered}/><MC l="Modules covered" v={S.modules}/></div><p className="text-[11px] text-gray-500 mt-3">{"Minh L\u00ea\u2019s knowledge is now available to the team in the Knowledge Graph."}</p><div className="flex gap-3 mt-3"><Link href={`/knowledge-graph?session=${S.id}`} className="h-8 px-3 rounded-md border border-violet-300 text-violet-700 text-xs font-medium inline-flex items-center gap-1.5 hover:bg-violet-50"><Sparkles className="w-3 h-3"/>Explore in Knowledge Graph</Link><Link href="/" className="h-8 px-3 rounded-md border border-gray-300 text-gray-700 text-xs font-medium inline-flex items-center gap-1.5 hover:bg-gray-50">Back to dashboard</Link></div></div></div>;
+  return <div className="grid grid-cols-3 gap-5"><div>{PhaseHero&&<PhaseHero phase="complete"/>}</div><div className="col-span-2 space-y-4"><div className="rounded-md bg-emerald-50 border border-emerald-200 p-3 flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0"/><div><p className="text-[12px] font-medium text-emerald-800">Committed to Knowledge Graph</p><p className="text-[10px] text-emerald-600" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{"Jun 14, 2026 at 3:42 PM \u00b7 487 entries"}</p></div></div><div className="rounded-lg border border-gray-200 bg-white p-5"><div className="grid grid-cols-3 gap-3"><MC l="Entries committed" v={42}/><MC l="Questions answered" v={S.answered}/><MC l="Modules covered" v={S.modules}/></div><p className="text-[11px] text-gray-500 mt-3">{"Minh L\u00ea\u2019s knowledge is now available to the team in the Knowledge Graph."}</p><div className="flex gap-3 mt-3"><Link href={`/knowledge-graph?session=${S.id}`} className="h-8 px-3 rounded-md border border-violet-300 text-violet-700 text-xs font-medium inline-flex items-center gap-1.5 hover:bg-violet-50"><Sparkles className="w-3 h-3"/>Explore in Knowledge Graph</Link><Link href="/" className="h-8 px-3 rounded-md border border-gray-300 text-gray-700 text-xs font-medium inline-flex items-center gap-1.5 hover:bg-gray-50">Back to dashboard</Link></div></div></div></div>;
 }
 
 function CommitModal({ S, entries = 42, sensitive = 3, unresolved = 0, validation = { passed: 5, total: 8, flagged: 1 }, onClose }) {
@@ -242,28 +249,24 @@ function DataValidation({ MD, flagged, setFlagged, dvOpen, setDvOpen }) {
   </div>;
 }
 
-function DVSource({ c, MD }) {
-  const mod = MD.flatMap(b => b.modules).find(m => m.name === c.module);
-  const cards = mod ? mod.items.map(i => i.name) : [];
-  const used = new Set(c.cards || []);
-  const gaps = (mod && mod.moduleGaps) || [];
-  const showGapExtra = c.gap && !gaps.includes(c.gap) && c.result !== "pass";
+function DVSource({ c }) {
+  // DV-15 — show ONLY what the AI referenced: the cited cards + the gap that maps to the result.
+  // Passed → cited cards. Failed → 0 cards + the matching gap. Partial → used cards + missing gap.
+  const usedCards = c.cards || [];
+  const usedGap = c.gap || null;
   return <div className="space-y-2 text-[11px]">
-    <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Source</p>
+    <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Sources used</p>
     <p className="text-[12px] font-medium text-violet-700">{c.module}</p>
-    <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium pt-1">{"Cards ("}{cards.length}{")"}</p>
+    <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium pt-1">{"Cards ("}{usedCards.length}{")"}</p>
     <div className="space-y-0.5">
-      {cards.map((name, i) => <div key={i} className="text-[11px] text-gray-600 py-0.5 flex items-center gap-1.5">
-        <FileText className="w-3 h-3 shrink-0 text-gray-400"/><span className="flex-1 truncate">{name}</span>{used.has(name) && <span className="text-[9px] font-medium text-emerald-600 shrink-0">used</span>}
+      {usedCards.map((name, i) => <div key={i} className="text-[11px] text-gray-600 py-0.5 flex items-center gap-1.5">
+        <FileText className="w-3 h-3 shrink-0 text-gray-400"/><span className="flex-1 truncate">{name}</span><span className="text-[9px] font-medium text-emerald-600 shrink-0">used</span>
       </div>)}
-      {cards.length === 0 && <p className="text-gray-400">No cards in this module.</p>}
+      {usedCards.length === 0 && <p className="text-gray-400">No cards used — answered from a gap or not found.</p>}
     </div>
-    {(gaps.length > 0 || showGapExtra) && <>
-      <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium pt-1">Gaps</p>
-      <div className="space-y-1">
-        {gaps.map((g, i) => { const match = c.result !== "pass" && c.gap === g; return <div key={i} className={`flex items-start gap-1.5 px-2 py-1 rounded text-[11px] ${match ? "bg-yellow-50 border border-yellow-200 text-yellow-800" : "text-gray-600"}`}><AlertTriangle className="w-3 h-3 shrink-0 mt-0.5 text-yellow-600"/><span className="flex-1">{g}</span>{match && <span className="text-[9px] font-medium shrink-0 text-yellow-700">related</span>}</div>; })}
-        {showGapExtra && <div className="flex items-start gap-1.5 px-2 py-1 rounded bg-yellow-50 border border-yellow-200 text-yellow-800 text-[11px]"><AlertTriangle className="w-3 h-3 shrink-0 mt-0.5 text-yellow-600"/><span className="flex-1">{c.gap}</span><span className="text-[9px] font-medium shrink-0 text-yellow-700">related</span></div>}
-      </div>
+    {usedGap && <>
+      <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium pt-1">Gap</p>
+      <div className="flex items-start gap-1.5 px-2 py-1 rounded bg-yellow-50 border border-yellow-200 text-yellow-800 text-[11px]"><AlertTriangle className="w-3 h-3 shrink-0 mt-0.5 text-yellow-600"/><span className="flex-1">{usedGap}</span><span className="text-[9px] font-medium shrink-0 text-yellow-700">{c.result==="fail"?"maps to failure":c.result==="partial"?"missing part":"gap-derived"}</span></div>
     </>}
   </div>;
 }
