@@ -18,7 +18,6 @@ function getPhase(sid) { return PHASES.find(p => p.subs.some(s => s.id === sid))
 function getSub(sid) { for (const p of PHASES) { const s = p.subs.find(x => x.id === sid); if (s) return s; } return null; }
 
 const ALL_SESSIONS = [
-  { id: "thanh-tung", name: "Thanh Tùng", role: "QA Lead", dept: "Engineering", initials: "TT", subStageId: 3, status: "active", daysLeft: 28, modules: 4, createdAt: "Jun 10, 2026" },
   { id: "minh-le", name: "Minh Lê", role: "Senior Backend Engineer", dept: "Engineering", initials: "ML", subStageId: 5, status: "active", daysLeft: 22, gapsResolved: "4/6", answered: "9/14", createdAt: "Jun 4, 2026" },
   { id: "thanh-duc", name: "Thanh Đức", role: "DevOps Engineer", dept: "Engineering", initials: "TĐ", subStageId: 8, status: "completed", gapsResolved: "5/5", answered: "11/11", createdAt: "Feb 20, 2026", completedAt: "Mar 12, 2026" },
   { id: "anh-thu", name: "Anh Thư", role: "Product Designer", dept: "Design", initials: "AT", subStageId: 8, status: "completed", gapsResolved: "6/6", answered: "38/38", createdAt: "May 15, 2026", completedAt: "Jun 1, 2026" },

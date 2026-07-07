@@ -43,15 +43,12 @@ function getSub(sid) { for (const p of PHASES) { const s = p.subs.find(x => x.id
 
 const DEPARTURES = [
   { id: "minh-le", name: "Minh L\u00ea", role: "Senior Backend Engineer", dept: "Engineering", lastDay: "July 4, 2026", daysLeft: 30, initials: "ML" },
-  { id: "thanh-tung", name: "Thanh T\u00f9ng", role: "QA Lead", dept: "Engineering", lastDay: "July 8, 2026", daysLeft: 28, initials: "TT" },
   { id: "phuong-anh", name: "Ph\u01b0\u01a1ng Anh Nguy\u1ec5n", role: "Account Executive", dept: "Sales", lastDay: "July 11, 2026", daysLeft: 33, initials: "PA" },
 ];
 const SESSIONS = [
-  { id: "thanh-tung", name: "Thanh T\u00f9ng", role: "QA Lead", dept: "Engineering", initials: "TT", subStageId: 3, daysLeft: 28, modules: 4 },
   { id: "minh-le", name: "Minh L\u00ea", role: "Senior Backend Engineer", dept: "Engineering", initials: "ML", subStageId: 5, daysLeft: 22, gapsResolved: "4/6", answered: "9/14" },
 ];
 const ACTIVITY_ACTIVE = [
-  { ts: "1 hour ago", actor: "System", text: "Thanh T\u00f9ng\u2019s crawl complete \u2014 3 boards, 127 cards, 4 modules derived", severity: "medium" },
   { ts: "2 hours ago", actor: "System", text: "Coworker joined Minh L\u00ea\u2019s session · asked 2 questions", severity: "low" },
   { ts: "3 hours ago", actor: "Minh L\u00ea", text: "Answered 3 questions in Payment Service module", severity: "low" },
   { ts: "5 hours ago", actor: "H\u00e0 Vy", text: "Added 3 priority prompts to Minh L\u00ea\u2019s session", severity: "low" },
@@ -59,7 +56,6 @@ const ACTIVITY_ACTIVE = [
 const ACTIVITY_COMPLETED = [
   { ts: "2 min ago", actor: "System", text: "KG access ready · starter prompts seeded", severity: "low" },
   { ts: "7 min ago", actor: "System", text: "Minh L\u00ea\u2019s session committed · 487 entries", severity: "low" },
-  { ts: "1 hour ago", actor: "System", text: "Thanh T\u00f9ng\u2019s crawl complete \u2014 3 boards, 127 cards, 4 modules derived", severity: "medium" },
   { ts: "3 hours ago", actor: "H\u00e0 Vy", text: "Reviewed and committed Minh L\u00ea\u2019s answers", severity: "low" },
 ];
 const OB_QUESTIONS = [
@@ -98,7 +94,6 @@ const CW_SESSIONS = [
       { q: "What's the rollback procedure for the Atlas migration?", module: "CI/CD Pipeline", card: "Atlas migration rollback", time: "3h" },
     ],
   },
-  { id: "thanh-tung", name: "Thanh T\u00f9ng", role: "QA Lead", initials: "TT", phase: "Prepare", phaseKey: "prepare", daysLeft: 28, ready: [], waiting: [] },
 ];
 
 export default function HaVyHandoverDashboard({ embedded = false, role: roleProp, state: stateProp } = {}) {
@@ -183,11 +178,11 @@ function CoworkerActive() {
 
 function CoworkerAllSatisfied() {
   return (<div className="max-w-3xl mx-auto p-6">
-    <GreetingBanner name={"Tr\u1ea7n H\u1eefu Nam"} subtitle={"All caught up · 2 sessions"} />
+    <GreetingBanner name={"Tr\u1ea7n H\u1eefu Nam"} subtitle={`All caught up · ${CW_SESSIONS.length} session${CW_SESSIONS.length !== 1 ? "s" : ""}`} />
     <div className="grid grid-cols-3 gap-3 mb-6">
       <ActionCard label={"Answers to review"} value={0} color="good" />
       <ActionCard label={"Waiting for answer"} value={0} color="good" />
-      <ActionCard label={"Active sessions"} value={2} color="normal" />
+      <ActionCard label={"Active sessions"} value={CW_SESSIONS.length} color="normal" />
     </div>
     <div className="rounded-lg border border-emerald-200 bg-emerald-50/40 p-6 text-center mb-6">
       <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" strokeWidth={1.5} />
@@ -348,6 +343,20 @@ function ManagerEmpty({ hasDepartures }) {
 function DepartureBanner({ departures }) { return (<article className="rounded-lg border border-yellow-200 bg-yellow-50/40 p-4 mb-6"><div className="flex items-center gap-2 mb-3"><AlertTriangle className="w-3.5 h-3.5 text-yellow-700" strokeWidth={2} /><h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider">{departures.length}{" upcoming departures from HRIS"}</h3></div><div className="space-y-2">{departures.map((d, i) => (<div key={i} className="flex items-center justify-between bg-white rounded-md border border-gray-200 px-3 py-2"><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 text-gray-700 text-[10px] font-semibold inline-flex items-center justify-center shrink-0">{d.initials}</div><div><div className="text-sm font-medium text-gray-900">{d.name}</div><div className="text-[11px] text-gray-500">{d.role}{" · "}{d.dept}</div></div></div><div className="flex items-center gap-3"><span className="text-[10px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{"Last day "}{d.lastDay}{" · "}{d.daysLeft}{"d"}</span><Link href={`/session/new?employee=${d.id}`} className="h-7 px-2.5 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-[11px] font-medium inline-flex items-center gap-1 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500/30">Start session<ArrowRight className="w-2.5 h-2.5" /></Link></div></div>))}</div></article>); }
 function ActionCard({ label, value, color = "normal", active, onClick }) { const cls = { urgent: "text-rose-600", warn: "text-yellow-700", good: "text-emerald-600", normal: "text-gray-900" }[color]; return (<button onClick={onClick} className={`rounded-lg border bg-white p-3 text-left transition-all focus:outline-none focus:ring-2 focus:ring-violet-500/20 cursor-pointer ${active ? "border-violet-400 ring-2 ring-violet-500/10" : "border-gray-200 hover:border-gray-300"}`}><div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">{label}</div><div className={`text-xl font-semibold ${cls}`} style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{value}</div></button>); }
 function SessionCard({ session }) { const phase = getPhase(session.subStageId); const isPrepare = phase.key === "prepare"; const pc = { prepare: "bg-blue-50 border-blue-200 text-blue-700", capture: "bg-violet-50 border-violet-200 text-violet-700", deliver: "bg-emerald-50 border-emerald-200 text-emerald-700" }; return (<Link href={`/session/${session.id}`} className="block rounded-lg border border-gray-200 bg-white transition-all hover:shadow-sm hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-500/20"><article className="p-4 flex items-start gap-4"><div className="w-10 h-10 rounded-full bg-gray-100 text-gray-700 border border-gray-200 text-[11px] font-semibold inline-flex items-center justify-center shrink-0">{session.initials}</div><div className="flex-1 min-w-0"><div className="flex items-center gap-2 mb-1 flex-wrap"><h3 className="text-sm font-semibold text-gray-900">{session.name}&apos;s session</h3><span className={`text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold border ${pc[phase.key]}`}>{phase.label}</span></div><p className="text-[12px] text-gray-500 mb-3">{session.role}{" · "}{session.dept}{" · "}{session.daysLeft}{" days left"}</p><PhaseProgress subStageId={session.subStageId} /><div className="flex items-center gap-3 mt-2 pt-2 border-t border-gray-100 text-[11px] text-gray-600">{isPrepare ? (<><span className="inline-flex items-center gap-1"><Layers className="w-3 h-3 text-gray-400" />{session.modules}{" modules mapped"}</span><span className="text-gray-300">·</span><span className="text-gray-400">capture not started</span></>) : (<><span className="inline-flex items-center gap-1"><Sparkles className="w-3 h-3 text-violet-500" />{session.gapsResolved}{" gaps resolved"}</span><span className="text-gray-300">·</span><span className="inline-flex items-center gap-1"><MessageCircle className="w-3 h-3 text-gray-400" />{session.answered}{" answered"}</span></>)}</div></div><span className="h-8 px-3 rounded-md border border-gray-300 bg-white text-gray-700 text-sm font-medium inline-flex items-center gap-1.5 shrink-0">Open<ArrowRight className="w-3 h-3" /></span></article></Link>); }
-function PhaseProgress({ subStageId, done }) { const cur = getPhase(subStageId); const curSub = getSub(subStageId); return (<div><div className="flex items-center justify-between mb-1 text-[10px]"><span className="text-gray-700 font-medium">{done ? "All 3 phases complete" : <>{"Phase "}{cur.id}{" of 3 · "}<span className="text-gray-900">{cur.label}</span></>}</span><span className="text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{done ? "Complete" : curSub.label}</span></div><div className="grid grid-cols-3 gap-1">{PHASES.map(p => { const isDone = done || p.id < cur.id; const isCur = !done && p.id === cur.id; let pct = 0; if (isCur) { const idx = p.subs.findIndex(s => s.id === subStageId); pct = ((idx + 0.5) / p.subs.length) * 100; } return (<div key={p.id} className="relative h-2 rounded-sm bg-gray-200 overflow-hidden">{isDone && <div className="absolute inset-0 bg-emerald-500" />}{isCur && <div className="absolute inset-y-0 left-0 bg-violet-500" style={{ width: `${pct}%` }} />}</div>); })}</div><div className="grid grid-cols-3 gap-1 mt-1">{PHASES.map(p => { const isDone = done || p.id < cur.id; const isCur = !done && p.id === cur.id; return <span key={p.id} className={`text-[9px] uppercase tracking-wider font-medium text-center ${isDone ? "text-emerald-700" : isCur ? "text-violet-700" : "text-gray-400"}`}>{p.label}</span>; })}</div></div>); }
+// UI-03 — compact 3-node stepper (matches the in-session stepper): green done · violet active · gray upcoming.
+function PhaseProgress({ subStageId, done }) {
+  const cur = getPhase(subStageId);
+  const activeIdx = done ? PHASES.length : cur.id - 1;
+  const activeLabel = done ? "Complete" : cur.label;
+  const nodeEl = (state) => state === "done"
+    ? <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
+    : state === "active"
+    ? <span className="w-2.5 h-2.5 rounded-full bg-violet-600 inline-block shrink-0" />
+    : <span className="w-2.5 h-2.5 rounded-full border border-gray-300 bg-white inline-block shrink-0" />;
+  return (<div className="flex items-center gap-2">
+    <div className="flex items-center">{PHASES.map((p, i) => { const state = i < activeIdx ? "done" : i === activeIdx ? "active" : "upcoming"; return (<React.Fragment key={p.id}>{nodeEl(state)}{i < PHASES.length - 1 && <span className="w-4 h-px mx-0.5 inline-block" style={{ background: state === "done" ? "#10b981" : "#e5e7eb" }} />}</React.Fragment>); })}</div>
+    <span className="text-[11px] font-medium text-gray-700">{activeLabel}</span>
+  </div>);
+}
 function SectionLabel({ count, children }) { return (<h2 className="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-medium flex items-center gap-2"><span>{children}</span>{count !== undefined && <span className="text-gray-400" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{"· "}{count}</span>}</h2>); }
 function ActivityItem({ ts, actor, text, severity }) { const border = { low: "rgb(229,231,235)", medium: "rgb(234,179,8)", high: "rgb(244,63,94)" }[severity]; return (<div className="rounded-md border border-gray-200 bg-white px-3 py-2" style={{ borderLeft: `2px solid ${border}` }}><div className="flex items-center justify-between mb-0.5 gap-2"><span className="text-[10px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{ts}</span><span className="text-[10px] text-gray-700 font-medium shrink-0">{actor}</span></div><div className="text-[11px] text-gray-900 leading-relaxed">{text}</div></div>); }

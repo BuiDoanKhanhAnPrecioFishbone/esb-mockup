@@ -467,7 +467,6 @@ const NOTIFS_BY_ROLE: Record<string, Notification[]> = {
   manager: [
     { id: "m1", icon: MessageCircle, tone: "violet", title: "Minh Lê answered 3 questions in Payment Service", detail: "Kafka retry · Stripe webhook · Gateway timeout", time: "Just now", href: "/session/minh-le?tab=data" },
     { id: "m2", icon: Users, tone: "gray", title: "Linh Anh joined Minh Lê’s session", detail: "Minh Lê’s session", time: "1h", href: "/session/minh-le?tab=overview" },
-    { id: "m3", icon: Network, tone: "gray", title: "Data collection complete — 127 cards, 4 modules", detail: "Thanh Tùng’s session", time: "2h", href: "/session/thanh-tung?tab=overview" },
     { id: "m4", icon: Sparkles, tone: "yellow", title: "AI detected 2 gaps in CI/CD Pipeline", detail: "Minh Lê’s session", time: "3h", href: "/session/minh-le?tab=data" },
   {
     id: "n-kltran-urgent",
@@ -505,8 +504,6 @@ const NOTIFS_BY_ROLE: Record<string, Notification[]> = {
   ],
   coworker: [
     { id: "c1", icon: CheckCircle2, tone: "emerald", title: "Minh Lê answered 2 questions — ready for your review", detail: "Payment Service", time: "Just now", href: "/session/minh-le?tab=data" },
-    { id: "c2", icon: Sparkles, tone: "yellow", title: "New gap in Test Automation Framework", detail: "Thanh Tùng’s session", time: "2h", href: "/session/thanh-tung?tab=data" },
-    { id: "c3", icon: Network, tone: "gray", title: "Thanh Tùng’s session is now in Capture", detail: "Phase change", time: "Yesterday", href: "/session/thanh-tung?tab=overview" },
   ],
 };
 
