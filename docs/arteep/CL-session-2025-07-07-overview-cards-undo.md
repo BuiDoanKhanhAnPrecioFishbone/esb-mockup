@@ -6,21 +6,15 @@
 
 ## §1 — Overview Page
 
-### PH-01: Replace progress bar with 3-step stepper ✅ LOCKED
+### PH-01: Replace progress bar with 3-step stepper + unified CTA ✅ LOCKED (UPDATED)
 
-**File:** `components/mockups/session-command-view.jsx` (PhaseHero component)
+**Files:** `components/mockups/session-command-view.jsx`, `components/mockups/session-deliver.jsx`
 
-**Issue:** Continuous progress bars imply percentages we cannot calculate. Each phase (Prepare/Capture/Deliver) is a discrete step, not a percentage.
+**Issue:** Continuous progress bars imply percentages we cannot calculate. Also, Deliver had a separate sticky bar for Commit — inconsistent with how Prepare and Capture place their forward actions.
 
-**Fix:** Replace the progress bar with a **3-step stepper**:
+**Fix:** Replace the progress bar with a **3-step stepper**. ALL forward actions live in the stepper — including Commit. Remove the sticky bar from the Deliver page.
 
-```
-  (✓)──────────(●)──────────(○)
- Prepare      Capture      Deliver
-   done        active       upcoming
-```
-
-**Step states:**
+**Stepper step states:**
 
 | State | Circle | Connector (line to next) | Label |
 |---|---|---|---|
@@ -28,15 +22,20 @@
 | Active | Filled violet circle (20px) + white dot inside | Dashed line (#c4b5fd) | Bold, violet text |
 | Upcoming | Empty circle (20px), gray border | Dashed line (#e5e7eb) | Normal weight, light gray text |
 
-**Phase CTA button** sits directly below the stepper, centered under the active step:
-```
-  (✓)──────────(●)──────────(○)
- Prepare      Capture      Deliver
+**Phase CTA per phase:**
 
-          [Start Capture →]
-```
+| Phase | Stepper shows | CTA button below stepper | Button style |
+|---|---|---|---|
+| **Prepare** | (●) Prepare ─── (○) Capture ─── (○) Deliver | Start Capture → | Outlined violet border, transparent bg |
+| **Capture** | (✓) Prepare ─── (●) Capture ─── (○) Deliver | Start Deliver → | Outlined violet border, transparent bg |
+| **Deliver** | (✓) Prepare ─── (✓) Capture ─── (●) Deliver | Commit to Knowledge Graph | **Gradient filled** (#6366f1 → #7c3aed), white text, Database icon |
+| **Complete** | (✓) Prepare ─── (✓) Capture ─── (✓) Deliver | No button — all done | — |
 
-Button style: outlined violet border, transparent bg, ArrowRight icon (same as SA-02, already built).
+**The Commit button uses gradient fill** to signal "this is irreversible" — same location as Start Capture/Deliver, but visually heavier. The outlined style = reversible phase transition. The gradient = final action.
+
+**Remove the sticky bottom bar** from `session-deliver.jsx`. The "Back to Capture" button also moves — see UR-03.
+
+**Backward actions** (Back to Prepare / Back to Capture) always live in the "..." header menu (SA-01). They never compete with the forward CTA.
 
 ---
 
@@ -60,7 +59,7 @@ Nothing else. The KPI cards below handle the numbers.
 
 **File:** `components/mockups/session-command-view.jsx`
 
-**Issue:** Standalone names ("Linh Anh") are ambiguous — users don’t know the person’s role.
+**Issue:** Standalone names ("Linh Anh") are ambiguous — users don't know the person's role.
 
 **Fix:** Every question must show attribution in this format:
 
@@ -107,7 +106,7 @@ This replaces any existing "Added by" or standalone name attribution.
 | Lucide `Circle` (filled dot) | Amber-500 | **In progress** | Card has questions, some are unanswered or answered but not yet accepted |
 | Lucide `Circle` (empty) | Gray-300 | **No questions** | Card has zero questions — no Q&A activity on this card |
 
-**Remove the dash (—) icon** — it’s undefined and confusing. If a card has no questions, use the empty gray circle.
+**Remove the dash (—) icon** — it's undefined and confusing. If a card has no questions, use the empty gray circle.
 
 **Audit rules:**
 - Count the questions on each card in the mock data
@@ -131,7 +130,7 @@ This replaces any existing "Added by" or standalone name attribution.
 
 **File:** `components/mockups/session-command-view.jsx`
 
-**Issue:** After clicking "Accept" on an answer, there’s no way to change your mind.
+**Issue:** After clicking "Accept" on an answer, there's no way to change your mind.
 
 **Fix:** After an answer is accepted, show a small **"Undo"** text link next to the "Accepted" badge:
 
@@ -152,9 +151,9 @@ This also applies to answers accepted via **Bulk Accept remaining** — each ind
 
 **File:** `components/mockups/session-command-view.jsx`
 
-**Issue:** After dismissing a detect (⚡), there’s no way to restore it.
+**Issue:** After dismissing a detect (⚡), there's no way to restore it.
 
-**Fix:** Dismissed detects don’t disappear — they gray out with a "Restore" link:
+**Fix:** Dismissed detects don't disappear — they gray out with a "Restore" link:
 
 ```
 ⚡ no description          [dismissed]  Restore
@@ -166,33 +165,28 @@ This also applies to answers accepted via **Bulk Accept remaining** — each ind
 
 ---
 
-### UR-03: Start Capture → Back to Prepare path ✅ LOCKED
+### UR-03: Backward navigation always in "..." header menu ✅ LOCKED (UPDATED)
 
-**File:** `components/mockups/session-command-view.jsx`
+**File:** `components/mockups/session-command-view.jsx`, `components/mockups/session-deliver.jsx`
 
-**Issue:** After starting Capture, there’s no way to go back to Prepare (e.g., Manager realizes they need to review more AI decisions before inviting the Offboarder).
+**Issue:** "Back to Capture" was in a sticky bar on the Deliver page. With PH-01 moving Commit to the stepper, the sticky bar is removed. Backward actions need a consistent home.
 
-**Fix:** During the Capture phase, the "..." session header menu (SA-01) gets a second option:
+**Fix:** ALL backward navigation lives in the "..." session header menu (SA-01):
 
-```
-┌────────────────────┐
-│ Back to Prepare      │  ← gray text
-│ Cancel session       │  ← rose text
-└────────────────────┘
-```
+| Phase | "..." menu contents |
+|---|---|
+| **Prepare** | Cancel session (rose) |
+| **Capture** | Back to Prepare (gray) · Cancel session (rose) |
+| **Deliver** | Back to Capture (gray) · Cancel session (rose) |
+| **Complete** | No menu needed — session is done |
 
-- "Back to Prepare" = gray text, no confirmation needed (low risk — data is preserved)
-- Reverts the session step from "capture" to "ready" (Prepare)
-- Offboarder queue is paused (they can’t submit new answers until Capture restarts)
-- Only visible during the Capture phase (not during Prepare or Deliver)
-
-During Deliver, "Back to Capture" already exists in the sticky bar.
+**Remove the sticky bar entirely** from `session-deliver.jsx`. The "Back to Capture" button moves from the sticky bar to the "..." header menu. The Commit button moves from the sticky bar to the stepper (PH-01).
 
 ---
 
-### UR-04: Summary of all reversible actions ✅ LOCKED
+### UR-04: Summary of all reversible actions ✅ LOCKED (UPDATED)
 
-**For reference — the complete undo map after UR-01/02/03:**
+**Complete undo map:**
 
 | Action | Undo mechanism | Type |
 |---|---|---|
@@ -210,12 +204,12 @@ During Deliver, "Back to Capture" already exists in the sticky bar.
 | Edit gap/question | Cancel during edit | Cancel |
 | Remove gap | ❌ Irreversible after confirmation | Intentional (confirm protects) |
 | Edit answer (Offboarder) | Cancel during edit | Cancel |
-| Start Capture | "Back to Prepare" in header menu | Menu action |
-| Start Deliver | "Back to Capture" in sticky bar | Button |
+| Start Capture | "Back to Prepare" in "..." header menu | Menu action |
+| Start Deliver | "Back to Capture" in "..." header menu | Menu action |
 | Cancel session | ❌ Irreversible | Intentional (confirm protects) |
 | Commit to KG | ❌ Irreversible | Intentional (confirm protects) |
 
-**Rule:** Actions marked ❌ are irreversible BY DESIGN — they all have confirmation dialogs. Every other action has an undo path.
+**Rule:** Actions marked ❌ are irreversible BY DESIGN — they all have confirmation dialogs. Every other action has an undo path. ALL backward navigation is in the "..." header menu. ALL forward actions are in the stepper.
 
 ---
 
@@ -226,8 +220,13 @@ During Deliver, "Back to Capture" already exists in the sticky bar.
 - [ ] Completed step: green filled circle + checkmark + solid line
 - [ ] Active step: violet filled circle + dot + dashed violet line
 - [ ] Upcoming step: empty gray circle + dashed gray line
-- [ ] Phase CTA button centered below stepper
+- [ ] Prepare: "Start Capture →" (outlined) below stepper
+- [ ] Capture: "Start Deliver →" (outlined) below stepper
+- [ ] Deliver: "Commit to Knowledge Graph" (gradient filled, Database icon) below stepper
+- [ ] Complete: no button — stepper shows all three steps as completed green
 - [ ] Summary text removed from PhaseHero — stepper + button only
+- [ ] Sticky bottom bar REMOVED from session-deliver.jsx
+- [ ] "Back to Capture" moved from sticky bar to "..." header menu
 
 **Card UI:**
 - [ ] All questions show "Created by [Avatar] [Name]" — no standalone names
@@ -241,7 +240,8 @@ During Deliver, "Back to Capture" already exists in the sticky bar.
 - [ ] "Undo" link on accepted answers → reverts to pending
 - [ ] Bulk-accepted answers each have individual "Undo"
 - [ ] Dismissed detects show dimmed + "Restore" link
-- [ ] "Back to Prepare" in header menu during Capture phase
+- [ ] "Back to Prepare" in "..." menu during Capture
+- [ ] "Back to Capture" in "..." menu during Deliver
 - [ ] All irreversible actions have confirmation dialogs
 
 ---
