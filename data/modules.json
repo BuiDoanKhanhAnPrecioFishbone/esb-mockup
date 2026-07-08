@@ -10,14 +10,21 @@
     ],
     "cards": [
       { "id": "pay-01", "name": "Kafka retry configuration", "desc": "DLQ routing, backoff strategy, poison message handling. Max 5 retries.", "linkedModuleIds": ["cicd"],
-        "classification": { "state": "pass", "confidence": 96 },
+        "classification": { "state": "pass", "confidence": 96, "chat": [
+          { "a": "M", "step": "CLASSIFY", "t": "Strong payment-domain signals — Kafka, DLQ routing, idempotency keys. Best fit is Payment Service at 96%." },
+          { "a": "G", "step": "VALIDATE", "t": "Agreed. It's also referenced by the deploy rollback runbook, so a linked CI/CD Pipeline tag is warranted." },
+          { "a": "M", "step": "PROPOSE", "t": "Assign to both Payment Service and CI/CD Pipeline — equal weight." }
+        ] },
         "checklist": [{ "text": "DLQ routing configured", "done": true }, { "text": "Backoff documented", "done": false }, { "text": "Alert on failures", "done": false }],
         "questions": [
           { "id": "q1", "text": "How does the retry logic handle poison messages?", "fromType": "ai", "answer": "After 5 retries with exponential backoff, messages route to the DLQ. Monitor via Datadog alert #4421.", "answeredBy": "Minh Lê", "answeredAt": "2h ago", "accepted": true, "acceptedBy": "Trần Hữu Nam", "acceptedAt": "30m", "file": { "name": "dlq-replay-runbook.pdf", "size": "12 KB" } },
           { "id": "q2", "text": "Max retry count before DLQ routing?", "fromType": "ai", "answer": "Max 5, configurable per topic in kafka-config.yaml. Backoff: 2x from 500ms.", "answeredBy": "Minh Lê", "answeredAt": "1h ago", "accepted": false }
         ] },
       { "id": "pay-02", "name": "Payment gateway timeout", "desc": "Circuit breaker pattern, 30s timeout.",
-        "classification": { "state": "pass", "confidence": 93 },
+        "classification": { "state": "pass", "confidence": 93, "chat": [
+          { "a": "M", "step": "CLASSIFY", "t": "Clear Payment Service signals — circuit breaker, 30s timeout, gateway semantics. 93%." },
+          { "a": "G", "step": "VALIDATE", "t": "Confirmed — single clean home, no cross-module overlap." }
+        ] },
         "questions": [ { "id": "q3", "text": "What happens when gateway times out mid-transaction?", "fromType": "ai", "answer": "Circuit breaker trips after 30s and returns 503. The client retries with an idempotency key, so no double-charge.", "answeredBy": "Minh Lê", "answeredAt": "1h ago", "accepted": false } ] },
       { "id": "pay-03", "name": "Stripe webhook handler", "desc": "Payment confirmations and refunds.",
         "questions": [ { "id": "q4", "text": "Which webhook events are critical vs optional?", "fromType": "human", "authorId": "cw1", "answer": "Critical: payment_intent.succeeded, charge.refunded, invoice.payment_failed. Optional route to a batch queue.", "answeredBy": "Minh Lê", "answeredAt": "45m", "accepted": true, "acceptedBy": "Trần Hữu Nam", "acceptedAt": "20m" } ] },
@@ -132,6 +139,11 @@
     "gaps": [],
     "cards": [
       { "id": "infra-01", "name": "Terraform modules", "desc": "VPC, EKS, RDS. S3 + DynamoDB state.",
+        "classification": { "state": "newmod", "confidence": 88, "newModule": "Infrastructure Provisioning", "chat": [
+          { "a": "M", "step": "CLASSIFY", "t": "IaC, AKS cluster, VNet, remote state backend — doesn't fit the existing modules well." },
+          { "a": "G", "step": "VERIFY", "t": "Confirmed: the provisioning cards cluster with no good home module." },
+          { "a": "M", "step": "PROPOSE", "t": "Propose a new standalone module — Infrastructure Provisioning (88%)." }
+        ] },
         "questions": [ { "id": "q12", "text": "Terraform version pinned?", "fromType": "ai" } ] },
       { "id": "infra-02", "name": "Helm chart templates", "desc": "Deployments + monitoring sidecar.",
         "questions": [ { "id": "q13", "text": "Helm overrides per env?", "fromType": "ai" } ] },

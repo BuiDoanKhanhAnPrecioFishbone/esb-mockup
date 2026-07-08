@@ -14,5 +14,9 @@
     { "id": "b-backend", "name": "Backend Services" },
     { "id": "b-platform", "name": "Platform Infrastructure" },
     { "id": "b-gateway", "name": "API Gateway" }
+  ],
+  "generalQuestions": [
+    { "id": "gq1", "text": "What's the process for handling customer escalations?", "authorId": "cw1", "answer": "On-call engineer first. P1: page lead via PagerDuty. Engineering provides RCA within 24h.", "answeredBy": "Minh Lê", "answeredAt": "1d ago", "accepted": true, "acceptedBy": "Hà Vy", "acceptedAt": "3h" },
+    { "id": "gq2", "text": "Are there any undocumented vendor agreements I should know about?", "authorId": "manager" }
   ]
 }

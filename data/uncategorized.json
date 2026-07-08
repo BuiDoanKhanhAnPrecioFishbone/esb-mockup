@@ -1,0 +1,25 @@
+[
+  {
+    "id": "uncat-01",
+    "name": "Vendor onboarding checklist",
+    "desc": "Half-finished checklist copied from an old board.",
+    "checklist": [{ "text": "Contact added", "done": true }, { "text": "SLA reviewed", "done": false }],
+    "classification": { "state": "uncat", "confidence": 23, "chat": [
+      { "a": "M", "step": "CLASSIFY", "t": "Top match is only 23% — too weak to assign confidently." },
+      { "a": "G", "step": "VERIFY", "t": "No module clears the 80% threshold for this card." },
+      { "a": "M", "step": "DEFER", "t": "Leaving it uncategorized for the Manager to place." }
+    ] },
+    "questions": []
+  },
+  {
+    "id": "uncat-02",
+    "name": "Legacy cron job notes",
+    "desc": "Scattered notes on the nightly settlement cron. Unclear which service owns it.",
+    "classification": { "state": "uncat", "confidence": 19, "chat": [
+      { "a": "M", "step": "CLASSIFY", "t": "Sparse notes on ad-hoc cron jobs — best match is only 19%." },
+      { "a": "G", "step": "VERIFY", "t": "No module clears the 80% threshold — genuinely ambiguous." },
+      { "a": "M", "step": "DEFER", "t": "Leaving it uncategorized for the Manager to place." }
+    ] },
+    "questions": []
+  }
+]

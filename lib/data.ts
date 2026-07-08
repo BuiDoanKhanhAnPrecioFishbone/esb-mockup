@@ -11,6 +11,7 @@
 import sessionJson from "../data/session.json";
 import coworkersJson from "../data/coworkers.json";
 import modulesJson from "../data/modules.json";
+import uncategorizedJson from "../data/uncategorized.json";
 
 export interface Board { id: string; name: string }
 export interface Coworker {
@@ -43,6 +44,7 @@ export interface Module { id: string; name: string; boardId: string; gaps: Gap[]
 export const boards = sessionJson.boards as Board[];
 export const coworkers = coworkersJson as unknown as Coworker[];
 export const modules = modulesJson as unknown as Module[];
+export const uncategorized = uncategorizedJson as unknown as Card[];
 export const sessionMeta = sessionJson;
 
 // ── Flat views ──────────────────────────────────────────────────────────────
@@ -134,3 +136,87 @@ export function verifyData(): { ok: boolean; errors: string[] } {
   });
   return { ok: errors.length === 0, errors };
 }
+
+// ── Legacy-compatible shapes consumed by session-command-view.jsx ─────────────
+// These preserve the exact field names the JSX reads (board/items/qs/CLASSIFY/…),
+// but everything is derived from the JSON above — so counts and links can't drift.
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+const modulesByBoard = new Map<string, Module[]>();
+modules.forEach((m) => { const a = modulesByBoard.get(m.boardId) ?? []; a.push(m); modulesByBoard.set(m.boardId, a); });
+const moduleNameOfQuestion = new Map<string, string>();
+modules.forEach((m) => m.cards.forEach((c) => (c.questions ?? []).forEach((q) => moduleNameOfQuestion.set(q.id, m.name))));
+
+function toLegacyQ(q: Question): any {
+  const o: any = { q: q.text, from: q.fromType === "ai" ? "AI-generated" : authorName(q.authorId), fromType: q.fromType };
+  if (q.answer) { o.answer = q.answer; o.answeredBy = q.answeredBy; o.answeredAt = q.answeredAt; }
+  if (q.accepted) { o.satisfiedBy = q.acceptedBy; o.satisfiedAt = q.acceptedAt; }
+  if (q.file) o.file = q.file;
+  return o;
+}
+
+export const MODULES_DATA: any[] = boards
+  .filter((b) => modulesByBoard.has(b.id))
+  .map((b) => ({
+    board: b.name,
+    boardCards: (modulesByBoard.get(b.id) ?? []).reduce((n, m) => n + m.cards.length, 0),
+    modules: (modulesByBoard.get(b.id) ?? []).map((m) => ({
+      name: m.name,
+      cards: m.cards.length,
+      qs: m.cards.reduce((n, c) => n + (c.questions ?? []).filter((q) => q.fromType !== "ai").length, 0),
+      gaps: m.gaps.length,
+      moduleGaps: m.gaps.map((g) => g.description),
+      moduleGapQs: m.gaps.map((g) => g.aiQuestion),
+      items: m.cards.map((c) => ({
+        name: c.name,
+        ...(c.linkedModuleIds ? { linkedIn: c.linkedModuleIds.map(moduleName) } : {}),
+        desc: c.desc ?? "",
+        checklist: c.checklist ?? [],
+        gaps: c.gaps ?? [],
+        files: c.files ?? [],
+        qs: (c.questions ?? []).map(toLegacyQ),
+      })),
+    })),
+  }));
+
+// Cards the AI could not confidently place in any module (home-less; not counted in the 64).
+export const UNCATEGORIZED: any[] = uncategorized.map((c) => ({
+  name: c.name, desc: c.desc ?? "", checklist: c.checklist ?? [], gaps: c.gaps ?? [], files: c.files ?? [], qs: (c.questions ?? []).map(toLegacyQ),
+}));
+
+// Classification map keyed by card name (built from card.classification; ids resolve names).
+export const CLASSIFY: Record<string, any> = {};
+modules.forEach((m) => m.cards.forEach((c) => {
+  const cl = c.classification;
+  const state = cl?.state ?? "pass";
+  const entry: any = { state, confidence: cl?.confidence ?? 94 };
+  if (state === "newmod") { entry.newModule = cl?.newModule; const linked = (c.linkedModuleIds ?? []).map(moduleName); if (linked.length) entry.linked = linked; }
+  else if (state === "review" || state === "uncat") { if (cl?.candidates) entry.candidates = cl.candidates; }
+  else { entry.primary = m.name; const linked = (c.linkedModuleIds ?? []).map(moduleName); if (linked.length) entry.linked = linked; }
+  if (cl?.chat) entry.chat = cl.chat;
+  CLASSIFY[c.name] = entry;
+}));
+uncategorized.forEach((c) => {
+  const cl = c.classification; if (!cl) return;
+  const entry: any = { state: cl.state, confidence: cl.confidence };
+  if (cl.candidates) entry.candidates = cl.candidates;
+  if (cl.chat) entry.chat = cl.chat;
+  CLASSIFY[c.name] = entry;
+});
+
+// Offboarder question queue — every question, mutable (GapContextPanel pushes new asks).
+export const OB_QUEUE: any[] = allQuestions.map((q) => {
+  const o: any = { id: q.id, q: q.text, from: q.fromType === "ai" ? "AI-generated" : authorName(q.authorId), fromType: q.fromType, module: moduleNameOfQuestion.get(q.id) ?? "", answered: !!q.answer, satisfied: !!q.accepted };
+  if (q.answer) o.answer = q.answer;
+  return o;
+});
+
+export const SEED_COWORKERS: any[] = coworkers.map((c) => ({ id: c.id, name: c.name, initials: c.initials, modules: c.moduleIds.map(moduleName), sharedCards: c.sharedCards, source: c.source, status: c.status }));
+
+// Session-level general questions (not tied to a card).
+export const SEED_GQ: any[] = ((sessionMeta as any).generalQuestions ?? []).map((g: any) => {
+  const o: any = { id: g.id, q: g.text, from: authorName(g.authorId), fromType: "human" };
+  if (g.answer) { o.answer = g.answer; o.answeredBy = g.answeredBy; o.answeredAt = g.answeredAt; }
+  if (g.accepted) { o.satisfiedBy = g.acceptedBy; o.satisfiedAt = g.acceptedAt; }
+  return o;
+});

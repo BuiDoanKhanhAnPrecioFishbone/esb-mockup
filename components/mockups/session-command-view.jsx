@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, ArrowRight, ArrowUpRight, X, CheckCircle2, C
 import { DeliverOverview, CompleteOverview } from "./session-deliver";
 import { useViewAs } from "@/lib/view-as";
 import { tabVisibility } from "@/lib/view-matrix";
+import { SESSION, MODULES_DATA, UNCATEGORIZED, CLASSIFY, OB_QUEUE, SEED_COWORKERS, SEED_GQ } from "@/lib/data";
 
 /* Session Command View — CL-119/120/127/128/129
    Prepare + Capture + Deliver + Complete · 3 roles
@@ -18,73 +19,11 @@ const ROLES = [
   { id: "coworker", label: "Coworker", sub: "Project peer", icon: "CW" },
 ];
 const FLOW = [
-  { id: "collecting", label: "Collecting data", trigger: "Crawl running \u2014 3 boards." },
-  { id: "ready", label: "Ready for review", trigger: "5 modules, 14 questions, 6 gaps." },
-  { id: "capture", label: "Capture (active)", trigger: "9 of 14 answered, 7 accepted." },
+  { id: "collecting", label: "Collecting data", trigger: `Crawl running \u2014 ${SESSION.boards} boards.` },
+  { id: "ready", label: "Ready for review", trigger: `${SESSION.modules} modules, ${SESSION.questions} questions, ${SESSION.gaps} gaps.` },
+  { id: "capture", label: "Capture (active)", trigger: `${SESSION.answered} of ${SESSION.questions} answered, ${SESSION.satisfied} accepted.` },
   { id: "deliver", label: "Deliver (review)", trigger: "Manager reviewing before KG commit." },
   { id: "complete", label: "Complete", trigger: "Committed to Knowledge Graph." },
-];
-export const SESSION = { id: "minh-le", name: "Minh L\u00ea", role: "Senior Backend Engineer", dept: "Engineering", initials: "ML", daysLeft: 22, deadline: "Jun 30, 2026", boards: 3, cards: 64, modules: 5, questions: 14, gaps: 6, coworkers: 3, answered: 9, satisfied: 7, gapsAddressed: 4, files: 3 };
-const SEED_GQ = [
-  { id: "gq1", q: "What\u2019s the process for handling customer escalations?", from: "Coworker", fromType: "human", answer: "On-call engineer first. P1: page lead via PagerDuty. Engineering provides RCA within 24h.", answeredBy: "Minh L\u00ea", answeredAt: "1d ago", satisfiedBy: "H\u00e0 Vy", satisfiedAt: "3h" },
-  { id: "gq2", q: "Are there any undocumented vendor agreements I should know about?", from: "H\u00e0 Vy", fromType: "human" },
-];
-const OB_QUEUE = [
-  { id: "obq1", q: "What are the undocumented rate limits on the payment API?", from: "Coworker", fromType: "human", module: "Payment Service", answered: false },
-  { id: "obq2", q: "Is there a runbook for the nightly batch job failures?", from: "Coworker", fromType: "human", module: "CI/CD Pipeline", answered: false },
-  { id: "obq3", q: "What's the rollback procedure for the Atlas migration?", from: "H\u00e0 Vy", fromType: "human", module: "CI/CD Pipeline", answered: false },
-  { id: "obq4", q: "How does the Kafka retry logic handle poison messages?", from: "AI-generated", fromType: "ai", module: "Payment Service", answered: false },
-  { id: "obq5", q: "Who owns the vendor XYZ contract renewal?", from: "AI-generated", fromType: "ai", module: "Inventory Sync", answered: false },
-  { id: "oba1", q: "Where is the API key rotation doc?", module: "Shared Libraries", answered: true, satisfied: true, answer: "Engineering wiki at /security/api-key-rotation.md. Rotates every 90 days via GitHub Action." },
-  { id: "oba2", q: "Who should I contact about the SLA penalty terms?", module: "Inventory Sync", answered: true, satisfied: false, answer: "Talk to Linh Ph\u1ea1m in Procurement \u2014 she handled the last renewal. SLA doc at /vendor-contracts." },
-];
-
-const SEED_COWORKERS = [
-  { id: "cw1", name: "Tr\u1ea7n H\u1eefu Nam", initials: "TN", modules: ["Payment Service", "CI/CD Pipeline"], sharedCards: 14, source: "trello", status: "joined" },
-  { id: "cw2", name: "Linh Anh", initials: "LA", modules: ["Monitoring & Alerts"], sharedCards: 6, source: "trello", status: "joined" },
-  { id: "cw3", name: "B\u1ea3o Nguy\u1ec5n", initials: "BN", modules: ["Infrastructure as Code"], sharedCards: 0, source: "manual", status: "pending" },
-];
-export const MODULES_DATA = [
-  { board: "Backend Services", boardCards: 34, modules: [
-    { name: "Payment Service", cards: 12, qs: 4, gaps: 3, moduleGaps: ["No disaster recovery or failover procedures documented", "No error escalation process for failed payments", "Missing SLA definitions for payment latency"], moduleGapQs: ["What is the failover procedure if the primary payment processor goes down?", "Who is paged when a payment batch fails, and what is the escalation path?", "What are the documented latency SLAs for payment processing?"], items: [
-      { name: "Kafka retry configuration", linkedIn: ["CI/CD Pipeline"], desc: "DLQ routing, backoff strategy, poison message handling. Max 5 retries.", checklist: [{ text: "DLQ routing configured", done: true }, { text: "Backoff documented", done: false }, { text: "Alert on failures", done: false }], gaps: ["Incomplete checklist (2/3 not done)"], gapQs: ["How does the retry logic handle poison messages?"], files: [{ name: "kafka-config.yaml", size: "3.2 KB" }], qs: [
-        { q: "How does the retry logic handle poison messages?", from: "AI-generated", answer: "After 5 retries with exponential backoff, messages route to the DLQ. Monitor via Datadog alert #4421.", answeredBy: "Minh L\u00ea", answeredAt: "2h ago", file: { name: "dlq-replay-runbook.pdf", size: "12 KB" }, satisfiedBy: "Coworker A", satisfiedAt: "30m" },
-        { q: "Max retry count before DLQ routing?", from: "AI-generated", answer: "Max 5, configurable per topic in kafka-config.yaml. Backoff: 2x from 500ms.", answeredBy: "Minh L\u00ea", answeredAt: "1h ago" },
-      ] },
-      { name: "Payment gateway timeout", desc: "Circuit breaker pattern, 30s timeout.", checklist: [{ text: "Timeout tuned per route", done: false }], gaps: [], files: [], qs: [{ q: "What happens when gateway times out mid-transaction?", from: "AI-generated", answer: "Circuit breaker trips after 30s and returns 503. The client retries with an idempotency key, so no double-charge.", answeredBy: "Minh Lê", answeredAt: "1h ago" }] },
-      { name: "Stripe webhook handler", desc: "Payment confirmations and refunds.", checklist: [], gaps: [], files: [], qs: [{ q: "Which webhook events are critical vs optional?", from: "Coworker", answer: "Critical: payment_intent.succeeded, charge.refunded, invoice.payment_failed. Optional \u2192 batch queue.", answeredBy: "Minh L\u00ea", answeredAt: "45m", satisfiedBy: "Coworker A", satisfiedAt: "20m" }] },
-      { name: "Refund reconciliation", desc: "Nightly Stripe\u2194ledger reconciliation.", checklist: [], gaps: [], files: [], qs: [{ q: "How are partial refunds reconciled?", from: "AI-generated", answer: "Matched nightly against the Stripe balance report; mismatches route to a manual queue owned by Finance.", answeredBy: "Minh L\u00ea", answeredAt: "2h ago" }] },
-      { name: "Currency conversion", desc: "ECB API rates, 04:00 UTC.", checklist: [{ text: "Fallback on API failure", done: true }], gaps: [], files: [], qs: [] },
-    ]},
-    { name: "CI/CD Pipeline", cards: 8, qs: 3, gaps: 1, moduleGaps: ["Deployment described differently across modules"], moduleGapQs: ["Which deployment process is authoritative across services?"], items: [
-      { name: "Atlas migration rollback", desc: "Migration procedures and rollback.", checklist: [], gaps: ["Missing description"], gapQs: ["Rollback procedure?"], files: [], qs: [{ q: "Rollback procedure for failed Atlas migrations?", from: "H\u00e0 Vy", answer: "Run /scripts/atlas-rollback.sh with migration ID. Snapshot before (7d expiry).", answeredBy: "Minh L\u00ea", answeredAt: "4h ago", satisfiedBy: "H\u00e0 Vy", satisfiedAt: "2h" }] },
-      { name: "GitHub Actions workflow", linkedIn: ["Infrastructure as Code"], desc: "lint\u2192test\u2192build\u2192deploy. Node 18/20.", checklist: [{ text: "Staging automated", done: true }, { text: "Prod approval", done: true }], gaps: [], files: [], qs: [{ q: "Runbook for nightly batch failures?", from: "Coworker", answer: "Check Actions logs, rerun transient. 3x fails: check Datadog.", answeredBy: "Minh L\u00ea", answeredAt: "3h ago" }] },
-      { name: "Docker image caching", desc: "Layer caching in GHCR.", checklist: [], gaps: [], files: [], qs: [] },
-    ]},
-    { name: "Shared Libraries", cards: 6, qs: 2, gaps: 0, items: [
-      { name: "API key rotation", desc: "90-day rotation via GitHub Action.", checklist: [{ text: "Schedule documented", done: true }, { text: "Auto-rotation on", done: true }], gaps: [], files: [{ name: "api-key-rotation.md", size: "1.8 KB" }], qs: [{ q: "Where is the rotation runbook?", from: "AI-generated", answer: "Wiki: /security/api-key-rotation.md. Ping DevOps on failure.", answeredBy: "Minh L\u00ea", answeredAt: "5h ago", satisfiedBy: "H\u00e0 Vy", satisfiedAt: "4h" }] },
-      { name: "Logging middleware", desc: "Structured logging + PII redaction.", checklist: [], gaps: [], files: [], qs: [] },
-      { name: "Auth token validator", desc: "JWT. RS256 + EdDSA.", checklist: [], gaps: [], files: [], qs: [{ q: "Token refresh strategy?", from: "AI-generated", answer: "15-min access, 7-day refresh HTTP-only cookies. Failure \u2192 login.", answeredBy: "Minh L\u00ea", answeredAt: "6h ago", satisfiedBy: "Coworker A", satisfiedAt: "5h" }] },
-    ]},
-  ]},
-  { board: "Platform Infrastructure", boardCards: 18, modules: [
-    { name: "Monitoring & Alerts", cards: 10, qs: 3, gaps: 2, moduleGaps: ["No alert routing documented", "No incident response runbook"], moduleGapQs: ["Which alerts page which on-call rotation?", "What is the step-by-step incident response runbook?"], items: [
-      { name: "Datadog dashboard", linkedIn: ["Payment Service"], desc: "SLO tracking. P50/P95/P99.", checklist: [], gaps: ["Thresholds undocumented"], gapQs: ["Critical alert thresholds?"], files: [], qs: [{ q: "Critical alert thresholds?", from: "AI-generated" }] },
-      { name: "PagerDuty escalation", desc: "Primary\u2192secondary\u2192eng mgr.", checklist: [{ text: "Rotation current", done: true }], gaps: [], files: [{ name: "oncall-schedule.pdf", size: "45 KB" }], qs: [] },
-      { name: "Log aggregation", desc: "Fluentd\u2192ES\u2192Kibana.", checklist: [], gaps: [], files: [], qs: [{ q: "Log retention policy?", from: "AI-generated" }] },
-    ]},
-    { name: "Infrastructure as Code", cards: 8, qs: 2, gaps: 0, items: [
-      { name: "Terraform modules", desc: "VPC, EKS, RDS. S3+DynamoDB.", checklist: [], gaps: [], files: [], qs: [{ q: "Terraform version pinned?", from: "AI-generated" }] },
-      { name: "Helm chart templates", desc: "Deployments + monitoring sidecar.", checklist: [], gaps: [], files: [], qs: [{ q: "Helm overrides per env?", from: "AI-generated" }] },
-      { name: "Secrets management", desc: "Vault via sidecar.", checklist: [{ text: "Auto-unseal on", done: true }, { text: "Rotation automated", done: false }], gaps: [], files: [], qs: [] },
-    ]},
-  ]},
-];
-
-// Cards the AI couldn't confidently assign to any module (below 80% for all). CL-session 2025-06-25 §5.
-const UNCATEGORIZED = [
-  { name: "Legacy cron job notes", desc: "Scattered notes on the nightly settlement cron. Unclear which service owns it.", checklist: [], gaps: [], files: [], qs: [{ q: "Which service owns the nightly settlement cron?", from: "AI-generated" }] },
-  { name: "Vendor onboarding checklist", desc: "Half-finished checklist copied from an old board.", checklist: [{ text: "Contact added", done: true }, { text: "SLA reviewed", done: false }], gaps: [], files: [], qs: [] },
 ];
 
 let qId = 200;
@@ -361,50 +300,6 @@ function OffboarderWorkspace() {
 // involved, and the two-agent reasoning transcript. Cards not listed default to a
 // clean single-module Pass. Modulize Agent (M, purple) classifies; Gap Agent (G,
 // orange) checks. The 6 conversation templates (§4.6) are realised below.
-const CLASSIFY = {
-  // Template 1 — Pass · single module (2 messages)
-  "Payment gateway timeout": { state:"pass", confidence:93, primary:"Payment Service", chat:[
-    {a:"M",step:"CLASSIFY",t:"Clear Payment Service signals — circuit breaker, 30s timeout, gateway semantics. 93%."},
-    {a:"G",step:"VALIDATE",t:"Confirmed — single clean home, no cross-module overlap."},
-  ]},
-  // Template 2 — Pass · multi-module 1:N (3 messages)
-  "Kafka retry configuration": { state:"pass", confidence:96, primary:"Payment Service", linked:["CI/CD Pipeline"], chat:[
-    {a:"M",step:"CLASSIFY",t:"Strong payment-domain signals — Kafka, DLQ routing, idempotency keys. Best fit is Payment Service at 96%."},
-    {a:"G",step:"VALIDATE",t:"Agreed. It's also referenced by the deploy rollback runbook, so a linked CI/CD Pipeline tag is warranted."},
-    {a:"M",step:"PROPOSE",t:"Assign to both Payment Service and CI/CD Pipeline — equal weight."},
-  ]},
-  // Template 3 — Review (4 messages)
-  "Datadog dashboard": { state:"review", confidence:41, candidates:["Monitoring & Alerts","Payment Service"], chat:[
-    {a:"M",step:"CLASSIFY",t:"Monitoring & Alerts at 41% — SLO dashboards and panels. But it also drives the payment alert routes."},
-    {a:"G",step:"CHALLENGE",t:"41% is well below the 80% bar, and the payment-alert overlap makes the primary ambiguous."},
-    {a:"M",step:"RECONSIDER",t:"Likely Monitoring primary with a Payment Service link — but the split needs a human call."},
-    {a:"G",step:"FLAG",t:"Flagging for Manager review — please confirm the primary module."},
-  ]},
-  // Template 4 — New Module · standalone (3 messages)
-  "Secrets management": { state:"newmod", confidence:84, newModule:"Secrets & Vault", chat:[
-    {a:"M",step:"CLASSIFY",t:"Vault sidecar, auto-unseal, rotation — no existing module owns secrets management."},
-    {a:"G",step:"VERIFY",t:"Confirmed: this is a distinct concern, not a fit for Shared Libraries or IaC."},
-    {a:"M",step:"PROPOSE",t:"Propose a new standalone module — Secrets & Vault (84%)."},
-  ]},
-  // Template 5 — New Module + existing link (4 messages)
-  "Terraform modules": { state:"newmod", confidence:88, newModule:"Infrastructure Provisioning", linked:["CI/CD Pipeline"], chat:[
-    {a:"M",step:"CLASSIFY",t:"IaC, AKS cluster, VNet, remote state backend — doesn't fit the existing modules well."},
-    {a:"G",step:"VERIFY",t:"Confirmed: 6 cards cluster around provisioning with no good home module."},
-    {a:"M",step:"RECONSIDER",t:"It's applied via GitHub Actions, so it also links to CI/CD Pipeline."},
-    {a:"G",step:"VALIDATE",t:"Agreed — new module Infrastructure Provisioning, also assigned to CI/CD Pipeline."},
-  ]},
-  // Template 6 — Uncategorized (3 messages)
-  "Vendor onboarding checklist": { state:"uncat", confidence:23, chat:[
-    {a:"M",step:"CLASSIFY",t:"Top match is only 23% — too weak to assign confidently."},
-    {a:"G",step:"VERIFY",t:"No module clears the 80% threshold for this card."},
-    {a:"M",step:"DEFER",t:"Leaving it uncategorized for the Manager to place."},
-  ]},
-  "Legacy cron job notes": { state:"uncat", confidence:19, chat:[
-    {a:"M",step:"CLASSIFY",t:"Sparse notes on ad-hoc cron jobs — best match is only 19%."},
-    {a:"G",step:"VERIFY",t:"No module clears the 80% threshold — genuinely ambiguous."},
-    {a:"M",step:"DEFER",t:"Leaving it uncategorized for the Manager to place."},
-  ]},
-};
 function classify(card){ return CLASSIFY[card.name] || { state:"pass", confidence:94, primary:undefined }; }
 const CLS_META = {
   pass:    { label:"Pass",         badge:null,                                                       border:null,        chip:"bg-violet-50 text-violet-700 border-violet-200",        rowBg:"",               rowBorder:null,                dotColor:null,      dotDashed:false },
