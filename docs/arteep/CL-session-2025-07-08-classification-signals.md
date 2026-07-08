@@ -1,4 +1,4 @@
-# ART-EEP — Module Classification Signals (2025-07-08)
+# ART-EEP — Module Classification Signals + Terminology (2025-07-08)
 
 *Apply via Claude Code. Delete after verified.*
 
@@ -29,7 +29,7 @@
 
 **What stays the same:**
 - Pass cards: clean white row, no badge, no tint (the default state)
-- Detects (⚡) still show as orange badges alongside classification badges
+- Detects still show as orange badges alongside classification badges
 - Filter tabs (All/Pass/Review/New Module/Uncategorized) unchanged
 - Card click behavior unchanged
 
@@ -72,6 +72,48 @@
 
 ---
 
+## CS-03: Rename "Knowledge Areas" → "Modules" ✅ LOCKED
+
+**File:** `components/mockups/session-command-view.jsx`
+
+**Issue:** The Overview tab uses "Knowledge Areas" and "AREAS" as labels. We renamed this concept to "Modules" throughout the system. The old terminology is stale.
+
+**Fix:** Search and replace:
+
+| Old | New |
+|---|---|
+| `AREAS` (stat card label) | `MODULES` |
+| `Knowledge Areas` (section header) | `Modules` |
+| `knowledge areas` (any lowercase reference) | `modules` |
+| `areas` in stat card value context | `modules` |
+
+The stat card row should read: `BOARDS 3` · `CARDS 64` · `MODULES 5` · `QUESTIONS 14`
+
+The section below should read: `MODULES` with the 5 module chips listed.
+
+---
+
+## CS-04: Fix "3 module gaps · flags on cards" copy ✅ LOCKED
+
+**File:** `components/mockups/session-command-view.jsx`
+
+**Issue:** The "KNOWLEDGE GAPS" section shows "3 module gaps · flags on cards" — this is unclear jargon. "Flags on cards" means nothing to the user.
+
+**Fix:** Replace with clear, specific copy:
+
+**Before:** `3 module gaps · flags on cards`
+**After:** `3 unresolved gaps across 2 modules`
+
+The number "3" = total unresolved gaps. "2 modules" = Payment Service (2 gaps) + Monitoring & Alerts (1 gap).
+
+Also rename the section header:
+**Before:** `KNOWLEDGE GAPS`
+**After:** `GAPS`
+
+Keep it short. The word "knowledge" is redundant — the entire app is about knowledge.
+
+---
+
 ## Verification checklist
 
 **Classification signals:**
@@ -90,6 +132,13 @@
 - [ ] Both instances of a cross-module card show the subtitle (bidirectional)
 - [ ] Single-module cards have no subtitle
 - [ ] At least 2 demo cards have multi-module assignments
+
+**Terminology:**
+- [ ] Stat card: "MODULES 5" not "AREAS 5"
+- [ ] Section header: "Modules" not "Knowledge Areas"
+- [ ] Zero instances of "Knowledge Areas" or "AREAS" remaining in the file
+- [ ] Gaps section: "GAPS" not "KNOWLEDGE GAPS"
+- [ ] Gaps copy: "3 unresolved gaps across 2 modules" not "3 module gaps · flags on cards"
 
 ---
 
