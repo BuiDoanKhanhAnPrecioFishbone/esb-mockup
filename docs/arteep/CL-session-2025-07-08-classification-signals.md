@@ -37,8 +37,44 @@
 
 ---
 
+## CS-02: Cross-module cards — "Also in" subtitle ✅ LOCKED
+
+**File:** `components/mockups/session-command-view.jsx`
+
+**Issue:** When a card belongs to multiple modules (1:N), it appears as a row in each module section with no visual connection. Users don't realize it's the same card appearing in different places.
+
+**Fix:** When a card belongs to 2+ modules, show an **"Also in: [module name]"** subtitle below the card title:
+
+```
+○ 📄 Kafka retry configuration
+     Also in: CI/CD Pipeline
+```
+
+**Styling:**
+- Position: below the card title, indented to align with the title text (padding-left matches the icon + gap)
+- Font: 10px, `text-indigo-500` (#6366f1)
+- Text: "Also in: [other module name]"
+- If the card is in 3+ modules: "Also in: CI/CD Pipeline, Shared Libraries"
+- Clickable: clicking the module name scrolls/navigates to that module section in the Data tab
+
+**When to show:**
+- Show on EVERY instance of the card across all module sections
+- In Module: Payment Service → "Also in: CI/CD Pipeline"
+- In Module: CI/CD Pipeline → "Also in: Payment Service"
+- Both instances show the subtitle pointing to each other
+
+**When NOT to show:**
+- Cards that belong to only 1 module — no subtitle, clean row
+
+**Mock data:** Ensure at least 2 cards in the demo data have multi-module assignments to demonstrate this feature:
+- "Kafka retry configuration" → Payment Service + CI/CD Pipeline
+- "Refund reconciliation" → Payment Service + Shared Libraries
+
+---
+
 ## Verification checklist
 
+**Classification signals:**
 - [ ] Pass card rows: white background, no left border accent, no badge, gray empty circle
 - [ ] Review card rows: amber-50 background tint, 3px amber left border, amber "Review" badge, amber dot
 - [ ] New Module card rows: violet-50 background tint, 3px violet left border, violet "New Module" badge, violet dot
@@ -48,6 +84,13 @@
 - [ ] Badges are readable (11px+ font, adequate padding)
 - [ ] Non-Pass rows visually jump out when scanning the full card list
 
+**Cross-module cards:**
+- [ ] Cards in 2+ modules show "Also in: [module name]" subtitle below the title
+- [ ] Subtitle is 10px, indigo-500 color, indented to align with title
+- [ ] Both instances of a cross-module card show the subtitle (bidirectional)
+- [ ] Single-module cards have no subtitle
+- [ ] At least 2 demo cards have multi-module assignments
+
 ---
 
-*End of fix. Apply via Claude Code. Delete after verified.*
+*End of fixes. Apply via Claude Code. Delete after verified.*
