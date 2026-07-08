@@ -56,6 +56,11 @@
       { "id": "cicd-01", "name": "Atlas migration rollback", "desc": "Migration procedures and rollback.", "checklist": [], "gaps": ["Missing description"],
         "questions": [ { "id": "q6", "text": "Rollback procedure for failed Atlas migrations?", "fromType": "human", "authorId": "manager", "answer": "Run /scripts/atlas-rollback.sh with migration ID. Snapshot before (7d expiry).", "answeredBy": "Minh Lê", "answeredAt": "4h ago", "accepted": true, "acceptedBy": "Hà Vy", "acceptedAt": "2h" } ] },
       { "id": "cicd-02", "name": "GitHub Actions workflow", "desc": "lint to test to build to deploy. Node 18/20.", "linkedModuleIds": ["infra"], "checklist": [{ "text": "Staging automated", "done": true }, { "text": "Prod approval", "done": true }],
+        "classification": { "state": "pass", "confidence": 92, "chat": [
+          { "a": "M", "step": "CLASSIFY", "t": "Strong CI/CD signals — GitHub Actions workflow, lint/test/build/deploy stages. Best fit is CI/CD Pipeline at 92%." },
+          { "a": "G", "step": "VALIDATE", "t": "Agreed. It also provisions AKS ingress and injects infra secrets at deploy, so a linked Infrastructure as Code tag is warranted." },
+          { "a": "M", "step": "PROPOSE", "t": "Assign to CI/CD Pipeline (primary) and Infrastructure as Code (linked)." }
+        ] },
         "questions": [ { "id": "q7", "text": "Runbook for nightly batch failures?", "fromType": "human", "authorId": "cw1", "answer": "Check Actions logs, rerun transient. 3x fails: check Datadog.", "answeredBy": "Minh Lê", "answeredAt": "3h ago", "accepted": true, "acceptedBy": "Trần Hữu Nam", "acceptedAt": "1h" } ] },
       { "id": "cicd-03", "name": "Docker image caching", "desc": "Layer caching in GHCR." },
       { "id": "cicd-04", "name": "Blue-green deploy strategy", "desc": "Zero-downtime cutover between environments.",
@@ -67,7 +72,12 @@
             { "a": "G", "step": "FLAG", "t": "Flagging for Manager review — please confirm the module." }
           ] } },
       { "id": "cicd-05", "name": "Canary release gates", "desc": "Progressive rollout with metric gates." },
-      { "id": "cicd-06", "name": "Secrets injection", "desc": "CSI driver injecting Vault secrets at deploy.", "linkedModuleIds": ["infra"] },
+      { "id": "cicd-06", "name": "Secrets injection", "desc": "CSI driver injecting Vault secrets at deploy.", "linkedModuleIds": ["infra"],
+        "classification": { "state": "pass", "confidence": 90, "chat": [
+          { "a": "M", "step": "CLASSIFY", "t": "Deploy-time secrets injection via the CSI driver — this runs in the pipeline, so CI/CD Pipeline at 90%." },
+          { "a": "G", "step": "VALIDATE", "t": "Agreed, but the secrets originate from the Vault setup in Infrastructure as Code — the two should be linked." },
+          { "a": "M", "step": "PROPOSE", "t": "Assign to CI/CD Pipeline (primary) and Infrastructure as Code (linked)." }
+        ] } },
       { "id": "cicd-07", "name": "Build matrix", "desc": "Node 18/20 x Ubuntu, 8min avg." },
       { "id": "cicd-08", "name": "Artifact registry (GHCR)", "desc": "Image storage and retention policy." },
       { "id": "cicd-09", "name": "Deploy approval gates", "desc": "Production manual approval step." },

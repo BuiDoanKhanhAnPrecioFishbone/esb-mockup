@@ -44,6 +44,7 @@ modules.forEach((m) => {
   m.cards.forEach((c) => {
     dupe("card", c.id);
     (c.linkedModuleIds || []).forEach((lm) => { if (!moduleIds.has(lm)) errors.push(`card ${c.id} → unknown linkedModuleId ${lm}`); });
+    if ((c.linkedModuleIds || []).length && !(c.classification && Array.isArray(c.classification.chat) && c.classification.chat.length)) errors.push(`cross-module card ${c.id} has no classification.chat (AI reasoning for the multi-module link)`);
     (c.questions || []).forEach((q) => {
       dupe("question", q.id);
       if (q.fromType === "human" && q.authorId && q.authorId !== "manager" && !cwIds.has(q.authorId)) errors.push(`question ${q.id} → unknown authorId ${q.authorId}`);
