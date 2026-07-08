@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, ArrowRight, ArrowUpRight, X, CheckCircle2, Clock, AlertTriangle, Sparkles, Bell, Layers, User, FileText, ChevronDown, Plus, MessageCircle, Paperclip, Pencil, Trash2, Check, GripVertical, HelpCircle, Inbox, ExternalLink, Mic, Pause, SkipForward, RotateCcw, Zap, MoreHorizontal, Circle } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowRight, ArrowUpRight, X, CheckCircle2, Clock, AlertTriangle, Sparkles, Bell, Layers, User, FileText, ChevronDown, Plus, MessageCircle, Paperclip, Pencil, Trash2, Check, GripVertical, HelpCircle, Inbox, ExternalLink, Mic, Pause, SkipForward, RotateCcw, Zap, MoreHorizontal, Circle, Package, MessageSquare, Database } from "lucide-react";
 import { DeliverOverview, CompleteOverview } from "./session-deliver";
 import { useViewAs } from "@/lib/view-as";
 import { tabVisibility } from "@/lib/view-matrix";
@@ -160,22 +160,37 @@ function SessionActionsMenu() {
 
 // OV-05 + UI-01 — VERTICAL 3-step stepper for the left column of the Overview 2-col layout.
 // 16px circles, labels beside each, CTA button(s) stacked at the bottom (`cta` may be one or two buttons).
+// CS-05 — premium vertical stepper: 32px gradient icon nodes, gradient/dashed connectors, dynamic
+// per-state sub-captions, and a violet-tinted gradient column background. CTA(s) passed via `cta`.
 function PhaseHero({ phase, cta }) {
-  const steps = [{id:"prepare",label:"Prepare"},{id:"capture",label:"Capture"},{id:"deliver",label:"Deliver"}];
-  const activeIdx = phase==="complete" ? steps.length : steps.findIndex(s=>s.id===phase);
-  const circle = (state) => state==="completed"
-    ? <span className="w-4 h-4 rounded-full bg-emerald-500 inline-flex items-center justify-center shrink-0"><Check className="w-2.5 h-2.5 text-white"/></span>
-    : state==="active"
-    ? <span className="w-4 h-4 rounded-full bg-violet-600 inline-flex items-center justify-center shrink-0"><span className="w-1 h-1 rounded-full bg-white"/></span>
-    : <span className="w-4 h-4 rounded-full border-2 border-gray-300 bg-white inline-block shrink-0"/>;
-  return <div className="rounded-lg border border-violet-200 bg-violet-50/40 p-4">
+  const activeIdx = phase==="complete" ? 3 : ["prepare","capture","deliver"].indexOf(phase);
+  const steps = [
+    { id:"prepare", label:"Prepare", Icon:Package,       done:`${SESSION.cards} cards · ${SESSION.modules} modules`,          active:"Classifying cards",  upcoming:"" },
+    { id:"capture", label:"Capture", Icon:MessageSquare, done:`${SESSION.questions} answered · ${SESSION.satisfied} accepted`, active:`${SESSION.answered} of ${SESSION.questions} answered`, upcoming:"Questions and answers" },
+    { id:"deliver", label:"Deliver", Icon:Database,      done:"",                                                            active:"Review and commit",  upcoming:"Validate and commit" },
+  ];
+  const stateOf = (i) => i<activeIdx ? "done" : i===activeIdx ? "active" : "upcoming";
+  const node = (st, Icon) => st==="done"
+    ? <div className="w-8 h-8 rounded-full inline-flex items-center justify-center shrink-0" style={{background:"linear-gradient(135deg,#34d399,#059669)",boxShadow:"0 2px 6px rgba(5,150,105,0.15)"}}><Check className="w-3.5 h-3.5 text-white"/></div>
+    : st==="active"
+    ? <div className="w-8 h-8 rounded-full inline-flex items-center justify-center shrink-0" style={{background:"linear-gradient(135deg,#818cf8,#7c3aed)",boxShadow:"0 0 0 4px rgba(124,58,237,0.12), 0 2px 8px rgba(124,58,237,0.2)"}}><Icon className="w-3.5 h-3.5 text-white"/></div>
+    : <div className="w-8 h-8 rounded-full bg-white border-2 border-gray-200 inline-flex items-center justify-center shrink-0"><Icon className="w-3.5 h-3.5 text-gray-300"/></div>;
+  const conn = (from, to) => from==="done"&&to==="done"
+    ? <div className="ml-[15px] h-5 w-0.5" style={{background:"#059669"}}/>
+    : from==="done"&&to==="active"
+    ? <div className="ml-[15px] h-5 w-0.5" style={{background:"linear-gradient(180deg,#059669,#c4b5fd)"}}/>
+    : from==="active"
+    ? <div className="ml-[15px] h-5 border-l-2 border-dashed" style={{borderColor:"#c4b5fd"}}/>
+    : <div className="ml-[15px] h-5 border-l-2 border-dashed" style={{borderColor:"#e5e7eb"}}/>;
+  return <div className="rounded-lg p-4" style={{background:"linear-gradient(180deg, #f5f3ff 0%, transparent 100%)", border:"1px solid #ede9fe"}}>
     <div className="flex flex-col">{steps.map((s,i)=>{
-      const state = i<activeIdx?"completed":i===activeIdx?"active":"upcoming";
-      const labelCls = state==="completed"?"text-gray-500":state==="active"?"font-semibold text-violet-700":"text-gray-400";
-      const connColor = state==="completed"?"#059669":state==="active"?"#c4b5fd":"#e5e7eb";
+      const st = stateOf(i);
+      const labelCls = st==="done"?"text-[11px] font-medium text-emerald-700":st==="active"?"text-[12px] font-semibold text-violet-800":"text-[11px] font-medium text-gray-400";
+      const capCls = st==="done"?"text-gray-500":st==="active"?"text-violet-600":"text-gray-300";
+      const cap = st==="done"?s.done:st==="active"?s.active:s.upcoming;
       return <React.Fragment key={s.id}>
-        <div className="flex items-center gap-2"><span className="shrink-0">{circle(state)}</span><span className={`text-[11px] ${labelCls}`}>{s.label}</span></div>
-        {i<steps.length-1&&<div className="ml-[7px] h-4 border-l-2" style={{borderColor:connColor,borderStyle:state==="completed"?"solid":"dashed"}}/>}
+        <div className="flex items-center gap-2.5">{node(st,s.Icon)}<div className="min-w-0"><div className={labelCls}>{s.label}</div>{cap&&<div className={`text-[9px] ${capCls}`}>{cap}</div>}</div></div>
+        {i<steps.length-1&&conn(st, stateOf(i+1))}
       </React.Fragment>;
     })}</div>
     {cta&&<div className="flex flex-col gap-2 mt-4">{cta}</div>}
@@ -201,7 +216,7 @@ function ManagerOverview({ stepId, isReady, onSwitchTab, coworkers, onAddCoworke
   // MV-R4-04 \u2014 Collecting Data is animation-only. The orbital belongs to empty/pending states, not active collection.
   if (!isReady) return <div className="space-y-4"><CategorizeAnimation/><div className="rounded-lg border border-gray-200 bg-white p-4 flex items-center gap-3"><div className="w-9 h-9 rounded-full bg-violet-50 inline-flex items-center justify-center shrink-0"><div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-violet-500 animate-spin"/></div><div><h3 className="text-sm font-medium text-gray-900">{"Collecting data from "}{SESSION.boards}{" boards\u2026"}</h3><p className="text-xs text-gray-500">{"We\u2019ll notify you when ready."}</p></div></div></div>;
   if (stepId==="capture") return <div className="space-y-4"><div className="grid grid-cols-3 gap-5"><div><PhaseHero phase="capture" cta={<Link href={`/session/${SESSION.id}?step=deliver`} className="w-full h-9 px-4 rounded-lg border-[1.5px] border-violet-400 bg-white hover:bg-violet-50 text-violet-700 text-sm font-medium inline-flex items-center justify-center gap-2">Start Deliver<ArrowRight className="w-3.5 h-3.5"/></Link>}/></div><div className="col-span-2"><div className="rounded-lg border border-gray-200 bg-white p-5"><h3 className="text-sm font-semibold text-gray-900 mb-3">Capture in progress</h3><ProgressBar/><p className="text-[11px] text-gray-500 mb-4">{SESSION.questions-SESSION.answered}{" questions remaining"}</p><div className="grid grid-cols-3 gap-3"><MC l="Accepted" v={SESSION.satisfied}/><MC l="Waiting review" v={SESSION.answered-SESSION.satisfied}/><MC l="Gaps addressed" v={`${SESSION.gapsAddressed}/${SESSION.gaps}`}/></div><p className="text-[11px] text-gray-500 mt-3" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{"Started 3d ago · "}{SESSION.daysLeft}{"d left"}</p></div></div></div><CoworkerNetwork coworkers={coworkers} readOnly/></div>;
-  return <div className="space-y-4"><div className="grid grid-cols-3 gap-5"><div><PhaseHero phase="prepare" cta={<Link href={`/session/${SESSION.id}`} className="w-full h-9 px-4 rounded-lg border-[1.5px] border-violet-400 bg-white hover:bg-violet-50 text-violet-700 text-sm font-medium inline-flex items-center justify-center gap-2">Start Capture<ArrowRight className="w-3.5 h-3.5"/></Link>}/></div><div className="col-span-2"><div className="rounded-lg border border-gray-200 bg-white p-5"><h3 className="text-sm font-semibold text-gray-900 mb-3">Data collection complete</h3><div className="grid grid-cols-4 gap-3 mb-4"><MC l="Boards" v={SESSION.boards}/><MC l="Cards" v={SESSION.cards}/><MC l="Areas" v={SESSION.modules}/><MC l="Questions" v={SESSION.questions}/></div><div className="pt-3 border-t border-gray-100 space-y-2"><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Knowledge areas</p><div className="flex flex-wrap gap-1.5">{["Payment Service","CI/CD Pipeline","Shared Libraries","Monitoring & Alerts","Infrastructure as Code"].map(m=><span key={m} className="text-[11px] px-2 py-1 rounded-md bg-gray-50 border border-gray-200 text-gray-700">{m}</span>)}</div></div><div className="pt-3 mt-3 border-t border-gray-100 grid grid-cols-2 gap-3"><div><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">Coworker engagement</p><p className="text-[12px] text-gray-700">2 of 3 have asked questions</p></div><div><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">Knowledge gaps</p><p className="text-[12px] text-gray-700">3 module gaps · flags on cards</p></div></div></div></div></div><CoworkerNetwork coworkers={coworkers} onAdd={onAddCoworker} onRemove={onRemoveCoworker} readOnly={false}/></div>;
+  return <div className="space-y-4"><div className="grid grid-cols-3 gap-5"><div><PhaseHero phase="prepare" cta={<Link href={`/session/${SESSION.id}`} className="w-full h-9 px-4 rounded-lg border-[1.5px] border-violet-400 bg-white hover:bg-violet-50 text-violet-700 text-sm font-medium inline-flex items-center justify-center gap-2">Start Capture<ArrowRight className="w-3.5 h-3.5"/></Link>}/></div><div className="col-span-2"><div className="rounded-lg border border-gray-200 bg-white p-5"><h3 className="text-sm font-semibold text-gray-900 mb-3">Data collection complete</h3><div className="grid grid-cols-4 gap-3 mb-4"><MC l="Boards" v={SESSION.boards}/><MC l="Cards" v={SESSION.cards}/><MC l="Modules" v={SESSION.modules}/><MC l="Questions" v={SESSION.questions}/></div><div className="pt-3 border-t border-gray-100 space-y-2"><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Modules</p><div className="flex flex-wrap gap-1.5">{["Payment Service","CI/CD Pipeline","Shared Libraries","Monitoring & Alerts","Infrastructure as Code"].map(m=><span key={m} className="text-[11px] px-2 py-1 rounded-md bg-gray-50 border border-gray-200 text-gray-700">{m}</span>)}</div></div><div className="pt-3 mt-3 border-t border-gray-100 grid grid-cols-2 gap-3"><div><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">Coworker engagement</p><p className="text-[12px] text-gray-700">2 of 3 have asked questions</p></div><div><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">Gaps</p><p className="text-[12px] text-gray-700">3 unresolved gaps across 2 modules</p></div></div></div></div></div><CoworkerNetwork coworkers={coworkers} onAdd={onAddCoworker} onRemove={onRemoveCoworker} readOnly={false}/></div>;
 }
 
 // Orbital illustration (R5-02) \u2014 the "waiting" visual for roles that can't act during
@@ -392,10 +407,10 @@ const CLASSIFY = {
 };
 function classify(card){ return CLASSIFY[card.name] || { state:"pass", confidence:94, primary:undefined }; }
 const CLS_META = {
-  pass:    { label:"Pass",         badge:null,                                                       border:null,        chip:"bg-violet-50 text-violet-700 border-violet-200" },
-  review:  { label:"Review",       badge:"bg-amber-50 text-amber-700 border-amber-400",              border:"#f59e0b",   chip:"bg-amber-50 text-amber-700 border-amber-400" },
-  newmod:  { label:"New Module",   badge:"bg-violet-50 text-violet-700 border-violet-300",           border:"#8b5cf6",   chip:"bg-violet-50 text-violet-700 border-violet-300" },
-  uncat:   { label:"Uncategorized",badge:"bg-gray-50 text-gray-500 border-gray-300 border-dashed",   border:null,        chip:"bg-gray-50 text-gray-500 border-gray-300 border-dashed" },
+  pass:    { label:"Pass",         badge:null,                                                       border:null,        chip:"bg-violet-50 text-violet-700 border-violet-200",        rowBg:"",               rowBorder:null,                dotColor:null,      dotDashed:false },
+  review:  { label:"Review",       badge:"bg-amber-50 text-amber-700 border-amber-400",              border:"#f59e0b",   chip:"bg-amber-50 text-amber-700 border-amber-400",           rowBg:"bg-amber-50/50", rowBorder:"3px solid #f59e0b", dotColor:"#f59e0b", dotDashed:false },
+  newmod:  { label:"New Module",   badge:"bg-violet-50 text-violet-700 border-violet-300",           border:"#8b5cf6",   chip:"bg-violet-50 text-violet-700 border-violet-300",        rowBg:"bg-violet-50/50",rowBorder:"3px solid #8b5cf6", dotColor:"#8b5cf6", dotDashed:false },
+  uncat:   { label:"Uncategorized",badge:"bg-gray-50 text-gray-500 border-gray-300 border-dashed",   border:null,        chip:"bg-gray-50 text-gray-500 border-gray-300 border-dashed",rowBg:"bg-gray-50/50",  rowBorder:"3px dashed #9ca3af",dotColor:null,      dotDashed:true },
 };
 function confColor(c){ return c>70?"#10b981":c>=40?"#f59e0b":"#f43f5e"; }
 const AGENT_AV = { M:{bg:"#ede9fe",fg:"#6d28d9",name:"Modulize Agent"}, G:{bg:"#fff7ed",fg:"#c2410c",name:"Gap Agent"} };
@@ -615,7 +630,7 @@ function CoworkerOverview({ stepId, isReady, onSwitchTab, coworkers }) {
   // R5-02 \u2014 waiting state: orbital + "Data is being collected" message, no CTA.
   if (!isReady) return <div className="rounded-xl border border-gray-200 bg-white p-10 text-center"><OrbitalIllustration/><h3 className="text-sm font-semibold text-gray-900 mb-1">Data is being collected</h3><p className="text-xs text-gray-500 max-w-sm mx-auto">{"The system is crawling Trello boards and organizing knowledge. You\u2019ll be able to review and ask questions once data is ready."}</p></div>;
   if (stepId==="capture") return <div className="space-y-4"><div className="rounded-lg border border-gray-200 bg-white p-5"><h3 className="text-sm font-semibold text-gray-900 mb-1">Your questions</h3><p className="text-[12px] text-gray-500 mb-3">Review answers and ask follow-ups.</p><div className="grid grid-cols-3 gap-3"><MC l="Answered" v={2}/><MC l="Waiting" v={1}/><MC l="Accepted" v={1}/></div><p className="text-[11px] text-yellow-700 mt-3 flex items-center gap-1.5"><AlertTriangle className="w-3 h-3"/>1 answer waiting for review</p></div><CoworkerNetwork coworkers={coworkers} readOnly/></div>;
-  return <div className="space-y-4"><div className="rounded-lg border border-gray-200 bg-white p-5"><h3 className="text-sm font-semibold text-gray-900 mb-1">{"Minh L\u00ea is leaving soon"}</h3><p className="text-[12px] text-gray-500 mb-3">{"Senior Backend Engineer · Last day July 4, 2026"}</p><div className="pt-3 border-t border-gray-100 space-y-2"><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Knowledge areas</p><div className="flex flex-wrap gap-1.5">{["Payment Service","CI/CD Pipeline","Shared Libraries","Monitoring & Alerts","Infrastructure as Code"].map(m=><span key={m} className="text-[11px] px-2 py-1 rounded-md bg-gray-50 border border-gray-200 text-gray-700">{m}</span>)}</div></div><div className="pt-3 mt-3 border-t border-gray-100 grid grid-cols-2 gap-3"><div><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">Your activity</p><p className="text-[12px] text-gray-700">0 questions asked</p></div><div><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">Others</p><p className="text-[12px] text-gray-700">2 coworkers active</p></div></div></div><CoworkerNetwork coworkers={coworkers} readOnly/></div>;
+  return <div className="space-y-4"><div className="rounded-lg border border-gray-200 bg-white p-5"><h3 className="text-sm font-semibold text-gray-900 mb-1">{"Minh L\u00ea is leaving soon"}</h3><p className="text-[12px] text-gray-500 mb-3">{"Senior Backend Engineer · Last day July 4, 2026"}</p><div className="pt-3 border-t border-gray-100 space-y-2"><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">Modules</p><div className="flex flex-wrap gap-1.5">{["Payment Service","CI/CD Pipeline","Shared Libraries","Monitoring & Alerts","Infrastructure as Code"].map(m=><span key={m} className="text-[11px] px-2 py-1 rounded-md bg-gray-50 border border-gray-200 text-gray-700">{m}</span>)}</div></div><div className="pt-3 mt-3 border-t border-gray-100 grid grid-cols-2 gap-3"><div><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">Your activity</p><p className="text-[12px] text-gray-700">0 questions asked</p></div><div><p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1">Others</p><p className="text-[12px] text-gray-700">2 coworkers active</p></div></div></div><CoworkerNetwork coworkers={coworkers} readOnly/></div>;
 }
 
 function CoworkerNetwork({ coworkers=[], onAdd, onRemove, readOnly=false }) {
@@ -722,7 +737,7 @@ function DataContent({ role, stepId, isReady, canEditQs, generalQs, addedModQs, 
   </div>{drawer}{gapDrawer}</div>;
 }
 
-function CardRow({ card, linked, showProgress, canManage, dismissedFlags, onDismissFlag, onRestoreFlag, primaryModuleOf, selectedCard, onSelectCard, clsFilter, clsOn }) {
+function CardRow({ card, linked, showProgress, canManage, dismissedFlags, onDismissFlag, onRestoreFlag, primaryModuleOf, selectedCard, onSelectCard, clsFilter, clsOn, moduleName }) {
   const isSel = selectedCard?.name===card.name;
   const allFlags = cardFlags(card);
   const flags = allFlags.filter(f=>!dismissedFlags.has(`${card.name}::${f}`)).slice(0,2); // DT-01 — cap active Detects at 2 per row
@@ -733,12 +748,15 @@ function CardRow({ card, linked, showProgress, canManage, dismissedFlags, onDism
   const cls = classify(card); const cmeta = CLS_META[cls.state]; // §4.6 — AI classification verdict
   const manualQ = card.qs.filter(q=>q.fromType!=="ai"&&q.from!=="AI-generated").length; // DT-02 — row count matches detail (manual only)
   if (clsOn && clsFilter && clsFilter!=="all" && cls.state!==clsFilter) return null;
-  // §4.6/WS — classification badge + left accent only in Prepare (clsOn). §4.1 — orange Detects. DT-01 — ≤2 indicators.
-  return <div className={`group/row relative w-full flex items-center gap-2 pr-3 py-2 border-t border-gray-50 ${linked?"pl-7 border-l-2 border-l-violet-300":"pl-10"} ${isSel?"bg-violet-50 border-l-2 border-l-violet-500":"hover:bg-gray-50"}`} style={!isSel&&!linked&&clsOn&&cmeta.border?{borderLeft:`2px solid ${cmeta.border}`}:(linked&&!isSel?{borderLeftStyle:"dashed"}:undefined)}>
-    <span className="w-4 shrink-0 inline-flex items-center justify-center" title={st==="done"?"All answered & accepted":st==="pending"?"In progress":"No questions"}>{st==="done"?<CheckCircle2 className="w-3.5 h-3.5 text-emerald-500"/>:st==="pending"?<Circle className="w-3 h-3 text-amber-500" fill="currentColor" strokeWidth={0}/>:<Circle className="w-3 h-3 text-gray-300"/>}</span>
-    <button onClick={()=>onSelectCard(card)} className="flex items-center gap-2 flex-1 min-w-0 text-left cursor-pointer"><FileText className={`w-3 h-3 shrink-0 ${linked?"text-violet-400":"text-gray-400"}`}/><span className={`text-[12px] truncate ${linked?"text-gray-500":"text-gray-800"}`}>{card.name}</span></button>
-    {clsOn&&cls.state!=="pass"&&<span className={`text-[8px] px-1.5 py-0.5 rounded border inline-flex items-center gap-0.5 shrink-0 ${cmeta.badge}`} title={`AI: ${cmeta.label}`}>{cls.state==="review"?<AlertTriangle className="w-2.5 h-2.5"/>:cls.state==="newmod"?<Sparkles className="w-2.5 h-2.5"/>:<Inbox className="w-2.5 h-2.5"/>}{cmeta.label}</span>}
-    {linked&&primaryMod&&<span className="text-[8px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-600 border border-violet-200 inline-flex items-center gap-0.5 shrink-0" title={`Also in ${primaryMod}`}>{primaryMod}</span>}
+  // CS-01 — non-Pass rows in Prepare get a full-row tint + 3px left border so they jump out when scanning.
+  const showSignal = clsOn && !isSel && !linked && cls.state!=="pass";
+  // CS-02 — the other modules this card belongs to (bidirectional: home + linkedIn, minus the current module).
+  const membership = [...new Set([primaryModuleOf?primaryModuleOf(card):null, ...(card.linkedIn||[])].filter(m=>m&&m!=="__uncat__"))];
+  const alsoIn = membership.filter(m=>m!==moduleName);
+  return <div className={`group/row relative w-full flex items-center gap-2 pr-3 py-2 border-t border-gray-50 ${linked?"pl-7 border-l-2 border-l-violet-300":"pl-10"} ${isSel?"bg-violet-50 border-l-2 border-l-violet-500":showSignal?cmeta.rowBg:"hover:bg-gray-50"}`} style={showSignal?{borderLeft:cmeta.rowBorder}:(linked&&!isSel?{borderLeftStyle:"dashed"}:undefined)}>
+    <span className="w-4 shrink-0 inline-flex items-center justify-center" title={clsOn?`AI: ${cmeta.label}`:st==="done"?"All answered & accepted":st==="pending"?"In progress":"No questions"}>{clsOn?(cls.state==="uncat"?<span className="w-2 h-2 rounded-full border border-dashed border-gray-400 inline-block"/>:cmeta.dotColor?<span className="w-2 h-2 rounded-full inline-block" style={{background:cmeta.dotColor}}/>:<Circle className="w-3 h-3 text-gray-300"/>):st==="done"?<CheckCircle2 className="w-3.5 h-3.5 text-emerald-500"/>:st==="pending"?<Circle className="w-3 h-3 text-amber-500" fill="currentColor" strokeWidth={0}/>:<Circle className="w-3 h-3 text-gray-300"/>}</span>
+    <button onClick={()=>onSelectCard(card)} className="flex items-start gap-2 flex-1 min-w-0 text-left cursor-pointer"><FileText className={`w-3 h-3 shrink-0 mt-0.5 ${linked?"text-violet-400":"text-gray-400"}`}/><div className="min-w-0"><span className={`text-[12px] truncate block ${linked?"text-gray-500":"text-gray-800"}`}>{card.name}</span>{alsoIn.length>0&&<span className="text-[10px] text-indigo-500 block truncate">{"Also in: "}{alsoIn.join(", ")}</span>}</div></button>
+    {clsOn&&cls.state!=="pass"&&<span className={`text-[11px] px-2 py-0.5 rounded border inline-flex items-center gap-1 shrink-0 ${cmeta.badge}`} title={`AI: ${cmeta.label}`}>{cls.state==="review"?<AlertTriangle className="w-3 h-3"/>:cls.state==="newmod"?<Sparkles className="w-3 h-3"/>:<Inbox className="w-3 h-3"/>}{cmeta.label}</span>}
     {!linked&&flags.map(f=><span key={f} className="group/flag text-[8px] px-1 py-0.5 rounded bg-orange-50 text-orange-700 border border-orange-400 inline-flex items-center gap-0.5 shrink-0" title="Detects — mechanical metadata check"><Zap className="w-2 h-2"/>{f}{canManage&&<button onClick={e=>{e.stopPropagation();onDismissFlag(`${card.name}::${f}`);}} className="opacity-0 group-hover/flag:opacity-100 hover:text-rose-600 cursor-pointer text-[12px] leading-none ml-0.5" title="Dismiss">{"×"}</button>}</span>)}
     {!linked&&dismissed.map(f=><span key={`d-${f}`} className="text-[8px] px-1 py-0.5 rounded bg-gray-50 text-gray-400 border border-gray-200 inline-flex items-center gap-0.5 shrink-0 opacity-60" title="Dismissed detect"><Zap className="w-2 h-2"/><span className="line-through">{f}</span>{canManage&&onRestoreFlag&&<button onClick={e=>{e.stopPropagation();onRestoreFlag(`${card.name}::${f}`);}} className="text-violet-500 hover:text-violet-700 cursor-pointer ml-0.5" title="Restore this detect">Restore</button>}</span>)}
     {!clsOn&&flags.length===0&&manualQ>0&&<span className="text-[8px] px-1 py-0.5 rounded bg-violet-50 text-violet-600 shrink-0">{manualQ}Q</span>}
@@ -760,7 +778,7 @@ function ModuleSection({ mod, role, isCapture, isDeliver, isComplete, canEditQs,
   const readOnly = isDeliver;
   const totalQs = prog.total + addedQs.length; // CR-04 — total = manual card Q + added Q (matches accepted + waiting)
   const cardCount = primaryCards.length + linkedCards.length;
-  const cardCommon = { showProgress, canManage, dismissedFlags, onDismissFlag, onRestoreFlag, primaryModuleOf, selectedCard, onSelectCard, clsFilter, clsOn };
+  const cardCommon = { showProgress, canManage, dismissedFlags, onDismissFlag, onRestoreFlag, primaryModuleOf, selectedCard, onSelectCard, clsFilter, clsOn, moduleName: mod.name };
   const handleModAsk = () => { if(modInput.trim()){ onAddModQ(modInput, mod.name); setModInput(""); setShowModQ(false); } };
   const handleRename = () => { if(renameInput.trim()){ setDisplayName(renameInput.trim()); setRenaming(false); } };
   // R6-02 — bulk-op candidates across this module's cards (Manager-only). Satisfy excludes "needs more".
