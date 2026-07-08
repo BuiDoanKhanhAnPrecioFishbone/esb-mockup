@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Search, Sparkles, Layers, MessageCircle } from "lucide-react";
+import { SESSION } from "@/lib/data";
 
 /* All Sessions registry (CL-123) — filterable list of all sessions.
    Aligned with redesigned dashboard (MV-04): inline knowledge metrics,
@@ -18,7 +19,7 @@ function getPhase(sid) { return PHASES.find(p => p.subs.some(s => s.id === sid))
 function getSub(sid) { for (const p of PHASES) { const s = p.subs.find(x => x.id === sid); if (s) return s; } return null; }
 
 const ALL_SESSIONS = [
-  { id: "minh-le", name: "Minh Lê", role: "Senior Backend Engineer", dept: "Engineering", initials: "ML", subStageId: 5, status: "active", daysLeft: 22, gapsResolved: "4/6", answered: "9/14", createdAt: "Jun 4, 2026" },
+  { id: "minh-le", name: "Minh Lê", role: "Senior Backend Engineer", dept: "Engineering", initials: "ML", subStageId: 5, status: "active", daysLeft: SESSION.daysLeft, gapsResolved: `${SESSION.gapsAddressed}/${SESSION.gaps}`, answered: `${SESSION.answered}/${SESSION.questions}`, createdAt: "Jun 4, 2026" },
   { id: "thanh-duc", name: "Thanh Đức", role: "DevOps Engineer", dept: "Engineering", initials: "TĐ", subStageId: 8, status: "completed", gapsResolved: "5/5", answered: "11/11", createdAt: "Feb 20, 2026", completedAt: "Mar 12, 2026" },
   { id: "anh-thu", name: "Anh Thư", role: "Product Designer", dept: "Design", initials: "AT", subStageId: 8, status: "completed", gapsResolved: "6/6", answered: "38/38", createdAt: "May 15, 2026", completedAt: "Jun 1, 2026" },
 ];
