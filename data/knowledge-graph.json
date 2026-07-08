@@ -1,0 +1,34 @@
+{
+  "_comment": "Consumer-plane KG copilot content. Nodes/edges are DERIVED from modules.json (lib/data.ts KG_NODES/KG_EDGES); this file only holds the AI copilot narrative, which references node ids (module ids + card ids).",
+  "chips": [
+    { "label": "Show risks", "response": "6 knowledge gaps remain across 3 modules — Payment Service (3), CI/CD Pipeline (1), and Monitoring & Alerts (2). The failover procedure and the incident-response runbook are the highest priority; both were only partially captured during Minh Lê's handover.", "focus": ["payment", "cicd", "monitoring", "pay-01", "mon-01"] },
+    { "label": "Payment flow", "response": "Payment Service holds 16 entries — Kafka retry with DLQ routing, Stripe webhook verification, refund reconciliation, PCI scope, and the tokenized payment vault. Kafka retry configuration also feeds the CI/CD pipeline.", "focus": ["payment", "pay-01", "pay-03", "pay-04", "pay-06"] },
+    { "label": "Deploy pipeline", "response": "Deployment runs through CI/CD Pipeline (14 entries): GitHub Actions, blue-green cutover, canary gates, and a 7-step rollback runbook. GitHub Actions and Secrets injection also link into Infrastructure as Code.", "focus": ["cicd", "cicd-02", "cicd-04", "cicd-10", "cicd-06"] },
+    { "label": "Cross-module links", "response": "Four entries span two modules: Kafka retry configuration (Payment ↔ CI/CD), Datadog dashboard (Monitoring ↔ Payment), and GitHub Actions plus Secrets injection (CI/CD ↔ Infrastructure).", "focus": ["pay-01", "mon-01", "cicd-02", "cicd-06", "payment", "cicd"] },
+    { "label": "Infrastructure", "response": "Infrastructure as Code holds 10 entries. Terraform modules and Secrets management were both proposed as new modules during classification.", "focus": ["infra", "infra-01", "infra-03"] }
+  ],
+  "prompts": {
+    "minh-le": { "contributor": "Minh", "input": "Show me Minh Lê's contributions", "response": "Minh Lê contributed 64 entries across 5 modules (Payment Service, CI/CD Pipeline, Shared Libraries, Monitoring & Alerts, Infrastructure as Code). 6 knowledge gaps remain across 3 modules." }
+  },
+  "seedThreads": [
+    { "id": "t-risks", "title": "Knowledge gaps & risks", "ts": "2h", "messages": [
+      { "role": "user", "text": "Where are the biggest knowledge risks?" },
+      { "role": "ai", "text": "6 knowledge gaps remain across 3 modules. The failover procedure (Payment Service) and the incident-response runbook (Monitoring & Alerts) are the highest priority — both were only partially captured during Minh Lê's handover.", "focus": ["payment", "monitoring", "cicd", "pay-01", "mon-01"],
+        "chips": [ { "icon": "Eye", "label": "Show the gap modules", "focus": ["payment", "cicd", "monitoring"] }, { "icon": "Users", "label": "Who contributed?", "response": "All entries trace back to Minh Lê's handover (Jun 2026)." }, { "icon": "Crosshair", "label": "Zoom to Payment Service", "focus": ["payment"] } ] }
+    ] },
+    { "id": "t-deploy", "title": "Deploy pipeline walkthrough", "ts": "Yesterday", "messages": [
+      { "role": "user", "text": "How does deployment work end to end?" },
+      { "role": "ai", "text": "Deployment flows through GitHub Actions into blue-green cutover on AKS, with a 7-step rollback runbook. GitHub Actions and Secrets injection also link into Infrastructure as Code.", "focus": ["cicd", "cicd-02", "cicd-04", "cicd-10", "cicd-06"],
+        "chips": [ { "icon": "Network", "label": "Connected entries", "focus": ["cicd-02", "cicd-06", "cicd-10"] }, { "icon": "Search", "label": "Rollback runbook", "focus": ["cicd-10"] } ] }
+    ] },
+    { "id": "t-payment", "title": "Payment service overview", "ts": "3d", "messages": [
+      { "role": "user", "text": "Walk me through the payment service." },
+      { "role": "ai", "text": "Payment Service spans 16 entries: Kafka retry with DLQ routing, Stripe webhook verification, refund reconciliation, PCI scope, and the tokenized payment vault. Kafka retry configuration also feeds CI/CD.", "focus": ["payment", "pay-01", "pay-03", "pay-04", "pay-06", "pay-11"],
+        "chips": [ { "icon": "Eye", "label": "Show the gaps", "focus": ["payment"] }, { "icon": "Network", "label": "Cross-module link", "focus": ["pay-01", "cicd"] }, { "icon": "Search", "label": "Kafka retry details", "focus": ["pay-01"] } ] }
+    ] }
+  ],
+  "reported": [
+    { "id": "pay-13", "text": "Distributed lock fix shipped in v2.4 — this entry still describes the pre-fix behaviour.", "time": "09:14" },
+    { "id": "cicd-01", "text": "Rollback runbook link is stale — points to the old wiki.", "time": "08:42" }
+  ]
+}

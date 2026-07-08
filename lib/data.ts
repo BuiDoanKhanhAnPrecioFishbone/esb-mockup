@@ -12,6 +12,7 @@ import sessionJson from "../data/session.json";
 import coworkersJson from "../data/coworkers.json";
 import modulesJson from "../data/modules.json";
 import uncategorizedJson from "../data/uncategorized.json";
+import kgJson from "../data/knowledge-graph.json";
 
 export interface Board { id: string; name: string }
 export interface Coworker {
@@ -224,4 +225,31 @@ export const SEED_GQ: any[] = ((sessionMeta as any).generalQuestions ?? []).map(
   if (g.answer) { o.answer = g.answer; o.answeredBy = g.answeredBy; o.answeredAt = g.answeredAt; }
   if (g.accepted) { o.satisfiedBy = g.acceptedBy; o.satisfiedAt = g.acceptedAt; }
   return o;
+});
+
+// ── Consumer-plane Knowledge Graph — DERIVED from the same modules.json ────────
+// The committed graph regenerates from the session: dept → 5 module nodes → 64 entry
+// nodes (the cards), with cross edges from linkedModuleIds. So the KG's module/entry
+// counts match the capture side exactly. Only the copilot narrative is authored, in
+// data/knowledge-graph.json (its focus arrays reference these module ids + card ids).
+function kgModuleSummary(m: Module): string {
+  return m.cards.slice(0, 4).map((c) => c.name).join(", ");
+}
+export const KG_NODES: any[] = [
+  { id: "minh-le", label: SESSION.name, type: "dept", depth: 0, summary: `${SESSION.name} · ${SESSION.role}\nOffboarding handover · Jun 2026\n${SESSION.modules} knowledge modules · ${SESSION.entries} entries` },
+  ...modules.map((m) => ({ id: m.id, label: m.name, type: "module", depth: 1, parent: "minh-le", entries: m.cards.length, verified: m.cards.length, flagged: 0, gaps: 0, summary: kgModuleSummary(m), provenance: [{ name: SESSION.name, date: "Jun 2026", count: m.cards.length }] })),
+  ...modules.flatMap((m) => m.cards.map((c) => ({ id: c.id, label: c.name, type: "entry", depth: 2, parent: m.id, status: "verified", summary: c.desc ?? c.name }))),
+];
+export const KG_EDGES: any[] = [
+  ...modules.map((m) => ({ from: "minh-le", to: m.id, type: "hierarchy" })),
+  ...modules.flatMap((m) => m.cards.map((c) => ({ from: m.id, to: c.id, type: "hierarchy" }))),
+  ...modules.flatMap((m) => m.cards.flatMap((c) => (c.linkedModuleIds ?? []).map((lm) => ({ from: c.id, to: lm, type: "cross", label: "also in" })))),
+];
+export const KG_CHIPS = (kgJson as any).chips as any[];
+export const KG_SEED_THREADS = (kgJson as any).seedThreads as any[];
+export const KG_REPORTED = (kgJson as any).reported as any[];
+export const KG_PROMPTS: Record<string, any> = {};
+Object.entries((kgJson as any).prompts).forEach(([k, v]) => {
+  const cfg = v as any;
+  KG_PROMPTS[k] = { input: cfg.input, response: cfg.response, filter: (n: any) => n.provenance?.some((p: any) => p.name.includes(cfg.contributor)) };
 });

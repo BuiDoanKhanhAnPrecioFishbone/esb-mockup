@@ -2,85 +2,16 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { Send, Sparkles, X, ChevronRight, Flag, BarChart3, CheckCircle2, XCircle, AlertTriangle, Pencil, Check, Plus, PanelLeftClose, PanelLeftOpen, Eye, Network, Users, Crosshair, Search } from "lucide-react";
+import { KG_NODES as NODES, KG_EDGES as EDGES, KG_CHIPS as CHIPS, KG_PROMPTS as PROMPTS, KG_SEED_THREADS as SEED_THREADS, KG_REPORTED } from "@/lib/data";
 
 /* ART-EEP Consumer Plane — Knowledge Graph Explorer
    Post-commit view: shows only committed entries, which are NEVER gaps (§8.1c).
    Every node is purple (knowledge) or gray (structural) — no yellow gap nodes, no Filter control.
    Gaps live inside active sessions only, not in the committed graph. */
 
-const NODES = [
-  { id:"eng", label:"Minh Lê", type:"dept", depth:0, summary:"Minh Lê · Senior Backend Engineer\nOffboarding handover · Jun 2026\n6 knowledge modules · 38 entries" },
-  { id:"payment", label:"Payment Processing", type:"module", depth:1, parent:"eng", entries:10, verified:10, flagged:1, gaps:0, summary:"Covers Kafka pipeline, Stripe integration,\nwebhook verification, PCI compliance", provenance:[{name:"Minh L\u00ea",date:"Jun 2026",count:10}] },
-  { id:"auth", label:"Auth & Identity", type:"module", depth:1, parent:"eng", entries:8, verified:8, flagged:1, gaps:0, summary:"OAuth2 PKCE, Azure AD SSO,\nJWT rotation, RBAC matrix", provenance:[{name:"Minh L\u00ea",date:"Jun 2026",count:8}] },
-  { id:"database", label:"Database & Migrations", type:"module", depth:1, parent:"eng", entries:7, verified:7, flagged:0, gaps:0, summary:"Cosmos DB partitioning, Flyway pipeline,\nmanual migration procedures", provenance:[{name:"Minh L\u00ea",date:"Jun 2026",count:7}] },
-  { id:"cicd", label:"CI/CD & Deployments", type:"module", depth:1, parent:"eng", entries:6, verified:6, flagged:0, gaps:0, summary:"GitHub Actions, Helm charts,\nsecrets injection, rollback runbook", provenance:[{name:"Minh L\u00ea",date:"Jun 2026",count:6}] },
-  { id:"monitor", label:"Monitoring", type:"module", depth:1, parent:"eng", entries:3, verified:3, flagged:0, gaps:0, summary:"Grafana dashboards, PagerDuty alerts,\nSLA definitions, escalation paths", provenance:[{name:"Minh L\u00ea",date:"Jun 2026",count:3}] },
-  { id:"ratelimit", label:"Rate Limiting & API", type:"module", depth:1, parent:"eng", entries:4, verified:4, flagged:0, gaps:0, summary:"Token bucket, API versioning,\nsunset policy, tenant configuration", provenance:[{name:"Minh L\u00ea",date:"Jun 2026",count:4}] },
-  { id:"e-kafka", label:"Kafka Event Pipeline", type:"entry", depth:2, parent:"payment", status:"verified", summary:"Async payment processing via Kafka\nRetry: 3x exponential backoff then DLQ\nIdempotency: payment_id + timestamp hash\n1,840 tokens" },
-  { id:"e-stripe-wh", label:"Stripe Webhook Verification", type:"entry", depth:2, parent:"payment", status:"verified", summary:"HMAC-SHA256 signature verification\nReplay protection: 5-min timestamp window\n680 tokens" },
-  { id:"e-race", label:"Payment Retry Race Condition", type:"entry", depth:2, parent:"payment", status:"verified", summary:"P2 incident 2026-05-15, 23 customers\nRoot cause: missing distributed lock\n920 tokens" },
-  { id:"e-pci", label:"PCI Compliance Scope", type:"entry", depth:2, parent:"payment", status:"verified", summary:"PCI compliance scope: SAQ-A, tokenized card data\nNo cardholder data stored in our systems\n640 tokens" },
-  { id:"e-stripe-pin", label:"Stripe API Pinning", type:"entry", depth:2, parent:"payment", status:"verified", summary:"Pinned to 2024-12-18, never auto-upgrade\nSandbox then staging then prod\n520 tokens" },
-  { id:"e-oauth", label:"OAuth2 PKCE Flow", type:"entry", depth:2, parent:"auth", status:"verified", summary:"Mobile clients via React Native\nS256 challenge, secure keychain storage\n7-day sliding refresh window\n1,420 tokens" },
-  { id:"e-saml", label:"Azure AD SAML SSO", type:"entry", depth:2, parent:"auth", status:"verified", summary:"Enterprise SSO via SAML 2.0\nSP-initiated only, IdP blocked\nTenant metadata in Key Vault\n890 tokens" },
-  { id:"e-jwt", label:"JWT Key Rotation", type:"entry", depth:2, parent:"auth", status:"verified", summary:"RSA-256 via Key Vault auto-rotation\n90-day cycle, 7-day grace period\nEmergency procedure documented in runbook\n1,100 tokens" },
-  { id:"e-rbac", label:"RBAC Permission Matrix", type:"entry", depth:2, parent:"auth", status:"verified", summary:"4 roles x 12 permissions\nEntra ID group mapping\nQ2 audit complete, matrix current\n760 tokens" },
-  { id:"e-cosmos", label:"Cosmos DB Partitioning", type:"entry", depth:2, parent:"database", status:"verified", summary:"Partition key: /orgId\nCross-partition queries blocked at SDK\nRU: 4,000/s autoscale to 8,000/s\n1,650 tokens" },
-  { id:"e-migv8", label:"Migration v8 to v9", type:"entry", depth:2, parent:"database", status:"verified", summary:"Manual ALTER TABLE on legacy SQL mirror\nCustomer DBA restricts DDL automation\nContradiction with Flyway card resolved\n540 tokens" },
-  { id:"e-flyway", label:"Flyway Migration Pipeline", type:"entry", depth:2, parent:"database", status:"verified", summary:"V{version}__{desc}.sql naming\nApplied on deploy via GitHub Actions\nRollback: manual scripts in /db/rollback/\n780 tokens" },
-  { id:"e-gha", label:"GitHub Actions Matrix", type:"entry", depth:2, parent:"cicd", status:"verified", summary:"4 workflows: lint, test, build, deploy\nNode 18/20 x Ubuntu, 8min avg\nCoverage gate: 85% minimum\n1,280 tokens" },
-  { id:"e-helm", label:"Helm Rollback Procedure", type:"entry", depth:2, parent:"cicd", status:"verified", summary:"7-step procedure (not just helm rollback)\nCheck init container, run rollback SQL,\nthen helm rollback, verify, post to Slack\n960 tokens" },
-  { id:"e-grafana", label:"Grafana Dashboard Suite", type:"entry", depth:2, parent:"monitor", status:"verified", summary:"6 dashboards: SLA, latency, errors,\nthroughput, cost, dependencies\nBacked by Azure Monitor\n1,580 tokens" },
-  { id:"e-sla", label:"SLA & Escalation Paths", type:"entry", depth:2, parent:"monitor", status:"verified", summary:"99.9% uptime target\nP1: 15min response, 4hr resolve\nEscalation: on-call then Ha Vy then CTO\n640 tokens" },
-  { id:"e-bucket", label:"Token Bucket Rate Limiter", type:"entry", depth:2, parent:"ratelimit", status:"verified", summary:"Per-tenant in Redis, 1,000 req/min\nBurst: 1.5x for 10s\nAdmin API for mid-contract changes\n1,340 tokens" },
-  { id:"e-sunset", label:"API Versioning & Sunset", type:"entry", depth:2, parent:"ratelimit", status:"verified", summary:"URL-based: /v1/, /v2/\nSunset header per RFC 8594\nv1 EOL: 2026-09-01\n480 tokens" },
-  { id:"s-keyvault", label:"Azure Key Vault", type:"system", depth:2, summary:"Secrets management\nOAuth tokens, API keys, tenant metadata\nCSI driver for Helm injection" },
-  { id:"s-pagerduty", label:"PagerDuty", type:"system", depth:2, summary:"Alerting service\nIntegrated with Grafana alerting rules\nP1/P2/P3 thresholds configured" },
-];
-
-const EDGES = [
-  {from:"eng",to:"payment",type:"hierarchy"},{from:"eng",to:"auth",type:"hierarchy"},{from:"eng",to:"database",type:"hierarchy"},{from:"eng",to:"cicd",type:"hierarchy"},{from:"eng",to:"monitor",type:"hierarchy"},{from:"eng",to:"ratelimit",type:"hierarchy"},
-  {from:"payment",to:"e-kafka",type:"hierarchy"},{from:"payment",to:"e-stripe-wh",type:"hierarchy"},{from:"payment",to:"e-race",type:"hierarchy"},{from:"payment",to:"e-pci",type:"hierarchy"},{from:"payment",to:"e-stripe-pin",type:"hierarchy"},
-  {from:"auth",to:"e-oauth",type:"hierarchy"},{from:"auth",to:"e-saml",type:"hierarchy"},{from:"auth",to:"e-jwt",type:"hierarchy"},{from:"auth",to:"e-rbac",type:"hierarchy"},
-  {from:"database",to:"e-cosmos",type:"hierarchy"},{from:"database",to:"e-migv8",type:"hierarchy"},{from:"database",to:"e-flyway",type:"hierarchy"},
-  {from:"cicd",to:"e-gha",type:"hierarchy"},{from:"cicd",to:"e-helm",type:"hierarchy"},
-  {from:"monitor",to:"e-grafana",type:"hierarchy"},{from:"monitor",to:"e-sla",type:"hierarchy"},
-  {from:"ratelimit",to:"e-bucket",type:"hierarchy"},{from:"ratelimit",to:"e-sunset",type:"hierarchy"},
-  {from:"e-oauth",to:"e-bucket",type:"cross",label:"rate-limited by"},{from:"e-rbac",to:"e-saml",type:"cross",label:"authenticated via"},{from:"e-gha",to:"e-helm",type:"cross",label:"deploys via"},{from:"e-helm",to:"e-flyway",type:"cross",label:"coordinates with"},{from:"e-helm",to:"e-migv8",type:"cross",label:"rollback includes"},{from:"e-cosmos",to:"e-migv8",type:"cross",label:"schema managed by"},{from:"e-grafana",to:"e-sla",type:"cross",label:"enforces"},{from:"e-kafka",to:"e-grafana",type:"cross",label:"monitored by"},{from:"e-stripe-wh",to:"e-bucket",type:"cross",label:"rate-limited by"},{from:"e-race",to:"e-kafka",type:"cross",label:"caused by"},{from:"e-jwt",to:"s-keyvault",type:"cross",label:"keys stored in"},{from:"e-saml",to:"s-keyvault",type:"cross",label:"metadata in"},{from:"e-helm",to:"s-keyvault",type:"cross",label:"secrets via CSI"},{from:"e-grafana",to:"s-pagerduty",type:"cross",label:"alerts via"},{from:"e-sla",to:"s-pagerduty",type:"cross",label:"escalates via"},
-];
-
-const CHIPS = [
-  {label:"Show risks",response:"Found 5 knowledge gaps across 3 modules. JWT Key Rotation and Migration v8-v9 are the highest priority \u2014 both contain tacit knowledge that was partially captured during Minh Le's handover.",focus:["e-jwt","e-migv8","e-pci","e-rbac","e-stripe-pin"]},
-  {label:"Critical paths",response:"3 critical operational procedures identified: Helm Rollback (7 manual steps), SLA Escalation (on-call chain), and Kafka DLQ monitoring. All verified during the last handover.",focus:["e-helm","e-sla","e-kafka","e-grafana"]},
-  {label:"Auth flow",response:"Authentication spans 4 entries: OAuth2 PKCE for mobile, Azure AD SAML for enterprise SSO, JWT rotation for token management, and RBAC for authorization. JWT rotation has an unresolved gap \u2014 the emergency procedure.",focus:["e-oauth","e-saml","e-jwt","e-rbac","auth"]},
-  {label:"Deploy pipeline",response:"Deployment flows through GitHub Actions (4 workflows, 8min avg) into Helm charts on AKS. The rollback procedure was tacit knowledge from Minh Le \u2014 now documented as a 7-step runbook.",focus:["e-gha","e-helm","e-flyway","cicd"]},
-  {label:"Incident response",response:"Incident response starts at Grafana dashboards (6 panels), routes through PagerDuty (P1/P2/P3 thresholds), and follows the SLA escalation path: on-call \u2192 Ha Vy \u2192 CTO. The payment retry race condition is the most recent documented incident.",focus:["e-sla","e-grafana","s-pagerduty","e-race","monitor"]},
-];
-
-const PROMPTS = {
-  "minh-le": { filter: n => n.provenance?.some(p => p.name.includes("Minh")), input: "Show me Minh L\u00ea's contributions", response: "Minh L\u00ea contributed 38 entries across 6 modules (Payment, Auth, Database, CI/CD, Monitoring, Rate Limiting). 5 knowledge gaps remain across 3 modules." },
-};
-
 /* Recommendation chips: each has an icon, a label, and either a focus array (graph highlight)
    and/or a canned AI response. The chatbot never creates new nodes — focus only highlights existing ones. */
 const RECO_ICONS = { Eye, Network, Users, Crosshair, Search, Sparkles };
-const SEED_THREADS = [
-  { id:"t-risks", title:"Knowledge gaps & risks", ts:"2h", messages:[
-    { role:"user", text:"Where are the biggest knowledge risks?" },
-    { role:"ai", text:"Found 5 knowledge gaps across 3 modules. JWT Key Rotation and Migration v8–v9 are the highest priority — both contain tacit knowledge that was only partially captured during Minh Lê's handover.", focus:["e-jwt","e-migv8","e-pci","e-rbac","e-stripe-pin"],
-      chips:[ {icon:"Eye",label:"Show the gaps",focus:["e-jwt","e-migv8","e-pci","e-rbac"]}, {icon:"Users",label:"Who contributed?",response:"All 5 gap entries trace back to Minh Lê's handover (Jun 2026)."}, {icon:"Crosshair",label:"Zoom to JWT rotation",focus:["e-jwt","auth"]} ] },
-  ] },
-  { id:"t-deploy", title:"Deploy pipeline walkthrough", ts:"Yesterday", messages:[
-    { role:"user", text:"How does deployment work end to end?" },
-    { role:"ai", text:"Deployment flows through GitHub Actions (4 workflows, 8min avg) into Helm charts on AKS. The rollback procedure was tacit knowledge from Minh Lê — now documented as a 7-step runbook.", focus:["e-gha","e-helm","e-flyway","cicd"],
-      chips:[ {icon:"Network",label:"Connected entries",focus:["e-gha","e-helm","e-flyway"]}, {icon:"Search",label:"Helm rollback details",focus:["e-helm"]} ] },
-  ] },
-  { id:"t-auth", title:"Auth & identity overview", ts:"3d", messages:[
-    { role:"user", text:"Walk me through the auth flow." },
-    { role:"ai", text:"Authentication spans 4 entries: OAuth2 PKCE for mobile, Azure AD SAML for enterprise SSO, JWT rotation for tokens, and RBAC for authorization. JWT rotation has an unresolved gap — the emergency procedure.", focus:["e-oauth","e-saml","e-jwt","e-rbac","auth"],
-      chips:[ {icon:"Eye",label:"Show the gap",focus:["e-jwt"]}, {icon:"Network",label:"Connected entries",focus:["e-oauth","e-saml","e-jwt","e-rbac"]}, {icon:"Search",label:"SAML SSO details",focus:["e-saml"]} ] },
-  ] },
-];
 
 /* §10 — interactive node references in AI chat.
    Match node LABELS in plain message text, longest-first to avoid partial overlaps.
@@ -159,10 +90,7 @@ export default function KnowledgeGraphExplorer({embedded=false}={}){
   const [reportingNode,setReportingNode]=useState(null);const [reportText,setReportText]=useState("");
   /* MV-01 — "Flagged" === "Reported": entries reported via the issue flow render rose and await Manager review.
      Seed 2 nodes as already flagged so the rose state is visible on load. */
-  const [reported,setReported]=useState(()=>new Map([
-    ["e-race",{text:"Distributed lock fix shipped in v2.4 — this entry still describes the pre-fix behaviour.",time:"09:14",seeded:true}],
-    ["e-jwt",{text:"Emergency rotation runbook link is stale — points to the old wiki.",time:"08:42",seeded:true}],
-  ]));
+  const [reported,setReported]=useState(()=>new Map(KG_REPORTED.map(r=>[r.id,{text:r.text,time:r.time,seeded:true}])));
   const [fStatus,setFStatus]=useState("all");const [fContrib,setFContrib]=useState("all");const [fGaps,setFGaps]=useState("all");
   const hasActiveFilter=fStatus!=="all"||fContrib!=="all"||fGaps!=="all";
   const [resolvedGaps,setResolvedGaps]=useState(new Set());
@@ -216,7 +144,7 @@ export default function KnowledgeGraphExplorer({embedded=false}={}){
   // Recommendation chip inside the chat thread.
   const onRecoChip=useCallback((chip)=>{const ai={text:chip.response||`Highlighting ${chip.label.toLowerCase()} in the graph.`,focus:chip.focus,chips:chip.followups};pushToThread(chip.label,ai);},[pushToThread]);
   // Free-text send: match a canned CHIPS/PROMPTS response by keyword, else generic.
-  const onSendChat=useCallback(()=>{const q=chatInput.trim();if(!q)return;const ql=q.toLowerCase();let match=CHIPS.find(c=>ql.includes(c.label.toLowerCase().split(" ")[0]));let ai;if(match){ai={text:match.response,focus:match.focus};}else{const node=NODES.find(n=>ql.includes(n.label.toLowerCase().slice(0,8)));if(node){const rel=NODES.filter(n=>n.parent===node.id).map(n=>n.id);ai={text:`${node.label}: ${(node.summary||"").split("\n")[0]}`,focus:rel.length?rel:[node.id]};}else{ai={text:"I searched Minh Lê’s knowledge graph. Try asking about a specific module — Payment, Auth, Database, CI/CD — or about knowledge gaps and risks.",focus:null};}}pushToThread(q,ai);setChatInput("");},[chatInput,pushToThread]);
+  const onSendChat=useCallback(()=>{const q=chatInput.trim();if(!q)return;const ql=q.toLowerCase();let match=CHIPS.find(c=>ql.includes(c.label.toLowerCase().split(" ")[0]));let ai;if(match){ai={text:match.response,focus:match.focus};}else{const node=NODES.find(n=>ql.includes(n.label.toLowerCase().slice(0,8)));if(node){const rel=NODES.filter(n=>n.parent===node.id).map(n=>n.id);ai={text:`${node.label}: ${(node.summary||"").split("\n")[0]}`,focus:rel.length?rel:[node.id]};}else{ai={text:"I searched Minh Lê’s knowledge graph. Try asking about a specific module — Payment Service, CI/CD Pipeline, Shared Libraries, Monitoring — or about knowledge gaps and risks.",focus:null};}}pushToThread(q,ai);setChatInput("");},[chatInput,pushToThread]);
   // Create / select / rename threads.
   const onNewChat=useCallback(()=>{const id="t-"+Date.now();setThreads(prev=>[{id,title:"New chat",ts:"now",messages:[]},...prev]);setActiveThread(id);setChatFocus(null);setChatResponse("");},[]);
   const onRenameThread=(id)=>{const t=threads.find(x=>x.id===id);if(t&&renameInput.trim()){setThreads(prev=>prev.map(x=>x.id===id?{...x,title:renameInput.trim()}:x));}setRenamingThread(null);};
