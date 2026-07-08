@@ -1,0 +1,154 @@
+[
+  {
+    "id": "payment",
+    "name": "Payment Service",
+    "boardId": "b-backend",
+    "gaps": [
+      { "id": "gap-pay-1", "description": "No disaster recovery or failover procedures documented", "aiQuestion": "What is the failover procedure if the primary payment processor goes down?", "addressed": true },
+      { "id": "gap-pay-2", "description": "No error escalation process for failed payments", "aiQuestion": "Who is paged when a payment batch fails, and what is the escalation path?", "addressed": true },
+      { "id": "gap-pay-3", "description": "Missing SLA definitions for payment latency", "aiQuestion": "What are the documented latency SLAs for payment processing?", "addressed": false }
+    ],
+    "cards": [
+      { "id": "pay-01", "name": "Kafka retry configuration", "desc": "DLQ routing, backoff strategy, poison message handling. Max 5 retries.", "linkedModuleIds": ["cicd"],
+        "classification": { "state": "pass", "confidence": 96 },
+        "checklist": [{ "text": "DLQ routing configured", "done": true }, { "text": "Backoff documented", "done": false }, { "text": "Alert on failures", "done": false }],
+        "questions": [
+          { "id": "q1", "text": "How does the retry logic handle poison messages?", "fromType": "ai", "answer": "After 5 retries with exponential backoff, messages route to the DLQ. Monitor via Datadog alert #4421.", "answeredBy": "Minh Lê", "answeredAt": "2h ago", "accepted": true, "acceptedBy": "Trần Hữu Nam", "acceptedAt": "30m", "file": { "name": "dlq-replay-runbook.pdf", "size": "12 KB" } },
+          { "id": "q2", "text": "Max retry count before DLQ routing?", "fromType": "ai", "answer": "Max 5, configurable per topic in kafka-config.yaml. Backoff: 2x from 500ms.", "answeredBy": "Minh Lê", "answeredAt": "1h ago", "accepted": false }
+        ] },
+      { "id": "pay-02", "name": "Payment gateway timeout", "desc": "Circuit breaker pattern, 30s timeout.",
+        "classification": { "state": "pass", "confidence": 93 },
+        "questions": [ { "id": "q3", "text": "What happens when gateway times out mid-transaction?", "fromType": "ai", "answer": "Circuit breaker trips after 30s and returns 503. The client retries with an idempotency key, so no double-charge.", "answeredBy": "Minh Lê", "answeredAt": "1h ago", "accepted": false } ] },
+      { "id": "pay-03", "name": "Stripe webhook handler", "desc": "Payment confirmations and refunds.",
+        "questions": [ { "id": "q4", "text": "Which webhook events are critical vs optional?", "fromType": "human", "authorId": "cw1", "answer": "Critical: payment_intent.succeeded, charge.refunded, invoice.payment_failed. Optional route to a batch queue.", "answeredBy": "Minh Lê", "answeredAt": "45m", "accepted": true, "acceptedBy": "Trần Hữu Nam", "acceptedAt": "20m" } ] },
+      { "id": "pay-04", "name": "Refund reconciliation", "desc": "Nightly Stripe-to-ledger reconciliation.",
+        "questions": [ { "id": "q5", "text": "How are partial refunds reconciled?", "fromType": "ai", "answer": "Matched nightly against the Stripe balance report; mismatches route to a manual queue owned by Finance.", "answeredBy": "Minh Lê", "answeredAt": "2h ago", "accepted": true, "acceptedBy": "Hà Vy", "acceptedAt": "1h" } ] },
+      { "id": "pay-05", "name": "Currency conversion", "desc": "ECB API rates, refreshed 04:00 UTC.", "checklist": [{ "text": "Fallback on API failure", "done": true }] },
+      { "id": "pay-06", "name": "PCI compliance scope", "desc": "SAQ-A, tokenized card data. No cardholder data stored." },
+      { "id": "pay-07", "name": "Idempotency key strategy", "desc": "payment_id + timestamp hash, 24h dedup window." },
+      { "id": "pay-08", "name": "3DS authentication flow", "desc": "SCA challenge and exemption handling." },
+      { "id": "pay-09", "name": "Chargeback handling", "desc": "Dispute lifecycle, evidence upload automation." },
+      { "id": "pay-10", "name": "Settlement batch job", "desc": "Nightly payout settlement to merchants." },
+      { "id": "pay-11", "name": "Payment method vault", "desc": "Tokenized card storage via network tokens.",
+        "questions": [ { "id": "q14", "text": "How are vault tokens rotated when a card is reissued?", "fromType": "human", "authorId": "cw2" } ] },
+      { "id": "pay-12", "name": "Fraud scoring hook", "desc": "Real-time risk scoring before capture." },
+      { "id": "pay-13", "name": "Dead letter queue replay", "desc": "DLQ replay runbook and tooling." },
+      { "id": "pay-14", "name": "Per-merchant rate limiting", "desc": "Token bucket per merchant tenant." },
+      { "id": "pay-15", "name": "Ledger double-entry model", "desc": "Immutable double-entry ledger." },
+      { "id": "pay-16", "name": "Payout schedule config", "desc": "Payout cadence per merchant agreement." }
+    ]
+  },
+  {
+    "id": "cicd",
+    "name": "CI/CD Pipeline",
+    "boardId": "b-gateway",
+    "gaps": [
+      { "id": "gap-cicd-1", "description": "Deployment described differently across modules", "aiQuestion": "Which deployment process is authoritative across services?", "addressed": true }
+    ],
+    "cards": [
+      { "id": "cicd-01", "name": "Atlas migration rollback", "desc": "Migration procedures and rollback.", "checklist": [], "gaps": ["Missing description"],
+        "questions": [ { "id": "q6", "text": "Rollback procedure for failed Atlas migrations?", "fromType": "human", "authorId": "manager", "answer": "Run /scripts/atlas-rollback.sh with migration ID. Snapshot before (7d expiry).", "answeredBy": "Minh Lê", "answeredAt": "4h ago", "accepted": true, "acceptedBy": "Hà Vy", "acceptedAt": "2h" } ] },
+      { "id": "cicd-02", "name": "GitHub Actions workflow", "desc": "lint to test to build to deploy. Node 18/20.", "linkedModuleIds": ["infra"], "checklist": [{ "text": "Staging automated", "done": true }, { "text": "Prod approval", "done": true }],
+        "questions": [ { "id": "q7", "text": "Runbook for nightly batch failures?", "fromType": "human", "authorId": "cw1", "answer": "Check Actions logs, rerun transient. 3x fails: check Datadog.", "answeredBy": "Minh Lê", "answeredAt": "3h ago", "accepted": true, "acceptedBy": "Trần Hữu Nam", "acceptedAt": "1h" } ] },
+      { "id": "cicd-03", "name": "Docker image caching", "desc": "Layer caching in GHCR." },
+      { "id": "cicd-04", "name": "Blue-green deploy strategy", "desc": "Zero-downtime cutover between environments.",
+        "classification": { "state": "review", "confidence": 44, "candidates": ["CI/CD Pipeline", "Infrastructure as Code"],
+          "chat": [
+            { "a": "M", "step": "CLASSIFY", "t": "CI/CD Pipeline at 44% — deploy cutover, traffic shifting. But it also configures AKS ingress." },
+            { "a": "G", "step": "CHALLENGE", "t": "44% is below the 80% bar, and the infra overlap makes the home ambiguous." },
+            { "a": "M", "step": "RECONSIDER", "t": "Likely CI/CD primary with an IaC link — but the split needs a human call." },
+            { "a": "G", "step": "FLAG", "t": "Flagging for Manager review — please confirm the module." }
+          ] } },
+      { "id": "cicd-05", "name": "Canary release gates", "desc": "Progressive rollout with metric gates." },
+      { "id": "cicd-06", "name": "Secrets injection", "desc": "CSI driver injecting Vault secrets at deploy.", "linkedModuleIds": ["infra"] },
+      { "id": "cicd-07", "name": "Build matrix", "desc": "Node 18/20 x Ubuntu, 8min avg." },
+      { "id": "cicd-08", "name": "Artifact registry (GHCR)", "desc": "Image storage and retention policy." },
+      { "id": "cicd-09", "name": "Deploy approval gates", "desc": "Production manual approval step." },
+      { "id": "cicd-10", "name": "Rollback runbook", "desc": "7-step production rollback procedure." },
+      { "id": "cicd-11", "name": "Nightly batch job", "desc": "Scheduled ETL and reconciliation." },
+      { "id": "cicd-12", "name": "Preview environments", "desc": "Per-PR ephemeral environments." },
+      { "id": "cicd-13", "name": "Changelog automation", "desc": "Conventional commits to changelog." },
+      { "id": "cicd-14", "name": "Release tagging", "desc": "SemVer tagging on release." }
+    ]
+  },
+  {
+    "id": "shared-libs",
+    "name": "Shared Libraries",
+    "boardId": "b-backend",
+    "gaps": [],
+    "cards": [
+      { "id": "shared-01", "name": "API key rotation", "desc": "90-day rotation via GitHub Action.", "files": [{ "name": "api-key-rotation.md", "size": "1.8 KB" }], "checklist": [{ "text": "Schedule documented", "done": true }, { "text": "Auto-rotation on", "done": true }],
+        "questions": [ { "id": "q8", "text": "Where is the rotation runbook?", "fromType": "ai", "answer": "Wiki: /security/api-key-rotation.md. Ping DevOps on failure.", "answeredBy": "Minh Lê", "answeredAt": "5h ago", "accepted": true, "acceptedBy": "Hà Vy", "acceptedAt": "4h" } ] },
+      { "id": "shared-02", "name": "Logging middleware", "desc": "Structured logging + PII redaction." },
+      { "id": "shared-03", "name": "Auth token validator", "desc": "JWT. RS256 + EdDSA.",
+        "questions": [ { "id": "q9", "text": "Token refresh strategy?", "fromType": "ai", "answer": "15-min access, 7-day refresh HTTP-only cookies. Failure to login.", "answeredBy": "Minh Lê", "answeredAt": "6h ago", "accepted": true, "acceptedBy": "Trần Hữu Nam", "acceptedAt": "5h" } ] },
+      { "id": "shared-04", "name": "HTTP client wrapper", "desc": "Timeouts, retries, tracing headers." },
+      { "id": "shared-05", "name": "Retry / backoff util", "desc": "Exponential backoff with jitter." },
+      { "id": "shared-06", "name": "Feature flag client", "desc": "LaunchDarkly wrapper with local fallback." },
+      { "id": "shared-07", "name": "Config loader", "desc": "Env + Vault config resolution." },
+      { "id": "shared-08", "name": "Error taxonomy", "desc": "Typed error codes and mapping." },
+      { "id": "shared-09", "name": "Tracing / OpenTelemetry", "desc": "Distributed tracing instrumentation." },
+      { "id": "shared-10", "name": "Rate limiter lib", "desc": "Shared Redis token-bucket limiter." },
+      { "id": "shared-11", "name": "Date / timezone util", "desc": "TZ-safe date handling." },
+      { "id": "shared-12", "name": "Validation schemas", "desc": "Zod request/response schemas." }
+    ]
+  },
+  {
+    "id": "monitoring",
+    "name": "Monitoring & Alerts",
+    "boardId": "b-platform",
+    "gaps": [
+      { "id": "gap-mon-1", "description": "No alert routing documented", "aiQuestion": "Which alerts page which on-call rotation?", "addressed": true },
+      { "id": "gap-mon-2", "description": "No incident response runbook", "aiQuestion": "What is the step-by-step incident response runbook?", "addressed": false }
+    ],
+    "cards": [
+      { "id": "mon-01", "name": "Datadog dashboard", "desc": "SLO tracking. P50/P95/P99.", "linkedModuleIds": ["payment"], "gaps": ["Thresholds undocumented"],
+        "classification": { "state": "review", "confidence": 41, "candidates": ["Monitoring & Alerts", "Payment Service"],
+          "chat": [
+            { "a": "M", "step": "CLASSIFY", "t": "Monitoring & Alerts at 41% — SLO dashboards and panels. But it also drives the payment alert routes." },
+            { "a": "G", "step": "CHALLENGE", "t": "41% is well below the 80% bar, and the payment-alert overlap makes the primary ambiguous." },
+            { "a": "M", "step": "RECONSIDER", "t": "Likely Monitoring primary with a Payment Service link — but the split needs a human call." },
+            { "a": "G", "step": "FLAG", "t": "Flagging for Manager review — please confirm the module." }
+          ] },
+        "questions": [ { "id": "q10", "text": "Critical alert thresholds?", "fromType": "ai" } ] },
+      { "id": "mon-02", "name": "PagerDuty escalation", "desc": "Primary to secondary to eng mgr.", "files": [{ "name": "oncall-schedule.pdf", "size": "45 KB" }], "checklist": [{ "text": "Rotation current", "done": true }] },
+      { "id": "mon-03", "name": "Log aggregation", "desc": "Fluentd to ES to Kibana.",
+        "questions": [ { "id": "q11", "text": "Log retention policy?", "fromType": "ai" } ] },
+      { "id": "mon-04", "name": "SLO / error budget", "desc": "99.9% uptime target, burn-rate alerts." },
+      { "id": "mon-05", "name": "Synthetic checks", "desc": "Uptime probes from 3 regions." },
+      { "id": "mon-06", "name": "Alert routing rules", "desc": "Which alert pages which rotation." },
+      { "id": "mon-07", "name": "Incident runbook index", "desc": "Catalog of incident runbooks." },
+      { "id": "mon-08", "name": "Metrics naming convention", "desc": "Metric taxonomy and tags." },
+      { "id": "mon-09", "name": "Trace sampling config", "desc": "10% head-based sampling." },
+      { "id": "mon-10", "name": "Uptime status page", "desc": "Public status page automation." },
+      { "id": "mon-11", "name": "On-call schedule", "desc": "Rotation and override config." },
+      { "id": "mon-12", "name": "Anomaly detection", "desc": "Outlier and seasonality alerts." }
+    ]
+  },
+  {
+    "id": "infra",
+    "name": "Infrastructure as Code",
+    "boardId": "b-platform",
+    "gaps": [],
+    "cards": [
+      { "id": "infra-01", "name": "Terraform modules", "desc": "VPC, EKS, RDS. S3 + DynamoDB state.",
+        "questions": [ { "id": "q12", "text": "Terraform version pinned?", "fromType": "ai" } ] },
+      { "id": "infra-02", "name": "Helm chart templates", "desc": "Deployments + monitoring sidecar.",
+        "questions": [ { "id": "q13", "text": "Helm overrides per env?", "fromType": "ai" } ] },
+      { "id": "infra-03", "name": "Secrets management (Vault)", "desc": "Vault via sidecar, auto-unseal, rotation.", "checklist": [{ "text": "Auto-unseal on", "done": true }, { "text": "Rotation automated", "done": false }],
+        "classification": { "state": "newmod", "confidence": 84, "newModule": "Secrets & Vault",
+          "chat": [
+            { "a": "M", "step": "CLASSIFY", "t": "Vault sidecar, auto-unseal, rotation — no existing module owns secrets management." },
+            { "a": "G", "step": "VERIFY", "t": "Confirmed: this is a distinct concern, not a fit for Shared Libraries or IaC." },
+            { "a": "M", "step": "PROPOSE", "t": "Propose a new standalone module — Secrets & Vault (84%)." }
+          ] } },
+      { "id": "infra-04", "name": "AKS cluster config", "desc": "Cluster provisioning and node pools." },
+      { "id": "infra-05", "name": "VNet / network policies", "desc": "Network segmentation and NSGs." },
+      { "id": "infra-06", "name": "DNS / Ingress config", "desc": "Ingress routing and TLS." },
+      { "id": "infra-07", "name": "Autoscaling policies", "desc": "HPA and VPA tuning." },
+      { "id": "infra-08", "name": "Backup / restore jobs", "desc": "Snapshot schedule and restore drills." },
+      { "id": "infra-09", "name": "IAM / RBAC bindings", "desc": "Role bindings and least privilege." },
+      { "id": "infra-10", "name": "Cost tagging policy", "desc": "Cost allocation tags and budgets." }
+    ]
+  }
+]

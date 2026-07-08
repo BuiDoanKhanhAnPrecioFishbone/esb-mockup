@@ -1,0 +1,18 @@
+{
+  "id": "minh-le",
+  "offboarder": {
+    "name": "Minh Lê",
+    "initials": "ML",
+    "role": "Senior Backend Engineer",
+    "dept": "Engineering",
+    "lastDay": "July 4, 2026"
+  },
+  "daysLeft": 22,
+  "deadline": "Jun 30, 2026",
+  "startedDaysAgo": 3,
+  "boards": [
+    { "id": "b-backend", "name": "Backend Services" },
+    { "id": "b-platform", "name": "Platform Infrastructure" },
+    { "id": "b-gateway", "name": "API Gateway" }
+  ]
+}

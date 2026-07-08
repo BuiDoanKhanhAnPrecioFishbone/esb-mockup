@@ -1,0 +1,5 @@
+[
+  { "id": "cw1", "name": "Trần Hữu Nam", "initials": "TN", "moduleIds": ["payment", "cicd"], "sharedCards": 14, "source": "trello", "status": "joined", "questionsAsked": 2 },
+  { "id": "cw2", "name": "Linh Anh", "initials": "LA", "moduleIds": ["monitoring"], "sharedCards": 6, "source": "trello", "status": "joined", "questionsAsked": 1 },
+  { "id": "cw3", "name": "Bảo Nguyễn", "initials": "BN", "moduleIds": ["infra"], "sharedCards": 0, "source": "manual", "status": "pending", "questionsAsked": 0 }
+]
