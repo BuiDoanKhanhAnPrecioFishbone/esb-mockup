@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, Clock, AlertTriangle, Sparkles, Database, ArrowLeftRight, Shield, ArrowRight, Info, ChevronDown, FileText, Flag } from "lucide-react";
+import { resolvedGaps, unresolvedGaps } from "@/lib/data";
 
 export function DeliverOverview({ role, onSwitchTab, S, MD, modProgress, MC, ProgressBar, PhaseHero }) {
   const [showCommit, setShowCommit] = useState(false);
@@ -12,22 +13,11 @@ export function DeliverOverview({ role, onSwitchTab, S, MD, modProgress, MC, Pro
   if (role === "offboarder") return <div className="space-y-4"><div className="text-center py-4"><div className="w-12 h-12 rounded-full bg-violet-100 text-violet-700 text-sm font-semibold inline-flex items-center justify-center mx-auto mb-3">{S.initials}</div><h2 className="text-xl font-semibold">{"Thank you, "}<span className="text-violet-600">Minh</span>.</h2><p className="text-[12px] text-gray-500 max-w-xs mx-auto mt-2">{"Your contributions are captured. H\u00e0 Vy will review before committing to the Knowledge Graph."}</p></div><div className="rounded-lg border border-gray-200 bg-white p-4"><p className="text-[11px] font-medium mb-2">What you contributed</p><div className="grid grid-cols-2 gap-3"><MC l="Answered" v={S.answered}/><MC l="Gaps addressed" v={S.gapsAddressed}/></div></div><div className="rounded-lg border border-gray-200 bg-white p-4"><p className="text-[11px] font-medium mb-2">What happens next</p><div className="space-y-2">{[{n:1,t:"H\u00e0 Vy reviews your contributions",d:"You\u2019ll get a copy of any follow-ups.",active:true},{n:2,t:"Knowledge Graph commit",d:"Your answers will be available to the team in the Knowledge Graph."}].map(s=><div key={s.n} className="flex gap-2.5 text-[11px]"><div className={`w-5 h-5 rounded-full text-[10px] font-medium flex items-center justify-center shrink-0 ${s.active?"bg-violet-100 text-violet-700":"bg-gray-100 text-gray-500"}`}>{s.n}</div><div><p className="font-medium">{s.t}</p><p className="text-gray-500 text-[10px]">{s.d}</p></div></div>)}</div></div></div>;
   if (role === "coworker") return <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-8 text-center"><div className="w-12 h-12 rounded-full bg-gray-100 inline-flex items-center justify-center mb-3 mx-auto"><Clock className="w-5 h-5 text-gray-400" strokeWidth={1.5}/></div><h3 className="text-sm font-medium text-gray-700 mb-1">Session is being finalized</h3><p className="text-xs text-gray-500 max-w-xs mx-auto">{"H\u00e0 Vy is reviewing contributions before committing to the Knowledge Graph."}</p></div>;
 
-  const ENTRIES = 42;
-  const ANSWERED = S.answered ?? 14;
-  const MODULES = S.modules ?? 5;
+  const ENTRIES = S.entries;
+  const ANSWERED = S.answered;
+  const MODULES = S.modules;
   const SENSITIVE = 3;
 
-  const resolvedGaps = [
-    { module: "Payment Service", gap: "Missing SLA definitions", how: "answered by Minh L\u00ea" },
-    { module: "CI/CD Pipeline", gap: "Atlas migration rollback procedure missing", how: "answered by Minh L\u00ea" },
-    { module: "Shared Libraries", gap: "API key rotation runbook location unknown", how: "answered by Minh L\u00ea" },
-    { module: "Monitoring & Alerts", gap: "No incident response runbook", how: "dismissed by H\u00e0 Vy" },
-  ];
-  const unresolvedGaps = [
-    { module: "Payment Service", gap: "No disaster recovery or failover procedures documented", status: "1 question waiting" },
-    { module: "Payment Service", gap: "No error escalation process defined", status: "0 questions" },
-    { module: "Monitoring & Alerts", gap: "No alert routing documented", status: "1 question waiting" },
-  ];
 
   return <div className="space-y-4"><div className="grid grid-cols-3 gap-5">
     {/* OV-05-FIX — the 2-column row wraps ONLY the stepper + the KPI card; everything below is full-width */}
@@ -120,7 +110,7 @@ export function CompleteOverview({ role, S, MC, PhaseHero }) {
         <h2 className="text-xl font-semibold text-gray-900 mb-1 relative">{"Thank you, Minh L\u00ea"}</h2>
         <p className="text-[13px] text-gray-600 relative">Your knowledge has been preserved.</p>
       </div>
-      <div className="grid grid-cols-3 gap-3 mb-5"><MC l="Questions answered" v={S.questions}/><MC l="Modules covered" v={S.modules}/><MC l="Knowledge entries" v={42}/></div>
+      <div className="grid grid-cols-3 gap-3 mb-5"><MC l="Questions answered" v={S.questions}/><MC l="Modules covered" v={S.modules}/><MC l="Knowledge entries" v={S.entries}/></div>
       <div className="rounded-lg border border-gray-200 bg-white p-5 mb-5"><p className="text-[11px] font-medium text-gray-700 mb-3 uppercase tracking-wider">What happens next</p><div className="space-y-3.5">{steps.map((s, i) => <div key={i} className="flex gap-3"><div className="shrink-0 mt-0.5">{s.state === "done" ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> : s.state === "active" ? <span className="w-5 h-5 rounded-full bg-violet-100 border-2 border-violet-500 inline-flex items-center justify-center"><span className="w-1.5 h-1.5 rounded-full bg-violet-600" /></span> : <span className="w-5 h-5 rounded-full border-2 border-gray-300 inline-block" />}</div><div><p className={`text-[12px] font-medium ${s.state === "upcoming" ? "text-gray-500" : "text-gray-900"}`}>{s.title}{s.state === "active" && <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200">In progress</span>}</p><p className="text-[11px] text-gray-500 mt-0.5">{s.desc}</p></div></div>)}</div></div>
       <p className="text-[12px] text-gray-500 text-center">Thank you for contributing to the team&apos;s success.</p>
     </div>;
@@ -134,7 +124,7 @@ export function CompleteOverview({ role, S, MC, PhaseHero }) {
     <div className="grid grid-cols-2 gap-3 mb-5"><MC l="Questions you asked" v={4}/><MC l="Answers you reviewed" v={2}/></div>
     <p className="text-[12px] text-gray-500 text-center">{"The answers you reviewed are now available to the whole team."}</p>
   </div>;
-  return <div className="grid grid-cols-3 gap-5"><div>{PhaseHero&&<PhaseHero phase="complete"/>}</div><div className="col-span-2 space-y-4"><div className="rounded-md bg-emerald-50 border border-emerald-200 p-3 flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0"/><div><p className="text-[12px] font-medium text-emerald-800">Committed to Knowledge Graph</p><p className="text-[10px] text-emerald-600" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{"Jun 14, 2026 at 3:42 PM \u00b7 487 entries"}</p></div></div><div className="rounded-lg border border-gray-200 bg-white p-5"><div className="grid grid-cols-3 gap-3"><MC l="Entries committed" v={42}/><MC l="Questions answered" v={S.answered}/><MC l="Modules covered" v={S.modules}/></div><p className="text-[11px] text-gray-500 mt-3">{"Minh L\u00ea\u2019s knowledge is now available to the team in the Knowledge Graph."}</p><div className="flex gap-3 mt-3"><Link href={`/knowledge-graph?session=${S.id}`} className="h-8 px-3 rounded-md border border-violet-300 text-violet-700 text-xs font-medium inline-flex items-center gap-1.5 hover:bg-violet-50"><Sparkles className="w-3 h-3"/>Explore in Knowledge Graph</Link><Link href="/" className="h-8 px-3 rounded-md border border-gray-300 text-gray-700 text-xs font-medium inline-flex items-center gap-1.5 hover:bg-gray-50">Back to dashboard</Link></div></div></div></div>;
+  return <div className="grid grid-cols-3 gap-5"><div>{PhaseHero&&<PhaseHero phase="complete"/>}</div><div className="col-span-2 space-y-4"><div className="rounded-md bg-emerald-50 border border-emerald-200 p-3 flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0"/><div><p className="text-[12px] font-medium text-emerald-800">Committed to Knowledge Graph</p><p className="text-[10px] text-emerald-600" style={{fontFamily:"ui-monospace,Menlo,monospace"}}>{"Jun 14, 2026 at 3:42 PM \u00b7 487 entries"}</p></div></div><div className="rounded-lg border border-gray-200 bg-white p-5"><div className="grid grid-cols-3 gap-3"><MC l="Entries committed" v={S.entries}/><MC l="Questions answered" v={S.answered}/><MC l="Modules covered" v={S.modules}/></div><p className="text-[11px] text-gray-500 mt-3">{"Minh L\u00ea\u2019s knowledge is now available to the team in the Knowledge Graph."}</p><div className="flex gap-3 mt-3"><Link href={`/knowledge-graph?session=${S.id}`} className="h-8 px-3 rounded-md border border-violet-300 text-violet-700 text-xs font-medium inline-flex items-center gap-1.5 hover:bg-violet-50"><Sparkles className="w-3 h-3"/>Explore in Knowledge Graph</Link><Link href="/" className="h-8 px-3 rounded-md border border-gray-300 text-gray-700 text-xs font-medium inline-flex items-center gap-1.5 hover:bg-gray-50">Back to dashboard</Link></div></div></div></div>;
 }
 
 function CommitModal({ S, entries = 42, sensitive = 3, unresolved = 0, validation = { passed: 5, total: 8, flagged: 1 }, onClose }) {

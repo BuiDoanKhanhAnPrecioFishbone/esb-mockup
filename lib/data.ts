@@ -51,6 +51,10 @@ export const sessionMeta = sessionJson;
 export const allCards: Card[] = modules.flatMap((m) => m.cards);
 export const allQuestions: Question[] = allCards.flatMap((c) => c.questions ?? []);
 export const allGaps: Gap[] = modules.flatMap((m) => m.gaps);
+// Gaps carrying their owning module name — split by addressed for the Deliver phase.
+export const gapsWithModule = modules.flatMap((m) => m.gaps.map((g) => ({ ...g, module: m.name })));
+export const resolvedGaps = gapsWithModule.filter((g) => g.addressed).map((g) => ({ module: g.module, gap: g.description, how: "answered by Minh Lê" }));
+export const unresolvedGaps = gapsWithModule.filter((g) => !g.addressed).map((g) => ({ module: g.module, gap: g.description, status: "1 question waiting" }));
 
 const boardNameById = new Map(boards.map((b) => [b.id, b.name]));
 const moduleNameById = new Map(modules.map((m) => [m.id, m.name]));
@@ -86,6 +90,7 @@ export const SESSION = {
   deadline: sessionMeta.deadline,
   boards: aggregates.boards,
   cards: aggregates.cards,
+  entries: aggregates.cards,
   modules: aggregates.modules,
   questions: aggregates.questions,
   gaps: aggregates.gaps,
