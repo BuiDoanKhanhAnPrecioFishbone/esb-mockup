@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useViewAs } from "@/lib/view-as";
 import SessionCommandView from "./session-command-view";
+import { SESSION } from "@/lib/data";
 
 const ROLES = [
   { id: "manager", label: "H\u00e0 Vy", sub: "Manager / HR", icon: "HV" },
@@ -24,8 +25,8 @@ const MANAGER_FLOW = [
 ];
 const OFFBOARDER_FLOW = [
   { id: "not-started", label: "Not started", trigger: "Session in Prepare." },
-  { id: "active-queue", label: "Active queue", trigger: "5 questions to answer." },
-  { id: "all-answered", label: "All answered", trigger: "All 14 questions answered." },
+  { id: "active-queue", label: "Active queue", trigger: `${SESSION.questions - SESSION.answered} questions to answer.` },
+  { id: "all-answered", label: "All answered", trigger: `All ${SESSION.questions} questions answered.` },
   { id: "complete", label: "Complete", trigger: "Knowledge committed to KG." },
 ];
 const COWORKER_FLOW = [
@@ -46,7 +47,7 @@ const DEPARTURES = [
   { id: "phuong-anh", name: "Ph\u01b0\u01a1ng Anh Nguy\u1ec5n", role: "Account Executive", dept: "Sales", lastDay: "July 11, 2026", daysLeft: 33, initials: "PA" },
 ];
 const SESSIONS = [
-  { id: "minh-le", name: "Minh L\u00ea", role: "Senior Backend Engineer", dept: "Engineering", initials: "ML", subStageId: 5, daysLeft: 22, gapsResolved: "4/6", answered: "9/14" },
+  { id: "minh-le", name: "Minh L\u00ea", role: "Senior Backend Engineer", dept: "Engineering", initials: "ML", subStageId: 5, daysLeft: SESSION.daysLeft, gapsResolved: `${SESSION.gapsAddressed}/${SESSION.gaps}`, answered: `${SESSION.answered}/${SESSION.questions}` },
 ];
 const ACTIVITY_ACTIVE = [
   { ts: "2 hours ago", actor: "System", text: "Coworker joined Minh L\u00ea\u2019s session · asked 2 questions", severity: "low" },
@@ -63,12 +64,12 @@ const OB_QUESTIONS = [
   { q: "Is there a runbook for the nightly batch job failures?", from: "Coworker", fromType: "human", module: "CI/CD Pipeline" },
   { q: "What\u2019s the rollback procedure for the Atlas migration?", from: "H\u00e0 Vy", fromType: "human", module: "CI/CD Pipeline" },
   { q: "How does the Kafka retry logic handle poison messages?", from: "AI-generated", fromType: "ai", module: "Payment Service" },
-  { q: "Who owns the vendor XYZ contract renewal?", from: "AI-generated", fromType: "ai", module: "Inventory Sync" },
+  { q: "Who owns the vendor XYZ contract renewal?", from: "AI-generated", fromType: "ai", module: "Shared Libraries" },
 ];
 // Full historical answer log (OV-R4-02 \u2014 the "All answered" view shows every Q&A, not a truncated 2).
 const OB_ANSWERED = [
   { q: "Where is the API key rotation doc?", module: "Shared Libraries", satisfied: true, preview: "Engineering wiki at /security/api-key-rotation.md. Rotates every 90 days via GitHub Action..." },
-  { q: "Who should I contact about the SLA penalty terms?", module: "Inventory Sync", satisfied: false, preview: "Talk to Linh Ph\u1ea1m in Procurement \u2014 she handled the last renewal. SLA doc at /vendor-contracts..." },
+  { q: "Who should I contact about the SLA penalty terms?", module: "Shared Libraries", satisfied: false, preview: "Talk to Linh Ph\u1ea1m in Procurement \u2014 she handled the last renewal. SLA doc at /vendor-contracts..." },
   { q: "How does the Kafka retry logic handle poison messages?", module: "Payment Service", satisfied: true, preview: "After 5 retries with exponential backoff, messages route to the DLQ. Monitor via Datadog alert #4421." },
   { q: "What's the max retry count before DLQ routing?", module: "Payment Service", satisfied: true, preview: "Max 5, configurable per topic in kafka-config.yaml. Backoff doubles from 500ms." },
   { q: "Which webhook events are critical vs optional?", module: "Payment Service", satisfied: true, preview: "Critical: payment_intent.succeeded, charge.refunded, invoice.payment_failed. The rest route to the batch queue." },
@@ -148,9 +149,9 @@ function OBAllAnswered() {
     <div className="rounded-xl border border-emerald-200 p-8 text-center mb-5" style={{ background: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)" }}>
       <div className="w-14 h-14 rounded-full bg-white inline-flex items-center justify-center mb-3 shadow-sm"><CheckCircle2 className="w-8 h-8 text-emerald-500" strokeWidth={1.75} /></div>
       <h3 className="text-base font-semibold text-gray-900 mb-1">{"You\u2019re all caught up!"}</h3>
-      <p className="text-xs text-gray-600">{"You answered "}{OB_ANSWERED.length}{" questions across 5 modules."}</p>
+      <p className="text-xs text-gray-600">{"You answered "}{OB_ANSWERED.length}{` questions across ${SESSION.modules} modules.`}</p>
     </div>
-    <div className="grid grid-cols-3 gap-3 mb-5"><OBStat v={OB_ANSWERED.length} l="Questions answered" /><OBStat v={5} l="Modules covered" /><OBStat v={42} l="Knowledge entries" /></div>
+    <div className="grid grid-cols-3 gap-3 mb-5"><OBStat v={OB_ANSWERED.length} l="Questions answered" /><OBStat v={SESSION.modules} l="Modules covered" /><OBStat v={SESSION.entries} l="Knowledge entries" /></div>
     {/* OV-R4-02 \u2014 full read-only answer history, scrollable, no truncation. */}
     <SectionLabel count={OB_ANSWERED.length}>Your submitted answers</SectionLabel>
     <div className="space-y-2 mt-2 max-h-[420px] overflow-y-auto pr-1">{OB_ANSWERED.map((q, i) => (<div key={i} className="rounded-lg border border-gray-200 bg-white px-4 py-3"><div className="text-[12px] text-gray-900 mb-1">{q.q}</div><div className="text-[11px] text-gray-500 flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-emerald-500" /><span>Answered</span>{q.satisfied ? <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">{"\u2713 Accepted"}</span> : <span className="text-[9px] text-gray-400">waiting for review</span>}<span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 ml-1">{q.module}</span></div>{q.preview && <p className="text-[11px] text-gray-500 mt-1.5 italic leading-relaxed">&quot;{q.preview}&quot;</p>}</div>))}</div>
