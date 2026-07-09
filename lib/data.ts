@@ -23,6 +23,7 @@ export interface Question {
   id: string; text: string; fromType: "ai" | "human"; authorId?: string;
   answer?: string; answeredBy?: string; answeredAt?: string;
   accepted?: boolean; acceptedBy?: string; acceptedAt?: string;
+  revisionNote?: string;
   file?: { name: string; size: string };
 }
 export interface ChatMsg { a: string; step: string; t: string }
@@ -65,14 +66,16 @@ const distinctFiles = new Set<string>();
 allCards.forEach((c) => (c.files ?? []).forEach((f) => distinctFiles.add(f.name)));
 allQuestions.forEach((q) => q.file && distinctFiles.add(q.file.name));
 
+// General (session-level) questions the Offboarder also answers — counted alongside card questions.
+const generalQs = (((sessionMeta as any).generalQuestions ?? []) as any[]);
 export const aggregates = {
   boards: new Set(modules.map((m) => m.boardId)).size,
   modules: modules.length,
   cards: allCards.length,
-  questions: allQuestions.length,
-  answered: allQuestions.filter((q) => !!q.answer).length,
-  accepted: allQuestions.filter((q) => !!q.accepted).length,
-  waiting: allQuestions.filter((q) => !q.answer).length,
+  questions: allQuestions.length + generalQs.length,
+  answered: allQuestions.filter((q) => !!q.answer).length + generalQs.filter((g) => !!g.answer).length,
+  accepted: allQuestions.filter((q) => !!q.accepted).length + generalQs.filter((g) => !!g.accepted).length,
+  waiting: allQuestions.filter((q) => !q.answer).length + generalQs.filter((g) => !g.answer).length,
   gaps: allGaps.length,
   gapsAddressed: allGaps.filter((g) => g.addressed).length,
   coworkers: coworkers.length,
@@ -225,6 +228,40 @@ export const SEED_GQ: any[] = ((sessionMeta as any).generalQuestions ?? []).map(
   if (g.answer) { o.answer = g.answer; o.answeredBy = g.answeredBy; o.answeredAt = g.answeredAt; }
   if (g.accepted) { o.satisfiedBy = g.acceptedBy; o.satisfiedAt = g.acceptedAt; }
   return o;
+});
+
+// ── Offboarder question queue with inline context (OQ spec) ───────────────────
+// The queue the Offboarder answers: human card questions (type "card", card context),
+// AI questions (type "gap", gap context), and general questions (type "general", none).
+// Attribution avatars carry a role tone. Counts match SESSION (general included).
+function qAvatar(fromType: string, authorId?: string): { avatar: string; tone: string } {
+  if (fromType === "ai") return { avatar: "AI", tone: "ai" };
+  const name = authorName(authorId);
+  if (name === "Hà Vy") return { avatar: "HV", tone: "manager" };
+  return { avatar: coworkers.find((c) => c.id === authorId)?.initials ?? "CW", tone: "coworker" };
+}
+export const OFFBOARDER_QUEUE: any[] = [];
+modules.forEach((m) => m.cards.forEach((c) => (c.questions ?? []).forEach((q) => {
+  const a = qAvatar(q.fromType, q.authorId);
+  const item: any = {
+    id: q.id, q: q.text, module: m.name, from: q.fromType === "ai" ? "AI-generated" : authorName(q.authorId),
+    avatar: a.avatar, tone: a.tone, answered: !!q.answer, accepted: !!q.accepted, answer: q.answer ?? "",
+    revision: q.revisionNote ? { by: "Hà Vy", note: q.revisionNote } : null,
+  };
+  if (q.fromType === "human") {
+    item.type = "card";
+    item.ctx = { kind: "card", cardName: c.name, alsoIn: (c.linkedModuleIds ?? []).map(moduleName), desc: c.desc ?? "", files: c.files ?? [], done: (c.checklist ?? []).filter((x) => x.done).length, total: (c.checklist ?? []).length };
+  } else {
+    item.type = "gap";
+    const gap = m.gaps[0];
+    const related = m.cards.filter((x) => x.id !== c.id).slice(0, 2).map((x) => x.name);
+    item.ctx = { kind: "gap", title: gap ? gap.description : `Needs more detail — ${c.name}`, summary: gap ? `Your team documented ${c.name.toLowerCase()}, but this area of ${m.name} still has an open gap.` : (c.desc ?? c.name), related };
+  }
+  OFFBOARDER_QUEUE.push(item);
+})));
+generalQs.forEach((g) => {
+  const a = qAvatar("human", g.authorId);
+  OFFBOARDER_QUEUE.push({ id: g.id, q: g.text, module: "General", type: "general", from: authorName(g.authorId), avatar: a.avatar, tone: a.tone, answered: !!g.answer, accepted: !!g.accepted, answer: g.answer ?? "", revision: null, ctx: null });
 });
 
 // ── Consumer-plane Knowledge Graph — DERIVED from the same modules.json ────────

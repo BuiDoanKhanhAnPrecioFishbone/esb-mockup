@@ -12,6 +12,7 @@ const modules = rd("modules.json");
 const allCards = modules.flatMap((m) => m.cards);
 const allQuestions = allCards.flatMap((c) => c.questions || []);
 const allGaps = modules.flatMap((m) => m.gaps);
+const generalQs = session.generalQuestions || [];
 const files = new Set();
 allCards.forEach((c) => (c.files || []).forEach((f) => files.add(f.name)));
 allQuestions.forEach((q) => q.file && files.add(q.file.name));
@@ -20,10 +21,10 @@ const agg = {
   boards: new Set(modules.map((m) => m.boardId)).size,
   modules: modules.length,
   cards: allCards.length,
-  questions: allQuestions.length,
-  answered: allQuestions.filter((q) => !!q.answer).length,
-  accepted: allQuestions.filter((q) => !!q.accepted).length,
-  waiting: allQuestions.filter((q) => !q.answer).length,
+  questions: allQuestions.length + generalQs.length,
+  answered: allQuestions.filter((q) => !!q.answer).length + generalQs.filter((g) => !!g.answer).length,
+  accepted: allQuestions.filter((q) => !!q.accepted).length + generalQs.filter((g) => !!g.accepted).length,
+  waiting: allQuestions.filter((q) => !q.answer).length + generalQs.filter((g) => !g.answer).length,
   gaps: allGaps.length,
   gapsAddressed: allGaps.filter((g) => g.addressed).length,
   coworkers: coworkers.length,
@@ -54,7 +55,7 @@ modules.forEach((m) => {
 });
 coworkers.forEach((c) => c.moduleIds.forEach((mid) => { if (!moduleIds.has(mid)) errors.push(`coworker ${c.id} → unknown moduleId ${mid}`); }));
 
-const targets = { boards: 3, modules: 5, cards: 64, questions: 14, answered: 9, accepted: 7, waiting: 5, gaps: 6, gapsAddressed: 4, coworkers: 3, files: 3 };
+const targets = { boards: 3, modules: 5, cards: 64, questions: 16, answered: 10, accepted: 7, waiting: 6, gaps: 6, gapsAddressed: 4, coworkers: 3, files: 3 };
 Object.entries(targets).forEach(([k, v]) => { if (agg[k] !== v) errors.push(`aggregate ${k} = ${agg[k]}, expected ${v}`); });
 
 if (errors.length) { console.error("\nFAIL (" + errors.length + "):\n - " + errors.join("\n - ")); process.exit(1); }
