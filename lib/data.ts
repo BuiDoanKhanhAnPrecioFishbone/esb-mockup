@@ -272,15 +272,23 @@ generalQs.forEach((g) => {
 function kgModuleSummary(m: Module): string {
   return m.cards.slice(0, 4).map((c) => c.name).join(", ");
 }
+// KG-14 — level-3 semantic chunks decompose a few cards (authored in knowledge-graph.json).
+const kgChunks = (((kgJson as any).chunks ?? []) as any[]);
+const kgChunkEdges = (((kgJson as any).chunkEdges ?? []) as any[]);
+const kgCardLabel = new Map<string, string>();
+modules.forEach((m) => m.cards.forEach((c) => kgCardLabel.set(c.id, c.name)));
 export const KG_NODES: any[] = [
   { id: "minh-le", label: SESSION.name, type: "dept", depth: 0, summary: `${SESSION.name} · ${SESSION.role}\nOffboarding handover · Jun 2026\n${SESSION.modules} knowledge modules · ${SESSION.entries} entries` },
   ...modules.map((m) => ({ id: m.id, label: m.name, type: "module", depth: 1, parent: "minh-le", entries: m.cards.length, verified: m.cards.length, flagged: 0, gaps: 0, summary: kgModuleSummary(m), provenance: [{ name: SESSION.name, date: "Jun 2026", count: m.cards.length }] })),
   ...modules.flatMap((m) => m.cards.map((c) => ({ id: c.id, label: c.name, type: "entry", depth: 2, parent: m.id, status: "verified", summary: c.desc ?? c.name }))),
+  ...kgChunks.map((ch) => ({ id: ch.id, label: ch.label, type: "chunk", depth: 3, parent: ch.parent, status: "verified", summary: `Semantic chunk of "${kgCardLabel.get(ch.parent) ?? ch.parent}" — ${ch.label}.` })),
 ];
 export const KG_EDGES: any[] = [
   ...modules.map((m) => ({ from: "minh-le", to: m.id, type: "hierarchy" })),
   ...modules.flatMap((m) => m.cards.map((c) => ({ from: m.id, to: c.id, type: "hierarchy" }))),
   ...modules.flatMap((m) => m.cards.flatMap((c) => (c.linkedModuleIds ?? []).map((lm) => ({ from: c.id, to: lm, type: "cross", label: "also in" })))),
+  ...kgChunks.map((ch) => ({ from: ch.parent, to: ch.id, type: "chunk" })),
+  ...kgChunkEdges.map((e) => ({ from: e.from, to: e.to, type: "crosschunk", label: e.label ?? "related" })),
 ];
 export const KG_CHIPS = (kgJson as any).chips as any[];
 export const KG_SEED_THREADS = (kgJson as any).seedThreads as any[];
