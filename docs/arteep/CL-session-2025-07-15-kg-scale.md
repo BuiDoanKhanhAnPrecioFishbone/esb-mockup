@@ -1,36 +1,24 @@
-# ART-EEP — Knowledge Graph: Gaps + Scale (2025-07-15)
+# ART-EEP — Knowledge Graph: Scale + Animation (2025-07-15)
 
 *Apply via Claude Code. Delete after verified.*
 *Do NOT merge with `CL-session-2025-07-09-kg-corrections.md` — that file has its own items (KG-07–12). Apply that one first, then this one.*
+*⚠️ OVERRIDE: Skip KG-10 (gap nodes) from the 07-09 file — gaps should NOT appear as nodes in the Knowledge Graph.*
 
 ---
 
-## KG-13: Gap nodes in the Knowledge Graph ✅ LOCKED
+## KG-13: Even slower node animation ✅ LOCKED (replaces original KG-13)
 
 **File:** `components/mockups/knowledge-graph-explorer.jsx`
 
-**Issue:** Gaps are not visualized in the final Knowledge Graph. The graph only shows cards and modules — there's no representation of WHERE knowledge is missing.
+**Issue:** KG-05 reduced animation speed, but nodes still move too fast. They need to be significantly calmer — gentle drift, not bouncing.
 
-**Fix:** Add gap nodes as yellow circles in the graph, connected to the cards/modules that identified them.
+**Fix:** Further reduce the force simulation parameters:
+- `alphaDecay`: increase to 0.05+ (nodes lose energy faster → settle sooner)
+- `velocityDecay`: increase to 0.6+ (more friction → slower movement)
+- `alpha` initial: reduce to 0.1 (start with less energy)
+- Link force strength: reduce (weaker pull → less oscillation)
 
-**Gap nodes to add (from session mock data):**
-
-| Gap name | Module | Connect to (source cards) |
-|---|---|---|
-| No disaster recovery | Payment Service | Kafka retry config, Payment gateway timeout |
-| No error escalation process | Payment Service | Stripe webhook handler |
-| No alert routing documented | Monitoring & Alerts | PagerDuty escalation, Datadog dashboard |
-
-**Node rendering:**
-- Fill: yellow (#eab308)
-- Radius: 8px (smaller than knowledge nodes)
-- Border: 1px solid #ca8a04
-- Label: gap description truncated to ~25 chars, full text on hover tooltip
-- Gap edges: dashed yellow line (#eab308), stroke-dasharray="4,4"
-
-**Position:** Gap nodes should cluster near their source cards (not floating randomly). The force simulation should pull gap nodes toward the cards they connect to.
-
-**Interaction:** Clicking a gap node opens the gap detail in the side panel (same as clicking from the Insights heatmap).
+**Target behavior:** Nodes should barely move once settled. A very slow, gentle drift — like objects floating in calm water. NOT bouncing, NOT oscillating, NOT jittering.
 
 ---
 
@@ -50,7 +38,7 @@
 | GitHub Actions workflow | Build pipeline · Deployment approval · Staging auto-deploy |
 | Stripe webhook handler | Event processing · Refund flow · Failure alerting |
 
-**This adds ~9 chunk nodes**, bringing the total from ~20 to ~30+ nodes (with gaps from KG-13, total ≈ 35 nodes).
+**This adds ~9 chunk nodes**, bringing the total from ~20 to ~30+ nodes.
 
 **Node rendering for chunks:**
 - Fill: lighter purple (#a78bfa / violet-400) — distinguishable from card nodes (violet-600)
@@ -69,17 +57,18 @@ Some chunks connect to chunks in OTHER cards, demonstrating semantic relationshi
 
 These cross-chunk edges are dashed violet (same as cross-module edges from KG-09) but thinner (1px vs 1.5px).
 
-**Node taxonomy update (full hierarchy):**
+**Updated node taxonomy (NO gap nodes):**
 
 | Level | Type | Color | Radius | Example |
 |---|---|---|---|---|
 | 0 (center) | Person | Gray (#6b7280) | 14px | Minh Lê |
 | 1 | Module | Gray (#9ca3af) | 12px | Payment Service |
 | 2 | Card (knowledge) | Purple (#7c3aed) | 8-12px (by centrality) | Kafka retry configuration |
-| 2 | Gap | Yellow (#eab308) | 8px | No disaster recovery |
 | 3 | Chunk | Light purple (#a78bfa) | 6px | DLQ routing |
 
-**Progressive disclosure:** On initial load, only Levels 0-2 are visible (Person, Modules, Cards, Gaps). Clicking/expanding a card node reveals its Level 3 chunks. This prevents the graph from being overwhelming on first render while allowing the presenter to "zoom in" during the demo.
+**No gap nodes.** Gaps are tracked in the session (gap lists, Data Validation), not visualized as nodes in the Knowledge Graph.
+
+**Progressive disclosure:** On initial load, only Levels 0-2 are visible (Person, Modules, Cards). Clicking/expanding a card node reveals its Level 3 chunks. This prevents the graph from being overwhelming on first render while allowing the presenter to "zoom in" during the demo.
 
 Alternatively, if progressive disclosure is too complex for the mockup, show all levels by default but position chunks close to their parent cards so they cluster naturally.
 
@@ -87,13 +76,11 @@ Alternatively, if progressive disclosure is too complex for the mockup, show all
 
 ## Verification checklist
 
-**Gaps:**
-- [ ] 3 gap nodes visible as yellow circles in the graph
-- [ ] Gap nodes connected to their source cards with dashed yellow lines
-- [ ] Gap nodes smaller than knowledge nodes (8px vs 10px)
-- [ ] Gap nodes cluster near their source cards (not floating)
-- [ ] Gap hover shows full description
-- [ ] Gap click opens detail in side panel
+**Animation:**
+- [ ] Nodes settle quickly and barely move once settled
+- [ ] No bouncing, oscillating, or jittering
+- [ ] Gentle drift only — like objects floating in calm water
+- [ ] `alphaDecay` ≥ 0.05, `velocityDecay` ≥ 0.6
 
 **Chunks & Scale:**
 - [ ] 2-3 cards broken into chunks (9+ chunk nodes)
@@ -101,8 +88,13 @@ Alternatively, if progressive disclosure is too complex for the mockup, show all
 - [ ] Chunks connected to parent card with thin solid lines
 - [ ] At least 2 cross-chunk edges connecting chunks across different cards
 - [ ] Cross-chunk edges are dashed violet, thinner than cross-module edges
-- [ ] Total visible nodes ≈ 30-35 (significantly denser than before)
+- [ ] Total visible nodes ≈ 30+ (significantly denser than before)
 - [ ] Graph looks like a real knowledge graph, not a folder tree
+
+**No gaps in graph:**
+- [ ] Zero yellow gap nodes in the graph
+- [ ] Node taxonomy: Person, Module, Card, Chunk only — no Gap type
+- [ ] KG-10 from the 07-09 file is skipped/overridden
 
 ---
 
