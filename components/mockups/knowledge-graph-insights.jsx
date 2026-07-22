@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Sparkles, ChevronRight, ChevronDown, ArrowLeft, List, BarChart3 } from "lucide-react";
+import { ArrowLeft, List, BarChart3 } from "lucide-react";
 
 /* Knowledge Graph Insights — /knowledge-graph/insights
    Two modes:
@@ -67,18 +67,13 @@ const MODULES = [
     ] },
 ];
 
+// KI-02 — Insights shows knowledge ACTIVITY only; gaps are tracked in the session (Data tab).
+// Negative activity values (legacy gap markers) clamp to "no activity" rather than a yellow cell.
 function cellColor(v) {
-  if (v < 0) return { bg: "#fde68a", border: "#fbbf24" };
-  if (v === 0) return { bg: "#f5f3ff", border: "#e4e0f5" };
+  if (v <= 0) return { bg: "#f5f3ff", border: "#e4e0f5" };
   if (v === 1) return { bg: "#ede9fe", border: "#c4b5fd" };
   if (v === 2) return { bg: "#c4b5fd", border: "#a78bfa" };
   return { bg: "#7c3aed", border: "#6d28d9" };
-}
-
-function StatusBadge({ status }) {
-  if (status === "verified") return <span className="text-[8px] px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200">Verified</span>;
-  if (status === "gap") return <span className="text-[8px] px-1.5 py-0.5 rounded bg-yellow-50 text-yellow-700 border border-yellow-200">Gap</span>;
-  return <span className="text-[8px] px-1.5 py-0.5 rounded bg-gray-50 text-gray-600 border border-gray-200">Draft</span>;
 }
 
 export default function KnowledgeGraphInsights({ embedded = false } = {}) {
@@ -101,9 +96,9 @@ export default function KnowledgeGraphInsights({ embedded = false } = {}) {
             <h2 className="text-sm font-semibold text-gray-900 leading-tight">Knowledge insights</h2>
             <div className="text-[11px] text-gray-500 flex items-center gap-1 mt-0.5">
               {selectedModule ? (
-                <><button onClick={goToAll} className="text-violet-600 hover:text-violet-700 cursor-pointer">Minh L\u00EA</button>{" \u203A "}<span className="text-gray-900 font-medium">{selectedModule.name}</span></>
+                <><button onClick={goToAll} className="text-violet-600 hover:text-violet-700 cursor-pointer">Minh Lê</button>{" \u203A "}<span className="text-gray-900 font-medium">{selectedModule.name}</span></>
               ) : (
-                <span>Minh L\u00EA&apos;s handover</span>
+                <span>Minh Lê&apos;s handover</span>
               )}
             </div>
           </div>
@@ -119,41 +114,18 @@ export default function KnowledgeGraphInsights({ embedded = false } = {}) {
   );
 }
 
+// KI-01 — the left module list is gone; the heatmap already lists every module, so it takes full width.
+// Module rows stay clickable (a row click drills into that module), preserving the drill-down path.
 function UnfilteredView({ onSelect, hoveredRow, setHoveredRow }) {
   return (
     <div className="grid grid-cols-12 gap-3">
-      {/* Left: Module list */}
-      <div className="col-span-5 rounded-lg border border-gray-200 bg-white overflow-hidden">
-        <div className="px-4 py-2.5 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
-          <span className="text-[12px] font-semibold text-gray-900">Modules</span>
-          <span className="text-[10px] text-gray-500" style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{MODULES.length}</span>
-        </div>
-        {MODULES.map((m, i) => (
-          <button key={m.id} onClick={() => onSelect(m.id)} onMouseEnter={() => setHoveredRow(i)} onMouseLeave={() => setHoveredRow(null)}
-            className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-left border-b border-gray-100 last:border-b-0 transition-colors cursor-pointer ${hoveredRow === i ? "bg-violet-50/50" : "hover:bg-gray-50"}`}>
-            <span className={`w-2 h-2 rounded-full shrink-0 ${m.gaps > 0 ? "bg-yellow-400" : "bg-emerald-400"}`} />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[12px] font-medium text-gray-900 truncate">{m.name}</span>
-              </div>
-              <div className="text-[10px] text-gray-500 flex items-center gap-1 mt-0.5">
-                <span style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{m.entries}e</span>
-                {m.gaps > 0 && <span className="text-[8px] px-1 py-0.5 rounded bg-yellow-50 text-yellow-700 border border-yellow-200">{m.gaps}</span>}
-              </div>
-            </div>
-            <ChevronRight className="w-3 h-3 text-gray-400 shrink-0" />
-          </button>
-        ))}
-      </div>
-
-      {/* Right: Module heatmap */}
-      <div className="col-span-7 rounded-lg border border-gray-200 bg-white overflow-hidden">
+      <div className="col-span-12 rounded-lg border border-gray-200 bg-white overflow-hidden">
         <div className="px-4 py-2.5 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
           <span className="text-[12px] font-semibold text-gray-900">Activity across all modules</span>
           <Legend />
         </div>
         <div className="p-4">
-          <HeatmapGrid rows={MODULES.map(m => ({ label: m.name, activity: m.activity }))} hoveredRow={hoveredRow} setHoveredRow={setHoveredRow} />
+          <HeatmapGrid rows={MODULES.map(m => ({ label: m.name, activity: m.activity, onClick: () => onSelect(m.id) }))} hoveredRow={hoveredRow} setHoveredRow={setHoveredRow} />
         </div>
       </div>
     </div>
@@ -189,12 +161,14 @@ function HeatmapGrid({ rows, hoveredRow, setHoveredRow }) {
       <tbody>
         {rows.map((row, ri) => (
           <tr key={ri} onMouseEnter={() => setHoveredRow(ri)} onMouseLeave={() => setHoveredRow(null)}
-            className={hoveredRow === ri ? "bg-violet-50/30" : ""}>
+            onClick={row.onClick} className={`${hoveredRow === ri ? "bg-violet-50/30" : ""} ${row.onClick ? "cursor-pointer" : ""}`}>
             <td className="text-[11px] text-gray-800 truncate" style={{ padding: "4px 8px 4px 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.label}</td>
             {row.activity.map((v, ci) => {
               const c = cellColor(v);
-              // KG-06 — hovering a cell surfaces the card count for that month (gap cells show "gap flagged").
-              const tip = `${row.label} — ${MONTHS[ci]}: ${v < 0 ? "gap flagged" : `${v} card${v === 1 ? "" : "s"}`}`;
+              // KI-03 — hovering a cell surfaces the module/entry, the month, and the card count.
+              // KI-02 — no "gap flagged" state; negative legacy values read as 0 cards.
+              const n = Math.max(0, v);
+              const tip = `${row.label} · ${MONTHS[ci]}\n${n} card${n === 1 ? "" : "s"} updated`;
               return <td key={ci} style={{ padding: "2px" }}><div title={tip} style={{ height: 22, borderRadius: 3, background: c.bg, border: `0.5px solid ${c.border}`, cursor: "default" }} /></td>;
             })}
           </tr>
@@ -210,7 +184,6 @@ function Legend() {
       <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm" style={{ background: "#f5f3ff", border: "0.5px solid #e4e0f5" }} />None</span>
       <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm" style={{ background: "#c4b5fd" }} />Low</span>
       <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm" style={{ background: "#7c3aed" }} />High</span>
-      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm" style={{ background: "#fde68a" }} />Gap</span>
     </div>
   );
 }

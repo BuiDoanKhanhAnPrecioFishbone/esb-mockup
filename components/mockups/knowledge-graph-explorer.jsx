@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Link from "next/link";
-import { Send, Sparkles, X, ChevronRight, Flag, BarChart3, CheckCircle2, XCircle, AlertTriangle, Pencil, Check, Plus, PanelLeftClose, PanelLeftOpen, Eye, Network, Users, Crosshair, Search } from "lucide-react";
+import { Send, Sparkles, X, ChevronRight, ChevronDown, Flag, BarChart3, CheckCircle2, XCircle, AlertTriangle, Pencil, Check, Plus, PanelLeftClose, PanelLeftOpen, Eye, Network, Users, Crosshair, Search, Clock } from "lucide-react";
 import { KG_NODES as NODES, KG_EDGES as EDGES, KG_CHIPS as CHIPS, KG_PROMPTS as PROMPTS, KG_SEED_THREADS as SEED_THREADS, KG_REPORTED } from "@/lib/data";
 
 /* ART-EEP Consumer Plane — Knowledge Graph Explorer
@@ -71,8 +71,17 @@ function initPos(nodes,w,h){const mods=nodes.filter(n=>n.depth===1);const cx=w/2
 
 function sim(nodes,edges,w,h,alpha){const a=0.1*alpha,rep=1500,sp=0.016,sl=100,ce=0.006,da=0.4;const m={}; /* KG-13 — alpha-decayed forces + heavier friction (velocityDecay 0.6): nodes settle in ~1s, then only gently drift. */nodes.forEach(n=>{m[n.id]=n;});for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){const na=nodes[i],nb=nodes[j],dx=nb.x-na.x,dy=nb.y-na.y,d=Math.sqrt(dx*dx+dy*dy)||1;const f=rep/(d*d)*a,fx=(dx/d)*f,fy=(dy/d)*f;na.vx-=fx;na.vy-=fy;nb.vx+=fx;nb.vy+=fy;}edges.forEach(e=>{const s=m[e.from],t=m[e.to];if(!s||!t)return;const dx=t.x-s.x,dy=t.y-s.y,d=Math.sqrt(dx*dx+dy*dy)||1;const f=(d-sl)*sp*a,fx=(dx/d)*f,fy=(dy/d)*f;s.vx+=fx;s.vy+=fy;t.vx-=fx;t.vy-=fy;});nodes.forEach(n=>{if(n._d)return;n.vx+=(w/2-n.x)*ce*a;n.vy+=(h/2-n.y)*ce*a;n.vx*=da;n.vy*=da;n.x+=n.vx;n.y+=n.vy;n.x=Math.max(40,Math.min(w-40,n.x));n.y=Math.max(40,Math.min(h-40,n.y));});}
 
+// KI-04 — offboarders whose handover has produced (or is producing) a graph. Only a committed
+// session has nodes; an in-progress one is selectable but resolves to an empty canvas.
+const EMPLOYEES=[
+  {id:"minh-le",name:"Minh Lê",role:"Senior Backend Engineer",status:"complete"},
+  {id:"phuong-anh",name:"Phương Anh Nguyễn",role:"Account Executive",status:"in-progress"},
+];
+
 export default function KnowledgeGraphExplorer({embedded=false}={}){
   const svgRef=useRef(null),boxRef=useRef(null),animRef=useRef(null),nodesRef=useRef([]),alphaRef=useRef(1);
+  // KI-04 — which offboarder's graph is being explored.
+  const [employeeId,setEmployeeId]=useState("minh-le");const [empOpen,setEmpOpen]=useState(false);
   const [dim,setDim]=useState({w:800,h:500});const [tick,setTick]=useState(0);
   const [hovered,setHovered]=useState(null);const [selected,setSelected]=useState(null);
   const [expanded,setExpanded]=useState(new Set());const [dragId,setDragId]=useState(null);
@@ -176,18 +185,43 @@ export default function KnowledgeGraphExplorer({embedded=false}={}){
   const childEntries=selData?.type==="module"?NODES.filter(n=>n.parent===selData.id&&n.depth===2):[];
   const selGapStatus=selData?gapStatus(selData.id):null;
   const selIsGap=selData?isGap(selData.id):false;
+  // KI-04 — the POC only holds a committed graph for Minh Lê; other offboarders resolve to an empty canvas.
+  const emp=EMPLOYEES.find(e=>e.id===employeeId)||EMPLOYEES[0];
+  const hasGraph=emp.status==="complete";
 
   return(
     <div className={`${embedded?'px-5 py-4 h-[calc(100vh-3rem)]':'p-4 h-full'} flex flex-col min-h-0`} style={{fontFamily:"'Inter',system-ui,sans-serif"}}>
       <div className="flex items-center justify-between mb-2 flex-shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-violet-600 flex items-center justify-center"><Sparkles className="w-4 h-4 text-white" strokeWidth={1.75}/></div>
-          <div><h2 className="text-sm font-semibold text-gray-900 leading-tight">{"Minh Lê’s Knowledge Graph"}</h2>
-          <p className="text-[11px] text-gray-500">{"Senior Backend Engineer · "}{NODES.filter(n=>n.type==="module").length}{" modules · "}{NODES.filter(n=>n.type==="entry").length}{" entries · "}{EDGES.length}{" relationships"}</p></div>
+          <div>
+            {/* KI-04 — title follows the selected offboarder; the chevron opens the employee picker. */}
+            <div className="relative">
+              <button onClick={()=>setEmpOpen(o=>!o)} className="flex items-center gap-1 group cursor-pointer">
+                <h2 className="text-sm font-semibold text-gray-900 leading-tight">{emp.name}{"’s Knowledge Graph"}</h2>
+                <ChevronDown className={`w-3.5 h-3.5 text-gray-400 group-hover:text-gray-600 transition-transform ${empOpen?"rotate-180":""}`}/>
+              </button>
+              {empOpen&&<>
+                <div className="fixed inset-0 z-40" onClick={()=>setEmpOpen(false)}/>
+                <div className="absolute left-0 top-full mt-1 w-[248px] bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1">
+                  {EMPLOYEES.map(e=><button key={e.id} onClick={()=>{setEmployeeId(e.id);setEmpOpen(false);clearAll();}} className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-left hover:bg-violet-50 cursor-pointer ${e.id===employeeId?"bg-violet-50":""}`}>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[12px] font-medium text-gray-900 truncate">{e.name}</p>
+                      <p className="text-[10px] text-gray-500 truncate">{e.role}</p>
+                    </div>
+                    {e.status==="complete"
+                      ? <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">Complete</span>
+                      : <span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 border border-gray-200 shrink-0">In progress</span>}
+                  </button>)}
+                </div>
+              </>}
+            </div>
+            <p className="text-[11px] text-gray-500">{emp.role}{hasGraph?<>{" · "}{NODES.filter(n=>n.type==="module").length}{" modules · "}{NODES.filter(n=>n.type==="entry").length}{" entries · "}{EDGES.length}{" relationships"}</>:" · handover in progress"}</p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={()=>{setExpanded(new Set(NODES.filter(n=>n.type==="module").map(n=>n.id)));}} className="px-2.5 py-1 text-[11px] font-medium text-violet-700 bg-violet-50 rounded-md hover:bg-violet-100 transition-colors cursor-pointer">Expand all</button>
-          <button onClick={clearAll} className="px-2.5 py-1 text-[11px] font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors cursor-pointer">Reset</button>
+          <button disabled={!hasGraph} onClick={()=>{setExpanded(new Set(NODES.filter(n=>n.type==="module").map(n=>n.id)));}} className="px-2.5 py-1 text-[11px] font-medium text-violet-700 bg-violet-50 rounded-md hover:bg-violet-100 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">Expand all</button>
+          <button disabled={!hasGraph} onClick={clearAll} className="px-2.5 py-1 text-[11px] font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">Reset</button>
         </div>
       </div>
       {/* Filter control removed (\u00a78.1a) \u2014 the committed graph is browsed via chat + zoom, not status/contributor/gap filters. */}
@@ -240,6 +274,15 @@ export default function KnowledgeGraphExplorer({embedded=false}={}){
 
         {/* 3. Graph canvas — always primary, fills remaining space; drawer overlays it */}
         <div ref={boxRef} className="flex-1 min-w-0 bg-gray-50 rounded-lg border border-gray-200 relative overflow-hidden" style={{cursor:panning?'grabbing':dragId?'grabbing':'grab'}}>
+          {/* KI-04 — an offboarder still mid-handover has committed nothing, so there is no graph to draw yet. */}
+          {!hasGraph&&<div className="absolute inset-0 z-20 bg-gray-50 flex items-center justify-center px-6">
+            <div className="text-center max-w-[320px]">
+              <div className="w-10 h-10 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center mx-auto mb-2.5"><Clock className="w-4 h-4 text-gray-400"/></div>
+              <p className="text-[13px] font-medium text-gray-900">{emp.name}{"’s handover is still in progress"}</p>
+              <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">Nothing has been committed to the Knowledge Graph yet. Her knowledge appears here once the session is committed.</p>
+              <button onClick={()=>{setEmployeeId("minh-le");clearAll();}} className="mt-3 px-2.5 py-1 text-[11px] font-medium text-violet-700 bg-violet-50 rounded-md hover:bg-violet-100 transition-colors cursor-pointer">View Minh Lê’s graph</button>
+            </div>
+          </div>}
           <svg ref={svgRef} width={dim.w} height={dim.h} className="w-full h-full" style={{touchAction:'none'}} onPointerMove={onMove} onPointerUp={onUp} onPointerDown={onBgDown}>
             <g transform={`translate(${pan.x},${pan.y}) scale(${pan.s})`}>
               {visEdges.map((e,i)=>{const s=nm[e.from],t=nm[e.to];if(!s||!t)return null;const sn=NODES.find(n=>n.id===e.from),tn=NODES.find(n=>n.id===e.to);const sr=nodeR(sn||{}),tr=nodeR(tn||{});const dx=t.x-s.x,dy=t.y-s.y,d=Math.sqrt(dx*dx+dy*dy)||1;const x1=s.x+(dx/d)*sr,y1=s.y+(dy/d)*sr,x2=t.x-(dx/d)*tr,y2=t.y-(dy/d)*tr;const hi=isHi(e.from)&&isHi(e.to);
